@@ -134,8 +134,12 @@ def get_visible_stores():
 
 def run_checklist_closeout(closeout_date: date):
     active_stores = Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
+
     created_count = 0
     skipped_count = 0
+    skipped_existing_count = 0
+    skipped_complete_count = 0
+    not_started_count = 0
 
     for store in active_stores:
         existing_exception = ChecklistException.query.filter_by(
@@ -146,6 +150,7 @@ def run_checklist_closeout(closeout_date: date):
 
         if existing_exception:
             skipped_count += 1
+            skipped_existing_count += 1
             continue
 
         daily = DailyChecklist.query.filter_by(
@@ -171,6 +176,7 @@ def run_checklist_closeout(closeout_date: date):
                 )
             )
             created_count += 1
+            not_started_count += 1
             continue
 
         incomplete_items = [item for item in daily.items if not item.is_completed]
@@ -181,6 +187,7 @@ def run_checklist_closeout(closeout_date: date):
 
         if checklist_completed and not manager_walk_missed:
             skipped_count += 1
+            skipped_complete_count += 1
             continue
 
         incomplete_names = ", ".join(item.task_text for item in incomplete_items)
@@ -209,6 +216,9 @@ def run_checklist_closeout(closeout_date: date):
         "closeout_date": closeout_date,
         "created_count": created_count,
         "skipped_count": skipped_count,
+        "skipped_existing_count": skipped_existing_count,
+        "skipped_complete_count": skipped_complete_count,
+        "not_started_count": not_started_count,
     }
 
 
@@ -491,7 +501,10 @@ def run_closeout():
     flash(
         f"Checklist closeout ran for {result['closeout_date'].strftime('%B %d, %Y')}. "
         f"Exceptions created: {result['created_count']}. "
-        f"Stores skipped: {result['skipped_count']}.",
+        f"Stores skipped: {result['skipped_count']}. "
+        f"Not started: {result['not_started_count']}. "
+        f"Skipped existing: {result['skipped_existing_count']}. "
+        f"Skipped complete: {result['skipped_complete_count']}.",
         "success"
     )
     return redirect(url_for("dashboard.home"))

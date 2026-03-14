@@ -102,7 +102,7 @@
     <div class="panel-head">
         <div>
             <h3>Store Heat Map</h3>
-            <div class="area-subtitle">One-glance status across all visible stores</div>
+            <div class="area-subtitle">Tap any store to open its checklist</div>
         </div>
         <div class="heatmap-legend">
             <span class="legend-chip legend-green">Strong</span>
@@ -115,18 +115,24 @@
     <div id="heatmap-wrapper" class="heatmap-grid">
         {% for area_name, stores in area_groups.items() %}
             {% for store in stores %}
-            <div class="heatmap-tile
-                {% if store.status == 'not_started' %}tile-gray
-                {% elif store.integrity_score > 0 and store.integrity_score < 80 %}tile-red
-                {% elif store.opening_percent >= 100 and store.integrity_score >= 90 %}tile-green
-                {% else %}tile-yellow{% endif %}">
-                <div class="heatmap-store">{{ store.store_number }}</div>
-                <div class="heatmap-area">{{ area_name }}</div>
-                <div class="heatmap-metrics">
-                    <span>Open {{ store.opening_percent }}%</span>
-                    <span>Int {{ store.integrity_score }}%</span>
+            <a
+                href="{{ url_for('checklist.index', store=store.store_number) }}"
+                class="heatmap-link"
+                aria-label="Open checklist for store {{ store.store_number }}"
+            >
+                <div class="heatmap-tile
+                    {% if store.status == 'not_started' %}tile-gray
+                    {% elif store.integrity_score > 0 and store.integrity_score < 80 %}tile-red
+                    {% elif store.opening_percent >= 100 and store.integrity_score >= 90 %}tile-green
+                    {% else %}tile-yellow{% endif %}">
+                    <div class="heatmap-store">{{ store.store_number }}</div>
+                    <div class="heatmap-area">{{ area_name }}</div>
+                    <div class="heatmap-metrics">
+                        <span>Open {{ store.opening_percent }}%</span>
+                        <span>Int {{ store.integrity_score }}%</span>
+                    </div>
                 </div>
-            </div>
+            </a>
             {% endfor %}
         {% endfor %}
     </div>
@@ -213,7 +219,7 @@
                 </thead>
                 <tbody>
                     {% for store in stores %}
-                    <tr>
+                    <tr class="clickable-row" onclick="window.location='{{ url_for('checklist.index', store=store.store_number) }}'">
                         <td>
                             <div class="store-cell">
                                 <div class="store-main">{{ store.store_number }}</div>
@@ -362,6 +368,11 @@ document.addEventListener("DOMContentLoaded", function () {
             heatmapWrapper.innerHTML = "";
             Object.entries(data.area_groups).forEach(([areaName, stores]) => {
                 stores.forEach(store => {
+                    const link = document.createElement("a");
+                    link.className = "heatmap-link";
+                    link.href = `/checklist/?store=${encodeURIComponent(store.store_number)}`;
+                    link.setAttribute("aria-label", `Open checklist for store ${store.store_number}`);
+
                     const tile = document.createElement("div");
                     tile.className = heatTileClass(store);
                     tile.innerHTML = `
@@ -372,7 +383,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             <span>Int ${store.integrity_score}%</span>
                         </div>
                     `;
-                    heatmapWrapper.appendChild(tile);
+
+                    link.appendChild(tile);
+                    heatmapWrapper.appendChild(link);
                 });
             });
 
@@ -391,7 +404,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const summary = data.area_summaries[areaName];
 
                 const rows = stores.map(store => `
-                    <tr>
+                    <tr class="clickable-row" onclick="window.location='/checklist/?store=${encodeURIComponent(store.store_number)}'">
                         <td>
                             <div class="store-cell">
                                 <div class="store-main">${store.store_number}</div>

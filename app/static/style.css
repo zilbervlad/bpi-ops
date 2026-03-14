@@ -1425,3 +1425,35 @@ textarea:focus {
         font-size: 13px;
     }
 }
+/* ------------------------------
+   Dashboard store click-through
+------------------------------ */
+
+.heatmap-link {
+    display: block;
+    color: inherit;
+}
+
+.heatmap-link:hover .heatmap-tile {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+.heatmap-link .heatmap-tile {
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    cursor: pointer;
+}
+
+.clickable-row {
+    cursor: pointer;
+    transition: background 0.18s ease;
+}
+
+.clickable-row:hover {
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.clickable-row td {
+    position: relative;
+}

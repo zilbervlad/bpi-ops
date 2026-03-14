@@ -115,52 +115,63 @@
 
 {% if is_ops_view %}
 <div class="panel premium-panel" style="margin-bottom: 24px;">
-    <div class="panel-head">
-        <h3>Yesterday Exceptions</h3>
-        <span class="summary-pill">{{ yesterday_label }}</span>
-    </div>
+    <button
+        type="button"
+        id="yesterday-exceptions-toggle"
+        class="panel-head"
+        style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
+        aria-expanded="true"
+    >
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <h3 style="margin: 0;">Yesterday Exceptions</h3>
+            <span class="summary-pill">{{ yesterday_label }}</span>
+        </div>
+        <span id="yesterday-exceptions-chevron" class="summary-pill">Hide ▲</span>
+    </button>
 
-    <div class="table-wrap premium-table-wrap">
-        <table class="data-table premium-table">
-            <thead>
-                <tr>
-                    <th>Store</th>
-                    <th>Manager</th>
-                    <th>Completion</th>
-                    <th>Integrity</th>
-                    <th>Manager Walk</th>
-                    <th>Incomplete Tasks</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in yesterday_exceptions %}
-                <tr onclick="window.location='{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date) }}'" style="cursor: pointer;">
-                    <td>{{ item.store_number }}</td>
-                    <td>{{ item.manager_on_duty }}</td>
-                    <td>
-                        <span class="table-badge {% if item.percent_complete >= 100 %}badge-success{% elif item.percent_complete > 0 %}badge-warning{% else %}badge-danger{% endif %}">
-                            {{ item.percent_complete }}%
-                        </span>
-                    </td>
-                    <td>
-                        <span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-danger{% endif %}">
-                            {{ item.integrity_score }}%
-                        </span>
-                    </td>
-                    <td>
-                        <span class="table-badge {% if item.manager_walk_missed %}badge-danger{% else %}badge-success{% endif %}">
-                            {% if item.manager_walk_missed %}Missed{% else %}Done{% endif %}
-                        </span>
-                    </td>
-                    <td>{{ item.incomplete_task_count }}</td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6">No closeout exceptions recorded for {{ yesterday_label }}.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div id="yesterday-exceptions-body" style="margin-top: 16px;">
+        <div class="table-wrap premium-table-wrap">
+            <table class="data-table premium-table">
+                <thead>
+                    <tr>
+                        <th>Store</th>
+                        <th>Manager</th>
+                        <th>Completion</th>
+                        <th>Integrity</th>
+                        <th>Manager Walk</th>
+                        <th>Incomplete Tasks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in yesterday_exceptions %}
+                    <tr onclick="window.location='{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date) }}'" style="cursor: pointer;">
+                        <td>{{ item.store_number }}</td>
+                        <td>{{ item.manager_on_duty }}</td>
+                        <td>
+                            <span class="table-badge {% if item.percent_complete >= 100 %}badge-success{% elif item.percent_complete > 0 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {{ item.percent_complete }}%
+                            </span>
+                        </td>
+                        <td>
+                            <span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {{ item.integrity_score }}%
+                            </span>
+                        </td>
+                        <td>
+                            <span class="table-badge {% if item.manager_walk_missed %}badge-danger{% else %}badge-success{% endif %}">
+                                {% if item.manager_walk_missed %}Missed{% else %}Done{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ item.incomplete_task_count }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">No closeout exceptions recorded for {{ yesterday_label }}.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endif %}
@@ -842,6 +853,19 @@ document.addEventListener("DOMContentLoaded", function () {
     bindWeeklyFocusCheckboxes();
     refreshDashboard();
     setInterval(refreshDashboard, 10000);
+
+    const yesterdayToggle = document.getElementById("yesterday-exceptions-toggle");
+    const yesterdayBody = document.getElementById("yesterday-exceptions-body");
+    const yesterdayChevron = document.getElementById("yesterday-exceptions-chevron");
+
+    if (yesterdayToggle && yesterdayBody && yesterdayChevron) {
+        yesterdayToggle.addEventListener("click", function () {
+            const isHidden = yesterdayBody.style.display === "none";
+            yesterdayBody.style.display = isHidden ? "block" : "none";
+            yesterdayToggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
+            yesterdayChevron.textContent = isHidden ? "Hide ▲" : "Show ▼";
+        });
+    }
 });
 </script>
 {% endblock %}

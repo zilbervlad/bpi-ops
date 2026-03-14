@@ -166,7 +166,7 @@ def run_checklist_closeout(closeout_date: date):
                     manager_on_duty=None,
                     checklist_started=False,
                     checklist_completed=False,
-                    manager_walk_missed=False,
+                    manager_walk_missed=True,
                     percent_complete=0.0,
                     integrity_score=0.0,
                     incomplete_task_count=0,

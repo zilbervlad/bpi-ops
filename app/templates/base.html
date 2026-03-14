@@ -9,10 +9,17 @@
 <body>
     {% if session.get('user_id') %}
     <div class="layout">
-        <aside class="sidebar">
-            <div class="brand">
-                <h1>BPI Ops</h1>
-                <p>Operations Platform</p>
+        <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay"></div>
+
+        <aside class="sidebar" id="sidebar">
+            <div class="brand brand-mobile-row">
+                <div>
+                    <h1>BPI Ops</h1>
+                    <p>Operations Platform</p>
+                </div>
+                <button class="mobile-nav-close" id="mobile-nav-close" type="button" aria-label="Close menu">
+                    ✕
+                </button>
             </div>
 
             <nav class="nav">
@@ -48,12 +55,17 @@
         </aside>
 
         <main class="main-content">
-            <header class="topbar">
-                <div>
-                    <h2>{% block header %}Dashboard{% endblock %}</h2>
-                    <p class="subtitle">
-                        Welcome, {{ session.get('user_name', 'User') }} ({{ session.get('user_role', 'role')|title }})
-                    </p>
+            <header class="topbar topbar-mobile">
+                <div class="topbar-left">
+                    <button class="mobile-nav-toggle" id="mobile-nav-toggle" type="button" aria-label="Open menu">
+                        ☰
+                    </button>
+                    <div>
+                        <h2>{% block header %}Dashboard{% endblock %}</h2>
+                        <p class="subtitle">
+                            Welcome, {{ session.get('user_name', 'User') }} ({{ session.get('user_role', 'role')|title }})
+                        </p>
+                    </div>
                 </div>
             </header>
 
@@ -72,6 +84,48 @@
             </div>
         </main>
     </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const body = document.body;
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("mobile-sidebar-overlay");
+        const openBtn = document.getElementById("mobile-nav-toggle");
+        const closeBtn = document.getElementById("mobile-nav-close");
+
+        function openSidebar() {
+            body.classList.add("mobile-nav-open");
+        }
+
+        function closeSidebar() {
+            body.classList.remove("mobile-nav-open");
+        }
+
+        if (openBtn) {
+            openBtn.addEventListener("click", openSidebar);
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener("click", closeSidebar);
+        }
+
+        if (overlay) {
+            overlay.addEventListener("click", closeSidebar);
+        }
+
+        if (sidebar) {
+            sidebar.querySelectorAll("a").forEach(link => {
+                link.addEventListener("click", closeSidebar);
+            });
+        }
+
+        window.addEventListener("resize", function () {
+            if (window.innerWidth > 800) {
+                closeSidebar();
+            }
+        });
+    });
+    </script>
     {% else %}
     <div class="login-page-wrap">
         {% with messages = get_flashed_messages(with_categories=true) %}

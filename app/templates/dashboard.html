@@ -1,32 +1,71 @@
 {% extends "base.html" %}
 
 {% block title %}Dashboard | BPI Ops{% endblock %}
-{% block header %}{% if session.get('user_role') == 'manager' %}Store Dashboard{% else %}Director Command Center{% endif %}{% endblock %}
+{% block header %}
+    {% if session.get('user_role') == 'manager' %}
+        Store Dashboard
+    {% elif session.get('user_role') == 'maintenance' %}
+        Maintenance Dashboard
+    {% else %}
+        Director Command Center
+    {% endif %}
+{% endblock %}
 
 {% block content %}
-{% set is_manager = session.get('user_role') == 'manager' %}
+{% set user_role = session.get('user_role') %}
+{% set is_manager = user_role == 'manager' %}
+{% set is_maintenance = user_role == 'maintenance' %}
+{% set is_ops_view = not is_manager and not is_maintenance %}
 
 <div class="command-bar panel" style="margin-bottom: 24px;">
     <div class="command-bar-left">
-        <div class="command-eyebrow">{% if is_manager %}STORE VIEW{% else %}LIVE OPERATIONS{% endif %}</div>
-        <h2 class="command-title">{% if is_manager %}BPI Ops Store Dashboard{% else %}BPI Ops Command Center{% endif %}</h2>
+        <div class="command-eyebrow">
+            {% if is_manager %}
+                STORE VIEW
+            {% elif is_maintenance %}
+                MAINTENANCE VIEW
+            {% else %}
+                LIVE OPERATIONS
+            {% endif %}
+        </div>
+
+        <h2 class="command-title">
+            {% if is_manager %}
+                BPI Ops Store Dashboard
+            {% elif is_maintenance %}
+                BPI Ops Maintenance Dashboard
+            {% else %}
+                BPI Ops Command Center
+            {% endif %}
+        </h2>
+
         <p class="command-subtitle">
             {% if is_manager %}
-            Today's checklist progress, opening integrity, and store task visibility.
+                Today's checklist progress, opening integrity, and store task visibility.
+            {% elif is_maintenance %}
+                Open maintenance workload, task visibility, and fast access to repair tracking.
             {% else %}
-            Real-time checklist execution, opening integrity, SVR compliance, and maintenance visibility.
+                Real-time checklist execution, opening integrity, SVR compliance, and maintenance visibility.
             {% endif %}
         </p>
     </div>
 
     <div class="command-bar-right">
-        <div class="command-chip">{% if is_manager %}Store Dashboard{% else %}Live Dashboard{% endif %}</div>
+        <div class="command-chip">
+            {% if is_manager %}
+                Store Dashboard
+            {% elif is_maintenance %}
+                Maintenance Dashboard
+            {% else %}
+                Live Dashboard
+            {% endif %}
+        </div>
         <div class="command-chip" id="last-refresh-chip">Refreshing...</div>
-        <div class="command-chip">{{ session.get('user_role', 'role')|title }}</div>
+        <div class="command-chip">{{ user_role|title }}</div>
     </div>
 </div>
 
-{% if not is_manager %}
+{% if is_ops_view %}
 <div class="content-grid exceptions-grid" style="margin-bottom: 24px;">
     <section class="panel premium-panel exception-panel">
         <div class="panel-head">
@@ -74,6 +113,21 @@
 </div>
 {% endif %}
 
+{% if is_maintenance %}
+<div class="dashboard-grid dashboard-grid-premium maintenance-metric-grid">
+    <div class="metric-card premium-card premium-card-blue">
+        <span class="metric-label">Open Maintenance</span>
+        <h3 id="stat-open-maintenance">{{ stats.open_maintenance }}</h3>
+        <p class="metric-footnote">Open tasks across visible stores</p>
+    </div>
+
+    <div class="metric-card premium-card premium-card-alert">
+        <span class="metric-label">Stores Flagged</span>
+        <h3 id="stat-stores-flagged">{{ stats.stores_flagged }}</h3>
+        <p class="metric-footnote">Stores with low integrity visibility</p>
+    </div>
+</div>
+{% else %}
 <div class="dashboard-grid dashboard-grid-premium {% if is_manager %}manager-metric-grid{% endif %}">
     <div class="metric-card premium-card">
         <span class="metric-label">Checklist Completion</span>
@@ -87,7 +141,7 @@
         <p class="metric-footnote">Before Open / 10:30 progress</p>
     </div>
 
-    {% if not is_manager %}
+    {% if is_ops_view %}
     <div class="metric-card premium-card">
         <span class="metric-label">SVR Compliance</span>
         <h3 id="stat-svr-compliance">{{ stats.svr_compliance }}</h3>
@@ -107,8 +161,9 @@
         <p class="metric-footnote">{% if is_manager %}Open tasks for your store{% else %}Open tasks across visible stores{% endif %}</p>
     </div>
 </div>
+{% endif %}
 
-{% if not is_manager %}
+{% if is_ops_view %}
 <div class="panel premium-panel heatmap-panel" style="margin-bottom: 24px;">
     <div class="panel-head">
         <div>
@@ -150,8 +205,8 @@
 </div>
 {% endif %}
 
-<div class="content-grid {% if is_manager %}manager-content-grid{% endif %}">
-    {% if not is_manager %}
+<div class="content-grid {% if is_manager %}manager-content-grid{% endif %} {% if is_maintenance %}maintenance-content-grid{% endif %}">
+    {% if is_ops_view %}
     <section class="panel premium-panel">
         <div class="panel-head">
             <h3>Operational Alerts</h3>
@@ -191,27 +246,44 @@
         </ul>
     </section>
     {% endif %}
+
+    {% if is_maintenance %}
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Maintenance Focus</h3>
+            <span class="summary-pill">Task View</span>
+        </div>
+        <ul class="clean-list">
+            <li>Prioritize open and in-progress tickets first.</li>
+            <li>Update statuses as work is assigned or completed.</li>
+            <li>Review tasks across visible stores from the Maintenance board.</li>
+            <li>Clear completed work so the board stays clean.</li>
+        </ul>
+    </section>
+    {% endif %}
 </div>
 
 <div class="panel premium-panel" style="margin-bottom: 24px;">
     <div class="panel-head">
-        <h3>{% if is_manager %}Store Summary{% else %}Store Summary{% endif %}</h3>
+        <h3>{% if is_maintenance %}Maintenance Summary{% else %}Store Summary{% endif %}</h3>
         <span class="summary-pill">Live Totals</span>
     </div>
 
     <div class="summary-pills summary-pills-large">
         <span class="summary-pill" id="summary-total-stores">Total Stores: {{ total_stores }}</span>
+        {% if not is_maintenance %}
         <span class="summary-pill success-pill" id="summary-completed">Completed: {{ completed_today }}</span>
         <span class="summary-pill warning-pill" id="summary-in-progress">In Progress: {{ in_progress_today }}</span>
         <span class="summary-pill neutral-pill" id="summary-not-started">Not Started: {{ not_started_today }}</span>
-        {% if not is_manager %}
+        {% endif %}
+        {% if is_ops_view %}
         <span class="summary-pill" id="summary-svr-completed">SVRs This Week: {{ svr_completed_count }}</span>
         {% endif %}
         <span class="summary-pill warning-pill" id="summary-open-maintenance">Open Maintenance: {{ open_maintenance_count }}</span>
     </div>
 </div>
 
-{% if not is_manager %}
+{% if is_ops_view %}
 <div id="areas-wrapper">
     {% for area_name, stores in area_groups.items() %}
     <div class="panel premium-panel area-panel" style="margin-bottom: 24px;">
@@ -298,6 +370,8 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const isManager = {{ 'true' if session.get('user_role') == 'manager' else 'false' }};
+    const isMaintenance = {{ 'true' if session.get('user_role') == 'maintenance' else 'false' }};
+    const isOpsView = !isManager && !isMaintenance;
 
     function statusBadgeClass(status) {
         if (status === "completed") return "status-badge status-completed";
@@ -373,24 +447,47 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const data = await response.json();
 
-            document.getElementById("stat-checklist-completion").textContent = data.stats.checklist_completion;
-            document.getElementById("stat-opening-completion").textContent = data.stats.opening_completion;
+            if (document.getElementById("stat-checklist-completion")) {
+                document.getElementById("stat-checklist-completion").textContent = data.stats.checklist_completion;
+            }
+
+            if (document.getElementById("stat-opening-completion")) {
+                document.getElementById("stat-opening-completion").textContent = data.stats.opening_completion;
+            }
+
             if (document.getElementById("stat-svr-compliance")) {
                 document.getElementById("stat-svr-compliance").textContent = data.stats.svr_compliance;
             }
-            document.getElementById("stat-stores-flagged").textContent = data.stats.stores_flagged;
-            document.getElementById("stat-open-maintenance").textContent = data.stats.open_maintenance;
+
+            if (document.getElementById("stat-stores-flagged")) {
+                document.getElementById("stat-stores-flagged").textContent = data.stats.stores_flagged;
+            }
+
+            if (document.getElementById("stat-open-maintenance")) {
+                document.getElementById("stat-open-maintenance").textContent = data.stats.open_maintenance;
+            }
 
             document.getElementById("summary-total-stores").textContent = `Total Stores: ${data.total_stores}`;
-            document.getElementById("summary-completed").textContent = `Completed: ${data.completed_today}`;
-            document.getElementById("summary-in-progress").textContent = `In Progress: ${data.in_progress_today}`;
-            document.getElementById("summary-not-started").textContent = `Not Started: ${data.not_started_today}`;
+
+            if (document.getElementById("summary-completed")) {
+                document.getElementById("summary-completed").textContent = `Completed: ${data.completed_today}`;
+            }
+
+            if (document.getElementById("summary-in-progress")) {
+                document.getElementById("summary-in-progress").textContent = `In Progress: ${data.in_progress_today}`;
+            }
+
+            if (document.getElementById("summary-not-started")) {
+                document.getElementById("summary-not-started").textContent = `Not Started: ${data.not_started_today}`;
+            }
+
             if (document.getElementById("summary-svr-completed")) {
                 document.getElementById("summary-svr-completed").textContent = `SVRs This Week: ${data.svr_completed_count}`;
             }
+
             document.getElementById("summary-open-maintenance").textContent = `Open Maintenance: ${data.open_maintenance_count}`;
 
-            if (!isManager) {
+            if (isOpsView) {
                 document.getElementById("opening-not-started-count").textContent = `${data.morning_exceptions.opening_not_started.length} stores`;
                 document.getElementById("opening-under-80-count").textContent = `${data.morning_exceptions.opening_under_80.length} stores`;
                 document.getElementById("opening-complete-count").textContent = `${data.morning_exceptions.opening_complete.length} stores`;

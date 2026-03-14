@@ -24,7 +24,7 @@
 
             <div class="form-group">
                 <label for="create_password">Password</label>
-                <input type="text" id="create_password" name="password" required>
+                <input type="password" id="create_password" name="password" required>
             </div>
 
             <div class="form-group">
@@ -49,27 +49,18 @@
 
             <button type="submit" class="btn-primary">Create User</button>
         </form>
-
     </section>
 
-
-
     <section class="panel">
-
         <h3>Edit Existing Users</h3>
 
         <div class="admin-task-list">
-
             {% for user in users %}
-
             <form method="POST" class="admin-task-card">
-
                 <input type="hidden" name="user_id" value="{{ user.id }}">
 
                 <div class="admin-task-top">
-
                     <span class="summary-pill">ID {{ user.id }}</span>
-
                     <span class="summary-pill">
                         {{ "Active" if user.is_active else "Inactive" }}
                     </span>
@@ -77,118 +68,83 @@
                     {% if user.role == 'admin' %}
                     <span class="summary-pill">Protected</span>
                     {% endif %}
-
                 </div>
 
-
-
                 <div class="admin-task-grid compact-grid">
-
                     <div class="form-group compact-group">
-
                         <label>Name</label>
-
                         <input type="text"
                                name="name"
                                value="{{ user.name }}"
                                {% if user.role == 'admin' %}disabled{% endif %}
                                required>
-
                     </div>
 
-
-
                     <div class="form-group compact-group">
-
                         <label>Username</label>
-
                         <input type="text"
                                name="username"
                                value="{{ user.username }}"
                                {% if user.role == 'admin' %}disabled{% endif %}
                                required>
-
                     </div>
-
                 </div>
 
-
-
                 <div class="admin-task-grid compact-grid">
-
                     <div class="form-group compact-group">
-
                         <label>Role</label>
-
                         <select name="role"
                                 class="edit-role-select"
                                 data-user-id="{{ user.id }}"
                                 onchange="toggleEditFields({{ user.id }})"
                                 {% if user.role == 'admin' %}disabled{% endif %}
                                 required>
-
                             <option value="manager" {% if user.role == 'manager' %}selected{% endif %}>Manager</option>
                             <option value="supervisor" {% if user.role == 'supervisor' %}selected{% endif %}>Supervisor</option>
                             <option value="maintenance" {% if user.role == 'maintenance' %}selected{% endif %}>Maintenance</option>
                             <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
-
                         </select>
-
                     </div>
-
-
 
                     <div class="form-group compact-group">
-
-                        <label>Reset Password</label>
-
-                        <input type="text"
+                        <label>{% if user.role == 'admin' %}Reset Admin Password{% else %}Reset Password{% endif %}</label>
+                        <input type="password"
                                name="password"
-                               placeholder="Leave blank"
-                               {% if user.role == 'admin' %}disabled{% endif %}>
-
+                               placeholder="Leave blank">
                     </div>
-
                 </div>
-
-
 
                 <div class="form-group compact-group edit-area-field"
                      id="edit-area-field-{{ user.id }}"
                      style="display:none;">
-
                     <label>Assigned Area</label>
-
                     <input type="text"
                            name="area_name"
                            value="{{ user.area_name or '' }}"
                            placeholder="Example: Area 2"
                            {% if user.role == 'admin' %}disabled{% endif %}>
-
                 </div>
-
-
 
                 <div class="form-group compact-group edit-store-field"
                      id="edit-store-field-{{ user.id }}"
                      style="display:none;">
-
                     <label>Assigned Store</label>
-
                     <input type="text"
                            name="store_number"
                            value="{{ user.store_number or '' }}"
                            placeholder="Example: 3209"
                            {% if user.role == 'admin' %}disabled{% endif %}>
-
                 </div>
 
-
-
                 <div class="admin-check-row compact-actions">
-
-                    {% if user.role != 'admin' %}
-
+                    {% if user.role == 'admin' %}
+                    <button type="submit"
+                            name="action"
+                            value="update"
+                            class="btn-primary">
+                        Reset Admin Password
+                    </button>
+                    {% else %}
                     <button type="submit"
                             name="action"
                             value="update"
@@ -196,10 +152,7 @@
                         Save User
                     </button>
 
-
-
                     {% if user.is_active %}
-
                     <button type="submit"
                             name="action"
                             value="deactivate"
@@ -207,9 +160,7 @@
                             formnovalidate>
                         Deactivate
                     </button>
-
                     {% else %}
-
                     <button type="submit"
                             name="action"
                             value="activate"
@@ -217,189 +168,93 @@
                             formnovalidate>
                         Activate
                     </button>
-
                     {% endif %}
-
                     {% endif %}
-
                 </div>
-
             </form>
-
             {% endfor %}
-
         </div>
-
     </section>
-
 </div>
 
-
-
 <script>
+function toggleCreateFields() {
+    const role = document.getElementById("create_role").value;
+    const areaField = document.getElementById("create-area-field");
+    const storeField = document.getElementById("create-store-field");
+    const areaInput = document.getElementById("create_area_name");
+    const storeInput = document.getElementById("create_store_number");
 
-function toggleCreateFields(){
-
-    const role = document.getElementById("create_role").value
-
-    const areaField = document.getElementById("create-area-field")
-
-    const storeField = document.getElementById("create-store-field")
-
-    const areaInput = document.getElementById("create_area_name")
-
-    const storeInput = document.getElementById("create_store_number")
-
-
-
-    if(role === "supervisor"){
-
-        areaField.style.display="grid"
-
-        storeField.style.display="none"
-
-        areaInput.required=true
-
-        storeInput.required=false
-
-        storeInput.value=""
-
+    if (role === "supervisor") {
+        areaField.style.display = "grid";
+        storeField.style.display = "none";
+        areaInput.required = true;
+        storeInput.required = false;
+        storeInput.value = "";
+    } else if (role === "manager") {
+        areaField.style.display = "none";
+        storeField.style.display = "grid";
+        areaInput.required = false;
+        storeInput.required = true;
+        areaInput.value = "";
+    } else {
+        areaField.style.display = "none";
+        storeField.style.display = "none";
+        areaInput.required = false;
+        storeInput.required = false;
+        areaInput.value = "";
+        storeInput.value = "";
     }
-
-    else if(role === "manager"){
-
-        areaField.style.display="none"
-
-        storeField.style.display="grid"
-
-        areaInput.required=false
-
-        storeInput.required=true
-
-        areaInput.value=""
-
-    }
-
-    else{
-
-        areaField.style.display="none"
-
-        storeField.style.display="none"
-
-        areaInput.required=false
-
-        storeInput.required=false
-
-        areaInput.value=""
-
-        storeInput.value=""
-
-    }
-
 }
 
+function toggleEditFields(userId) {
+    const roleSelect = document.querySelector(`.edit-role-select[data-user-id="${userId}"]`);
+    if (!roleSelect) return;
 
+    const role = roleSelect.value;
+    const areaField = document.getElementById(`edit-area-field-${userId}`);
+    const storeField = document.getElementById(`edit-store-field-${userId}`);
 
-function toggleEditFields(userId){
+    const areaInput = areaField ? areaField.querySelector("input") : null;
+    const storeInput = storeField ? storeField.querySelector("input") : null;
 
-    const roleSelect=document.querySelector(`.edit-role-select[data-user-id="${userId}"]`)
-
-    if(!roleSelect) return
-
-
-
-    const role=roleSelect.value
-
-
-
-    const areaField=document.getElementById(`edit-area-field-${userId}`)
-
-    const storeField=document.getElementById(`edit-store-field-${userId}`)
-
-
-
-    const areaInput=areaField ? areaField.querySelector("input") : null
-
-    const storeInput=storeField ? storeField.querySelector("input") : null
-
-
-
-    if(role==="supervisor"){
-
-        if(areaField) areaField.style.display="grid"
-
-        if(storeField) storeField.style.display="none"
-
-        if(areaInput) areaInput.required=true
-
-        if(storeInput){
-
-            storeInput.required=false
-
-            storeInput.value=""
-
+    if (role === "supervisor") {
+        if (areaField) areaField.style.display = "grid";
+        if (storeField) storeField.style.display = "none";
+        if (areaInput) areaInput.required = true;
+        if (storeInput) {
+            storeInput.required = false;
+            storeInput.value = "";
         }
-
+    } else if (role === "manager") {
+        if (areaField) areaField.style.display = "none";
+        if (storeField) storeField.style.display = "grid";
+        if (areaInput) {
+            areaInput.required = false;
+            areaInput.value = "";
+        }
+        if (storeInput) storeInput.required = true;
+    } else {
+        if (areaField) areaField.style.display = "none";
+        if (storeField) storeField.style.display = "none";
+        if (areaInput) {
+            areaInput.required = false;
+            areaInput.value = "";
+        }
+        if (storeInput) {
+            storeInput.required = false;
+            storeInput.value = "";
+        }
     }
-
-    else if(role==="manager"){
-
-        if(areaField) areaField.style.display="none"
-
-        if(storeField) storeField.style.display="grid"
-
-        if(areaInput){
-
-            areaInput.required=false
-
-            areaInput.value=""
-
-        }
-
-        if(storeInput) storeInput.required=true
-
-    }
-
-    else{
-
-        if(areaField) areaField.style.display="none"
-
-        if(storeField) storeField.style.display="none"
-
-        if(areaInput){
-
-            areaInput.required=false
-
-            areaInput.value=""
-
-        }
-
-        if(storeInput){
-
-            storeInput.required=false
-
-            storeInput.value=""
-
-        }
-
-    }
-
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+    toggleCreateFields();
 
-
-document.addEventListener("DOMContentLoaded",function(){
-
-    toggleCreateFields()
-
-    document.querySelectorAll(".edit-role-select").forEach(select=>{
-
-        toggleEditFields(select.dataset.userId)
-
-    })
-
-})
-
+    document.querySelectorAll(".edit-role-select").forEach(select => {
+        toggleEditFields(select.dataset.userId);
+    });
+});
 </script>
 
 {% endblock %}

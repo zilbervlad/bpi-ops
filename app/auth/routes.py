@@ -133,10 +133,6 @@ def manage_users():
                 flash("User not found.", "error")
                 return redirect(url_for("auth.manage_users"))
 
-            if user.role == "admin":
-                flash("Admin users cannot be edited here.", "error")
-                return redirect(url_for("auth.manage_users"))
-
             name = request.form.get("name", "").strip()
             username = request.form.get("username", "").strip()
             role = request.form.get("role", "").strip()
@@ -145,6 +141,20 @@ def manage_users():
             new_password = request.form.get("password", "").strip()
 
             valid_roles = {"admin", "supervisor", "manager", "maintenance"}
+
+            # -------------------------
+            # PROTECTED ADMIN LOGIC
+            # -------------------------
+            if user.role == "admin":
+                if not new_password:
+                    flash("For protected admin users, only password reset is allowed here.", "error")
+                    return redirect(url_for("auth.manage_users"))
+
+                user.set_password(new_password)
+                db.session.commit()
+
+                flash("Admin password updated successfully.", "success")
+                return redirect(url_for("auth.manage_users"))
 
             if not name or not username or role not in valid_roles:
                 flash("Please complete all required fields correctly.", "error")

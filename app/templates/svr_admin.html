@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}SVR Admin | BPI Ops{% endblock %}
+{% block header %}SVR Admin{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <section class="panel premium-panel">
+        <h3>Add SVR Field</h3>
+        <form method="POST" class="login-form">
+            <input type="hidden" name="action" value="create">
+
+            <div class="form-group">
+                <label for="field_key">Field Key</label>
+                <input type="text" id="field_key" name="field_key" placeholder="example_field_key" required>
+            </div>
+
+            <div class="form-group">
+                <label for="field_label">Field Label</label>
+                <input type="text" id="field_label" name="field_label" required>
+            </div>
+
+            <div class="form-group">
+                <label for="field_type">Field Type</label>
+                <select id="field_type" name="field_type" required>
+                    <option value="text">Text</option>
+                    <option value="textarea" selected>Textarea</option>
+                    <option value="yesno">Yes / No</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="sort_order">Sort Order</label>
+                <input type="number" id="sort_order" name="sort_order" value="999" required>
+            </div>
+
+            <button type="submit" class="btn-primary">Add Field</button>
+        </form>
+    </section>
+
+    <section class="panel premium-panel">
+        <h3>SVR Template Fields</h3>
+        <div class="admin-task-list">
+            {% for field in fields %}
+            <form method="POST" class="admin-task-card">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="field_id" value="{{ field.id }}">
+
+                <div class="admin-task-top">
+                    <span class="summary-pill">ID {{ field.id }}</span>
+                    <span class="summary-pill">{{ field.field_type }}</span>
+                    {% if field.is_active %}
+                    <span class="summary-pill">Active</span>
+                    {% else %}
+                    <span class="summary-pill">Inactive</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label>Field Key</label>
+                    <input type="text" name="field_key" value="{{ field.field_key }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Field Label</label>
+                    <input type="text" name="field_label" value="{{ field.field_label }}" required>
+                </div>
+
+                <div class="admin-task-grid compact-grid">
+                    <div class="form-group compact-group">
+                        <label>Field Type</label>
+                        <select name="field_type" required>
+                            <option value="text" {% if field.field_type == 'text' %}selected{% endif %}>Text</option>
+                            <option value="textarea" {% if field.field_type == 'textarea' %}selected{% endif %}>Textarea</option>
+                            <option value="yesno" {% if field.field_type == 'yesno' %}selected{% endif %}>Yes / No</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group compact-group">
+                        <label>Sort Order</label>
+                        <input type="number" name="sort_order" value="{{ field.sort_order }}" required>
+                    </div>
+                </div>
+
+                <div class="admin-check-row compact-actions">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="is_active" {% if field.is_active %}checked{% endif %}>
+                        Active
+                    </label>
+
+                    <button type="submit" class="btn-primary">Save Field</button>
+                </div>
+            </form>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

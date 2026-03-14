@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Store Admin | BPI Ops{% endblock %}
+{% block header %}Store Admin{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <section class="panel">
+        <h3>Add Store</h3>
+        <form method="POST" class="login-form">
+            <input type="hidden" name="action" value="create">
+
+            <div class="form-group">
+                <label for="store_number">Store Number</label>
+                <input type="text" id="store_number" name="store_number" required>
+            </div>
+
+            <div class="form-group">
+                <label for="store_name">Store Name</label>
+                <input type="text" id="store_name" name="store_name">
+            </div>
+
+            <div class="form-group">
+                <label for="area_name">Area</label>
+                <input type="text" id="area_name" name="area_name" list="area-options" required>
+                <datalist id="area-options">
+                    {% for area in existing_areas %}
+                    <option value="{{ area }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+
+            <button type="submit" class="btn-primary">Add Store</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h3>All Stores</h3>
+        <div class="admin-task-list">
+            {% for store in stores %}
+            <form method="POST" class="admin-task-card">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="store_id" value="{{ store.id }}">
+
+                <div class="admin-task-top">
+                    <span class="summary-pill">ID {{ store.id }}</span>
+                    <span class="summary-pill">{{ store.area_name }}</span>
+                </div>
+
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label>Store Number</label>
+                        <input type="text" name="store_number" value="{{ store.store_number }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Store Name</label>
+                        <input type="text" name="store_name" value="{{ store.store_name or '' }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Area</label>
+                    <input type="text" name="area_name" value="{{ store.area_name }}" list="area-options" required>
+                </div>
+
+                <div class="admin-check-row">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="is_active" {% if store.is_active %}checked{% endif %}>
+                        Active
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary">Save Store</button>
+            </form>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

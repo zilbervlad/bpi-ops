@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | BPI Ops{% endblock %}
+{% block header %}Director Command Center{% endblock %}
+
+{% block content %}
+<div class="command-bar panel" style="margin-bottom: 24px;">
+    <div class="command-bar-left">
+        <div class="command-eyebrow">LIVE OPERATIONS</div>
+        <h2 class="command-title">BPI Ops Command Center</h2>
+        <p class="command-subtitle">
+            Real-time checklist execution, opening integrity, SVR compliance, and maintenance visibility.
+        </p>
+    </div>
+
+    <div class="command-bar-right">
+        <div class="command-chip">Live Dashboard</div>
+        <div class="command-chip" id="last-refresh-chip">Refreshing...</div>
+        <div class="command-chip">{{ session.get('user_role', 'role')|title }}</div>
+    </div>
+</div>
+
+<div class="content-grid exceptions-grid" style="margin-bottom: 24px;">
+    <section class="panel premium-panel exception-panel">
+        <div class="panel-head">
+            <h3>Opening Not Started</h3>
+            <span class="summary-pill neutral-pill" id="opening-not-started-count">
+                {{ morning_exceptions.opening_not_started|length }} stores
+            </span>
+        </div>
+        <div class="exception-list" id="opening-not-started-list">
+            {% for store in morning_exceptions.opening_not_started %}
+            <span class="exception-chip neutral-pill">{{ store }}</span>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel premium-panel exception-panel">
+        <div class="panel-head">
+            <h3>Opening Under 80%</h3>
+            <span class="summary-pill warning-pill" id="opening-under-80-count">
+                {{ morning_exceptions.opening_under_80|length }} stores
+            </span>
+        </div>
+        <div class="exception-list detailed" id="opening-under-80-list">
+            {% for store in morning_exceptions.opening_under_80 %}
+            <span class="exception-chip warning-pill">
+                {{ store.store_number }} - {{ store.opening_percent }}%
+            </span>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel premium-panel exception-panel">
+        <div class="panel-head">
+            <h3>Opening Complete</h3>
+            <span class="summary-pill success-pill" id="opening-complete-count">
+                {{ morning_exceptions.opening_complete|length }} stores
+            </span>
+        </div>
+        <div class="exception-list" id="opening-complete-list">
+            {% for store in morning_exceptions.opening_complete %}
+            <span class="exception-chip success-pill">{{ store }}</span>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<div class="dashboard-grid dashboard-grid-premium">
+    <div class="metric-card premium-card">
+        <span class="metric-label">Checklist Completion</span>
+        <h3 id="stat-checklist-completion">{{ stats.checklist_completion }}</h3>
+        <p class="metric-footnote">Visible stores completed today</p>
+    </div>
+
+    <div class="metric-card premium-card premium-card-blue">
+        <span class="metric-label">Opening Tracker</span>
+        <h3 id="stat-opening-completion">{{ stats.opening_completion }}</h3>
+        <p class="metric-footnote">Before Open / 10:30 progress</p>
+    </div>
+
+    <div class="metric-card premium-card">
+        <span class="metric-label">SVR Compliance</span>
+        <h3 id="stat-svr-compliance">{{ stats.svr_compliance }}</h3>
+        <p class="metric-footnote">Visible stores with SVR this week</p>
+    </div>
+
+    <div class="metric-card premium-card premium-card-alert">
+        <span class="metric-label">Stores Flagged</span>
+        <h3 id="stat-stores-flagged">{{ stats.stores_flagged }}</h3>
+        <p class="metric-footnote">Integrity below threshold</p>
+    </div>
+
+    <div class="metric-card premium-card premium-card-blue">
+        <span class="metric-label">Open Maintenance</span>
+        <h3 id="stat-open-maintenance">{{ stats.open_maintenance }}</h3>
+        <p class="metric-footnote">Open tasks across visible stores</p>
+    </div>
+</div>
+
+<div class="panel premium-panel heatmap-panel" style="margin-bottom: 24px;">
+    <div class="panel-head">
+        <div>
+            <h3>Store Heat Map</h3>
+            <div class="area-subtitle">One-glance status across all visible stores</div>
+        </div>
+        <div class="heatmap-legend">
+            <span class="legend-chip legend-green">Strong</span>
+            <span class="legend-chip legend-yellow">In Progress</span>
+            <span class="legend-chip legend-red">At Risk</span>
+            <span class="legend-chip legend-gray">Not Started</span>
+        </div>
+    </div>
+
+    <div id="heatmap-wrapper" class="heatmap-grid">
+        {% for area_name, stores in area_groups.items() %}
+            {% for store in stores %}
+            <div class="heatmap-tile
+                {% if store.status == 'not_started' %}tile-gray
+                {% elif store.integrity_score > 0 and store.integrity_score < 80 %}tile-red
+                {% elif store.opening_percent >= 100 and store.integrity_score >= 90 %}tile-green
+                {% else %}tile-yellow{% endif %}">
+                <div class="heatmap-store">{{ store.store_number }}</div>
+                <div class="heatmap-area">{{ area_name }}</div>
+                <div class="heatmap-metrics">
+                    <span>Open {{ store.opening_percent }}%</span>
+                    <span>Int {{ store.integrity_score }}%</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+
+<div class="content-grid">
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Operational Alerts</h3>
+            <span class="summary-pill">Live Exceptions</span>
+        </div>
+        <ul class="clean-list" id="alerts-list">
+            {% for alert in alerts %}
+            <li>{{ alert }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Quick Actions</h3>
+            <span class="summary-pill">Role Based</span>
+        </div>
+        <div class="action-grid">
+            {% for action in quick_actions %}
+            <a class="action-btn" href="{{ action.url }}">{{ action.label }}</a>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<div class="panel premium-panel" style="margin-bottom: 24px;">
+    <div class="panel-head">
+        <h3>Store Summary</h3>
+        <span class="summary-pill">Live Totals</span>
+    </div>
+
+    <div class="summary-pills summary-pills-large">
+        <span class="summary-pill" id="summary-total-stores">Total Stores: {{ total_stores }}</span>
+        <span class="summary-pill success-pill" id="summary-completed">Completed: {{ completed_today }}</span>
+        <span class="summary-pill warning-pill" id="summary-in-progress">In Progress: {{ in_progress_today }}</span>
+        <span class="summary-pill neutral-pill" id="summary-not-started">Not Started: {{ not_started_today }}</span>
+        <span class="summary-pill" id="summary-svr-completed">SVRs This Week: {{ svr_completed_count }}</span>
+        <span class="summary-pill warning-pill" id="summary-open-maintenance">Open Maintenance: {{ open_maintenance_count }}</span>
+    </div>
+</div>
+
+<div id="areas-wrapper">
+    {% for area_name, stores in area_groups.items() %}
+    <div class="panel premium-panel area-panel" style="margin-bottom: 24px;">
+        <div class="area-header area-header-premium">
+            <div>
+                <div class="command-eyebrow">AREA PERFORMANCE</div>
+                <h3>{{ area_name }}</h3>
+                <div class="area-subtitle">
+                    Avg Opening:
+                    <span class="inline-metric">{{ area_summaries[area_name].avg_opening }}%</span>
+                    |
+                    Avg Completion:
+                    <span class="inline-metric">{{ area_summaries[area_name].avg_completion }}%</span>
+                    |
+                    Avg Integrity:
+                    <span class="inline-metric {% if area_summaries[area_name].avg_integrity > 0 and area_summaries[area_name].avg_integrity < 80 %}danger-text{% elif area_summaries[area_name].avg_integrity >= 90 %}success-text{% endif %}">
+                        {{ area_summaries[area_name].avg_integrity }}%
+                    </span>
+                </div>
+            </div>
+
+            <div class="area-header-right">
+                <span class="summary-pill">{{ area_summaries[area_name].store_count }} stores</span>
+            </div>
+        </div>
+
+        <div class="table-wrap premium-table-wrap">
+            <table class="data-table premium-table">
+                <thead>
+                    <tr>
+                        <th>Store</th>
+                        <th>Opening</th>
+                        <th>Checklist</th>
+                        <th>Integrity</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for store in stores %}
+                    <tr>
+                        <td>
+                            <div class="store-cell">
+                                <div class="store-main">{{ store.store_number }}</div>
+                                <div class="store-sub">{{ store.store_name or ('Store ' ~ store.store_number) }}</div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="table-badge {% if store.opening_percent >= 100 %}badge-success{% elif store.opening_percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                                {{ store.opening_percent }}%
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="table-badge {% if store.checklist_percent >= 100 %}badge-success{% elif store.checklist_percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                                {{ store.checklist_percent }}%
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="table-badge {% if store.integrity_score > 0 and store.integrity_score < 80 %}badge-danger{% elif store.integrity_score >= 90 %}badge-success{% elif store.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                                {{ store.integrity_score }}%
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="status-badge
+                                {% if store.status == 'completed' %}status-completed
+                                {% elif store.status == 'in_progress' %}status-progress
+                                {% else %}status-not-started{% endif %}">
+                                {{ store.status.replace('_', ' ')|title }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function statusBadgeClass(status) {
+        if (status === "completed") return "status-badge status-completed";
+        if (status === "in_progress") return "status-badge status-progress";
+        return "status-badge status-not-started";
+    }
+
+    function checklistBadgeClass(value) {
+        const num = Number(value);
+        if (num >= 100) return "table-badge badge-success";
+        if (num > 0) return "table-badge badge-warning";
+        return "table-badge badge-neutral";
+    }
+
+    function integrityBadgeClass(value) {
+        const num = Number(value);
+        if (num > 0 && num < 80) return "table-badge badge-danger";
+        if (num >= 90) return "table-badge badge-success";
+        if (num > 0) return "table-badge badge-warning";
+        return "table-badge badge-neutral";
+    }
+
+    function integrityTextClass(value) {
+        const num = Number(value);
+        if (num > 0 && num < 80) return "danger-text";
+        if (num >= 90) return "success-text";
+        return "";
+    }
+
+    function formatStatus(status) {
+        return status.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function stampRefreshTime() {
+        const chip = document.getElementById("last-refresh-chip");
+        if (!chip) return;
+        const now = new Date();
+        chip.textContent = `Updated ${now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}`;
+    }
+
+    function renderChipList(containerId, items, cls, formatter = null) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        el.innerHTML = "";
+
+        if (!items || items.length === 0) {
+            const span = document.createElement("span");
+            span.className = `exception-chip ${cls}`;
+            span.textContent = "None";
+            el.appendChild(span);
+            return;
+        }
+
+        items.forEach(item => {
+            const span = document.createElement("span");
+            span.className = `exception-chip ${cls}`;
+            span.textContent = formatter ? formatter(item) : item;
+            el.appendChild(span);
+        });
+    }
+
+    function heatTileClass(store) {
+        if (store.status === "not_started") return "heatmap-tile tile-gray";
+        if (Number(store.integrity_score) > 0 && Number(store.integrity_score) < 80) return "heatmap-tile tile-red";
+        if (Number(store.opening_percent) >= 100 && Number(store.integrity_score) >= 90) return "heatmap-tile tile-green";
+        return "heatmap-tile tile-yellow";
+    }
+
+    async function refreshDashboard() {
+        try {
+            const response = await fetch("/live-data");
+            if (!response.ok) return;
+
+            const data = await response.json();
+
+            document.getElementById("stat-checklist-completion").textContent = data.stats.checklist_completion;
+            document.getElementById("stat-opening-completion").textContent = data.stats.opening_completion;
+            document.getElementById("stat-svr-compliance").textContent = data.stats.svr_compliance;
+            document.getElementById("stat-stores-flagged").textContent = data.stats.stores_flagged;
+            document.getElementById("stat-open-maintenance").textContent = data.stats.open_maintenance;
+
+            document.getElementById("summary-total-stores").textContent = `Total Stores: ${data.total_stores}`;
+            document.getElementById("summary-completed").textContent = `Completed: ${data.completed_today}`;
+            document.getElementById("summary-in-progress").textContent = `In Progress: ${data.in_progress_today}`;
+            document.getElementById("summary-not-started").textContent = `Not Started: ${data.not_started_today}`;
+            document.getElementById("summary-svr-completed").textContent = `SVRs This Week: ${data.svr_completed_count}`;
+            document.getElementById("summary-open-maintenance").textContent = `Open Maintenance: ${data.open_maintenance_count}`;
+
+            document.getElementById("opening-not-started-count").textContent = `${data.morning_exceptions.opening_not_started.length} stores`;
+            document.getElementById("opening-under-80-count").textContent = `${data.morning_exceptions.opening_under_80.length} stores`;
+            document.getElementById("opening-complete-count").textContent = `${data.morning_exceptions.opening_complete.length} stores`;
+
+            renderChipList("opening-not-started-list", data.morning_exceptions.opening_not_started, "neutral-pill");
+            renderChipList(
+                "opening-under-80-list",
+                data.morning_exceptions.opening_under_80,
+                "warning-pill",
+                (item) => `${item.store_number} - ${item.opening_percent}%`
+            );
+            renderChipList("opening-complete-list", data.morning_exceptions.opening_complete, "success-pill");
+
+            const heatmapWrapper = document.getElementById("heatmap-wrapper");
+            heatmapWrapper.innerHTML = "";
+            Object.entries(data.area_groups).forEach(([areaName, stores]) => {
+                stores.forEach(store => {
+                    const tile = document.createElement("div");
+                    tile.className = heatTileClass(store);
+                    tile.innerHTML = `
+                        <div class="heatmap-store">${store.store_number}</div>
+                        <div class="heatmap-area">${areaName}</div>
+                        <div class="heatmap-metrics">
+                            <span>Open ${store.opening_percent}%</span>
+                            <span>Int ${store.integrity_score}%</span>
+                        </div>
+                    `;
+                    heatmapWrapper.appendChild(tile);
+                });
+            });
+
+            const alertsList = document.getElementById("alerts-list");
+            alertsList.innerHTML = "";
+            data.alerts.forEach(alert => {
+                const li = document.createElement("li");
+                li.textContent = alert;
+                alertsList.appendChild(li);
+            });
+
+            const areasWrapper = document.getElementById("areas-wrapper");
+            areasWrapper.innerHTML = "";
+
+            Object.entries(data.area_groups).forEach(([areaName, stores]) => {
+                const summary = data.area_summaries[areaName];
+
+                const rows = stores.map(store => `
+                    <tr>
+                        <td>
+                            <div class="store-cell">
+                                <div class="store-main">${store.store_number}</div>
+                                <div class="store-sub">${store.store_name || "Store " + store.store_number}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="${checklistBadgeClass(store.opening_percent)}">
+                                ${store.opening_percent}%
+                            </span>
+                        </td>
+                        <td>
+                            <span class="${checklistBadgeClass(store.checklist_percent)}">
+                                ${store.checklist_percent}%
+                            </span>
+                        </td>
+                        <td>
+                            <span class="${integrityBadgeClass(store.integrity_score)}">
+                                ${store.integrity_score}%
+                            </span>
+                        </td>
+                        <td>
+                            <span class="${statusBadgeClass(store.status)}">
+                                ${formatStatus(store.status)}
+                            </span>
+                        </td>
+                    </tr>
+                `).join("");
+
+                const block = document.createElement("div");
+                block.className = "panel premium-panel area-panel";
+                block.style.marginBottom = "24px";
+                block.innerHTML = `
+                    <div class="area-header area-header-premium">
+                        <div>
+                            <div class="command-eyebrow">AREA PERFORMANCE</div>
+                            <h3>${areaName}</h3>
+                            <div class="area-subtitle">
+                                Avg Opening:
+                                <span class="inline-metric">${summary.avg_opening}%</span>
+                                |
+                                Avg Completion:
+                                <span class="inline-metric">${summary.avg_completion}%</span>
+                                |
+                                Avg Integrity:
+                                <span class="inline-metric ${integrityTextClass(summary.avg_integrity)}">${summary.avg_integrity}%</span>
+                            </div>
+                        </div>
+                        <div class="area-header-right">
+                            <span class="summary-pill">${summary.store_count} stores</span>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap premium-table-wrap">
+                        <table class="data-table premium-table">
+                            <thead>
+                                <tr>
+                                    <th>Store</th>
+                                    <th>Opening</th>
+                                    <th>Checklist</th>
+                                    <th>Integrity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                areasWrapper.appendChild(block);
+            });
+
+            stampRefreshTime();
+        } catch (error) {
+            console.error("Dashboard refresh failed:", error);
+        }
+    }
+
+    refreshDashboard();
+    setInterval(refreshDashboard, 10000);
+});
+</script>
+{% endblock %}

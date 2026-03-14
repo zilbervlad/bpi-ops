@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}SVR Report | BPI Ops{% endblock %}
+{% block header %}SVR Report{% endblock %}
+
+{% block content %}
+<div class="panel premium-panel" style="margin-bottom: 24px;">
+    <div class="panel-head">
+        <div>
+            <h3>Store {{ report.store_number }}</h3>
+            <div class="area-subtitle">
+                {{ report.visit_date.strftime('%B %d, %Y') }} |
+                Supervisor: {{ report.supervisor_name or '—' }} |
+                Manager: {{ report.manager_on_duty or '—' }}
+            </div>
+        </div>
+        <span class="summary-pill">SVR #{{ report.id }}</span>
+    </div>
+</div>
+
+<div class="content-grid" style="margin-bottom: 24px;">
+    <section class="panel premium-panel">
+        <h3>Full SVR</h3>
+        <div class="svr-value-list">
+            {% for value in values %}
+            <div class="svr-value-card">
+                <div class="svr-value-label">{{ value.field_label }}</div>
+
+                {% if value.field_type == 'yesno' %}
+                    <div class="svr-value-text">
+                        {% if value.value_text == 'Yes' %}
+                            <span class="summary-pill">Yes</span>
+                        {% elif value.value_text == 'No' %}
+                            <span class="summary-pill" style="background: #7f1d1d; color: #fecaca;">No</span>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="svr-value-text">{{ value.value_text or '—' }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel premium-panel">
+        <h3>Manager Weekly Focus Summary</h3>
+        {% include "svr_manager_export.html" %}
+    </section>
+</div>
+{% endblock %}

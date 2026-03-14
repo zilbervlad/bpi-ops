@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance | BPI Ops{% endblock %}
+{% block header %}Maintenance Dashboard{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Add Maintenance Task</h3>
+            <span class="summary-pill">Manual + SVR Auto Tickets</span>
+        </div>
+
+        <form method="POST" class="login-form">
+            <input type="hidden" name="action" value="create">
+
+            <div class="form-group">
+                <label for="store_number">Store</label>
+                <select id="store_number" name="store_number" required>
+                    {% for store in stores %}
+                    <option value="{{ store.store_number }}">{{ store.store_number }} - {{ store.area_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="title">Task Title(s)</label>
+                <textarea id="title" name="title" rows="4" placeholder="Enter one task per line&#10;Example:&#10;Bottom oven not heating&#10;Walk-in fan noisy&#10;Bathroom sink leaking" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="details">Details</label>
+                <textarea id="details" name="details" rows="4" placeholder="Optional details that apply to all tasks..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary">Add Task</button>
+        </form>
+    </section>
+
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Filters</h3>
+            <span class="summary-pill">Live Board</span>
+        </div>
+
+        <form method="GET" class="login-form">
+            <div class="form-group">
+                <label for="store">Store</label>
+                <select id="store" name="store">
+                    <option value="">All Stores</option>
+                    {% for store in stores %}
+                    <option value="{{ store.store_number }}" {% if store.store_number == store_filter %}selected{% endif %}>
+                        {{ store.store_number }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="">All Statuses</option>
+                    <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
+                    <option value="assigned" {% if status_filter == 'assigned' %}selected{% endif %}>Assigned</option>
+                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+                    <option value="complete" {% if status_filter == 'complete' %}selected{% endif %}>Complete</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-primary">Apply Filters</button>
+        </form>
+    </section>
+</div>
+
+<div class="panel premium-panel" style="margin-top: 24px;">
+    <div class="panel-head">
+        <h3>Open Maintenance Board</h3>
+        <span class="summary-pill">{{ tickets|length }} tasks</span>
+    </div>
+
+    <div class="admin-task-list">
+        {% for ticket in tickets %}
+        <form method="POST" class="admin-task-card">
+            <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+
+            <div class="admin-task-top">
+                <span class="summary-pill">Store {{ ticket.store_number }}</span>
+
+                <span class="status-badge
+                    {% if ticket.status == 'complete' %}status-completed
+                    {% elif ticket.status == 'in_progress' %}status-progress
+                    {% elif ticket.status == 'assigned' %}status-progress
+                    {% else %}status-not-started{% endif %}">
+                    {{ ticket.status.replace('_', ' ')|title }}
+                </span>
+
+                <span class="summary-pill">{{ ticket.source_type|upper }}</span>
+            </div>
+
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label>Store</label>
+                    <select name="store_number" required>
+                        {% for store in stores %}
+                        <option value="{{ store.store_number }}" {% if store.store_number == ticket.store_number %}selected{% endif %}>
+                            {{ store.store_number }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" required>
+                        <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
+                        <option value="assigned" {% if ticket.status == 'assigned' %}selected{% endif %}>Assigned</option>
+                        <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                        <option value="complete" {% if ticket.status == 'complete' %}selected{% endif %}>Complete</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Task Title</label>
+                <input type="text" name="title" value="{{ ticket.title }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Details</label>
+                <textarea name="details" rows="4">{{ ticket.details or '' }}</textarea>
+            </div>
+
+            <div class="area-subtitle">
+                Created {{ ticket.created_at.strftime('%b %d, %Y %I:%M %p') if ticket.created_at else '' }}
+                {% if ticket.svr_report_id %}
+                | Linked SVR #{{ ticket.svr_report_id }}
+                {% endif %}
+            </div>
+
+            <div class="admin-check-row compact-actions">
+                <button type="submit" name="action" value="update" class="btn-primary">Save Task</button>
+                <button type="submit" name="action" value="delete" class="btn-danger" formnovalidate onclick="return confirm('Delete this maintenance task?')">
+                    Delete
+                </button>
+            </div>
+        </form>
+        {% else %}
+        <div class="admin-task-card">
+            No maintenance tasks found.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

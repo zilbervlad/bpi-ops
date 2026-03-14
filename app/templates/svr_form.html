@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}New SVR | BPI Ops{% endblock %}
+{% block header %}Create SVR Report{% endblock %}
+
+{% block content %}
+<form method="POST" class="panel premium-panel">
+    <div class="panel-head">
+        <h3>Supervisor Visit Report</h3>
+        <span class="summary-pill">Supervisor Only</span>
+    </div>
+
+    <div class="content-grid">
+        {% for field in fields %}
+        <div class="form-group {% if field.field_type == 'textarea' %}full-span{% endif %}">
+            <label for="{{ field.field_key }}">{{ field.field_label }}</label>
+
+            {% if field.field_key == 'store_number' %}
+                <select id="store_number" name="store_number" required>
+                    {% for store in stores %}
+                    <option value="{{ store.store_number }}" {% if store.store_number == selected_store %}selected{% endif %}>
+                        {{ store.store_number }} - {{ store.area_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+            {% elif field.field_key == 'date' %}
+                <input type="date" id="visit_date" name="visit_date" value="{{ today }}" required>
+
+            {% elif field.field_key == 'manager_on_duty' %}
+                <input type="text" id="manager_on_duty" name="manager_on_duty">
+
+            {% elif field.field_type == 'yesno' %}
+                <select id="{{ field.field_key }}" name="{{ field.field_key }}">
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                </select>
+
+            {% elif field.field_type == 'text' %}
+                <input type="text" id="{{ field.field_key }}" name="{{ field.field_key }}">
+
+            {% else %}
+                <textarea id="{{ field.field_key }}" name="{{ field.field_key }}" rows="4"></textarea>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <button type="submit" class="btn-primary">Save SVR</button>
+</form>
+{% endblock %}

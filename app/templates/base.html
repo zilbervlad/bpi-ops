@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BPI Ops{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% if session.get('user_id') %}
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="brand">
+                <h1>BPI Ops</h1>
+                <p>Operations Platform</p>
+            </div>
+
+            <nav class="nav">
+                <a href="{{ url_for('dashboard.home') }}">Dashboard</a>
+
+                {% if session.get('user_role') in ['admin', 'supervisor', 'manager'] %}
+                <a href="{{ url_for('checklist.index') }}">Checklist</a>
+                {% endif %}
+
+                {% if session.get('user_role') == 'admin' %}
+                <a href="{{ url_for('checklist.admin') }}">Checklist Admin</a>
+                <a href="{{ url_for('store_admin.index') }}">Store Admin</a>
+                {% endif %}
+
+                {% if session.get('user_role') in ['admin', 'supervisor'] %}
+                <a href="{{ url_for('svr.index') }}">SVR</a>
+                {% endif %}
+
+                {% if session.get('user_role') == 'admin' %}
+                <a href="{{ url_for('svr.admin') }}">SVR Admin</a>
+                {% endif %}
+
+                {% if session.get('user_role') in ['admin', 'supervisor', 'maintenance'] %}
+                <a href="{{ url_for('maintenance.index') }}">Maintenance</a>
+                {% endif %}
+
+                {% if session.get('user_role') == 'admin' %}
+                <a href="{{ url_for('auth.manage_users') }}">Users</a>
+                {% endif %}
+
+                <a href="{{ url_for('auth.logout') }}" class="logout-link">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div>
+                    <h2>{% block header %}Dashboard{% endblock %}</h2>
+                    <p class="subtitle">
+                        Welcome, {{ session.get('user_name', 'User') }} ({{ session.get('user_role', 'role')|title }})
+                    </p>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-wrap">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="page-content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    {% else %}
+    <div class="login-page-wrap">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-wrap standalone-flash">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block login_content %}{% endblock %}
+    </div>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Checklist | BPI Ops{% endblock %}
+{% block header %}Daily Checklist{% endblock %}
+
+{% block content %}
+<div class="panel" style="margin-bottom: 24px;">
+    <div class="checklist-topbar">
+        <div>
+            <h3 style="margin-bottom: 6px;">Store {{ store_number }}</h3>
+            <p class="subtitle" style="margin: 0;">{{ today_label }}</p>
+            {% if is_read_only %}
+            <div class="readonly-badge">Read Only - Past Day</div>
+            {% endif %}
+        </div>
+
+        <div class="checklist-score-grid">
+            <div class="checklist-progress-box">
+                <span class="metric-label">Completion</span>
+                <h3 id="overall-completion">{{ daily.percent_complete }}%</h3>
+            </div>
+
+            <div class="checklist-progress-box">
+                <span class="metric-label">Integrity</span>
+                <h3 id="integrity-score">{{ daily.integrity_score }}%</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-grid" style="grid-template-columns: 2fr 1fr;">
+    <div>
+        <form method="GET" class="panel" style="margin-bottom: 24px;">
+            <h3>Load Checklist</h3>
+            <div class="form-group">
+                <label for="store">Store Number</label>
+                <select id="store" name="store" required>
+                    {% for store in stores %}
+                    <option value="{{ store.store_number }}" {% if store.store_number == store_number %}selected{% endif %}>
+                        {{ store.store_number }} - {{ store.area_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Checklist Date</label>
+                <input type="date" id="date" name="date" value="{{ selected_date }}" required>
+            </div>
+
+            <button type="submit" class="btn-primary">Load Checklist</button>
+        </form>
+
+        <form method="POST" id="checklist-form">
+            <div class="panel" style="margin-bottom: 24px;">
+                <h3>Checklist Info</h3>
+                <div class="form-group">
+                    <label for="manager_on_duty">Manager on Duty</label>
+                    <input
+                        type="text"
+                        id="manager_on_duty"
+                        name="manager_on_duty"
+                        value="{{ daily.manager_on_duty or '' }}"
+                        placeholder="Enter manager name"
+                        {% if is_read_only %}disabled{% endif %}
+                    >
+                </div>
+                {% if not is_read_only %}
+                <div id="autosave-status" class="autosave-status">Ready</div>
+                {% endif %}
+            </div>
+
+            {% for section, items in grouped_items.items() %}
+                {% set section_index = loop.index0 %}
+                {% set completed_count = items | selectattr('is_completed') | list | length %}
+                {% set total_count = items | length %}
+                {% set section_percent = ((completed_count / total_count) * 100) if total_count > 0 else 0 %}
+
+                <details class="accordion-section panel" {% if loop.first %}open{% endif %}>
+                    <summary class="accordion-summary">
+                        <div class="accordion-title-wrap">
+                            <h3 class="accordion-title">{{ section }}</h3>
+                            {% if section == "Before Open / Before 10:30" %}
+                            <span class="integrity-pill">Integrity Section</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="accordion-meta">
+                            <span class="accordion-count" id="count-{{ section_index }}">{{ completed_count }}/{{ total_count }}</span>
+                            <span class="accordion-percent" id="percent-{{ section_index }}">{{ section_percent|round(0)|int }}%</span>
+                        </div>
+                    </summary>
+
+                    <div class="accordion-body">
+                        <div
+                            class="checklist-items"
+                            data-section-index="{{ section_index }}"
+                            data-section-name="{{ section }}"
+                        >
+                            {% for item in items %}
+                            <div class="checklist-item-card">
+                                <div class="checklist-item-main">
+                                    <label class="checklist-checkbox-row">
+                                        <input
+                                            type="checkbox"
+                                            name="item_{{ item.id }}"
+                                            class="live-checklist-box"
+                                            data-item-id="{{ item.id }}"
+                                            data-section-index="{{ section_index }}"
+                                            data-section-name="{{ section }}"
+                                            {% if item.is_completed %}checked{% endif %}
+                                            {% if is_read_only %}disabled{% endif %}
+                                        >
+                                        <span>{{ item.task_text }}</span>
+                                    </label>
+
+                                    <div class="task-meta">
+                                        Expected time: {{ item.expected_minutes }} min
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-top: 14px;">
+                                    <label for="notes_{{ item.id }}">Notes</label>
+                                    <input
+                                        type="text"
+                                        id="notes_{{ item.id }}"
+                                        name="notes_{{ item.id }}"
+                                        class="autosave-note"
+                                        data-item-id="{{ item.id }}"
+                                        value="{{ item.notes or '' }}"
+                                        placeholder="Optional notes"
+                                        {% if is_read_only %}disabled{% endif %}
+                                    >
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </details>
+            {% endfor %}
+
+            {% if not is_read_only %}
+            <button type="submit" class="btn-primary">Save Checklist</button>
+            {% endif %}
+        </form>
+    </div>
+
+    <div>
+        <div class="panel">
+            <h3>Recent History</h3>
+            <div class="history-list">
+                {% for entry in history %}
+                <a
+                    class="history-item"
+                    href="{{ url_for('checklist.index', store=store_number, date=entry.checklist_date.strftime('%Y-%m-%d')) }}"
+                >
+                    <div>
+                        <div class="history-date">{{ entry.checklist_date.strftime('%b %d, %Y') }}</div>
+                        <div class="history-sub">{{ entry.status.replace('_', ' ')|title }}</div>
+                    </div>
+                    <div class="history-metrics">
+                        <span>{{ entry.percent_complete }}%</span>
+                        <span>{{ entry.integrity_score }}%</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const checkboxes = Array.from(document.querySelectorAll(".live-checklist-box"));
+    const noteInputs = Array.from(document.querySelectorAll(".autosave-note"));
+    const overallCompletionEl = document.getElementById("overall-completion");
+    const integrityScoreEl = document.getElementById("integrity-score");
+    const autosaveStatusEl = document.getElementById("autosave-status");
+    const managerInput = document.getElementById("manager_on_duty");
+
+    const storeNumber = "{{ store_number }}";
+    const selectedDate = "{{ selected_date }}";
+
+    function setAutosaveStatus(text) {
+        if (autosaveStatusEl) {
+            autosaveStatusEl.textContent = text;
+        }
+    }
+
+    function updateStatsFromServer(data) {
+        if (!data) return;
+
+        if (overallCompletionEl && data.overall_completion !== undefined) {
+            overallCompletionEl.textContent = `${data.overall_completion}%`;
+        }
+
+        if (integrityScoreEl && data.integrity_score !== undefined) {
+            integrityScoreEl.textContent = `${data.integrity_score}%`;
+        }
+
+        if (data.sections) {
+            Object.keys(data.sections).forEach(idx => {
+                const section = data.sections[idx];
+                const countEl = document.getElementById(`count-${idx}`);
+                const percentEl = document.getElementById(`percent-${idx}`);
+
+                if (countEl) {
+                    countEl.textContent = `${section.completed}/${section.total}`;
+                }
+
+                if (percentEl) {
+                    percentEl.textContent = `${section.percent}%`;
+                }
+            });
+        }
+    }
+
+    async function autosaveItem(itemId) {
+        const checkbox = document.querySelector(`.live-checklist-box[data-item-id="${itemId}"]`);
+        const noteInput = document.querySelector(`.autosave-note[data-item-id="${itemId}"]`);
+
+        if (!checkbox) return;
+
+        setAutosaveStatus("Saving...");
+
+        try {
+            const response = await fetch("/checklist/autosave-item", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    item_id: Number(itemId),
+                    is_completed: checkbox.checked,
+                    notes: noteInput ? noteInput.value : "",
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                setAutosaveStatus("Save failed");
+                return;
+            }
+
+            updateStatsFromServer(data);
+            setAutosaveStatus("Saved");
+        } catch (error) {
+            setAutosaveStatus("Save failed");
+        }
+    }
+
+    let managerTimer = null;
+
+    async function autosaveManager() {
+        if (!managerInput) return;
+
+        setAutosaveStatus("Saving...");
+
+        try {
+            const response = await fetch("/checklist/autosave-manager", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    store_number: storeNumber,
+                    selected_date: selectedDate,
+                    manager_on_duty: managerInput.value,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                setAutosaveStatus("Save failed");
+                return;
+            }
+
+            setAutosaveStatus("Saved");
+        } catch (error) {
+            setAutosaveStatus("Save failed");
+        }
+    }
+
+    checkboxes.forEach(box => {
+        box.addEventListener("change", function () {
+            autosaveItem(this.dataset.itemId);
+        });
+    });
+
+    const noteTimers = {};
+
+    noteInputs.forEach(input => {
+        input.addEventListener("input", function () {
+            const itemId = this.dataset.itemId;
+            setAutosaveStatus("Typing...");
+
+            clearTimeout(noteTimers[itemId]);
+            noteTimers[itemId] = setTimeout(() => {
+                autosaveItem(itemId);
+            }, 700);
+        });
+    });
+
+    if (managerInput) {
+        managerInput.addEventListener("input", function () {
+            setAutosaveStatus("Typing...");
+            clearTimeout(managerTimer);
+            managerTimer = setTimeout(() => {
+                autosaveManager();
+            }, 700);
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Checklist Admin | BPI Ops{% endblock %}
+{% block header %}Checklist Admin{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <section class="panel">
+        <h3>Add New Task</h3>
+        <form method="POST" class="login-form">
+            <input type="hidden" name="action" value="create">
+
+            <div class="form-group">
+                <label for="section_name">Section</label>
+                <select id="section_name" name="section_name" required>
+                    {% for section in section_options %}
+                    <option value="{{ section }}">{{ section }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="task_text">Task Text</label>
+                <input type="text" id="task_text" name="task_text" required>
+            </div>
+
+            <div class="form-group">
+                <label for="expected_minutes">Expected Minutes</label>
+                <input type="number" id="expected_minutes" name="expected_minutes" value="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="sort_order">Sort Order</label>
+                <input type="number" id="sort_order" name="sort_order" value="999" required>
+            </div>
+
+            <label class="checkbox-inline">
+                <input type="checkbox" name="is_required" checked>
+                Required for integrity/completion
+            </label>
+
+            <button type="submit" class="btn-primary">Add Task</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h3>Checklist Template</h3>
+        <div class="admin-task-list">
+            {% for item in items %}
+            <form method="POST" class="admin-task-card">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="item_id" value="{{ item.id }}">
+
+                <div class="admin-task-top">
+                    <span class="summary-pill">ID {{ item.id }}</span>
+                    <span class="summary-pill">{{ item.section_name }}</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Section</label>
+                    <select name="section_name" required>
+                        {% for section in section_options %}
+                        <option value="{{ section }}" {% if item.section_name == section %}selected{% endif %}>
+                            {{ section }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Task Text</label>
+                    <input type="text" name="task_text" value="{{ item.task_text }}" required>
+                </div>
+
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label>Expected Minutes</label>
+                        <input type="number" name="expected_minutes" value="{{ item.expected_minutes }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sort Order</label>
+                        <input type="number" name="sort_order" value="{{ item.sort_order }}" required>
+                    </div>
+                </div>
+
+                <div class="admin-check-row">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="is_required" {% if item.is_required %}checked{% endif %}>
+                        Required
+                    </label>
+
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="is_active" {% if item.is_active %}checked{% endif %}>
+                        Active
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary">Save Task</button>
+            </form>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

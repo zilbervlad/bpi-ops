@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}SVR Reports | BPI Ops{% endblock %}
+{% block header %}SVR Reports{% endblock %}
+
+{% block content %}
+<div class="panel premium-panel" style="margin-bottom: 24px;">
+    <div class="panel-head">
+        <h3>Supervisor Visit Reports</h3>
+        {% if session.get('user_role') == 'supervisor' %}
+        <a href="{{ url_for('svr.new_report') }}" class="action-btn" style="max-width: 220px;">Create New SVR</a>
+        {% endif %}
+    </div>
+    <p class="subtitle" style="margin: 0;">Supervisor-only store visit reports with maintenance sync and manager summary export.</p>
+</div>
+
+<div class="panel premium-panel">
+    <div class="table-wrap premium-table-wrap">
+        <table class="data-table premium-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Store</th>
+                    <th>Supervisor</th>
+                    <th>Manager</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.visit_date.strftime('%b %d, %Y') }}</td>
+                    <td>{{ report.store_number }}</td>
+                    <td>{{ report.supervisor_name or '—' }}</td>
+                    <td>{{ report.manager_on_duty or '—' }}</td>
+                    <td>
+                        <a href="{{ url_for('svr.view_report', report_id=report.id) }}" class="summary-pill">Open</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">No SVR reports yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

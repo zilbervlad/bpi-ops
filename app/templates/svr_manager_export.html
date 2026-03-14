@@ -1,0 +1,18 @@
+<div class="svr-export-block">
+    <div class="svr-export-row"><strong>Store:</strong> {{ manager_summary.store_number }}</div>
+    <div class="svr-export-row"><strong>Date:</strong> {{ manager_summary.visit_date }}</div>
+    <div class="svr-export-row"><strong>Supervisor:</strong> {{ manager_summary.supervisor_name }}</div>
+    <div class="svr-export-row"><strong>Manager on Duty:</strong> {{ manager_summary.manager_on_duty }}</div>
+
+    <hr class="svr-divider">
+
+    <div class="svr-export-section">
+        <div class="svr-export-label">Cleaning List for the Week</div>
+        <div class="svr-export-text">{{ manager_summary.cleaning_list_for_week or '—' }}</div>
+    </div>
+
+    <div class="svr-export-section">
+        <div class="svr-export-label">Goals for the Week</div>
+        <div class="svr-export-text">{{ manager_summary.goals_for_week or '—' }}</div>
+    </div>
+</div>

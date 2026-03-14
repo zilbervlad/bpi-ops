@@ -1,8 +1,9 @@
 from collections import defaultdict
-from datetime import date, timedelta
-from flask import Blueprint, render_template, session, jsonify
+from datetime import date, timedelta, datetime
+from flask import Blueprint, render_template, session, jsonify, request
 from app.auth.routes import login_required
-from app.models import Store, DailyChecklist, SVRReport, MaintenanceTicket
+from app.extensions import db
+from app.models import Store, DailyChecklist, SVRReport, MaintenanceTicket, WeeklyFocusItem
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -36,6 +37,7 @@ def get_visible_stores():
 def build_dashboard_data():
     stores = get_visible_stores()
     visible_store_numbers = {store.store_number for store in stores}
+    user_role = session.get("user_role")
 
     total_stores = len(stores)
     completed_today = 0
@@ -138,9 +140,6 @@ def build_dashboard_data():
         sum(s["opening_percent"] for area in ordered_area_groups.values() for s in area) / total_stores, 1
     ) if total_stores else 0.0
 
-    # -----------------------------
-    # SVR compliance (this week)
-    # -----------------------------
     today = date.today()
     week_start = today - timedelta(days=today.weekday())
 
@@ -158,9 +157,6 @@ def build_dashboard_data():
     svr_missing_stores = sorted(list(visible_store_numbers - weekly_svr_store_numbers))
     svr_compliance_percent = round((svr_completed_count / total_stores) * 100, 1) if total_stores else 0.0
 
-    # -----------------------------
-    # Maintenance summary
-    # -----------------------------
     visible_tickets = MaintenanceTicket.query.filter(
         MaintenanceTicket.store_number.in_(visible_store_numbers)
     ).all() if visible_store_numbers else []
@@ -168,9 +164,23 @@ def build_dashboard_data():
     open_maintenance_count = sum(1 for t in visible_tickets if t.status != "complete")
     complete_maintenance_count = sum(1 for t in visible_tickets if t.status == "complete")
 
-    # -----------------------------
-    # Real alerts
-    # -----------------------------
+    manager_weekly_focus = []
+    if user_role == "manager" and visible_store_numbers:
+        focus_items = WeeklyFocusItem.query.filter(
+            WeeklyFocusItem.store_number.in_(visible_store_numbers),
+            WeeklyFocusItem.is_completed == False
+        ).order_by(WeeklyFocusItem.item_type.asc(), WeeklyFocusItem.id.asc()).all()
+
+        manager_weekly_focus = [
+            {
+                "id": item.id,
+                "item_type": item.item_type,
+                "item_text": item.item_text,
+                "store_number": item.store_number,
+            }
+            for item in focus_items
+        ]
+
     alerts = []
 
     for store_number in opening_not_started[:5]:
@@ -223,6 +233,7 @@ def build_dashboard_data():
         "svr_missing_stores": svr_missing_stores,
         "open_maintenance_count": open_maintenance_count,
         "complete_maintenance_count": complete_maintenance_count,
+        "manager_weekly_focus": manager_weekly_focus,
     }
 
 
@@ -264,6 +275,7 @@ def home():
         svr_missing_stores=data["svr_missing_stores"],
         open_maintenance_count=data["open_maintenance_count"],
         complete_maintenance_count=data["complete_maintenance_count"],
+        manager_weekly_focus=data["manager_weekly_focus"],
     )
 
 
@@ -272,3 +284,28 @@ def home():
 def live_data():
     data = build_dashboard_data()
     return jsonify(data)
+
+
+@dashboard_bp.route("/complete-weekly-focus", methods=["POST"])
+@login_required
+def complete_weekly_focus():
+    user_role = session.get("user_role")
+    if user_role not in ["admin", "manager", "supervisor"]:
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    data = request.get_json() or {}
+    item_id = data.get("item_id")
+
+    item = WeeklyFocusItem.query.get(item_id)
+    if not item:
+        return jsonify({"success": False, "error": "Item not found"}), 404
+
+    visible_store_numbers = {store.store_number for store in get_visible_stores()}
+    if item.store_number not in visible_store_numbers:
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    item.is_completed = True
+    item.completed_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({"success": True})

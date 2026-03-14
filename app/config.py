@@ -12,5 +12,12 @@ INSTANCE_DIR.mkdir(exist_ok=True)
 
 class Config:
     SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "dev-secret-key")
-    SQLALCHEMY_DATABASE_URI = f"sqlite:///{INSTANCE_DIR / 'bpi_ops.db'}"
+
+    database_url = os.getenv("DATABASE_URL", "").strip()
+
+    if database_url:
+        SQLALCHEMY_DATABASE_URI = database_url
+    else:
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{INSTANCE_DIR / 'bpi_ops.db'}"
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False

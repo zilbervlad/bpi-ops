@@ -189,28 +189,8 @@ def build_dashboard_data():
             for item in focus_items
         ]
 
+    # TEMPORARY BYPASS FOR DEBUGGING
     yesterday_exceptions = []
-    if user_role in ["admin", "supervisor"] and visible_store_numbers:
-        exception_rows = ChecklistException.query.filter(
-            ChecklistException.store_number.in_(visible_store_numbers),
-            ChecklistException.checklist_date == yesterday
-        ).order_by(ChecklistException.store_number.asc()).all()
-
-        yesterday_exceptions = [
-            {
-                "store_number": row.store_number,
-                "manager_on_duty": row.manager_on_duty or "—",
-                "percent_complete": row.percent_complete,
-                "integrity_score": row.integrity_score,
-                "manager_walk_missed": row.manager_walk_missed,
-                "incomplete_task_count": row.incomplete_task_count,
-                "incomplete_task_names": row.incomplete_task_names or "",
-                "checklist_started": row.checklist_started,
-                "checklist_completed": row.checklist_completed,
-                "checklist_date": row.checklist_date.strftime("%Y-%m-%d"),
-            }
-            for row in exception_rows
-        ]
 
     alerts = []
 

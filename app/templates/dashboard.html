@@ -1,25 +1,32 @@
 {% extends "base.html" %}
 
 {% block title %}Dashboard | BPI Ops{% endblock %}
-{% block header %}Director Command Center{% endblock %}
+{% block header %}{% if session.get('user_role') == 'manager' %}Store Dashboard{% else %}Director Command Center{% endif %}{% endblock %}
 
 {% block content %}
+{% set is_manager = session.get('user_role') == 'manager' %}
+
 <div class="command-bar panel" style="margin-bottom: 24px;">
     <div class="command-bar-left">
-        <div class="command-eyebrow">LIVE OPERATIONS</div>
-        <h2 class="command-title">BPI Ops Command Center</h2>
+        <div class="command-eyebrow">{% if is_manager %}STORE VIEW{% else %}LIVE OPERATIONS{% endif %}</div>
+        <h2 class="command-title">{% if is_manager %}BPI Ops Store Dashboard{% else %}BPI Ops Command Center{% endif %}</h2>
         <p class="command-subtitle">
+            {% if is_manager %}
+            Today's checklist progress, opening integrity, and store task visibility.
+            {% else %}
             Real-time checklist execution, opening integrity, SVR compliance, and maintenance visibility.
+            {% endif %}
         </p>
     </div>
 
     <div class="command-bar-right">
-        <div class="command-chip">Live Dashboard</div>
+        <div class="command-chip">{% if is_manager %}Store Dashboard{% else %}Live Dashboard{% endif %}</div>
         <div class="command-chip" id="last-refresh-chip">Refreshing...</div>
         <div class="command-chip">{{ session.get('user_role', 'role')|title }}</div>
     </div>
 </div>
 
+{% if not is_manager %}
 <div class="content-grid exceptions-grid" style="margin-bottom: 24px;">
     <section class="panel premium-panel exception-panel">
         <div class="panel-head">
@@ -65,12 +72,13 @@
         </div>
     </section>
 </div>
+{% endif %}
 
-<div class="dashboard-grid dashboard-grid-premium">
+<div class="dashboard-grid dashboard-grid-premium {% if is_manager %}manager-metric-grid{% endif %}">
     <div class="metric-card premium-card">
         <span class="metric-label">Checklist Completion</span>
         <h3 id="stat-checklist-completion">{{ stats.checklist_completion }}</h3>
-        <p class="metric-footnote">Visible stores completed today</p>
+        <p class="metric-footnote">{% if is_manager %}Today's store completion{% else %}Visible stores completed today{% endif %}</p>
     </div>
 
     <div class="metric-card premium-card premium-card-blue">
@@ -79,14 +87,16 @@
         <p class="metric-footnote">Before Open / 10:30 progress</p>
     </div>
 
+    {% if not is_manager %}
     <div class="metric-card premium-card">
         <span class="metric-label">SVR Compliance</span>
         <h3 id="stat-svr-compliance">{{ stats.svr_compliance }}</h3>
         <p class="metric-footnote">Visible stores with SVR this week</p>
     </div>
+    {% endif %}
 
     <div class="metric-card premium-card premium-card-alert">
-        <span class="metric-label">Stores Flagged</span>
+        <span class="metric-label">{% if is_manager %}Store Flagged{% else %}Stores Flagged{% endif %}</span>
         <h3 id="stat-stores-flagged">{{ stats.stores_flagged }}</h3>
         <p class="metric-footnote">Integrity below threshold</p>
     </div>
@@ -94,10 +104,11 @@
     <div class="metric-card premium-card premium-card-blue">
         <span class="metric-label">Open Maintenance</span>
         <h3 id="stat-open-maintenance">{{ stats.open_maintenance }}</h3>
-        <p class="metric-footnote">Open tasks across visible stores</p>
+        <p class="metric-footnote">{% if is_manager %}Open tasks for your store{% else %}Open tasks across visible stores{% endif %}</p>
     </div>
 </div>
 
+{% if not is_manager %}
 <div class="panel premium-panel heatmap-panel" style="margin-bottom: 24px;">
     <div class="panel-head">
         <div>
@@ -137,8 +148,10 @@
         {% endfor %}
     </div>
 </div>
+{% endif %}
 
-<div class="content-grid">
+<div class="content-grid {% if is_manager %}manager-content-grid{% endif %}">
+    {% if not is_manager %}
     <section class="panel premium-panel">
         <div class="panel-head">
             <h3>Operational Alerts</h3>
@@ -150,6 +163,7 @@
             {% endfor %}
         </ul>
     </section>
+    {% endif %}
 
     <section class="panel premium-panel">
         <div class="panel-head">
@@ -162,11 +176,26 @@
             {% endfor %}
         </div>
     </section>
+
+    {% if is_manager %}
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Today's Focus</h3>
+            <span class="summary-pill">Manager View</span>
+        </div>
+        <ul class="clean-list">
+            <li>Complete opening section early.</li>
+            <li>Keep integrity above threshold.</li>
+            <li>Review open maintenance items for your store.</li>
+            <li>Use Checklist to track live completion.</li>
+        </ul>
+    </section>
+    {% endif %}
 </div>
 
 <div class="panel premium-panel" style="margin-bottom: 24px;">
     <div class="panel-head">
-        <h3>Store Summary</h3>
+        <h3>{% if is_manager %}Store Summary{% else %}Store Summary{% endif %}</h3>
         <span class="summary-pill">Live Totals</span>
     </div>
 
@@ -175,11 +204,14 @@
         <span class="summary-pill success-pill" id="summary-completed">Completed: {{ completed_today }}</span>
         <span class="summary-pill warning-pill" id="summary-in-progress">In Progress: {{ in_progress_today }}</span>
         <span class="summary-pill neutral-pill" id="summary-not-started">Not Started: {{ not_started_today }}</span>
+        {% if not is_manager %}
         <span class="summary-pill" id="summary-svr-completed">SVRs This Week: {{ svr_completed_count }}</span>
+        {% endif %}
         <span class="summary-pill warning-pill" id="summary-open-maintenance">Open Maintenance: {{ open_maintenance_count }}</span>
     </div>
 </div>
 
+{% if not is_manager %}
 <div id="areas-wrapper">
     {% for area_name, stores in area_groups.items() %}
     <div class="panel premium-panel area-panel" style="margin-bottom: 24px;">
@@ -261,9 +293,12 @@
     </div>
     {% endfor %}
 </div>
+{% endif %}
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    const isManager = {{ 'true' if session.get('user_role') == 'manager' else 'false' }};
+
     function statusBadgeClass(status) {
         if (status === "completed") return "status-badge status-completed";
         if (status === "in_progress") return "status-badge status-progress";
@@ -340,7 +375,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             document.getElementById("stat-checklist-completion").textContent = data.stats.checklist_completion;
             document.getElementById("stat-opening-completion").textContent = data.stats.opening_completion;
-            document.getElementById("stat-svr-compliance").textContent = data.stats.svr_compliance;
+            if (document.getElementById("stat-svr-compliance")) {
+                document.getElementById("stat-svr-compliance").textContent = data.stats.svr_compliance;
+            }
             document.getElementById("stat-stores-flagged").textContent = data.stats.stores_flagged;
             document.getElementById("stat-open-maintenance").textContent = data.stats.open_maintenance;
 
@@ -348,135 +385,145 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("summary-completed").textContent = `Completed: ${data.completed_today}`;
             document.getElementById("summary-in-progress").textContent = `In Progress: ${data.in_progress_today}`;
             document.getElementById("summary-not-started").textContent = `Not Started: ${data.not_started_today}`;
-            document.getElementById("summary-svr-completed").textContent = `SVRs This Week: ${data.svr_completed_count}`;
+            if (document.getElementById("summary-svr-completed")) {
+                document.getElementById("summary-svr-completed").textContent = `SVRs This Week: ${data.svr_completed_count}`;
+            }
             document.getElementById("summary-open-maintenance").textContent = `Open Maintenance: ${data.open_maintenance_count}`;
 
-            document.getElementById("opening-not-started-count").textContent = `${data.morning_exceptions.opening_not_started.length} stores`;
-            document.getElementById("opening-under-80-count").textContent = `${data.morning_exceptions.opening_under_80.length} stores`;
-            document.getElementById("opening-complete-count").textContent = `${data.morning_exceptions.opening_complete.length} stores`;
+            if (!isManager) {
+                document.getElementById("opening-not-started-count").textContent = `${data.morning_exceptions.opening_not_started.length} stores`;
+                document.getElementById("opening-under-80-count").textContent = `${data.morning_exceptions.opening_under_80.length} stores`;
+                document.getElementById("opening-complete-count").textContent = `${data.morning_exceptions.opening_complete.length} stores`;
 
-            renderChipList("opening-not-started-list", data.morning_exceptions.opening_not_started, "neutral-pill");
-            renderChipList(
-                "opening-under-80-list",
-                data.morning_exceptions.opening_under_80,
-                "warning-pill",
-                (item) => `${item.store_number} - ${item.opening_percent}%`
-            );
-            renderChipList("opening-complete-list", data.morning_exceptions.opening_complete, "success-pill");
+                renderChipList("opening-not-started-list", data.morning_exceptions.opening_not_started, "neutral-pill");
+                renderChipList(
+                    "opening-under-80-list",
+                    data.morning_exceptions.opening_under_80,
+                    "warning-pill",
+                    (item) => `${item.store_number} - ${item.opening_percent}%`
+                );
+                renderChipList("opening-complete-list", data.morning_exceptions.opening_complete, "success-pill");
 
-            const heatmapWrapper = document.getElementById("heatmap-wrapper");
-            heatmapWrapper.innerHTML = "";
-            Object.entries(data.area_groups).forEach(([areaName, stores]) => {
-                stores.forEach(store => {
-                    const link = document.createElement("a");
-                    link.className = "heatmap-link";
-                    link.href = `/checklist/?store=${encodeURIComponent(store.store_number)}`;
-                    link.setAttribute("aria-label", `Open checklist for store ${store.store_number}`);
+                const heatmapWrapper = document.getElementById("heatmap-wrapper");
+                if (heatmapWrapper) {
+                    heatmapWrapper.innerHTML = "";
+                    Object.entries(data.area_groups).forEach(([areaName, stores]) => {
+                        stores.forEach(store => {
+                            const link = document.createElement("a");
+                            link.className = "heatmap-link";
+                            link.href = `/checklist/?store=${encodeURIComponent(store.store_number)}`;
+                            link.setAttribute("aria-label", `Open checklist for store ${store.store_number}`);
 
-                    const tile = document.createElement("div");
-                    tile.className = heatTileClass(store);
-                    tile.innerHTML = `
-                        <div class="heatmap-store">${store.store_number}</div>
-                        <div class="heatmap-area">${areaName}</div>
-                        <div class="heatmap-metrics">
-                            <span>Open ${store.opening_percent}%</span>
-                            <span>Int ${store.integrity_score}%</span>
-                        </div>
-                    `;
+                            const tile = document.createElement("div");
+                            tile.className = heatTileClass(store);
+                            tile.innerHTML = `
+                                <div class="heatmap-store">${store.store_number}</div>
+                                <div class="heatmap-area">${areaName}</div>
+                                <div class="heatmap-metrics">
+                                    <span>Open ${store.opening_percent}%</span>
+                                    <span>Int ${store.integrity_score}%</span>
+                                </div>
+                            `;
 
-                    link.appendChild(tile);
-                    heatmapWrapper.appendChild(link);
-                });
-            });
+                            link.appendChild(tile);
+                            heatmapWrapper.appendChild(link);
+                        });
+                    });
+                }
 
-            const alertsList = document.getElementById("alerts-list");
-            alertsList.innerHTML = "";
-            data.alerts.forEach(alert => {
-                const li = document.createElement("li");
-                li.textContent = alert;
-                alertsList.appendChild(li);
-            });
+                const alertsList = document.getElementById("alerts-list");
+                if (alertsList) {
+                    alertsList.innerHTML = "";
+                    data.alerts.forEach(alert => {
+                        const li = document.createElement("li");
+                        li.textContent = alert;
+                        alertsList.appendChild(li);
+                    });
+                }
 
-            const areasWrapper = document.getElementById("areas-wrapper");
-            areasWrapper.innerHTML = "";
+                const areasWrapper = document.getElementById("areas-wrapper");
+                if (areasWrapper) {
+                    areasWrapper.innerHTML = "";
 
-            Object.entries(data.area_groups).forEach(([areaName, stores]) => {
-                const summary = data.area_summaries[areaName];
+                    Object.entries(data.area_groups).forEach(([areaName, stores]) => {
+                        const summary = data.area_summaries[areaName];
 
-                const rows = stores.map(store => `
-                    <tr class="clickable-row" onclick="window.location='/checklist/?store=${encodeURIComponent(store.store_number)}'">
-                        <td>
-                            <div class="store-cell">
-                                <div class="store-main">${store.store_number}</div>
-                                <div class="store-sub">${store.store_name || "Store " + store.store_number}</div>
+                        const rows = stores.map(store => `
+                            <tr class="clickable-row" onclick="window.location='/checklist/?store=${encodeURIComponent(store.store_number)}'">
+                                <td>
+                                    <div class="store-cell">
+                                        <div class="store-main">${store.store_number}</div>
+                                        <div class="store-sub">${store.store_name || "Store " + store.store_number}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="${checklistBadgeClass(store.opening_percent)}">
+                                        ${store.opening_percent}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="${checklistBadgeClass(store.checklist_percent)}">
+                                        ${store.checklist_percent}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="${integrityBadgeClass(store.integrity_score)}">
+                                        ${store.integrity_score}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="${statusBadgeClass(store.status)}">
+                                        ${formatStatus(store.status)}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join("");
+
+                        const block = document.createElement("div");
+                        block.className = "panel premium-panel area-panel";
+                        block.style.marginBottom = "24px";
+                        block.innerHTML = `
+                            <div class="area-header area-header-premium">
+                                <div>
+                                    <div class="command-eyebrow">AREA PERFORMANCE</div>
+                                    <h3>${areaName}</h3>
+                                    <div class="area-subtitle">
+                                        Avg Opening:
+                                        <span class="inline-metric">${summary.avg_opening}%</span>
+                                        |
+                                        Avg Completion:
+                                        <span class="inline-metric">${summary.avg_completion}%</span>
+                                        |
+                                        Avg Integrity:
+                                        <span class="inline-metric ${integrityTextClass(summary.avg_integrity)}">${summary.avg_integrity}%</span>
+                                    </div>
+                                </div>
+                                <div class="area-header-right">
+                                    <span class="summary-pill">${summary.store_count} stores</span>
+                                </div>
                             </div>
-                        </td>
-                        <td>
-                            <span class="${checklistBadgeClass(store.opening_percent)}">
-                                ${store.opening_percent}%
-                            </span>
-                        </td>
-                        <td>
-                            <span class="${checklistBadgeClass(store.checklist_percent)}">
-                                ${store.checklist_percent}%
-                            </span>
-                        </td>
-                        <td>
-                            <span class="${integrityBadgeClass(store.integrity_score)}">
-                                ${store.integrity_score}%
-                            </span>
-                        </td>
-                        <td>
-                            <span class="${statusBadgeClass(store.status)}">
-                                ${formatStatus(store.status)}
-                            </span>
-                        </td>
-                    </tr>
-                `).join("");
 
-                const block = document.createElement("div");
-                block.className = "panel premium-panel area-panel";
-                block.style.marginBottom = "24px";
-                block.innerHTML = `
-                    <div class="area-header area-header-premium">
-                        <div>
-                            <div class="command-eyebrow">AREA PERFORMANCE</div>
-                            <h3>${areaName}</h3>
-                            <div class="area-subtitle">
-                                Avg Opening:
-                                <span class="inline-metric">${summary.avg_opening}%</span>
-                                |
-                                Avg Completion:
-                                <span class="inline-metric">${summary.avg_completion}%</span>
-                                |
-                                Avg Integrity:
-                                <span class="inline-metric ${integrityTextClass(summary.avg_integrity)}">${summary.avg_integrity}%</span>
+                            <div class="table-wrap premium-table-wrap">
+                                <table class="data-table premium-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Store</th>
+                                            <th>Opening</th>
+                                            <th>Checklist</th>
+                                            <th>Integrity</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${rows}
+                                    </tbody>
+                                </table>
                             </div>
-                        </div>
-                        <div class="area-header-right">
-                            <span class="summary-pill">${summary.store_count} stores</span>
-                        </div>
-                    </div>
-
-                    <div class="table-wrap premium-table-wrap">
-                        <table class="data-table premium-table">
-                            <thead>
-                                <tr>
-                                    <th>Store</th>
-                                    <th>Opening</th>
-                                    <th>Checklist</th>
-                                    <th>Integrity</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${rows}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-                areasWrapper.appendChild(block);
-            });
+                        `;
+                        areasWrapper.appendChild(block);
+                    });
+                }
+            }
 
             stampRefreshTime();
         } catch (error) {

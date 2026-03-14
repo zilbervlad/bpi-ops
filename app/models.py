@@ -127,7 +127,6 @@ class ChecklistException(db.Model):
 
     percent_complete = db.Column(db.Float, nullable=False, default=0.0)
     integrity_score = db.Column(db.Float, nullable=False, default=0.0)
-    manager_walk_percent = db.Column(db.Float, nullable=False, default=0.0)
 
     incomplete_task_count = db.Column(db.Integer, nullable=False, default=0)
     incomplete_task_names = db.Column(db.Text, nullable=True)

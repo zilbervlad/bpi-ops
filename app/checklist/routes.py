@@ -153,7 +153,7 @@ def run_checklist_closeout(closeout_date: date):
             checklist_date=closeout_date
         ).first()
 
-        if not daily or (daily.percent_complete == 0 and not daily.manager_on_duty):
+        if not daily:
             db.session.add(
                 ChecklistException(
                     store_number=store.store_number,

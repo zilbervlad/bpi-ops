@@ -269,20 +269,6 @@
 {% endif %}
 
 <div class="content-grid {% if is_manager %}manager-content-grid{% endif %} {% if is_maintenance %}maintenance-content-grid{% endif %}">
-    {% if is_ops_view %}
-    <section class="panel premium-panel">
-        <div class="panel-head">
-            <h3>Operational Alerts</h3>
-            <span class="summary-pill">Live Exceptions</span>
-        </div>
-        <ul class="clean-list" id="alerts-list">
-            {% for alert in alerts %}
-            <li>{{ alert }}</li>
-            {% endfor %}
-        </ul>
-    </section>
-    {% endif %}
-
     <section class="panel premium-panel">
         <div class="panel-head">
             <h3>Quick Actions</h3>
@@ -388,26 +374,6 @@
         </ul>
     </section>
     {% endif %}
-</div>
-
-<div class="panel premium-panel" style="margin-bottom: 24px;">
-    <div class="panel-head">
-        <h3>{% if is_maintenance %}Maintenance Summary{% else %}Store Summary{% endif %}</h3>
-        <span class="summary-pill">Live Totals</span>
-    </div>
-
-    <div class="summary-pills summary-pills-large">
-        <span class="summary-pill" id="summary-total-stores">Total Stores: {{ total_stores }}</span>
-        {% if not is_maintenance %}
-        <span class="summary-pill success-pill" id="summary-completed">Completed: {{ completed_today }}</span>
-        <span class="summary-pill warning-pill" id="summary-in-progress">In Progress: {{ in_progress_today }}</span>
-        <span class="summary-pill neutral-pill" id="summary-not-started">Not Started: {{ not_started_today }}</span>
-        {% endif %}
-        {% if is_ops_view %}
-        <span class="summary-pill" id="summary-svr-completed">SVRs This Week: {{ svr_completed_count }}</span>
-        {% endif %}
-        <span class="summary-pill warning-pill" id="summary-open-maintenance">Open Maintenance: {{ open_maintenance_count }}</span>
-    </div>
 </div>
 
 {% if is_ops_view %}
@@ -692,26 +658,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 document.getElementById("stat-open-maintenance").textContent = data.stats.open_maintenance;
             }
 
-            document.getElementById("summary-total-stores").textContent = `Total Stores: ${data.total_stores}`;
-
-            if (document.getElementById("summary-completed")) {
-                document.getElementById("summary-completed").textContent = `Completed: ${data.completed_today}`;
-            }
-
-            if (document.getElementById("summary-in-progress")) {
-                document.getElementById("summary-in-progress").textContent = `In Progress: ${data.in_progress_today}`;
-            }
-
-            if (document.getElementById("summary-not-started")) {
-                document.getElementById("summary-not-started").textContent = `Not Started: ${data.not_started_today}`;
-            }
-
-            if (document.getElementById("summary-svr-completed")) {
-                document.getElementById("summary-svr-completed").textContent = `SVRs This Week: ${data.svr_completed_count}`;
-            }
-
-            document.getElementById("summary-open-maintenance").textContent = `Open Maintenance: ${data.open_maintenance_count}`;
-
             if (isManager) {
                 renderManagerWeeklyFocus(data.manager_weekly_focus || []);
             }
@@ -788,16 +734,6 @@ document.addEventListener("DOMContentLoaded", function () {
                             link.appendChild(tile);
                             heatmapWrapper.appendChild(link);
                         });
-                    });
-                }
-
-                const alertsList = document.getElementById("alerts-list");
-                if (alertsList) {
-                    alertsList.innerHTML = "";
-                    data.alerts.forEach(alert => {
-                        const li = document.createElement("li");
-                        li.textContent = alert;
-                        alertsList.appendChild(li);
                     });
                 }
 
@@ -910,3 +846,4 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 {% endblock %}
+

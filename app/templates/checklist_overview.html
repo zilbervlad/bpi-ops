@@ -217,4 +217,26 @@ row.style.display = text.includes(search) ? "" : "none";
 });
 </script>
 
+</script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.querySelectorAll("details.premium-panel").forEach(section => {
+
+        section.addEventListener("toggle", function () {
+
+            if (this.open) {
+                document.querySelectorAll("details.premium-panel").forEach(other => {
+                    if (other !== this) {
+                        other.removeAttribute("open");
+                    }
+                });
+            }
+
+        });
+
+    });
+
+});
+</script>
+
 {% endblock %}

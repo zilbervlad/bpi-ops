@@ -230,15 +230,22 @@
             <h3>Quick Actions</h3>
             <span class="summary-pill">Role Based</span>
         </div>
-        <div class="action-grid">
+
+        <div class="action-grid" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
             {% for action in quick_actions %}
-            <a class="action-btn" href="{{ action.url }}">{{ action.label }}</a>
+            <a
+                class="action-btn"
+                href="{{ action.url }}"
+                style="padding: 14px 16px; text-align: center;"
+            >
+                {{ action.label }}
+            </a>
             {% endfor %}
         </div>
 
         {% if user_role == "admin" %}
-        <form method="POST" action="{{ url_for('checklist.run_closeout') }}" style="margin-top: 14px;">
-            <button type="submit" class="btn-primary" style="width: 100%;">
+        <form method="POST" action="{{ url_for('checklist.run_closeout') }}" style="margin-top: 12px;">
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px 16px;">
                 Run Yesterday Closeout
             </button>
         </form>
@@ -519,31 +526,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const data = await response.json();
 
-            const checklistCompletion = document.getElementById("stat-checklist-completion");
-            if (checklistCompletion) {
-                checklistCompletion.textContent = data.stats.checklist_completion;
-            }
-
-            const openingCompletion = document.getElementById("stat-opening-completion");
-            if (openingCompletion) {
-                openingCompletion.textContent = data.stats.opening_completion;
-            }
-
-            const svrCompliance = document.getElementById("stat-svr-compliance");
-            if (svrCompliance) {
-                svrCompliance.textContent = data.stats.svr_compliance;
-            }
-
-            const storesFlagged = document.getElementById("stat-stores-flagged");
-            if (storesFlagged) {
-                storesFlagged.textContent = data.stats.stores_flagged;
-            }
-
-            const openMaintenance = document.getElementById("stat-open-maintenance");
-            if (openMaintenance) {
-                openMaintenance.textContent = data.stats.open_maintenance;
-            }
-
             if (isOpsView && data.morning_exceptions) {
                 const openingNotStartedCount = document.getElementById("opening-not-started-count");
                 if (openingNotStartedCount) {
@@ -647,6 +629,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 {% endblock %}
+
 
 
 

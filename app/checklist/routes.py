@@ -140,6 +140,7 @@ def run_checklist_closeout(closeout_date: date):
     skipped_existing_count = 0
     skipped_complete_count = 0
     not_started_count = 0
+    archived_shell_count = 0
 
     for store in active_stores:
         existing_exception = ChecklistException.query.filter_by(
@@ -158,7 +159,28 @@ def run_checklist_closeout(closeout_date: date):
             checklist_date=closeout_date
         ).first()
 
-        if not daily or (daily.percent_complete == 0 and not (daily.manager_on_duty or "").strip()):
+        # Force an archived checklist to exist even if the store never opened it
+        if not daily:
+            daily = get_or_create_daily_checklist(store.store_number, closeout_date)
+            daily.status = "in_progress"
+            daily.percent_complete = 0.0
+            daily.integrity_score = 0.0
+            daily.manager_on_duty = daily.manager_on_duty or ""
+            db.session.commit()
+            archived_shell_count += 1
+
+        incomplete_items = [item for item in daily.items if not item.is_completed]
+        manager_walk_items = [item for item in daily.items if item.section_name == "Manager's Walk"]
+        manager_walk_missed = any(not item.is_completed for item in manager_walk_items) if manager_walk_items else False
+
+        checklist_started = bool((daily.manager_on_duty or "").strip()) or any(
+            item.is_completed or (item.notes or "").strip()
+            for item in daily.items
+        )
+
+        checklist_completed = len(incomplete_items) == 0 or daily.status == "completed"
+
+        if not checklist_started:
             db.session.add(
                 ChecklistException(
                     store_number=store.store_number,
@@ -169,7 +191,7 @@ def run_checklist_closeout(closeout_date: date):
                     manager_walk_missed=True,
                     percent_complete=0.0,
                     integrity_score=0.0,
-                    incomplete_task_count=0,
+                    incomplete_task_count=len(daily.items),
                     incomplete_task_names="Checklist not started",
                     auto_closed_at=datetime.utcnow(),
                     closeout_type="auto_5am",
@@ -178,12 +200,6 @@ def run_checklist_closeout(closeout_date: date):
             created_count += 1
             not_started_count += 1
             continue
-
-        incomplete_items = [item for item in daily.items if not item.is_completed]
-        manager_walk_items = [item for item in daily.items if item.section_name == "Manager's Walk"]
-        manager_walk_missed = any(not item.is_completed for item in manager_walk_items) if manager_walk_items else False
-
-        checklist_completed = len(incomplete_items) == 0 or daily.status == "completed"
 
         if checklist_completed and not manager_walk_missed:
             skipped_count += 1
@@ -219,6 +235,7 @@ def run_checklist_closeout(closeout_date: date):
         "skipped_existing_count": skipped_existing_count,
         "skipped_complete_count": skipped_complete_count,
         "not_started_count": not_started_count,
+        "archived_shell_count": archived_shell_count,
     }
 
 
@@ -503,6 +520,7 @@ def run_closeout():
         f"Exceptions created: {result['created_count']}. "
         f"Stores skipped: {result['skipped_count']}. "
         f"Not started: {result['not_started_count']}. "
+        f"Archive shells created: {result['archived_shell_count']}. "
         f"Skipped existing: {result['skipped_existing_count']}. "
         f"Skipped complete: {result['skipped_complete_count']}.",
         "success"

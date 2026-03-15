@@ -200,7 +200,7 @@
     {% set heatmap = namespace(risk=[], progress=[], not_started=[], strong=[]) %}
     {% for area_name, stores in area_groups.items() %}
         {% for store in stores %}
-            {% if store.status == 'not_started' %}
+            {% if store.opening_percent == 0 and store.integrity_score == 0 %}
                 {% set _ = heatmap.not_started.append((area_name, store)) %}
             {% elif store.integrity_score > 0 and store.integrity_score < 80 %}
                 {% set _ = heatmap.risk.append((area_name, store)) %}
@@ -689,6 +689,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 {% endblock %}
+
 
 
 

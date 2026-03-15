@@ -1,7 +1,7 @@
 from collections import defaultdict
 from datetime import date, timedelta, datetime
-from flask import Blueprint, render_template, session, jsonify, request
-from app.auth.routes import login_required
+from flask import Blueprint, render_template, session, jsonify, request, redirect, url_for, flash
+from app.auth.routes import login_required, role_required
 from app.extensions import db
 from app.models import (
     Store,
@@ -298,6 +298,7 @@ def home():
     ]
 
     if user_role in ["admin", "supervisor"]:
+        quick_actions.append({"label": "Action Board", "url": "/action-board"})
         quick_actions.append({"label": "Open SVR", "url": "/svr/"})
 
     if user_role == "admin":
@@ -359,3 +360,133 @@ def complete_weekly_focus():
     db.session.commit()
 
     return jsonify({"success": True})
+
+
+@dashboard_bp.route("/action-board")
+@login_required
+@role_required("admin", "supervisor")
+def action_board():
+    visible_stores = get_visible_stores()
+    visible_store_numbers = {store.store_number for store in visible_stores}
+
+    search = request.args.get("search", "").strip().lower()
+    status_filter = request.args.get("status", "").strip().lower()
+    type_filter = request.args.get("item_type", "").strip().lower()
+    store_filter = request.args.get("store_number", "").strip()
+    sort_by = request.args.get("sort", "status_store").strip().lower()
+
+    items = WeeklyFocusItem.query.filter(
+        WeeklyFocusItem.source_type == "svr",
+        WeeklyFocusItem.store_number.in_(visible_store_numbers)
+    ).all() if visible_store_numbers else []
+
+    filtered_items = []
+
+    for item in items:
+        if status_filter == "open" and item.is_completed:
+            continue
+        if status_filter == "completed" and not item.is_completed:
+            continue
+        if type_filter and item.item_type != type_filter:
+            continue
+        if store_filter and item.store_number != store_filter:
+            continue
+
+        if search:
+            haystack = " ".join([
+                item.store_number or "",
+                item.item_type or "",
+                item.item_text or "",
+            ]).lower()
+            if search not in haystack:
+                continue
+
+        filtered_items.append(item)
+
+    if sort_by == "store":
+        filtered_items = sorted(
+            filtered_items,
+            key=lambda x: (x.store_number, x.item_type, x.created_at or datetime.min)
+        )
+    elif sort_by == "type":
+        filtered_items = sorted(
+            filtered_items,
+            key=lambda x: (x.item_type, x.store_number, x.created_at or datetime.min)
+        )
+    elif sort_by == "newest":
+        filtered_items = sorted(
+            filtered_items,
+            key=lambda x: x.created_at or datetime.min,
+            reverse=True
+        )
+    elif sort_by == "oldest":
+        filtered_items = sorted(
+            filtered_items,
+            key=lambda x: x.created_at or datetime.min
+        )
+    elif sort_by == "completed_recent":
+        filtered_items = sorted(
+            filtered_items,
+            key=lambda x: (
+                0 if x.is_completed else 1,
+                -(x.completed_at.timestamp()) if x.completed_at else float("inf"),
+                x.store_number
+            )
+        )
+    else:
+        filtered_items = sorted(
+            filtered_items,
+            key=lambda x: (
+                0 if not x.is_completed else 1,
+                x.store_number,
+                x.item_type,
+                x.created_at or datetime.min
+            )
+        )
+
+    open_count = sum(1 for item in filtered_items if not item.is_completed)
+    completed_count = sum(1 for item in filtered_items if item.is_completed)
+
+    return render_template(
+        "action_board.html",
+        items=filtered_items,
+        stores=visible_stores,
+        search=search,
+        status_filter=status_filter,
+        type_filter=type_filter,
+        store_filter=store_filter,
+        sort_by=sort_by,
+        open_count=open_count,
+        completed_count=completed_count,
+    )
+
+
+@dashboard_bp.route("/clear-weekly-focus-items", methods=["POST"])
+@login_required
+@role_required("admin", "supervisor")
+def clear_weekly_focus_items():
+    visible_store_numbers = {store.store_number for store in get_visible_stores()}
+    item_ids = request.form.getlist("item_ids")
+
+    if not item_ids:
+        flash("No completed items selected.", "error")
+        return redirect(url_for("dashboard.action_board"))
+
+    cleared_count = 0
+
+    items = WeeklyFocusItem.query.filter(
+        WeeklyFocusItem.id.in_(item_ids),
+        WeeklyFocusItem.source_type == "svr",
+        WeeklyFocusItem.store_number.in_(visible_store_numbers)
+    ).all()
+
+    for item in items:
+        if item.is_completed:
+            db.session.delete(item)
+            cleared_count += 1
+
+    db.session.commit()
+
+    flash(f"Cleared {cleared_count} completed item(s).", "success")
+    return redirect(url_for("dashboard.action_board"))
+

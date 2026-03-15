@@ -663,9 +663,21 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             if (isOpsView) {
-                document.getElementById("opening-not-started-count").textContent = `${data.morning_exceptions.opening_not_started.length} stores`;
-                document.getElementById("opening-under-80-count").textContent = `${data.morning_exceptions.opening_under_80.length} stores`;
-                document.getElementById("opening-complete-count").textContent = `${data.morning_exceptions.opening_complete.length} stores`;
+                const openingNotStartedCount = document.getElementById("opening-not-started-count");
+                const openingUnder80Count = document.getElementById("opening-under-80-count");
+                const openingCompleteCount = document.getElementById("opening-complete-count");
+
+                if (openingNotStartedCount) {
+                    openingNotStartedCount.textContent = `${data.morning_exceptions.opening_not_started.length} stores`;
+                }
+
+                if (openingUnder80Count) {
+                    openingUnder80Count.textContent = `${data.morning_exceptions.opening_under_80.length} stores`;
+                }
+
+                if (openingCompleteCount) {
+                    openingCompleteCount.textContent = `${data.morning_exceptions.opening_complete.length} stores`;
+                }
 
                 renderChipList("opening-not-started-list", data.morning_exceptions.opening_not_started, "neutral-pill");
                 renderChipList(
@@ -829,7 +841,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     bindWeeklyFocusCheckboxes();
     refreshDashboard();
-    setInterval(refreshDashboard, 10000);
+    setInterval(refreshDashboard, 15000);
 
     const yesterdayToggle = document.getElementById("yesterday-exceptions-toggle");
     const yesterdayBody = document.getElementById("yesterday-exceptions-body");

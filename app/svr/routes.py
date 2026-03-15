@@ -389,12 +389,29 @@ def delete_report(report_id):
         flash("You do not have access to delete that SVR.", "error")
         return redirect(url_for("svr.index"))
 
-    SVRReportValue.query.filter_by(report_id=report.id).delete()
+    # Keep maintenance tickets, but detach them from this SVR
+    linked_tickets = MaintenanceTicket.query.filter_by(
+        svr_report_id=report.id,
+        source_type="svr"
+    ).all()
+
+    for ticket in linked_tickets:
+        ticket.svr_report_id = None
+        if ticket.details:
+            ticket.details = f"{ticket.details} | Original SVR was deleted"
+        else:
+            ticket.details = "Original SVR was deleted"
+
+    # delete weekly focus items created by this SVR
     WeeklyFocusItem.query.filter_by(svr_report_id=report.id).delete()
 
-    # Keep maintenance tickets intact
+    # delete SVR values
+    SVRReportValue.query.filter_by(report_id=report.id).delete()
+
+    # now delete the report itself
     db.session.delete(report)
     db.session.commit()
 
     flash("SVR deleted.", "success")
     return redirect(url_for("svr.index"))
+

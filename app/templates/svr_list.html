@@ -33,8 +33,19 @@
                     <td>{{ report.store_number }}</td>
                     <td>{{ report.supervisor_name or '—' }}</td>
                     <td>{{ report.manager_on_duty or '—' }}</td>
-                    <td>
-                        <a href="{{ url_for('svr.view_report', report_id=report.id) }}" class="summary-pill">Open</a>
+                    <td style="display:flex; gap:10px;">
+                        <a href="{{ url_for('svr.view_report', report_id=report.id) }}" class="summary-pill">
+                            Open
+                        </a>
+
+                        <form method="POST"
+                              action="{{ url_for('svr.delete_report', report_id=report.id) }}"
+                              onsubmit="return confirm('Delete this SVR? This cannot be undone.');"
+                        >
+                            <button type="submit" class="summary-pill danger-pill">
+                                Delete
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 {% else %}

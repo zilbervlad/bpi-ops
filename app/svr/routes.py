@@ -319,3 +319,28 @@ def admin():
     ).all()
 
     return render_template("svr_admin.html", fields=fields)
+@svr_bp.route("/delete/<int:report_id>", methods=["POST"])
+@login_required
+@role_required("admin", "supervisor")
+def delete_report(report_id):
+    report = SVRReport.query.get_or_404(report_id)
+
+    visible_store_numbers = {store.store_number for store in get_supervisor_visible_stores()}
+
+    if report.store_number not in visible_store_numbers:
+        flash("You do not have access to delete that SVR.", "error")
+        return redirect(url_for("svr.index"))
+
+    # delete SVR values
+    SVRReportValue.query.filter_by(report_id=report.id).delete()
+
+    # delete weekly focus items created by this SVR
+    WeeklyFocusItem.query.filter_by(svr_report_id=report.id).delete()
+
+    # DO NOT delete maintenance tickets (per your request)
+
+    db.session.delete(report)
+    db.session.commit()
+
+    flash("SVR deleted.", "success")
+    return redirect(url_for("svr.index"))

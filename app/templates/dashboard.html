@@ -197,28 +197,88 @@
         </div>
     </div>
 
+    {% set heatmap = namespace(risk=[], progress=[], not_started=[], strong=[]) %}
+    {% for area_name, stores in area_groups.items() %}
+        {% for store in stores %}
+            {% if store.status == 'not_started' %}
+                {% set _ = heatmap.not_started.append((area_name, store)) %}
+            {% elif store.integrity_score > 0 and store.integrity_score < 80 %}
+                {% set _ = heatmap.risk.append((area_name, store)) %}
+            {% elif store.opening_percent >= 100 and store.integrity_score >= 90 %}
+                {% set _ = heatmap.strong.append((area_name, store)) %}
+            {% else %}
+                {% set _ = heatmap.progress.append((area_name, store)) %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+
     <div id="heatmap-wrapper" class="heatmap-grid">
-        {% for area_name, stores in area_groups.items() %}
-            {% for store in stores %}
-            <a
-                href="{{ url_for('checklist.index', store=store.store_number) }}"
-                class="heatmap-link"
-                aria-label="Open checklist for store {{ store.store_number }}"
-            >
-                <div class="heatmap-tile
-                    {% if store.status == 'not_started' %}tile-gray
-                    {% elif store.integrity_score > 0 and store.integrity_score < 80 %}tile-red
-                    {% elif store.opening_percent >= 100 and store.integrity_score >= 90 %}tile-green
-                    {% else %}tile-yellow{% endif %}">
-                    <div class="heatmap-store">{{ store.store_number }}</div>
-                    <div class="heatmap-area">{{ area_name }}</div>
-                    <div class="heatmap-metrics">
-                        <span>Open {{ store.opening_percent }}%</span>
-                        <span>Int {{ store.integrity_score }}%</span>
-                    </div>
+        {% for area_name, store in heatmap.risk %}
+        <a
+            href="{{ url_for('checklist.index', store=store.store_number) }}"
+            class="heatmap-link"
+            aria-label="Open checklist for store {{ store.store_number }}"
+        >
+            <div class="heatmap-tile tile-red">
+                <div class="heatmap-store">{{ store.store_number }}</div>
+                <div class="heatmap-area">{{ area_name }}</div>
+                <div class="heatmap-metrics">
+                    <span>Open {{ store.opening_percent }}%</span>
+                    <span>Int {{ store.integrity_score }}%</span>
                 </div>
-            </a>
-            {% endfor %}
+            </div>
+        </a>
+        {% endfor %}
+
+        {% for area_name, store in heatmap.progress %}
+        <a
+            href="{{ url_for('checklist.index', store=store.store_number) }}"
+            class="heatmap-link"
+            aria-label="Open checklist for store {{ store.store_number }}"
+        >
+            <div class="heatmap-tile tile-yellow">
+                <div class="heatmap-store">{{ store.store_number }}</div>
+                <div class="heatmap-area">{{ area_name }}</div>
+                <div class="heatmap-metrics">
+                    <span>Open {{ store.opening_percent }}%</span>
+                    <span>Int {{ store.integrity_score }}%</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+
+        {% for area_name, store in heatmap.not_started %}
+        <a
+            href="{{ url_for('checklist.index', store=store.store_number) }}"
+            class="heatmap-link"
+            aria-label="Open checklist for store {{ store.store_number }}"
+        >
+            <div class="heatmap-tile tile-gray">
+                <div class="heatmap-store">{{ store.store_number }}</div>
+                <div class="heatmap-area">{{ area_name }}</div>
+                <div class="heatmap-metrics">
+                    <span>Open {{ store.opening_percent }}%</span>
+                    <span>Int {{ store.integrity_score }}%</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+
+        {% for area_name, store in heatmap.strong %}
+        <a
+            href="{{ url_for('checklist.index', store=store.store_number) }}"
+            class="heatmap-link"
+            aria-label="Open checklist for store {{ store.store_number }}"
+        >
+            <div class="heatmap-tile tile-green">
+                <div class="heatmap-store">{{ store.store_number }}</div>
+                <div class="heatmap-area">{{ area_name }}</div>
+                <div class="heatmap-metrics">
+                    <span>Open {{ store.opening_percent }}%</span>
+                    <span>Int {{ store.integrity_score }}%</span>
+                </div>
+            </div>
+        </a>
         {% endfor %}
     </div>
 </div>

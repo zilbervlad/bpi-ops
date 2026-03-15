@@ -60,7 +60,7 @@
                 Live Dashboard
             {% endif %}
         </div>
-        <div class="command-chip" id="last-refresh-chip">Live View</div>
+        <div class="command-chip" id="last-refresh-chip">Refreshing...</div>
         <div class="command-chip">{{ user_role|title }}</div>
     </div>
 </div>
@@ -70,11 +70,11 @@
     <section class="panel premium-panel exception-panel">
         <div class="panel-head">
             <h3>Opening Not Started</h3>
-            <span class="summary-pill neutral-pill">
+            <span class="summary-pill neutral-pill" id="opening-not-started-count">
                 {{ morning_exceptions.opening_not_started|length }} stores
             </span>
         </div>
-        <div class="exception-list">
+        <div class="exception-list" id="opening-not-started-list">
             {% for store in morning_exceptions.opening_not_started %}
             <span class="exception-chip neutral-pill">{{ store }}</span>
             {% else %}
@@ -86,11 +86,11 @@
     <section class="panel premium-panel exception-panel">
         <div class="panel-head">
             <h3>Opening Under 80%</h3>
-            <span class="summary-pill warning-pill">
+            <span class="summary-pill warning-pill" id="opening-under-80-count">
                 {{ morning_exceptions.opening_under_80|length }} stores
             </span>
         </div>
-        <div class="exception-list detailed">
+        <div class="exception-list detailed" id="opening-under-80-list">
             {% for store in morning_exceptions.opening_under_80 %}
             <span class="exception-chip warning-pill">
                 {{ store.store_number }} - {{ store.opening_percent }}%
@@ -104,11 +104,11 @@
     <section class="panel premium-panel exception-panel">
         <div class="panel-head">
             <h3>Opening Complete</h3>
-            <span class="summary-pill success-pill">
+            <span class="summary-pill success-pill" id="opening-complete-count">
                 {{ morning_exceptions.opening_complete|length }} stores
             </span>
         </div>
-        <div class="exception-list">
+        <div class="exception-list" id="opening-complete-list">
             {% for store in morning_exceptions.opening_complete %}
             <span class="exception-chip success-pill">{{ store }}</span>
             {% else %}
@@ -148,7 +148,7 @@
                         <th>Incomplete Tasks</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="yesterday-exceptions-tbody">
                     {% for item in yesterday_exceptions %}
                     <tr onclick="window.location='{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date) }}'" style="cursor: pointer;">
                         <td>{{ item.store_number }}</td>
@@ -186,13 +186,13 @@
 <div class="dashboard-grid dashboard-grid-premium maintenance-metric-grid">
     <div class="metric-card premium-card premium-card-blue">
         <span class="metric-label">Open Maintenance</span>
-        <h3>{{ stats.open_maintenance }}</h3>
+        <h3 id="stat-open-maintenance">{{ stats.open_maintenance }}</h3>
         <p class="metric-footnote">Open tasks across visible stores</p>
     </div>
 
     <div class="metric-card premium-card premium-card-alert">
         <span class="metric-label">Stores Flagged</span>
-        <h3>{{ stats.stores_flagged }}</h3>
+        <h3 id="stat-stores-flagged">{{ stats.stores_flagged }}</h3>
         <p class="metric-footnote">Stores with low integrity visibility</p>
     </div>
 </div>
@@ -200,33 +200,33 @@
 <div class="dashboard-grid dashboard-grid-premium {% if is_manager %}manager-metric-grid{% endif %}">
     <div class="metric-card premium-card">
         <span class="metric-label">Checklist Completion</span>
-        <h3>{{ stats.checklist_completion }}</h3>
+        <h3 id="stat-checklist-completion">{{ stats.checklist_completion }}</h3>
         <p class="metric-footnote">{% if is_manager %}Today's store completion{% else %}Visible stores completed today{% endif %}</p>
     </div>
 
     <div class="metric-card premium-card premium-card-blue">
         <span class="metric-label">Opening Tracker</span>
-        <h3>{{ stats.opening_completion }}</h3>
+        <h3 id="stat-opening-completion">{{ stats.opening_completion }}</h3>
         <p class="metric-footnote">Before Open / 10:30 progress</p>
     </div>
 
     {% if is_ops_view %}
     <div class="metric-card premium-card">
         <span class="metric-label">SVR Compliance</span>
-        <h3>{{ stats.svr_compliance }}</h3>
+        <h3 id="stat-svr-compliance">{{ stats.svr_compliance }}</h3>
         <p class="metric-footnote">Visible stores with SVR this week</p>
     </div>
     {% endif %}
 
     <div class="metric-card premium-card premium-card-alert">
         <span class="metric-label">{% if is_manager %}Store Flagged{% else %}Stores Flagged{% endif %}</span>
-        <h3>{{ stats.stores_flagged }}</h3>
+        <h3 id="stat-stores-flagged">{{ stats.stores_flagged }}</h3>
         <p class="metric-footnote">Integrity below threshold</p>
     </div>
 
     <div class="metric-card premium-card premium-card-blue">
         <span class="metric-label">Open Maintenance</span>
-        <h3>{{ stats.open_maintenance }}</h3>
+        <h3 id="stat-open-maintenance">{{ stats.open_maintenance }}</h3>
         <p class="metric-footnote">{% if is_manager %}Open tasks for your store{% else %}Open tasks across visible stores{% endif %}</p>
     </div>
 </div>
@@ -470,6 +470,58 @@
 document.addEventListener("DOMContentLoaded", function () {
     const isManager = {{ 'true' if session.get('user_role') == 'manager' else 'false' }};
     const isMaintenance = {{ 'true' if session.get('user_role') == 'maintenance' else 'false' }};
+    const isOpsView = !isManager && !isMaintenance;
+
+    let refreshInFlight = false;
+
+    function checklistBadgeClass(value) {
+        const num = Number(value);
+        if (num >= 100) return "table-badge badge-success";
+        if (num > 0) return "table-badge badge-warning";
+        return "table-badge badge-danger";
+    }
+
+    function integrityBadgeClass(value) {
+        const num = Number(value);
+        if (num >= 90) return "table-badge badge-success";
+        if (num > 0) return "table-badge badge-warning";
+        return "table-badge badge-danger";
+    }
+
+    function managerWalkBadgeClass(value) {
+        const num = Number(value);
+        if (num >= 100) return "table-badge badge-success";
+        if (num > 0) return "table-badge badge-warning";
+        return "table-badge badge-danger";
+    }
+
+    function renderChipList(containerId, items, cls, formatter = null) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+
+        el.innerHTML = "";
+
+        if (!items || items.length === 0) {
+            const span = document.createElement("span");
+            span.className = `exception-chip ${cls}`;
+            span.textContent = "None";
+            el.appendChild(span);
+            return;
+        }
+
+        items.forEach(item => {
+            const span = document.createElement("span");
+            span.className = `exception-chip ${cls}`;
+            span.textContent = formatter ? formatter(item) : item;
+            el.appendChild(span);
+        });
+    }
+
+    function updateRefreshChip(text) {
+        const chip = document.getElementById("last-refresh-chip");
+        if (!chip) return;
+        chip.textContent = text;
+    }
 
     function bindWeeklyFocusCheckboxes() {
         document.querySelectorAll(".manager-weekly-focus-box").forEach(box => {
@@ -496,6 +548,134 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    async function refreshDashboard() {
+        if (refreshInFlight) return;
+        refreshInFlight = true;
+        updateRefreshChip("Refreshing...");
+
+        try {
+            const response = await fetch("/live-data", {
+                method: "GET",
+                headers: {
+                    "Cache-Control": "no-cache"
+                }
+            });
+
+            if (!response.ok) {
+                updateRefreshChip("Refresh failed");
+                refreshInFlight = false;
+                return;
+            }
+
+            const data = await response.json();
+
+            const checklistCompletion = document.getElementById("stat-checklist-completion");
+            if (checklistCompletion) {
+                checklistCompletion.textContent = data.stats.checklist_completion;
+            }
+
+            const openingCompletion = document.getElementById("stat-opening-completion");
+            if (openingCompletion) {
+                openingCompletion.textContent = data.stats.opening_completion;
+            }
+
+            const svrCompliance = document.getElementById("stat-svr-compliance");
+            if (svrCompliance) {
+                svrCompliance.textContent = data.stats.svr_compliance;
+            }
+
+            const storesFlagged = document.getElementById("stat-stores-flagged");
+            if (storesFlagged) {
+                storesFlagged.textContent = data.stats.stores_flagged;
+            }
+
+            const openMaintenance = document.getElementById("stat-open-maintenance");
+            if (openMaintenance) {
+                openMaintenance.textContent = data.stats.open_maintenance;
+            }
+
+            if (isOpsView && data.morning_exceptions) {
+                const openingNotStartedCount = document.getElementById("opening-not-started-count");
+                if (openingNotStartedCount) {
+                    openingNotStartedCount.textContent = `${data.morning_exceptions.opening_not_started.length} stores`;
+                }
+
+                const openingUnder80Count = document.getElementById("opening-under-80-count");
+                if (openingUnder80Count) {
+                    openingUnder80Count.textContent = `${data.morning_exceptions.opening_under_80.length} stores`;
+                }
+
+                const openingCompleteCount = document.getElementById("opening-complete-count");
+                if (openingCompleteCount) {
+                    openingCompleteCount.textContent = `${data.morning_exceptions.opening_complete.length} stores`;
+                }
+
+                renderChipList(
+                    "opening-not-started-list",
+                    data.morning_exceptions.opening_not_started,
+                    "neutral-pill"
+                );
+
+                renderChipList(
+                    "opening-under-80-list",
+                    data.morning_exceptions.opening_under_80,
+                    "warning-pill",
+                    (item) => `${item.store_number} - ${item.opening_percent}%`
+                );
+
+                renderChipList(
+                    "opening-complete-list",
+                    data.morning_exceptions.opening_complete,
+                    "success-pill"
+                );
+
+                const yesterdayTbody = document.getElementById("yesterday-exceptions-tbody");
+                if (yesterdayTbody) {
+                    if (data.yesterday_exceptions && data.yesterday_exceptions.length > 0) {
+                        yesterdayTbody.innerHTML = data.yesterday_exceptions.map(item => `
+                            <tr onclick="window.location='/checklist/?store=${encodeURIComponent(item.store_number)}&date=${encodeURIComponent(item.checklist_date)}'" style="cursor: pointer;">
+                                <td>${item.store_number}</td>
+                                <td>${item.manager_on_duty}</td>
+                                <td>
+                                    <span class="${checklistBadgeClass(item.percent_complete)}">
+                                        ${item.percent_complete}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="${integrityBadgeClass(item.integrity_score)}">
+                                        ${item.integrity_score}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="${managerWalkBadgeClass(item.manager_walk_percent)}">
+                                        ${item.manager_walk_percent}%
+                                    </span>
+                                </td>
+                                <td>${item.incomplete_task_count}</td>
+                            </tr>
+                        `).join("");
+                    } else {
+                        yesterdayTbody.innerHTML = `
+                            <tr>
+                                <td colspan="6">No closeout exceptions recorded for ${data.yesterday_label}.</td>
+                            </tr>
+                        `;
+                    }
+                }
+            }
+
+            const now = new Date();
+            updateRefreshChip(
+                `Updated ${now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}`
+            );
+        } catch (error) {
+            console.error("Dashboard refresh failed:", error);
+            updateRefreshChip("Refresh failed");
+        } finally {
+            refreshInFlight = false;
+        }
+    }
+
     bindWeeklyFocusCheckboxes();
 
     const yesterdayToggle = document.getElementById("yesterday-exceptions-toggle");
@@ -511,10 +691,9 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    const refreshChip = document.getElementById("last-refresh-chip");
-    if (refreshChip) {
-        refreshChip.textContent = "Loaded";
-    }
+    updateRefreshChip("Loaded");
+    refreshDashboard();
+    setInterval(refreshDashboard, 15000);
 });
 </script>
 {% endblock %}

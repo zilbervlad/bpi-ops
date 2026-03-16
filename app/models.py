@@ -1,6 +1,13 @@
 from datetime import datetime, date
+from zoneinfo import ZoneInfo
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db
+
+APP_TZ = ZoneInfo("America/New_York")
+
+
+def today_et():
+    return datetime.now(APP_TZ).date()
 
 
 class User(db.Model):
@@ -63,7 +70,7 @@ class DailyChecklist(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     store_number = db.Column(db.String(20), nullable=False)
-    checklist_date = db.Column(db.Date, nullable=False, default=date.today)
+    checklist_date = db.Column(db.Date, nullable=False, default=today_et)
     manager_on_duty = db.Column(db.String(120), nullable=True)
 
     status = db.Column(db.String(50), nullable=False, default="in_progress")
@@ -151,7 +158,7 @@ class SVRReport(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     store_number = db.Column(db.String(10), nullable=False)
-    visit_date = db.Column(db.Date, nullable=False, default=date.today)
+    visit_date = db.Column(db.Date, nullable=False, default=today_et)
     manager_on_duty = db.Column(db.String(120), nullable=True)
 
     supervisor_name = db.Column(db.String(120), nullable=True)

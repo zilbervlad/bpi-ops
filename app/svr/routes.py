@@ -1,4 +1,6 @@
 from datetime import datetime, date
+from zoneinfo import ZoneInfo
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app.auth.routes import login_required, role_required
 from app.extensions import db
@@ -12,6 +14,16 @@ from app.models import (
 )
 
 svr_bp = Blueprint("svr", __name__, url_prefix="/svr")
+
+APP_TZ = ZoneInfo("America/New_York")
+
+
+def now_et():
+    return datetime.now(APP_TZ)
+
+
+def today_et():
+    return now_et().date()
 
 
 DEFAULT_SVR_TEMPLATE = [
@@ -213,7 +225,7 @@ def new_report():
 
         visit_date_raw = request.form.get("visit_date", "").strip()
         try:
-            visit_date = datetime.strptime(visit_date_raw, "%Y-%m-%d").date() if visit_date_raw else date.today()
+            visit_date = datetime.strptime(visit_date_raw, "%Y-%m-%d").date() if visit_date_raw else today_et()
         except ValueError:
             flash("Invalid date.", "error")
             return redirect(url_for("svr.new_report", store=store_number))
@@ -264,7 +276,7 @@ def new_report():
         stores=stores,
         fields=fields,
         selected_store=selected_store,
-        today=date.today().strftime("%Y-%m-%d"),
+        today=today_et().strftime("%Y-%m-%d"),
     )
 
 
@@ -414,4 +426,3 @@ def delete_report(report_id):
 
     flash("SVR deleted.", "success")
     return redirect(url_for("svr.index"))
-

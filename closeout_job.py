@@ -1,16 +1,23 @@
-from datetime import date, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from app import create_app
 from app.checklist.routes import run_checklist_closeout
 
 
+APP_TZ = ZoneInfo("America/New_York")
+
+
+def today_et():
+    return datetime.now(APP_TZ).date()
+
+
 app = create_app()
 
 with app.app_context():
-
     print("Running BPI Ops checklist closeout...")
 
-    yesterday = date.today() - timedelta(days=1)
+    yesterday = today_et() - timedelta(days=1)
 
     result = run_checklist_closeout(yesterday)
 

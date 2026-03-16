@@ -85,10 +85,13 @@ def build_dashboard_data():
 
     area_groups = defaultdict(list)
 
+    today = today_et()
+
     for store in stores:
         daily = DailyChecklist.query.filter_by(
-            store_number=store.store_number
-        ).order_by(DailyChecklist.checklist_date.desc()).first()
+            store_number=store.store_number,
+            checklist_date=today
+        ).first()
 
         checklist_percent = daily.percent_complete if daily else 0.0
         integrity_score = daily.integrity_score if daily else 0.0
@@ -121,9 +124,9 @@ def build_dashboard_data():
 
         area_groups[store.area_name].append(store_payload)
 
-        if opening_percent == 0:
+        if not daily:
             opening_not_started.append(store.store_number)
-        elif opening_percent < 80:
+        elif 0 < opening_percent < 80:
             opening_under_80.append({
                 "store_number": store.store_number,
                 "opening_percent": opening_percent,
@@ -163,7 +166,6 @@ def build_dashboard_data():
         sum(s["opening_percent"] for area in ordered_area_groups.values() for s in area) / total_stores, 1
     ) if total_stores else 0.0
 
-    today = today_et()
     week_start = today - timedelta(days=today.weekday())
     yesterday = today - timedelta(days=1)
 

@@ -26,6 +26,13 @@ def today_et():
     return now_et().date()
 
 
+def business_date_et():
+    now = now_et()
+    if now.hour < 5:
+        return (now - timedelta(days=1)).date()
+    return now.date()
+
+
 def get_or_create_daily_checklist(store_number: str, checklist_date: date):
     daily = DailyChecklist.query.filter_by(
         store_number=store_number,
@@ -86,24 +93,17 @@ def update_checklist_progress(daily: DailyChecklist):
     if not section_one_items:
         daily.integrity_score = 0.0
     else:
-        # 60% = completion score
         completed_section_one = sum(1 for item in section_one_items if item.is_completed)
         completion_score = (completed_section_one / len(section_one_items)) * 100
 
-        # Total expected time for required opening items
         expected_minutes = sum(item.expected_minutes or 0 for item in section_one_items)
 
-        # Completion timestamps for required opening items
         completed_times = sorted(
             [item.completed_at for item in section_one_items if item.completed_at]
         )
 
-        # Default timing score
-        timing_score = 100.0
+        timing_score = 0.0
 
-        # Burst detection:
-        # If 4 or more required opening items are completed within 60 seconds,
-        # force timing score to 0.
         burst_threshold = 4
         burst_window_seconds = 60
 
@@ -215,7 +215,6 @@ def run_checklist_closeout(closeout_date: date):
             checklist_date=closeout_date
         ).first()
 
-        # Force an archived checklist to exist even if the store never opened it
         if not daily:
             daily = get_or_create_daily_checklist(store.store_number, closeout_date)
             daily.status = "in_progress"
@@ -303,7 +302,7 @@ def overview():
         return redirect(url_for("checklist.index"))
 
     visible_stores = get_visible_stores()
-    today = today_et()
+    today = business_date_et()
 
     not_started = []
     in_progress = []
@@ -390,7 +389,7 @@ def delete_archive():
         flash("Invalid checklist date.", "error")
         return redirect(url_for("checklist.overview"))
 
-    if checklist_date >= today_et():
+    if checklist_date >= business_date_et():
         flash("Only archived past checklists can be deleted.", "error")
         return redirect(url_for("checklist.overview"))
 
@@ -443,7 +442,7 @@ def index():
         store_number = default_store
 
     requested_date_str = request.args.get("date", "").strip()
-    today = today_et()
+    today = business_date_et()
 
     if requested_date_str:
         try:
@@ -647,7 +646,7 @@ def autosave_item():
         return jsonify({"success": False, "error": "Item not found"}), 404
 
     daily = item.daily_checklist
-    if daily.checklist_date < today_et():
+    if daily.checklist_date < business_date_et():
         return jsonify({"success": False, "error": "Past checklists are read-only"}), 400
 
     visible_store_numbers = {store.store_number for store in get_visible_stores()}
@@ -688,7 +687,7 @@ def autosave_manager():
     except ValueError:
         return jsonify({"success": False, "error": "Invalid date"}), 400
 
-    if selected_date < today_et():
+    if selected_date < business_date_et():
         return jsonify({"success": False, "error": "Past checklists are read-only"}), 400
 
     visible_store_numbers = {store.store_number for store in get_visible_stores()}

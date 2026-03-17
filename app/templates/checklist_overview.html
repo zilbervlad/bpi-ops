@@ -44,7 +44,6 @@
     </div>
 </div>
 
-
 <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
 
 <!-- In Progress -->
@@ -63,6 +62,9 @@
 <span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
 Integrity {{ item.integrity_score }}%
 </span>
+<span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+Walk {{ item.manager_walk_integrity }}%
+</span>
 </div>
 <div class="area-subtitle">{{ item.store_name }} | {{ item.area_name }}</div>
 </a>
@@ -71,7 +73,6 @@ Integrity {{ item.integrity_score }}%
 {% endfor %}
 </div>
 </details>
-
 
 <!-- Not Started -->
 <details class="panel premium-panel">
@@ -97,7 +98,6 @@ Integrity {{ item.integrity_score }}%
 
 </div>
 
-
 <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
 
 <!-- Completed Today -->
@@ -116,6 +116,9 @@ Integrity {{ item.integrity_score }}%
 <span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
 Integrity {{ item.integrity_score }}%
 </span>
+<span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+Walk {{ item.manager_walk_integrity }}%
+</span>
 </div>
 <div class="area-subtitle">{{ item.store_name }} | {{ item.area_name }}</div>
 </a>
@@ -124,7 +127,6 @@ Integrity {{ item.integrity_score }}%
 {% endfor %}
 </div>
 </details>
-
 
 <!-- Checklist Archives -->
 <details class="panel premium-panel">
@@ -159,6 +161,7 @@ box-sizing: border-box;
 <th>Date</th>
 <th>Completion</th>
 <th>Integrity</th>
+<th>Walk Integrity</th>
 <th>Status</th>
 {% if session.get("user_role") == "admin" %}
 <th>Actions</th>
@@ -182,6 +185,12 @@ box-sizing: border-box;
 <td>
 <span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
 {{ item.integrity_score }}%
+</span>
+</td>
+
+<td>
+<span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+{{ item.manager_walk_integrity }}%
 </span>
 </td>
 
@@ -210,7 +219,7 @@ box-sizing: border-box;
 </tr>
 {% else %}
 <tr>
-<td colspan="{% if session.get('user_role') == 'admin' %}8{% else %}7{% endif %}">No archive history available yet.</td>
+<td colspan="{% if session.get('user_role') == 'admin' %}9{% else %}8{% endif %}">No archive history available yet.</td>
 </tr>
 {% endfor %}
 </tbody>
@@ -220,7 +229,6 @@ box-sizing: border-box;
 </details>
 
 </div>
-
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

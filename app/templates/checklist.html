@@ -25,6 +25,11 @@
                     <span class="metric-label">Integrity</span>
                     <h3 id="integrity-score">{{ daily.integrity_score }}%</h3>
                 </div>
+
+                <div class="checklist-progress-box">
+                    <span class="metric-label">Manager's Walk Integrity</span>
+                    <h3 id="manager-walk-integrity">{{ manager_walk_integrity }}%</h3>
+                </div>
             </div>
         </div>
     </div>
@@ -89,6 +94,9 @@
                                 <h3 class="accordion-title">{{ section }}</h3>
                                 {% if section == "Before Open / Before 10:30" %}
                                 <span class="integrity-pill">Integrity Section</span>
+                                {% endif %}
+                                {% if section == "Manager's Walk" %}
+                                <span class="integrity-pill">Walk Integrity Tracked</span>
                                 {% endif %}
                             </div>
 
@@ -185,6 +193,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const noteInputs = Array.from(document.querySelectorAll(".autosave-note"));
     const overallCompletionEl = document.getElementById("overall-completion");
     const integrityScoreEl = document.getElementById("integrity-score");
+    const managerWalkIntegrityEl = document.getElementById("manager-walk-integrity");
     const autosaveStatusEl = document.getElementById("autosave-status");
     const managerInput = document.getElementById("manager_on_duty");
 
@@ -217,6 +226,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (integrityScoreEl && data.integrity_score !== undefined) {
             integrityScoreEl.textContent = `${data.integrity_score}%`;
+        }
+
+        if (managerWalkIntegrityEl && data.manager_walk_integrity !== undefined) {
+            managerWalkIntegrityEl.textContent = `${data.manager_walk_integrity}%`;
         }
 
         if (data.sections) {

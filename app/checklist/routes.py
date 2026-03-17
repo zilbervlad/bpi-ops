@@ -74,6 +74,66 @@ def get_or_create_daily_checklist(store_number: str, checklist_date: date):
     return daily
 
 
+def calculate_manager_walk_integrity(daily: DailyChecklist):
+    manager_walk_items = [
+        item for item in daily.items
+        if item.section_name == "Manager's Walk" and item.is_required
+    ]
+
+    if not manager_walk_items:
+        return 0.0
+
+    completed_manager_walk = sum(1 for item in manager_walk_items if item.is_completed)
+    completion_score = (completed_manager_walk / len(manager_walk_items)) * 100
+
+    expected_minutes = sum(item.expected_minutes or 0 for item in manager_walk_items)
+
+    valid_completed_times = []
+    for item in manager_walk_items:
+        if not item.completed_at:
+            continue
+
+        completed_et = utc_naive_to_et(item.completed_at)
+        if completed_et and completed_et.date() == daily.checklist_date:
+            valid_completed_times.append(item.completed_at)
+
+    completed_times = sorted(valid_completed_times)
+
+    timing_score = 0.0
+
+    burst_threshold = 3
+    burst_window_seconds = 45
+
+    burst_detected = False
+    if len(completed_times) >= burst_threshold:
+        for i in range(len(completed_times) - burst_threshold + 1):
+            start = completed_times[i]
+            end = completed_times[i + burst_threshold - 1]
+            if (end - start).total_seconds() <= burst_window_seconds:
+                burst_detected = True
+                break
+
+    if burst_detected:
+        timing_score = 0.0
+    elif len(completed_times) >= 2 and expected_minutes > 0:
+        first_completed = completed_times[0]
+        last_completed = completed_times[-1]
+
+        elapsed_minutes = (last_completed - first_completed).total_seconds() / 60
+        ratio = elapsed_minutes / expected_minutes
+
+        if ratio >= 0.70:
+            timing_score = 100.0
+        elif ratio >= 0.50:
+            timing_score = 75.0
+        elif ratio >= 0.30:
+            timing_score = 40.0
+        else:
+            timing_score = 0.0
+
+    return round((completion_score * 0.60) + (timing_score * 0.40), 1)
+
+
 def update_checklist_progress(daily: DailyChecklist):
     total_items = len(daily.items)
     completed_items = sum(1 for item in daily.items if item.is_completed)
@@ -345,6 +405,7 @@ def overview():
                 "area_name": store.area_name,
                 "percent_complete": today_checklist.percent_complete,
                 "integrity_score": today_checklist.integrity_score,
+                "manager_walk_integrity": calculate_manager_walk_integrity(today_checklist),
                 "checklist_date": today_checklist.checklist_date,
             })
         else:
@@ -354,6 +415,7 @@ def overview():
                 "area_name": store.area_name,
                 "percent_complete": today_checklist.percent_complete,
                 "integrity_score": today_checklist.integrity_score,
+                "manager_walk_integrity": calculate_manager_walk_integrity(today_checklist),
                 "checklist_date": today_checklist.checklist_date,
             })
 
@@ -369,6 +431,7 @@ def overview():
                 "area_name": store.area_name,
                 "percent_complete": row.percent_complete,
                 "integrity_score": row.integrity_score,
+                "manager_walk_integrity": calculate_manager_walk_integrity(row),
                 "checklist_date": row.checklist_date,
                 "status": row.status,
             })
@@ -472,6 +535,7 @@ def index():
     is_read_only = selected_date < today
 
     daily = get_or_create_daily_checklist(store_number, selected_date)
+    manager_walk_integrity = calculate_manager_walk_integrity(daily)
 
     if request.method == "POST":
         if is_read_only:
@@ -501,6 +565,7 @@ def index():
 
         db.session.commit()
         update_checklist_progress(daily)
+        manager_walk_integrity = calculate_manager_walk_integrity(daily)
 
         flash("Checklist saved successfully.", "success")
         return redirect(
@@ -541,6 +606,7 @@ def index():
         stores=visible_stores,
         history=history,
         is_read_only=is_read_only,
+        manager_walk_integrity=manager_walk_integrity,
     )
 
 
@@ -676,11 +742,13 @@ def autosave_item():
 
     db.session.commit()
     update_checklist_progress(daily)
+    manager_walk_integrity = calculate_manager_walk_integrity(daily)
 
     return jsonify({
         "success": True,
         "overall_completion": daily.percent_complete,
         "integrity_score": daily.integrity_score,
+        "manager_walk_integrity": manager_walk_integrity,
         "status": daily.status,
         "sections": build_section_stats(daily),
     })

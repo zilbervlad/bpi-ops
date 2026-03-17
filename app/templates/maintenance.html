@@ -139,9 +139,12 @@
 
             <div class="admin-check-row compact-actions">
                 <button type="submit" name="action" value="update" class="btn-primary">Save Task</button>
+
+                {% if user_role in ["admin", "supervisor", "maintenance"] %}
                 <button type="submit" name="action" value="delete" class="btn-danger" formnovalidate onclick="return confirm('Delete this maintenance task?')">
                     Delete
                 </button>
+                {% endif %}
             </div>
         </form>
         {% else %}

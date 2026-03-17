@@ -7,6 +7,10 @@ from app.models import MaintenanceTicket, Store
 maintenance_bp = Blueprint("maintenance", __name__, url_prefix="/maintenance")
 
 
+def get_current_role():
+    return (session.get("user_role") or "").strip()
+
+
 def get_visible_stores():
     role = session.get("user_role")
     user_area = session.get("user_area")
@@ -40,10 +44,11 @@ def split_lines_to_tasks(text: str):
 
 @maintenance_bp.route("/", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "supervisor", "maintenance")
+@role_required("admin", "supervisor", "maintenance", "manager")
 def index():
     visible_stores = get_visible_stores()
     visible_store_numbers = get_visible_store_numbers()
+    role = get_current_role()
 
     if request.method == "POST":
         action = request.form.get("action", "").strip()
@@ -127,6 +132,10 @@ def index():
                 flash("Invalid status.", "error")
                 return redirect(url_for("maintenance.index"))
 
+            if role == "manager" and store_number != session.get("user_store"):
+                flash("Managers can only manage tickets for their own store.", "error")
+                return redirect(url_for("maintenance.index"))
+
             ticket.store_number = store_number
             ticket.title = title
             ticket.details = details
@@ -137,6 +146,10 @@ def index():
             return redirect(url_for("maintenance.index"))
 
         if action == "delete":
+            if role == "manager":
+                flash("Managers cannot delete maintenance tasks.", "error")
+                return redirect(url_for("maintenance.index"))
+
             ticket_id = request.form.get("ticket_id", "").strip()
             ticket = MaintenanceTicket.query.get(ticket_id)
 
@@ -176,4 +189,5 @@ def index():
         stores=visible_stores,
         status_filter=status_filter,
         store_filter=store_filter,
+        user_role=role,
     )

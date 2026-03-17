@@ -90,19 +90,40 @@ def update_checklist_progress(daily: DailyChecklist):
         completed_section_one = sum(1 for item in section_one_items if item.is_completed)
         completion_score = (completed_section_one / len(section_one_items)) * 100
 
-        # 40% = timing credibility score
+        # Total expected time for required opening items
         expected_minutes = sum(item.expected_minutes or 0 for item in section_one_items)
-        completed_times = [item.completed_at for item in section_one_items if item.completed_at]
 
+        # Completion timestamps for required opening items
+        completed_times = sorted(
+            [item.completed_at for item in section_one_items if item.completed_at]
+        )
+
+        # Default timing score
         timing_score = 100.0
 
-        # Only judge timing if we actually have enough completed items and a real expected time
-        if len(completed_times) >= 2 and expected_minutes > 0:
-            first_completed = min(completed_times)
-            last_completed = max(completed_times)
-            elapsed_minutes = (last_completed - first_completed).total_seconds() / 60
+        # Burst detection:
+        # If 4 or more required opening items are completed within 60 seconds,
+        # force timing score to 0.
+        burst_threshold = 4
+        burst_window_seconds = 60
 
-            ratio = elapsed_minutes / expected_minutes if expected_minutes > 0 else 1.0
+        burst_detected = False
+        if len(completed_times) >= burst_threshold:
+            for i in range(len(completed_times) - burst_threshold + 1):
+                start = completed_times[i]
+                end = completed_times[i + burst_threshold - 1]
+                if (end - start).total_seconds() <= burst_window_seconds:
+                    burst_detected = True
+                    break
+
+        if burst_detected:
+            timing_score = 0.0
+        elif len(completed_times) >= 2 and expected_minutes > 0:
+            first_completed = completed_times[0]
+            last_completed = completed_times[-1]
+
+            elapsed_minutes = (last_completed - first_completed).total_seconds() / 60
+            ratio = elapsed_minutes / expected_minutes
 
             if ratio >= 0.70:
                 timing_score = 100.0

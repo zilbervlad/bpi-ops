@@ -121,64 +121,152 @@
 
 {% if is_ops_view %}
 <div class="content-grid" style="margin-bottom: 24px;">
-    <section class="panel premium-panel">
+    <section class="panel premium-panel heatmap-panel">
         <div class="panel-head">
-            <h3>3 O'Clock Restock Progress</h3>
-            <span class="summary-pill">{{ restock_progress|length }} stores</span>
+            <div>
+                <h3>3 O'Clock Restock</h3>
+                <div class="area-subtitle">Tap any store to open its checklist</div>
+            </div>
+            <div class="heatmap-legend">
+                <span class="legend-chip legend-green">Complete</span>
+                <span class="legend-chip legend-yellow">In Progress</span>
+                <span class="legend-chip legend-gray">Not Started</span>
+            </div>
         </div>
 
-        <div id="restock-progress-list" style="display:flex; flex-direction:column; gap:12px;">
-            {% for item in restock_progress %}
+        {% set restock_map = namespace(not_started=[], progress=[], complete=[]) %}
+        {% for item in restock_progress %}
+            {% if item.percent >= 100 %}
+                {% set _ = restock_map.complete.append(item) %}
+            {% elif item.percent > 0 %}
+                {% set _ = restock_map.progress.append(item) %}
+            {% else %}
+                {% set _ = restock_map.not_started.append(item) %}
+            {% endif %}
+        {% endfor %}
+
+        <div id="restock-progress-list" class="heatmap-grid">
+            {% for item in restock_map.progress %}
             <a
                 href="{{ url_for('checklist.index', store=item.store_number) }}"
-                style="text-decoration:none; color:inherit;"
+                class="heatmap-link"
+                aria-label="Open checklist for store {{ item.store_number }}"
             >
-                <div class="admin-task-card" style="cursor:pointer;">
-                    <div class="admin-task-top">
-                        <span class="summary-pill">Store {{ item.store_number }}</span>
-                        <span class="table-badge {% if item.percent >= 100 %}badge-success{% elif item.percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                            {{ item.percent }}%
-                        </span>
-                    </div>
-                    <div class="area-subtitle" style="margin-bottom:10px;">{{ item.store_name }} | {{ item.area_name }}</div>
-                    <div style="width:100%; height:12px; background:#e5e7eb; border-radius:999px; overflow:hidden;">
-                        <div style="height:100%; width:{{ item.percent }}%; background:{% if item.percent >= 100 %}#22c55e{% elif item.percent > 0 %}#f59e0b{% else %}#cbd5e1{% endif %}; border-radius:999px;"></div>
+                <div class="heatmap-tile tile-yellow">
+                    <div class="heatmap-store">{{ item.store_number }}</div>
+                    <div class="heatmap-area">{{ item.area_name }}</div>
+                    <div class="heatmap-metrics">
+                        <span>Restock {{ item.percent }}%</span>
                     </div>
                 </div>
             </a>
-            {% else %}
-            <div class="admin-task-card">No restock progress data available.</div>
+            {% endfor %}
+
+            {% for item in restock_map.not_started %}
+            <a
+                href="{{ url_for('checklist.index', store=item.store_number) }}"
+                class="heatmap-link"
+                aria-label="Open checklist for store {{ item.store_number }}"
+            >
+                <div class="heatmap-tile tile-gray">
+                    <div class="heatmap-store">{{ item.store_number }}</div>
+                    <div class="heatmap-area">{{ item.area_name }}</div>
+                    <div class="heatmap-metrics">
+                        <span>Restock {{ item.percent }}%</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+
+            {% for item in restock_map.complete %}
+            <a
+                href="{{ url_for('checklist.index', store=item.store_number) }}"
+                class="heatmap-link"
+                aria-label="Open checklist for store {{ item.store_number }}"
+            >
+                <div class="heatmap-tile tile-green">
+                    <div class="heatmap-store">{{ item.store_number }}</div>
+                    <div class="heatmap-area">{{ item.area_name }}</div>
+                    <div class="heatmap-metrics">
+                        <span>Restock {{ item.percent }}%</span>
+                    </div>
+                </div>
+            </a>
             {% endfor %}
         </div>
     </section>
 
-    <section class="panel premium-panel">
+    <section class="panel premium-panel heatmap-panel">
         <div class="panel-head">
-            <h3>Manager's Walk Progress</h3>
-            <span class="summary-pill">{{ manager_walk_progress|length }} stores</span>
+            <div>
+                <h3>Manager's Walk</h3>
+                <div class="area-subtitle">Tap any store to open its checklist</div>
+            </div>
+            <div class="heatmap-legend">
+                <span class="legend-chip legend-green">Complete</span>
+                <span class="legend-chip legend-yellow">In Progress</span>
+                <span class="legend-chip legend-gray">Not Started</span>
+            </div>
         </div>
 
-        <div id="manager-walk-progress-list" style="display:flex; flex-direction:column; gap:12px;">
-            {% for item in manager_walk_progress %}
+        {% set walk_map = namespace(not_started=[], progress=[], complete=[]) %}
+        {% for item in manager_walk_progress %}
+            {% if item.percent >= 100 %}
+                {% set _ = walk_map.complete.append(item) %}
+            {% elif item.percent > 0 %}
+                {% set _ = walk_map.progress.append(item) %}
+            {% else %}
+                {% set _ = walk_map.not_started.append(item) %}
+            {% endif %}
+        {% endfor %}
+
+        <div id="manager-walk-progress-list" class="heatmap-grid">
+            {% for item in walk_map.progress %}
             <a
                 href="{{ url_for('checklist.index', store=item.store_number) }}"
-                style="text-decoration:none; color:inherit;"
+                class="heatmap-link"
+                aria-label="Open checklist for store {{ item.store_number }}"
             >
-                <div class="admin-task-card" style="cursor:pointer;">
-                    <div class="admin-task-top">
-                        <span class="summary-pill">Store {{ item.store_number }}</span>
-                        <span class="table-badge {% if item.percent >= 100 %}badge-success{% elif item.percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                            {{ item.percent }}%
-                        </span>
-                    </div>
-                    <div class="area-subtitle" style="margin-bottom:10px;">{{ item.store_name }} | {{ item.area_name }}</div>
-                    <div style="width:100%; height:12px; background:#e5e7eb; border-radius:999px; overflow:hidden;">
-                        <div style="height:100%; width:{{ item.percent }}%; background:{% if item.percent >= 100 %}#22c55e{% elif item.percent > 0 %}#f59e0b{% else %}#cbd5e1{% endif %}; border-radius:999px;"></div>
+                <div class="heatmap-tile tile-yellow">
+                    <div class="heatmap-store">{{ item.store_number }}</div>
+                    <div class="heatmap-area">{{ item.area_name }}</div>
+                    <div class="heatmap-metrics">
+                        <span>Walk {{ item.percent }}%</span>
                     </div>
                 </div>
             </a>
-            {% else %}
-            <div class="admin-task-card">No manager walk progress data available.</div>
+            {% endfor %}
+
+            {% for item in walk_map.not_started %}
+            <a
+                href="{{ url_for('checklist.index', store=item.store_number) }}"
+                class="heatmap-link"
+                aria-label="Open checklist for store {{ item.store_number }}"
+            >
+                <div class="heatmap-tile tile-gray">
+                    <div class="heatmap-store">{{ item.store_number }}</div>
+                    <div class="heatmap-area">{{ item.area_name }}</div>
+                    <div class="heatmap-metrics">
+                        <span>Walk {{ item.percent }}%</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+
+            {% for item in walk_map.complete %}
+            <a
+                href="{{ url_for('checklist.index', store=item.store_number) }}"
+                class="heatmap-link"
+                aria-label="Open checklist for store {{ item.store_number }}"
+            >
+                <div class="heatmap-tile tile-green">
+                    <div class="heatmap-store">{{ item.store_number }}</div>
+                    <div class="heatmap-area">{{ item.area_name }}</div>
+                    <div class="heatmap-metrics">
+                        <span>Walk {{ item.percent }}%</span>
+                    </div>
+                </div>
+            </a>
             {% endfor %}
         </div>
     </section>
@@ -536,18 +624,11 @@ document.addEventListener("DOMContentLoaded", function () {
         chip.textContent = text;
     }
 
-    function progressBadgeClass(value) {
+    function tileClass(value) {
         const num = Number(value);
-        if (num >= 100) return "table-badge badge-success";
-        if (num > 0) return "table-badge badge-warning";
-        return "table-badge badge-neutral";
-    }
-
-    function progressBarColor(value) {
-        const num = Number(value);
-        if (num >= 100) return "#22c55e";
-        if (num > 0) return "#f59e0b";
-        return "#cbd5e1";
+        if (num >= 100) return "tile-green";
+        if (num > 0) return "tile-yellow";
+        return "tile-gray";
     }
 
     function bindWeeklyFocusCheckboxes() {
@@ -575,7 +656,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function renderProgressCards(containerId, items) {
+    function renderHeatmapTiles(containerId, items, labelPrefix) {
         const el = document.getElementById(containerId);
         if (!el) return;
 
@@ -584,16 +665,26 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        el.innerHTML = items.map(item => `
-            <a href="/checklist/?store=${encodeURIComponent(item.store_number)}" style="text-decoration:none; color:inherit;">
-                <div class="admin-task-card" style="cursor:pointer;">
-                    <div class="admin-task-top">
-                        <span class="summary-pill">Store ${item.store_number}</span>
-                        <span class="${progressBadgeClass(item.percent)}">${item.percent}%</span>
-                    </div>
-                    <div class="area-subtitle" style="margin-bottom:10px;">${item.store_name} | ${item.area_name}</div>
-                    <div style="width:100%; height:12px; background:#e5e7eb; border-radius:999px; overflow:hidden;">
-                        <div style="height:100%; width:${item.percent}%; background:${progressBarColor(item.percent)}; border-radius:999px;"></div>
+        const progress = [];
+        const notStarted = [];
+        const complete = [];
+
+        items.forEach(item => {
+            const num = Number(item.percent);
+            if (num >= 100) complete.push(item);
+            else if (num > 0) progress.push(item);
+            else notStarted.push(item);
+        });
+
+        const ordered = [...progress, ...notStarted, ...complete];
+
+        el.innerHTML = ordered.map(item => `
+            <a href="/checklist/?store=${encodeURIComponent(item.store_number)}" class="heatmap-link" aria-label="Open checklist for store ${item.store_number}">
+                <div class="heatmap-tile ${tileClass(item.percent)}">
+                    <div class="heatmap-store">${item.store_number}</div>
+                    <div class="heatmap-area">${item.area_name}</div>
+                    <div class="heatmap-metrics">
+                        <span>${labelPrefix} ${item.percent}%</span>
                     </div>
                 </div>
             </a>
@@ -656,8 +747,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     "success-pill"
                 );
 
-                renderProgressCards("restock-progress-list", data.restock_progress || []);
-                renderProgressCards("manager-walk-progress-list", data.manager_walk_progress || []);
+                renderHeatmapTiles("restock-progress-list", data.restock_progress || [], "Restock");
+                renderHeatmapTiles("manager-walk-progress-list", data.manager_walk_progress || [], "Walk");
             }
 
             const now = new Date();

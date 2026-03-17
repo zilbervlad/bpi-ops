@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import date, timedelta, datetime
+from datetime import timedelta, datetime
 from zoneinfo import ZoneInfo
 
 from flask import Blueprint, render_template, session, jsonify, request, redirect, url_for, flash
@@ -25,6 +25,13 @@ def now_et():
 
 def today_et():
     return now_et().date()
+
+
+def business_date_et():
+    now = now_et()
+    if now.hour < 5:
+        return (now - timedelta(days=1)).date()
+    return now.date()
 
 
 def get_visible_stores():
@@ -85,7 +92,7 @@ def build_dashboard_data():
 
     area_groups = defaultdict(list)
 
-    today = today_et()
+    today = business_date_et()
 
     for store in stores:
         daily = DailyChecklist.query.filter_by(
@@ -222,7 +229,6 @@ def build_dashboard_data():
             ).all()
         }
 
-        yesterday_exceptions = []
         for row in exception_rows:
             yesterday_daily = yesterday_daily_map.get(row.store_number)
             manager_walk_percent = calculate_section_percent(yesterday_daily, "Manager's Walk")

@@ -382,7 +382,6 @@
                     <button
                         type="button"
                         class="action-store-toggle"
-                        data-store-toggle="{{ store_number }}"
                         aria-expanded="false"
                     >
                         <div class="action-store-head">
@@ -401,7 +400,7 @@
                         </div>
                     </button>
 
-                    <div class="action-store-body" data-store-body="{{ store_number }}">
+                    <div class="action-store-body">
                         {% if groups.open_cleaning %}
                         <div class="action-tile-section">
                             <div class="action-tile-section-title">Cleaning</div>
@@ -506,10 +505,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    document.querySelectorAll("[data-store-toggle]").forEach(toggle => {
+    document.querySelectorAll(".action-store-toggle").forEach(toggle => {
         toggle.addEventListener("click", function () {
-            const storeNumber = this.dataset.storeToggle;
-            const body = document.querySelector(`[data-store-body="${storeNumber}"]`);
+            const tile = this.closest(".action-store-tile");
+            if (!tile) return;
+
+            const body = tile.querySelector(".action-store-body");
             const chevron = this.querySelector(".action-chevron");
 
             if (!body || !chevron) return;

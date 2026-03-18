@@ -452,94 +452,104 @@
 <div id="areas-wrapper">
     {% for area_name, stores in area_groups.items() %}
     <div class="panel premium-panel area-panel" style="margin-bottom: 24px;">
-        <div class="area-header area-header-premium">
-            <div>
-                <div class="command-eyebrow">AREA PERFORMANCE</div>
-                <h3>{{ area_name }}</h3>
-                <div class="area-subtitle">
-                    Avg Opening:
-                    <span class="inline-metric">{{ area_summaries[area_name].avg_opening }}%</span>
-                    |
-                    Avg Completion:
-                    <span class="inline-metric">{{ area_summaries[area_name].avg_completion }}%</span>
-                    |
-                    Avg Integrity:
-                    <span class="inline-metric {% if area_summaries[area_name].avg_integrity > 0 and area_summaries[area_name].avg_integrity < 80 %}danger-text{% elif area_summaries[area_name].avg_integrity >= 90 %}success-text{% endif %}">
-                        {{ area_summaries[area_name].avg_integrity }}%
-                    </span>
+        <button
+            type="button"
+            class="area-toggle-btn"
+            style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0;"
+            aria-expanded="false"
+        >
+            <div class="area-header area-header-premium" style="pointer-events: none;">
+                <div>
+                    <div class="command-eyebrow">AREA PERFORMANCE</div>
+                    <h3>{{ area_name }}</h3>
+                    <div class="area-subtitle">
+                        Avg Opening:
+                        <span class="inline-metric">{{ area_summaries[area_name].avg_opening }}%</span>
+                        |
+                        Avg Completion:
+                        <span class="inline-metric">{{ area_summaries[area_name].avg_completion }}%</span>
+                        |
+                        Avg Integrity:
+                        <span class="inline-metric {% if area_summaries[area_name].avg_integrity > 0 and area_summaries[area_name].avg_integrity < 80 %}danger-text{% elif area_summaries[area_name].avg_integrity >= 90 %}success-text{% endif %}">
+                            {{ area_summaries[area_name].avg_integrity }}%
+                        </span>
+                    </div>
+                </div>
+
+                <div class="area-header-right" style="display: flex; align-items: center; gap: 12px;">
+                    <span class="summary-pill">{{ area_summaries[area_name].store_count }} stores</span>
+                    <span class="summary-pill area-toggle-chevron">Show ▼</span>
                 </div>
             </div>
+        </button>
 
-            <div class="area-header-right">
-                <span class="summary-pill">{{ area_summaries[area_name].store_count }} stores</span>
+        <div class="area-table-body" style="display: none; margin-top: 16px;">
+            <div class="table-wrap premium-table-wrap">
+                <table class="data-table premium-table">
+                    <thead>
+                        <tr>
+                            <th>Store</th>
+                            <th>Opening</th>
+                            <th>Restock</th>
+                            <th>Walk</th>
+                            <th>Checklist</th>
+                            <th>Integrity</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for store in stores %}
+                        <tr class="clickable-row" onclick="window.location='{{ url_for('checklist.index', store=store.store_number) }}'">
+                            <td>
+                                <div class="store-cell">
+                                    <div class="store-main">{{ store.store_number }}</div>
+                                    <div class="store-sub">{{ store.store_name or ('Store ' ~ store.store_number) }}</div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="table-badge {% if store.opening_percent >= 100 %}badge-success{% elif store.opening_percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                                    {{ store.opening_percent }}%
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="table-badge {% if store.restock_percent >= 100 %}badge-success{% elif store.restock_percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                                    {{ store.restock_percent }}%
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="table-badge {% if store.manager_walk_percent >= 100 %}badge-success{% elif store.manager_walk_percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                                    {{ store.manager_walk_percent }}%
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="table-badge {% if store.checklist_percent >= 100 %}badge-success{% elif store.checklist_percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                                    {{ store.checklist_percent }}%
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="table-badge {% if store.integrity_score > 0 and store.integrity_score < 80 %}badge-danger{% elif store.integrity_score >= 90 %}badge-success{% elif store.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                                    {{ store.integrity_score }}%
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="status-badge
+                                    {% if store.status == 'completed' %}status-completed
+                                    {% elif store.status == 'in_progress' %}status-progress
+                                    {% else %}status-not-started{% endif %}">
+                                    {{ store.status.replace('_', ' ')|title }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-        </div>
-
-        <div class="table-wrap premium-table-wrap">
-            <table class="data-table premium-table">
-                <thead>
-                    <tr>
-                        <th>Store</th>
-                        <th>Opening</th>
-                        <th>Restock</th>
-                        <th>Walk</th>
-                        <th>Checklist</th>
-                        <th>Integrity</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for store in stores %}
-                    <tr class="clickable-row" onclick="window.location='{{ url_for('checklist.index', store=store.store_number) }}'">
-                        <td>
-                            <div class="store-cell">
-                                <div class="store-main">{{ store.store_number }}</div>
-                                <div class="store-sub">{{ store.store_name or ('Store ' ~ store.store_number) }}</div>
-                            </div>
-                        </td>
-
-                        <td>
-                            <span class="table-badge {% if store.opening_percent >= 100 %}badge-success{% elif store.opening_percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                                {{ store.opening_percent }}%
-                            </span>
-                        </td>
-
-                        <td>
-                            <span class="table-badge {% if store.restock_percent >= 100 %}badge-success{% elif store.restock_percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                                {{ store.restock_percent }}%
-                            </span>
-                        </td>
-
-                        <td>
-                            <span class="table-badge {% if store.manager_walk_percent >= 100 %}badge-success{% elif store.manager_walk_percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                                {{ store.manager_walk_percent }}%
-                            </span>
-                        </td>
-
-                        <td>
-                            <span class="table-badge {% if store.checklist_percent >= 100 %}badge-success{% elif store.checklist_percent > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                                {{ store.checklist_percent }}%
-                            </span>
-                        </td>
-
-                        <td>
-                            <span class="table-badge {% if store.integrity_score > 0 and store.integrity_score < 80 %}badge-danger{% elif store.integrity_score >= 90 %}badge-success{% elif store.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                                {{ store.integrity_score }}%
-                            </span>
-                        </td>
-
-                        <td>
-                            <span class="status-badge
-                                {% if store.status == 'completed' %}status-completed
-                                {% elif store.status == 'in_progress' %}status-progress
-                                {% else %}status-not-started{% endif %}">
-                                {{ store.status.replace('_', ' ')|title }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
     {% endfor %}
@@ -612,6 +622,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 } catch (error) {
                     console.error("Weekly focus completion failed:", error);
                 }
+            });
+        });
+    }
+
+    function bindAreaToggles() {
+        document.querySelectorAll(".area-panel").forEach(panel => {
+            const toggleBtn = panel.querySelector(".area-toggle-btn");
+            const body = panel.querySelector(".area-table-body");
+            const chevron = panel.querySelector(".area-toggle-chevron");
+
+            if (!toggleBtn || !body || !chevron) return;
+
+            toggleBtn.addEventListener("click", function () {
+                const isHidden = body.style.display === "none";
+                body.style.display = isHidden ? "block" : "none";
+                toggleBtn.setAttribute("aria-expanded", isHidden ? "true" : "false");
+                chevron.textContent = isHidden ? "Hide ▲" : "Show ▼";
             });
         });
     }
@@ -743,6 +770,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     bindWeeklyFocusCheckboxes();
+    bindAreaToggles();
 
     const shiftExecutionToggle = document.getElementById("shift-execution-toggle");
     const shiftExecutionBody = document.getElementById("shift-execution-body");

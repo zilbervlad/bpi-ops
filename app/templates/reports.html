@@ -9,7 +9,7 @@
         <div class="command-eyebrow">REPORTING</div>
         <h2 class="command-title">Checklist Performance Reports</h2>
         <p class="command-subtitle">
-            Filter by store, area, and date range to review execution trends.
+            Search fast, open advanced filters only when needed, and turn on deeper analysis only when you want it.
         </p>
     </div>
     <div class="command-bar-right">
@@ -20,48 +20,97 @@
 </div>
 
 <div class="panel premium-panel" style="margin-bottom: 24px;">
-    <div class="panel-head">
-        <h3>Filters</h3>
+    <div class="panel-head" style="align-items: flex-start; gap: 12px;">
+        <div>
+            <h3>Search & Filters</h3>
+            <div class="area-subtitle">Global search first. Advanced filters stay out of the way until you need them.</div>
+        </div>
         <span class="summary-pill">Refine View</span>
     </div>
 
     <form method="GET" class="login-form">
-        <div class="admin-task-grid">
-            <div class="form-group">
-                <label for="store_number">Store</label>
-                <select id="store_number" name="store_number">
-                    <option value="">All Stores</option>
-                    {% for store in stores %}
-                    <option value="{{ store.store_number }}" {% if selected_store == store.store_number %}selected{% endif %}>
-                        {{ store.store_number }} - {{ store.store_name or ('Store ' ~ store.store_number) }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="area_name">Area</label>
-                <select id="area_name" name="area_name">
-                    <option value="">All Areas</option>
-                    {% for area in area_options %}
-                    <option value="{{ area }}" {% if selected_area == area %}selected{% endif %}>
-                        {{ area }}
-                    </option>
-                    {% endfor %}
-                </select>
+        <div class="admin-task-grid" style="margin-bottom: 16px;">
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="q">Global Search</label>
+                <input
+                    type="text"
+                    id="q"
+                    name="q"
+                    value="{{ q }}"
+                    placeholder="Search by store, area, or manager..."
+                >
             </div>
         </div>
 
-        <div class="admin-task-grid">
-            <div class="form-group">
-                <label for="start_date">Start Date</label>
-                <input type="date" id="start_date" name="start_date" value="{{ start_date }}" required>
-            </div>
+        <div class="admin-check-row" style="margin-bottom: 16px; gap: 12px; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                <input
+                    type="checkbox"
+                    name="show_task_analysis"
+                    value="1"
+                    {% if show_task_analysis %}checked{% endif %}
+                >
+                Include Task Analysis
+            </label>
 
-            <div class="form-group">
-                <label for="end_date">End Date</label>
-                <input type="date" id="end_date" name="end_date" value="{{ end_date }}" required>
-            </div>
+            <details {% if selected_store or selected_area or manager_name %}open{% endif %} style="width: 100%;">
+                <summary style="cursor: pointer; font-weight: 700; margin-bottom: 14px;">
+                    Advanced Filters
+                </summary>
+
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label for="store_number">Store</label>
+                        <select id="store_number" name="store_number">
+                            <option value="">All Stores</option>
+                            {% for store in stores %}
+                            <option value="{{ store.store_number }}" {% if selected_store == store.store_number %}selected{% endif %}>
+                                {{ store.store_number }} - {{ store.store_name or ('Store ' ~ store.store_number) }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="area_name">Area</label>
+                        <select id="area_name" name="area_name">
+                            <option value="">All Areas</option>
+                            {% for area in area_options %}
+                            <option value="{{ area }}" {% if selected_area == area %}selected{% endif %}>
+                                {{ area }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label for="manager_name">Manager</label>
+                        <input
+                            type="text"
+                            id="manager_name"
+                            name="manager_name"
+                            value="{{ manager_name }}"
+                            placeholder="Filter by manager name..."
+                        >
+                    </div>
+
+                    <div></div>
+                </div>
+
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label for="start_date">Start Date</label>
+                        <input type="date" id="start_date" name="start_date" value="{{ start_date }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="end_date">End Date</label>
+                        <input type="date" id="end_date" name="end_date" value="{{ end_date }}" required>
+                    </div>
+                </div>
+            </details>
         </div>
 
         <div class="admin-check-row">
@@ -97,6 +146,79 @@
     </div>
 </div>
 
+{% if show_task_analysis and task_analysis %}
+<div class="dashboard-grid dashboard-grid-premium" style="margin-bottom: 24px;">
+    <div class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Top Ranked Stores</h3>
+            <span class="summary-pill">Task Analysis</span>
+        </div>
+        <div class="stack-list">
+            {% for row in task_analysis.top_ranked_stores %}
+            <div class="premium-list-row">
+                <div>
+                    <strong>{{ row.store_number }}</strong> — {{ row.store_name }}
+                    <div class="area-subtitle">{{ row.area_name }}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div><strong>{{ row.avg_completion }}%</strong> completion</div>
+                    <div class="area-subtitle">{{ row.avg_integrity }}% integrity</div>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">No ranked store data available.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Lowest Integrity Stores</h3>
+            <span class="summary-pill">Watch List</span>
+        </div>
+        <div class="stack-list">
+            {% for row in task_analysis.lowest_integrity_stores %}
+            <div class="premium-list-row">
+                <div>
+                    <strong>{{ row.store_number }}</strong> — {{ row.store_name }}
+                    <div class="area-subtitle">{{ row.area_name }}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div><strong>{{ row.avg_integrity }}%</strong> integrity</div>
+                    <div class="area-subtitle">{{ row.avg_completion }}% completion</div>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">No integrity data available.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Biggest Completion Gaps</h3>
+            <span class="summary-pill">Attention Needed</span>
+        </div>
+        <div class="stack-list">
+            {% for row in task_analysis.biggest_completion_gaps %}
+            <div class="premium-list-row">
+                <div>
+                    <strong>{{ row.store_number }}</strong> — {{ row.store_name }}
+                    <div class="area-subtitle">{{ row.area_name }}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div><strong>{{ row.not_started_count }}</strong> not started</div>
+                    <div class="area-subtitle">{{ row.in_progress_count }} in progress</div>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">No completion gaps found.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="panel premium-panel" style="margin-bottom: 24px;">
     <div class="panel-head">
         <h3>Store Performance</h3>
@@ -109,6 +231,7 @@
                 <tr>
                     <th>Store</th>
                     <th>Area</th>
+                    <th>Managers</th>
                     <th>Avg Completion</th>
                     <th>Avg Integrity</th>
                     <th>Completed</th>
@@ -128,6 +251,13 @@
                     </td>
                     <td>{{ row.area_name }}</td>
                     <td>
+                        {% if row.manager_names %}
+                            {{ row.manager_names | join(', ') }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
                         <span class="table-badge {% if row.avg_completion >= 90 %}badge-success{% elif row.avg_completion >= 70 %}badge-warning{% else %}badge-danger{% endif %}">
                             {{ row.avg_completion }}%
                         </span>
@@ -144,7 +274,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="8">No checklist data found for the selected filters.</td>
+                    <td colspan="9">No checklist data found for the selected filters.</td>
                 </tr>
                 {% endfor %}
             </tbody>

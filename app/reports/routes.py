@@ -47,10 +47,13 @@ def index():
     default_start = today - timedelta(days=6)
     default_end = today
 
+    q = request.args.get("q", "").strip()
     start_date_str = request.args.get("start_date", default_start.strftime("%Y-%m-%d")).strip()
     end_date_str = request.args.get("end_date", default_end.strftime("%Y-%m-%d")).strip()
     selected_store = request.args.get("store_number", "").strip()
     selected_area = request.args.get("area_name", "").strip()
+    manager_name = request.args.get("manager_name", "").strip()
+    show_task_analysis = request.args.get("show_task_analysis", "").strip() == "1"
 
     try:
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
@@ -74,10 +77,27 @@ def index():
     filtered_stores = visible_stores
 
     if selected_store:
-        filtered_stores = [store for store in filtered_stores if store.store_number == selected_store]
+        filtered_stores = [
+            store for store in filtered_stores
+            if store.store_number == selected_store
+        ]
 
     if selected_area:
-        filtered_stores = [store for store in filtered_stores if store.area_name == selected_area]
+        filtered_stores = [
+            store for store in filtered_stores
+            if store.area_name == selected_area
+        ]
+
+    if q:
+        q_lower = q.lower()
+        filtered_stores = [
+            store for store in filtered_stores
+            if (
+                q_lower in (store.store_number or "").lower()
+                or q_lower in (store.store_name or "").lower()
+                or q_lower in (store.area_name or "").lower()
+            )
+        ]
 
     filtered_store_numbers = {store.store_number for store in filtered_stores}
 
@@ -91,6 +111,45 @@ def index():
             DailyChecklist.checklist_date.desc(),
             DailyChecklist.store_number.asc()
         ).all()
+
+    if manager_name:
+        manager_lower = manager_name.lower()
+        checklist_rows = [
+            row for row in checklist_rows
+            if (
+                manager_lower in (row.manager_on_duty or "").lower()
+                or manager_lower in (row.opening_manager or "").lower()
+                or manager_lower in (row.closing_manager or "").lower()
+            )
+        ]
+
+    if q:
+        q_lower = q.lower()
+        checklist_rows = [
+            row for row in checklist_rows
+            if (
+                q_lower in (row.store_number or "").lower()
+                or q_lower in (row.manager_on_duty or "").lower()
+                or q_lower in (row.opening_manager or "").lower()
+                or q_lower in (row.closing_manager or "").lower()
+            )
+        ]
+
+    checklist_store_numbers = {row.store_number for row in checklist_rows}
+
+    if selected_store or selected_area or q or manager_name:
+        filtered_stores = [
+            store for store in filtered_stores
+            if store.store_number in checklist_store_numbers
+            or (
+                q
+                and (
+                    q.lower() in (store.store_number or "").lower()
+                    or q.lower() in (store.store_name or "").lower()
+                    or q.lower() in (store.area_name or "").lower()
+                )
+            )
+        ]
 
     days_in_range = (end_date - start_date).days + 1
 
@@ -140,6 +199,13 @@ def index():
         in_progress_count = sum(1 for row in store_rows if row.status == "in_progress")
         not_started_count = max(days_in_range - checklist_count, 0)
 
+        manager_names = sorted({
+            name.strip()
+            for row in store_rows
+            for name in [row.manager_on_duty, row.opening_manager, row.closing_manager]
+            if name and name.strip()
+        })
+
         store_report_rows.append({
             "store_number": store.store_number,
             "store_name": store.store_name or f"Store {store.store_number}",
@@ -150,6 +216,7 @@ def index():
             "in_progress_count": in_progress_count,
             "not_started_count": not_started_count,
             "checklist_count": checklist_count,
+            "manager_names": manager_names,
         })
 
     store_report_rows = sorted(
@@ -191,15 +258,64 @@ def index():
             "checklist_count": rollup["checklist_count"],
         })
 
+    task_analysis = None
+    if show_task_analysis:
+        ranked_stores = sorted(
+            [
+                row for row in store_report_rows
+                if row["checklist_count"] > 0
+            ],
+            key=lambda x: (
+                -x["avg_completion"],
+                -x["avg_integrity"],
+                -x["completed_count"],
+                x["store_number"],
+            )
+        )
+
+        lowest_integrity = sorted(
+            [
+                row for row in store_report_rows
+                if row["checklist_count"] > 0
+            ],
+            key=lambda x: (
+                x["avg_integrity"],
+                x["avg_completion"],
+                x["store_number"],
+            )
+        )
+
+        completion_gaps = sorted(
+            [
+                row for row in store_report_rows
+                if row["not_started_count"] > 0 or row["in_progress_count"] > 0
+            ],
+            key=lambda x: (
+                -x["not_started_count"],
+                -x["in_progress_count"],
+                x["store_number"],
+            )
+        )
+
+        task_analysis = {
+            "top_ranked_stores": ranked_stores[:5],
+            "lowest_integrity_stores": lowest_integrity[:5],
+            "biggest_completion_gaps": completion_gaps[:5],
+        }
+
     return render_template(
         "reports.html",
         stores=visible_stores,
         area_options=area_options,
         selected_store=selected_store,
         selected_area=selected_area,
+        manager_name=manager_name,
+        q=q,
         start_date=start_date_str,
         end_date=end_date_str,
+        show_task_analysis=show_task_analysis,
         summary=summary,
         store_report_rows=store_report_rows,
         area_report_rows=area_report_rows,
+        task_analysis=task_analysis,
     )

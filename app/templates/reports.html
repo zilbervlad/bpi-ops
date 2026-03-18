@@ -111,8 +111,25 @@
             </details>
         </div>
 
-        <div class="admin-check-row">
+        <div class="admin-check-row" style="gap: 10px; flex-wrap: wrap;">
             <button type="submit" class="btn-primary">Run Report</button>
+
+            <a
+                href="{{ url_for('reports.export_excel',
+                    q=q,
+                    store_number=selected_store,
+                    area_name=selected_area,
+                    manager_name=manager_name,
+                    start_date=start_date,
+                    end_date=end_date,
+                    show_task_analysis='1' if show_task_analysis else ''
+                ) }}"
+                class="action-btn"
+                style="max-width: 180px;"
+            >
+                Export to Excel
+            </a>
+
             <a href="{{ url_for('reports.index') }}" class="action-btn" style="max-width: 180px;">Reset Filters</a>
         </div>
     </form>

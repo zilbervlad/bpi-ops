@@ -9,6 +9,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: 16px;
+        align-items: start;
     }
 
     .action-store-tile {
@@ -17,11 +18,12 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(255, 255, 255, 0.025);
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
-        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        transition: border-color 0.18s ease, background 0.18s ease;
+        align-self: start;
+        height: auto;
     }
 
     .action-store-tile:hover {
-        transform: translateY(-2px);
         border-color: rgba(255, 255, 255, 0.14);
         background: rgba(255, 255, 255, 0.04);
     }
@@ -194,24 +196,7 @@
         flex-wrap: wrap;
     }
 
-    .action-board-filters {
-        display: grid;
-        grid-template-columns: 1.2fr 180px 180px 180px 180px;
-        gap: 12px;
-        align-items: end;
-    }
-
-    @media (max-width: 1180px) {
-        .action-board-filters {
-            grid-template-columns: 1fr 1fr;
-        }
-    }
-
     @media (max-width: 760px) {
-        .action-board-filters {
-            grid-template-columns: 1fr;
-        }
-
         .action-store-head {
             flex-direction: column;
         }
@@ -229,108 +214,17 @@
 <div class="panel premium-panel" style="margin-bottom: 24px;">
     <div class="panel-head">
         <h3>Supervisor / Admin Action Board</h3>
-        <span class="summary-pill">SVR Weekly Focus Tracking</span>
+        <div class="action-board-toolbar">
+            <button type="button" class="summary-pill" id="select-all-completed-btn">Select Completed</button>
+        </div>
     </div>
-    <p class="subtitle" style="margin: 0;">
+    <p class="subtitle" style="margin: 0 0 18px 0;">
         Open items stay front and center. Completed items remain visible in a dimmed state until leadership clears them.
     </p>
-</div>
 
-<div class="dashboard-grid dashboard-grid-premium" style="margin-bottom: 24px;">
-    <div class="metric-card premium-card premium-card-blue">
-        <span class="metric-label">Visible Items</span>
-        <h3>{{ items|length }}</h3>
-        <p class="metric-footnote">Filtered board total</p>
-    </div>
-
-    <div class="metric-card premium-card premium-card-alert">
-        <span class="metric-label">Open</span>
-        <h3>{{ open_count }}</h3>
-        <p class="metric-footnote">Still pending with the GM</p>
-    </div>
-
-    <div class="metric-card premium-card">
-        <span class="metric-label">Completed</span>
-        <h3>{{ completed_count }}</h3>
-        <p class="metric-footnote">Waiting for leadership clear</p>
-    </div>
-</div>
-
-<div class="panel premium-panel" style="margin-bottom: 24px;">
-    <div class="panel-head">
-        <h3>Filters</h3>
-        <span class="summary-pill">Sortable</span>
-    </div>
-
-    <form method="GET" action="{{ url_for('dashboard.action_board') }}" class="action-board-filters">
-        <div class="form-group" style="margin-bottom:0;">
-            <label for="search">Search</label>
-            <input
-                type="text"
-                id="search"
-                name="search"
-                value="{{ search }}"
-                placeholder="Store, type, task..."
-            >
-        </div>
-
-        <div class="form-group" style="margin-bottom:0;">
-            <label for="status">Status</label>
-            <select id="status" name="status">
-                <option value="" {% if not status_filter %}selected{% endif %}>All</option>
-                <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
-                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom:0;">
-            <label for="item_type">Type</label>
-            <select id="item_type" name="item_type">
-                <option value="" {% if not type_filter %}selected{% endif %}>All</option>
-                <option value="cleaning" {% if type_filter == 'cleaning' %}selected{% endif %}>Cleaning</option>
-                <option value="goal" {% if type_filter == 'goal' %}selected{% endif %}>Goal</option>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom:0;">
-            <label for="store_number">Store</label>
-            <select id="store_number" name="store_number">
-                <option value="" {% if not store_filter %}selected{% endif %}>All Stores</option>
-                {% for store in stores %}
-                <option value="{{ store.store_number }}" {% if store_filter == store.store_number %}selected{% endif %}>
-                    {{ store.store_number }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom:0;">
-            <label for="sort">Sort</label>
-            <select id="sort" name="sort">
-                <option value="status_store" {% if sort_by == 'status_store' %}selected{% endif %}>Open First</option>
-                <option value="store" {% if sort_by == 'store' %}selected{% endif %}>Store</option>
-                <option value="type" {% if sort_by == 'type' %}selected{% endif %}>Type</option>
-                <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest Created</option>
-                <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest Created</option>
-                <option value="completed_recent" {% if sort_by == 'completed_recent' %}selected{% endif %}>Recently Completed</option>
-            </select>
-        </div>
-
-        <div style="grid-column: 1 / -1; display:flex; gap:12px; margin-top: 4px; flex-wrap: wrap;">
-            <button type="submit" class="btn-primary">Apply Filters</button>
-            <a href="{{ url_for('dashboard.action_board') }}" class="summary-pill" style="text-decoration:none;">Clear Filters</a>
-        </div>
-    </form>
-</div>
-
-<form method="POST" action="{{ url_for('dashboard.clear_weekly_focus_items') }}">
-    <div class="panel premium-panel">
-        <div class="panel-head">
-            <h3>Store Action Tiles</h3>
-            <div class="action-board-toolbar">
-                <button type="button" class="summary-pill" id="select-all-completed-btn">Select Completed</button>
-                <button type="submit" class="btn-primary">Clear Selected Completed</button>
-            </div>
+    <form method="POST" action="{{ url_for('dashboard.clear_weekly_focus_items') }}">
+        <div style="margin-bottom: 18px;">
+            <button type="submit" class="btn-primary">Clear Selected Completed</button>
         </div>
 
         {% set board = namespace(grouped={}) %}
@@ -486,10 +380,10 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="action-empty-state">No action items match those filters.</div>
+        <div class="action-empty-state">No action items found.</div>
         {% endif %}
-    </div>
-</form>
+    </form>
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

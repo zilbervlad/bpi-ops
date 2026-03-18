@@ -5,48 +5,160 @@
 
 {% block content %}
 <style>
-    .action-board-row {
-        transition: background 0.18s ease, opacity 0.18s ease;
+    .action-board-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
     }
 
-    .action-board-row:hover {
-        background: rgba(255, 255, 255, 0.03);
+    .action-store-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
     }
 
-    .action-board-row.is-completed {
-        background: rgba(0, 0, 0, 0.22);
+    .action-store-tile {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 18px;
+        background: rgba(255, 255, 255, 0.02);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        height: 100%;
     }
 
-    .action-board-row.is-completed:hover {
-        background: rgba(0, 0, 0, 0.30);
+    .action-store-link:hover .action-store-tile {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.035);
     }
 
-    .action-board-row.is-completed td {
-        opacity: 0.62;
+    .action-store-tile.tile-red {
+        border-left: 4px solid #ef4444;
     }
 
-    .action-board-row.is-completed td:first-child,
-    .action-board-row.is-completed td:nth-child(5),
-    .action-board-row.is-completed td:nth-child(7) {
-        opacity: 1;
+    .action-store-tile.tile-yellow {
+        border-left: 4px solid #f59e0b;
     }
 
-    .action-item-text {
-        font-weight: 600;
-        line-height: 1.35;
+    .action-store-tile.tile-green {
+        border-left: 4px solid #22c55e;
     }
 
-    .action-board-row.is-completed .action-item-text {
-        text-decoration: line-through;
-        text-decoration-thickness: 1px;
+    .action-store-tile.tile-gray {
+        border-left: 4px solid rgba(255, 255, 255, 0.22);
     }
 
-    .action-board-store {
+    .action-store-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .action-store-number {
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .action-store-sub {
+        font-size: 12px;
+        opacity: 0.72;
+        margin-top: 6px;
+    }
+
+    .action-store-counts {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .action-count-pill {
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
         font-weight: 700;
+        background: rgba(255, 255, 255, 0.06);
     }
 
-    .action-board-muted {
-        opacity: 0.7;
+    .action-count-pill.open {
+        background: rgba(245, 158, 11, 0.16);
+        color: #fbbf24;
+    }
+
+    .action-count-pill.completed {
+        background: rgba(34, 197, 94, 0.14);
+        color: #86efac;
+    }
+
+    .action-tile-section {
+        margin-top: 14px;
+    }
+
+    .action-tile-section:first-of-type {
+        margin-top: 0;
+    }
+
+    .action-tile-section-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        opacity: 0.82;
+        margin-bottom: 10px;
+    }
+
+    .action-task-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .action-task-chip {
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        line-height: 1.35;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .action-task-chip.goal {
+        border-left: 3px solid #22c55e;
+    }
+
+    .action-task-chip.cleaning {
+        border-left: 3px solid #f59e0b;
+    }
+
+    .action-task-chip.completed {
+        background: rgba(0, 0, 0, 0.24);
+        opacity: 0.58;
+        text-decoration: line-through;
+    }
+
+    .action-task-meta {
+        display: block;
+        margin-top: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        opacity: 0.65;
+        text-decoration: none;
+    }
+
+    .action-empty-state {
+        border-radius: 14px;
+        padding: 16px;
+        text-align: center;
+        opacity: 0.72;
+        background: rgba(255, 255, 255, 0.03);
     }
 
     .action-board-toolbar {
@@ -56,15 +168,30 @@
         flex-wrap: wrap;
     }
 
-    @media (max-width: 1100px) {
+    .action-board-filters {
+        display: grid;
+        grid-template-columns: 1.2fr 180px 180px 180px 180px;
+        gap: 12px;
+        align-items: end;
+    }
+
+    @media (max-width: 1180px) {
         .action-board-filters {
             grid-template-columns: 1fr 1fr;
         }
     }
 
-    @media (max-width: 720px) {
+    @media (max-width: 760px) {
         .action-board-filters {
             grid-template-columns: 1fr;
+        }
+
+        .action-store-head {
+            flex-direction: column;
+        }
+
+        .action-store-counts {
+            justify-content: flex-start;
         }
     }
 </style>
@@ -75,7 +202,7 @@
         <span class="summary-pill">SVR Weekly Focus Tracking</span>
     </div>
     <p class="subtitle" style="margin: 0;">
-        Completed items stay here until leadership clears them. Managers only see open items.
+        Open items stay front and center. Completed items remain visible in a dimmed state until leadership clears them.
     </p>
 </div>
 
@@ -105,9 +232,7 @@
         <span class="summary-pill">Sortable</span>
     </div>
 
-    <form method="GET" action="{{ url_for('dashboard.action_board') }}"
-          class="action-board-filters"
-          style="display:grid; grid-template-columns: 1.2fr 180px 180px 180px 180px; gap:12px; align-items:end;">
+    <form method="GET" action="{{ url_for('dashboard.action_board') }}" class="action-board-filters">
         <div class="form-group" style="margin-bottom:0;">
             <label for="search">Search</label>
             <input
@@ -171,90 +296,161 @@
 <form method="POST" action="{{ url_for('dashboard.clear_weekly_focus_items') }}">
     <div class="panel premium-panel">
         <div class="panel-head">
-            <h3>Action Items</h3>
+            <h3>Store Action Tiles</h3>
             <div class="action-board-toolbar">
                 <button type="button" class="summary-pill" id="select-all-completed-btn">Select Completed</button>
                 <button type="submit" class="btn-primary">Clear Selected Completed</button>
             </div>
         </div>
 
-        <div class="table-wrap premium-table-wrap">
-            <table class="data-table premium-table">
-                <thead>
-                    <tr>
-                        <th style="width: 70px;">Clear</th>
-                        <th>Store</th>
-                        <th>Type</th>
-                        <th>Item</th>
-                        <th>Status</th>
-                        <th>Created</th>
-                        <th>Completed</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in items %}
-                    <tr class="action-board-row {% if item.is_completed %}is-completed{% endif %}">
-                        <td>
-                            {% if item.is_completed %}
-                            <input
-                                type="checkbox"
-                                name="item_ids"
-                                value="{{ item.id }}"
-                                class="completed-item-box"
-                            >
-                            {% else %}
-                            —
-                            {% endif %}
-                        </td>
+        {% set board = namespace(grouped={}) %}
+        {% for item in items %}
+            {% if item.store_number not in board.grouped %}
+                {% set _ = board.grouped.update({
+                    item.store_number: {
+                        'open_cleaning': [],
+                        'open_goal': [],
+                        'completed_cleaning': [],
+                        'completed_goal': []
+                    }
+                }) %}
+            {% endif %}
 
-                        <td>
-                            <div class="action-board-store">{{ item.store_number }}</div>
-                        </td>
+            {% if item.is_completed %}
+                {% if item.item_type == 'cleaning' %}
+                    {% set _ = board.grouped[item.store_number]['completed_cleaning'].append(item) %}
+                {% else %}
+                    {% set _ = board.grouped[item.store_number]['completed_goal'].append(item) %}
+                {% endif %}
+            {% else %}
+                {% if item.item_type == 'cleaning' %}
+                    {% set _ = board.grouped[item.store_number]['open_cleaning'].append(item) %}
+                {% else %}
+                    {% set _ = board.grouped[item.store_number]['open_goal'].append(item) %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
 
-                        <td>
-                            {% if item.item_type == "cleaning" %}
-                            <span class="table-badge badge-warning">Cleaning</span>
-                            {% else %}
-                            <span class="table-badge badge-success">Goal</span>
-                            {% endif %}
-                        </td>
+        {% if board.grouped %}
+        <div class="action-board-grid">
+            {% for store_number, groups in board.grouped|dictsort %}
+                {% set open_total = groups.open_cleaning|length + groups.open_goal|length %}
+                {% set completed_total = groups.completed_cleaning|length + groups.completed_goal|length %}
+                {% set total_items = open_total + completed_total %}
 
-                        <td>
-                            <div class="action-item-text">{{ item.item_text }}</div>
-                        </td>
+                {% if total_items == 0 %}
+                    {% set tile_class = 'tile-gray' %}
+                {% elif open_total == 0 %}
+                    {% set tile_class = 'tile-green' %}
+                {% elif completed_total > 0 %}
+                    {% set tile_class = 'tile-yellow' %}
+                {% else %}
+                    {% set tile_class = 'tile-red' %}
+                {% endif %}
 
-                        <td>
-                            {% if item.is_completed %}
-                            <span class="table-badge badge-success">Completed</span>
-                            {% else %}
-                            <span class="table-badge badge-warning">Open</span>
-                            {% endif %}
-                        </td>
+                <a
+                    href="{{ url_for('checklist.index', store=store_number) }}"
+                    class="action-store-link"
+                    aria-label="Open checklist for store {{ store_number }}"
+                >
+                    <div class="action-store-tile {{ tile_class }}">
+                        <div class="action-store-head">
+                            <div>
+                                <div class="action-store-number">{{ store_number }}</div>
+                                <div class="action-store-sub">Tap to open checklist</div>
+                            </div>
 
-                        <td>
-                            {% if item.created_at %}
-                                {{ item.created_at.strftime('%b %d, %Y %I:%M %p') }}
-                            {% else %}
-                                —
-                            {% endif %}
-                        </td>
+                            <div class="action-store-counts">
+                                <span class="action-count-pill open">{{ open_total }} open</span>
+                                <span class="action-count-pill completed">{{ completed_total }} completed</span>
+                            </div>
+                        </div>
 
-                        <td>
-                            {% if item.completed_at %}
-                                {{ item.completed_at.strftime('%b %d, %Y %I:%M %p') }}
-                            {% else %}
-                                —
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="7">No action items match those filters.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        {% if groups.open_cleaning %}
+                        <div class="action-tile-section">
+                            <div class="action-tile-section-title">Cleaning</div>
+                            <div class="action-task-stack">
+                                {% for item in groups.open_cleaning %}
+                                <div class="action-task-chip cleaning">
+                                    {{ item.item_text }}
+                                    <span class="action-task-meta">
+                                        Open • {{ item.created_at.strftime('%b %d, %Y %I:%M %p') if item.created_at else 'No date' }}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if groups.open_goal %}
+                        <div class="action-tile-section">
+                            <div class="action-tile-section-title">Goals</div>
+                            <div class="action-task-stack">
+                                {% for item in groups.open_goal %}
+                                <div class="action-task-chip goal">
+                                    {{ item.item_text }}
+                                    <span class="action-task-meta">
+                                        Open • {{ item.created_at.strftime('%b %d, %Y %I:%M %p') if item.created_at else 'No date' }}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if groups.completed_cleaning or groups.completed_goal %}
+                        <div class="action-tile-section">
+                            <div class="action-tile-section-title">Completed</div>
+                            <div class="action-task-stack">
+                                {% for item in groups.completed_cleaning %}
+                                <div class="action-task-chip cleaning completed">
+                                    <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                                        <input
+                                            type="checkbox"
+                                            name="item_ids"
+                                            value="{{ item.id }}"
+                                            class="completed-item-box"
+                                            onclick="event.stopPropagation();"
+                                        >
+                                        <span style="display:block;">
+                                            {{ item.item_text }}
+                                            <span class="action-task-meta">
+                                                Cleaning • {{ item.completed_at.strftime('%b %d, %Y %I:%M %p') if item.completed_at else 'Completed' }}
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                                {% endfor %}
+
+                                {% for item in groups.completed_goal %}
+                                <div class="action-task-chip goal completed">
+                                    <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                                        <input
+                                            type="checkbox"
+                                            name="item_ids"
+                                            value="{{ item.id }}"
+                                            class="completed-item-box"
+                                            onclick="event.stopPropagation();"
+                                        >
+                                        <span style="display:block;">
+                                            {{ item.item_text }}
+                                            <span class="action-task-meta">
+                                                Goal • {{ item.completed_at.strftime('%b %d, %Y %I:%M %p') if item.completed_at else 'Completed' }}
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </a>
+            {% endfor %}
         </div>
+        {% else %}
+        <div class="action-empty-state">No action items match those filters.</div>
+        {% endif %}
     </div>
 </form>
 

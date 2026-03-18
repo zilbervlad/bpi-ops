@@ -7,30 +7,23 @@
 <style>
     .action-board-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: 16px;
     }
 
-    .action-store-link {
-        text-decoration: none;
-        color: inherit;
-        display: block;
-    }
-
     .action-store-tile {
-        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 18px;
-        padding: 18px;
-        background: rgba(255, 255, 255, 0.02);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.025);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
         transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-        height: 100%;
     }
 
-    .action-store-link:hover .action-store-tile {
+    .action-store-tile:hover {
         transform: translateY(-2px);
-        border-color: rgba(255, 255, 255, 0.16);
-        background: rgba(255, 255, 255, 0.035);
+        border-color: rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.04);
     }
 
     .action-store-tile.tile-red {
@@ -46,7 +39,17 @@
     }
 
     .action-store-tile.tile-gray {
-        border-left: 4px solid rgba(255, 255, 255, 0.22);
+        border-left: 4px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .action-store-toggle {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: inherit;
+        padding: 0;
+        cursor: pointer;
+        text-align: left;
     }
 
     .action-store-head {
@@ -54,7 +57,6 @@
         align-items: flex-start;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 14px;
     }
 
     .action-store-number {
@@ -67,6 +69,13 @@
         font-size: 12px;
         opacity: 0.72;
         margin-top: 6px;
+    }
+
+    .action-store-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
     }
 
     .action-store-counts {
@@ -94,11 +103,28 @@
         color: #86efac;
     }
 
+    .action-chevron {
+        font-size: 12px;
+        font-weight: 700;
+        opacity: 0.85;
+    }
+
+    .action-store-body {
+        display: none;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .action-store-body.open {
+        display: block;
+    }
+
     .action-tile-section {
         margin-top: 14px;
     }
 
-    .action-tile-section:first-of-type {
+    .action-tile-section:first-child {
         margin-top: 0;
     }
 
@@ -130,12 +156,12 @@
         font-weight: 600;
     }
 
-    .action-task-chip.goal {
-        border-left: 3px solid #22c55e;
-    }
-
     .action-task-chip.cleaning {
         border-left: 3px solid #f59e0b;
+    }
+
+    .action-task-chip.goal {
+        border-left: 3px solid #22c55e;
     }
 
     .action-task-chip.completed {
@@ -188,6 +214,10 @@
 
         .action-store-head {
             flex-direction: column;
+        }
+
+        .action-store-right {
+            align-items: flex-start;
         }
 
         .action-store-counts {
@@ -348,24 +378,30 @@
                     {% set tile_class = 'tile-red' %}
                 {% endif %}
 
-                <a
-                    href="{{ url_for('checklist.index', store=store_number) }}"
-                    class="action-store-link"
-                    aria-label="Open checklist for store {{ store_number }}"
-                >
-                    <div class="action-store-tile {{ tile_class }}">
+                <div class="action-store-tile {{ tile_class }}">
+                    <button
+                        type="button"
+                        class="action-store-toggle"
+                        data-store-toggle="{{ store_number }}"
+                        aria-expanded="false"
+                    >
                         <div class="action-store-head">
                             <div>
                                 <div class="action-store-number">{{ store_number }}</div>
-                                <div class="action-store-sub">Tap to open checklist</div>
+                                <div class="action-store-sub">Click to view tasks</div>
                             </div>
 
-                            <div class="action-store-counts">
-                                <span class="action-count-pill open">{{ open_total }} open</span>
-                                <span class="action-count-pill completed">{{ completed_total }} completed</span>
+                            <div class="action-store-right">
+                                <div class="action-store-counts">
+                                    <span class="action-count-pill open">{{ open_total }} open</span>
+                                    <span class="action-count-pill completed">{{ completed_total }} completed</span>
+                                </div>
+                                <span class="action-chevron">Show ▼</span>
                             </div>
                         </div>
+                    </button>
 
+                    <div class="action-store-body" data-store-body="{{ store_number }}">
                         {% if groups.open_cleaning %}
                         <div class="action-tile-section">
                             <div class="action-tile-section-title">Cleaning</div>
@@ -410,7 +446,6 @@
                                             name="item_ids"
                                             value="{{ item.id }}"
                                             class="completed-item-box"
-                                            onclick="event.stopPropagation();"
                                         >
                                         <span style="display:block;">
                                             {{ item.item_text }}
@@ -430,7 +465,6 @@
                                             name="item_ids"
                                             value="{{ item.id }}"
                                             class="completed-item-box"
-                                            onclick="event.stopPropagation();"
                                         >
                                         <span style="display:block;">
                                             {{ item.item_text }}
@@ -444,8 +478,12 @@
                             </div>
                         </div>
                         {% endif %}
+
+                        {% if not groups.open_cleaning and not groups.open_goal and not groups.completed_cleaning and not groups.completed_goal %}
+                        <div class="action-empty-state">No tasks for this store.</div>
+                        {% endif %}
                     </div>
-                </a>
+                </div>
             {% endfor %}
         </div>
         {% else %}
@@ -467,6 +505,21 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
+
+    document.querySelectorAll("[data-store-toggle]").forEach(toggle => {
+        toggle.addEventListener("click", function () {
+            const storeNumber = this.dataset.storeToggle;
+            const body = document.querySelector(`[data-store-body="${storeNumber}"]`);
+            const chevron = this.querySelector(".action-chevron");
+
+            if (!body || !chevron) return;
+
+            const isOpen = body.classList.contains("open");
+            body.classList.toggle("open", !isOpen);
+            this.setAttribute("aria-expanded", !isOpen ? "true" : "false");
+            chevron.textContent = !isOpen ? "Hide ▲" : "Show ▼";
+        });
+    });
 });
 </script>
 {% endblock %}

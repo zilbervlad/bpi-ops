@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Store Report Detail | BPI Ops{% endblock %}
+{% block header %}Store Report Detail{% endblock %}
+
+{% block content %}
+{% if not store %}
+<div class="panel premium-panel">
+    <div class="panel-head">
+        <h3>Store Not Available</h3>
+        <span class="summary-pill">Reports</span>
+    </div>
+    <p>This store is not visible for your role or could not be found.</p>
+    <a href="{{ url_for('reports.index') }}" class="action-btn" style="max-width: 220px;">Back to Reports</a>
+</div>
+{% else %}
+<div class="command-bar panel" style="margin-bottom: 24px;">
+    <div class="command-bar-left">
+        <div class="command-eyebrow">STORE DETAIL</div>
+        <h2 class="command-title">Store {{ store.store_number }} — {{ store.store_name or ('Store ' ~ store.store_number) }}</h2>
+        <p class="command-subtitle">
+            {{ store.area_name }} • {{ start_date }} to {{ end_date }}
+        </p>
+    </div>
+    <div class="command-bar-right">
+        <a href="{{ url_for('reports.index', **back_args) }}" class="action-btn" style="max-width: 220px;">← Back to Reports</a>
+    </div>
+</div>
+
+<div class="panel premium-panel" style="margin-bottom: 24px;">
+    <div class="panel-head">
+        <h3>Store Summary</h3>
+        <span class="summary-pill">{{ summary.checklist_count }} checklists</span>
+    </div>
+
+    <div class="dashboard-grid dashboard-grid-premium">
+        <div class="metric-card premium-card">
+            <span class="metric-label">Avg Completion</span>
+            <h3>{{ summary.avg_completion }}%</h3>
+            <p class="metric-footnote">Average completion for this store</p>
+        </div>
+
+        <div class="metric-card premium-card premium-card-blue">
+            <span class="metric-label">Avg Integrity</span>
+            <h3>{{ summary.avg_integrity }}%</h3>
+            <p class="metric-footnote">Average integrity score for this store</p>
+        </div>
+
+        <div class="metric-card premium-card">
+            <span class="metric-label">Completed</span>
+            <h3>{{ summary.completed_count }}</h3>
+            <p class="metric-footnote">Completed checklist records</p>
+        </div>
+
+        <div class="metric-card premium-card premium-card-alert">
+            <span class="metric-label">Not Started</span>
+            <h3>{{ summary.not_started_count }}</h3>
+            <p class="metric-footnote">Days in range without a checklist</p>
+        </div>
+    </div>
+</div>
+
+<div class="panel premium-panel" style="margin-bottom: 24px;">
+    <div class="panel-head">
+        <h3>Managers Seen in Range</h3>
+        <span class="summary-pill">{{ manager_names|length }} managers</span>
+    </div>
+
+    <div class="stack-list">
+        {% if manager_names %}
+            {% for name in manager_names %}
+            <div class="premium-list-row">
+                <div><strong>{{ name }}</strong></div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">No manager names found in this date range.</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="panel premium-panel">
+    <div class="panel-head">
+        <h3>Daily Checklist History</h3>
+        <span class="summary-pill">{{ store_rows|length }} records</span>
+    </div>
+
+    <div class="table-wrap premium-table-wrap">
+        <table class="data-table premium-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Completion</th>
+                    <th>Integrity</th>
+                    <th>Managers</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in store_rows %}
+                <tr>
+                    <td>{{ row.checklist_date.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        <span class="table-badge {% if row.status == 'completed' %}badge-success{% elif row.status == 'in_progress' %}badge-warning{% else %}badge-danger{% endif %}">
+                            {{ row.status.replace('_', ' ').title() }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="table-badge {% if row.percent_complete >= 90 %}badge-success{% elif row.percent_complete >= 70 %}badge-warning{% else %}badge-danger{% endif %}">
+                            {{ row.percent_complete }}%
+                        </span>
+                    </td>
+                    <td>
+                        <span class="table-badge {% if row.integrity_score >= 90 %}badge-success{% elif row.integrity_score >= 75 %}badge-warning{% else %}badge-danger{% endif %}">
+                            {{ row.integrity_score }}%
+                        </span>
+                    </td>
+                    <td>{{ row.manager_display }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">No checklist history found for this store in the selected date range.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

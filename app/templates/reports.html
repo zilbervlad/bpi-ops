@@ -245,8 +245,16 @@
                 <tr>
                     <td>
                         <div class="store-cell">
-                            <div class="store-main">{{ row.store_number }}</div>
-                            <div class="store-sub">{{ row.store_name }}</div>
+                            <div class="store-main">
+                                <a href="{{ url_for('reports.store_detail', store_number=row.store_number, start_date=start_date, end_date=end_date, q=q, area_name=selected_area, store_number=selected_store, manager_name=manager_name, show_task_analysis='1' if show_task_analysis else '') }}" style="color: inherit; text-decoration: none;">
+                                    {{ row.store_number }}
+                                </a>
+                            </div>
+                            <div class="store-sub">
+                                <a href="{{ url_for('reports.store_detail', store_number=row.store_number, start_date=start_date, end_date=end_date, q=q, area_name=selected_area, store_number=selected_store, manager_name=manager_name, show_task_analysis='1' if show_task_analysis else '') }}" style="color: inherit; text-decoration: none;">
+                                    {{ row.store_name }}
+                                </a>
+                            </div>
                         </div>
                     </td>
                     <td>{{ row.area_name }}</td>

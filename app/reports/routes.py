@@ -37,23 +37,13 @@ def get_visible_stores():
     return []
 
 
-@reports_bp.route("/")
-@login_required
-@role_required("admin", "supervisor")
-def index():
-    visible_stores = get_visible_stores()
-
+def parse_report_dates():
     today = date.today()
     default_start = today - timedelta(days=6)
     default_end = today
 
-    q = request.args.get("q", "").strip()
     start_date_str = request.args.get("start_date", default_start.strftime("%Y-%m-%d")).strip()
     end_date_str = request.args.get("end_date", default_end.strftime("%Y-%m-%d")).strip()
-    selected_store = request.args.get("store_number", "").strip()
-    selected_area = request.args.get("area_name", "").strip()
-    manager_name = request.args.get("manager_name", "").strip()
-    show_task_analysis = request.args.get("show_task_analysis", "").strip() == "1"
 
     try:
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
@@ -71,6 +61,23 @@ def index():
         start_date, end_date = end_date, start_date
         start_date_str = start_date.strftime("%Y-%m-%d")
         end_date_str = end_date.strftime("%Y-%m-%d")
+
+    return start_date, end_date, start_date_str, end_date_str
+
+
+@reports_bp.route("/")
+@login_required
+@role_required("admin", "supervisor")
+def index():
+    visible_stores = get_visible_stores()
+
+    start_date, end_date, start_date_str, end_date_str = parse_report_dates()
+
+    q = request.args.get("q", "").strip()
+    selected_store = request.args.get("store_number", "").strip()
+    selected_area = request.args.get("area_name", "").strip()
+    manager_name = request.args.get("manager_name", "").strip()
+    show_task_analysis = request.args.get("show_task_analysis", "").strip() == "1"
 
     area_options = sorted({store.area_name for store in visible_stores if store.area_name})
 
@@ -318,4 +325,120 @@ def index():
         store_report_rows=store_report_rows,
         area_report_rows=area_report_rows,
         task_analysis=task_analysis,
+    )
+
+
+@reports_bp.route("/store/<store_number>")
+@login_required
+@role_required("admin", "supervisor")
+def store_detail(store_number):
+    visible_stores = get_visible_stores()
+    visible_store_map = {store.store_number: store for store in visible_stores}
+
+    store = visible_store_map.get(store_number)
+    if not store:
+        return render_template(
+            "store_report_detail.html",
+            store=None,
+            store_rows=[],
+            summary=None,
+            manager_names=[],
+            start_date="",
+            end_date="",
+            back_args={},
+        )
+
+    start_date, end_date, start_date_str, end_date_str = parse_report_dates()
+
+    store_rows = DailyChecklist.query.filter(
+        DailyChecklist.store_number == store_number,
+        DailyChecklist.checklist_date >= start_date,
+        DailyChecklist.checklist_date <= end_date,
+    ).order_by(
+        DailyChecklist.checklist_date.desc()
+    ).all()
+
+    checklist_count = len(store_rows)
+    days_in_range = (end_date - start_date).days + 1
+
+    avg_completion = round(
+        sum(row.percent_complete for row in store_rows) / checklist_count, 1
+    ) if checklist_count else 0.0
+
+    integrity_values = [row.integrity_score for row in store_rows if row.integrity_score > 0]
+    avg_integrity = round(
+        sum(integrity_values) / len(integrity_values), 1
+    ) if integrity_values else 0.0
+
+    completed_count = sum(1 for row in store_rows if row.status == "completed")
+    in_progress_count = sum(1 for row in store_rows if row.status == "in_progress")
+    not_started_count = max(days_in_range - checklist_count, 0)
+
+    manager_names = sorted({
+        name.strip()
+        for row in store_rows
+        for name in [row.manager_on_duty, row.opening_manager, row.closing_manager]
+        if name and name.strip()
+    })
+
+    daily_rows = []
+    for row in store_rows:
+        managers_for_day = [
+            value for value in [
+                row.manager_on_duty,
+                row.opening_manager,
+                row.closing_manager,
+            ]
+            if value and value.strip()
+        ]
+
+        daily_rows.append({
+            "checklist_date": row.checklist_date,
+            "status": row.status,
+            "percent_complete": row.percent_complete,
+            "integrity_score": row.integrity_score,
+            "manager_display": " / ".join(dict.fromkeys(managers_for_day)) if managers_for_day else "—",
+        })
+
+    summary = {
+        "avg_completion": avg_completion,
+        "avg_integrity": avg_integrity,
+        "completed_count": completed_count,
+        "in_progress_count": in_progress_count,
+        "not_started_count": not_started_count,
+        "checklist_count": checklist_count,
+        "days_in_range": days_in_range,
+    }
+
+    back_args = {
+        "start_date": start_date_str,
+        "end_date": end_date_str,
+    }
+
+    q = request.args.get("q", "").strip()
+    selected_area = request.args.get("area_name", "").strip()
+    selected_store = request.args.get("store_number", "").strip()
+    manager_name = request.args.get("manager_name", "").strip()
+    show_task_analysis = request.args.get("show_task_analysis", "").strip()
+
+    if q:
+        back_args["q"] = q
+    if selected_area:
+        back_args["area_name"] = selected_area
+    if selected_store:
+        back_args["store_number"] = selected_store
+    if manager_name:
+        back_args["manager_name"] = manager_name
+    if show_task_analysis == "1":
+        back_args["show_task_analysis"] = "1"
+
+    return render_template(
+        "store_report_detail.html",
+        store=store,
+        store_rows=daily_rows,
+        summary=summary,
+        manager_names=manager_names,
+        start_date=start_date_str,
+        end_date=end_date_str,
+        back_args=back_args,
     )

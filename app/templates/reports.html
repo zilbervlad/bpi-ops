@@ -9,7 +9,7 @@
         <div class="command-eyebrow">REPORTING</div>
         <h2 class="command-title">Checklist Performance Reports</h2>
         <p class="command-subtitle">
-            Search by store, area, manager, or task to review execution trends.
+            Filter by store, area, and date range to review execution trends.
         </p>
     </div>
     <div class="command-bar-right">
@@ -20,120 +20,47 @@
 </div>
 
 <div class="panel premium-panel" style="margin-bottom: 24px;">
-    <div class="panel-head" style="margin-bottom: 16px;">
-        <div>
-            <h3>Report Search</h3>
-            <div class="area-subtitle">Use one search bar first, then open advanced filters only if needed.</div>
-        </div>
-        <span class="summary-pill">Phase 1</span>
+    <div class="panel-head">
+        <h3>Filters</h3>
+        <span class="summary-pill">Refine View</span>
     </div>
 
     <form method="GET" class="login-form">
-        <div class="form-group" style="margin-bottom: 18px;">
-            <label for="search_query">Search</label>
-            <input
-                type="text"
-                id="search_query"
-                name="search_query"
-                value="{{ request.args.get('search_query', '') }}"
-                placeholder="Search by store, area, manager, or task..."
-            >
+        <div class="admin-task-grid">
+            <div class="form-group">
+                <label for="store_number">Store</label>
+                <select id="store_number" name="store_number">
+                    <option value="">All Stores</option>
+                    {% for store in stores %}
+                    <option value="{{ store.store_number }}" {% if selected_store == store.store_number %}selected{% endif %}>
+                        {{ store.store_number }} - {{ store.store_name or ('Store ' ~ store.store_number) }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="area_name">Area</label>
+                <select id="area_name" name="area_name">
+                    <option value="">All Areas</option>
+                    {% for area in area_options %}
+                    <option value="{{ area }}" {% if selected_area == area %}selected{% endif %}>
+                        {{ area }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
 
-        <div class="admin-task-grid" style="margin-bottom: 18px;">
-            <div class="form-group" style="margin-bottom: 0;">
+        <div class="admin-task-grid">
+            <div class="form-group">
                 <label for="start_date">Start Date</label>
                 <input type="date" id="start_date" name="start_date" value="{{ start_date }}" required>
             </div>
 
-            <div class="form-group" style="margin-bottom: 0;">
+            <div class="form-group">
                 <label for="end_date">End Date</label>
                 <input type="date" id="end_date" name="end_date" value="{{ end_date }}" required>
-            </div>
-        </div>
-
-        <div class="admin-check-row" style="align-items: center; margin-bottom: 18px;">
-            <label class="checklist-checkbox-row" style="margin: 0;">
-                <input
-                    type="checkbox"
-                    id="task_mode"
-                    name="task_mode"
-                    value="1"
-                    {% if request.args.get('task_mode') == '1' %}checked{% endif %}
-                >
-                <span>Task-Level Analysis</span>
-            </label>
-
-            <button
-                type="button"
-                id="advanced-filters-toggle"
-                class="action-btn"
-                style="max-width: 220px;"
-                aria-expanded="false"
-            >
-                Advanced Filters ▼
-            </button>
-        </div>
-
-        <div
-            id="advanced-filters-body"
-            style="display: none; margin-bottom: 18px;"
-        >
-            <div class="panel premium-panel" style="margin: 0; padding: 18px;">
-                <div class="panel-head" style="margin-bottom: 16px;">
-                    <h3 style="margin: 0;">Advanced Filters</h3>
-                    <span class="summary-pill">Optional</span>
-                </div>
-
-                <div class="admin-task-grid">
-                    <div class="form-group">
-                        <label for="store_number">Store</label>
-                        <select id="store_number" name="store_number">
-                            <option value="">All Stores</option>
-                            {% for store in stores %}
-                            <option value="{{ store.store_number }}" {% if selected_store == store.store_number %}selected{% endif %}>
-                                {{ store.store_number }} - {{ store.store_name or ('Store ' ~ store.store_number) }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="area_name">Area</label>
-                        <select id="area_name" name="area_name">
-                            <option value="">All Areas</option>
-                            {% for area in area_options %}
-                            <option value="{{ area }}" {% if selected_area == area %}selected{% endif %}>
-                                {{ area }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="admin-task-grid">
-                    <div class="form-group">
-                        <label for="manager_name">Manager</label>
-                        <input
-                            type="text"
-                            id="manager_name"
-                            name="manager_name"
-                            value="{{ request.args.get('manager_name', '') }}"
-                            placeholder="Optional manager search..."
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="task_name">Task</label>
-                        <input
-                            type="text"
-                            id="task_name"
-                            name="task_name"
-                            value="{{ request.args.get('task_name', '') }}"
-                            placeholder="Optional task search..."
-                        >
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -274,32 +201,4 @@
         </table>
     </div>
 </div>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const advancedToggle = document.getElementById("advanced-filters-toggle");
-    const advancedBody = document.getElementById("advanced-filters-body");
-
-    if (advancedToggle && advancedBody) {
-        const hasAdvancedValues =
-            "{{ selected_store }}" !== "" ||
-            "{{ selected_area }}" !== "" ||
-            "{{ request.args.get('manager_name', '') }}" !== "" ||
-            "{{ request.args.get('task_name', '') }}" !== "";
-
-        if (hasAdvancedValues) {
-            advancedBody.style.display = "block";
-            advancedToggle.setAttribute("aria-expanded", "true");
-            advancedToggle.textContent = "Advanced Filters ▲";
-        }
-
-        advancedToggle.addEventListener("click", function () {
-            const isHidden = advancedBody.style.display === "none";
-            advancedBody.style.display = isHidden ? "block" : "none";
-            advancedToggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
-            advancedToggle.textContent = isHidden ? "Advanced Filters ▲" : "Advanced Filters ▼";
-        });
-    }
-});
-</script>
 {% endblock %}

@@ -7,25 +7,26 @@
 <style>
     .action-board-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
         align-items: start;
     }
 
     .action-store-tile {
-        border-radius: 18px;
-        padding: 16px;
+        border-radius: 16px;
+        padding: 12px;
         border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.025);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
-        transition: border-color 0.18s ease, background 0.18s ease;
+        background: rgba(255, 255, 255, 0.02);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
+        transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
         align-self: start;
         height: auto;
     }
 
     .action-store-tile:hover {
         border-color: rgba(255, 255, 255, 0.14);
-        background: rgba(255, 255, 255, 0.04);
+        background: rgba(255, 255, 255, 0.035);
+        transform: translateY(-1px);
     }
 
     .action-store-tile.tile-red {
@@ -58,39 +59,39 @@
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 12px;
+        gap: 10px;
     }
 
     .action-store-number {
-        font-size: 22px;
+        font-size: 19px;
         font-weight: 800;
         line-height: 1;
     }
 
     .action-store-sub {
-        font-size: 12px;
-        opacity: 0.72;
-        margin-top: 6px;
+        font-size: 11px;
+        opacity: 0.68;
+        margin-top: 4px;
     }
 
     .action-store-right {
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: 8px;
+        gap: 6px;
     }
 
     .action-store-counts {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
         justify-content: flex-end;
     }
 
     .action-count-pill {
         border-radius: 999px;
-        padding: 6px 10px;
-        font-size: 12px;
+        padding: 4px 8px;
+        font-size: 11px;
         font-weight: 700;
         background: rgba(255, 255, 255, 0.06);
     }
@@ -106,15 +107,15 @@
     }
 
     .action-chevron {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         opacity: 0.85;
     }
 
     .action-store-body {
         display: none;
-        margin-top: 14px;
-        padding-top: 14px;
+        margin-top: 10px;
+        padding-top: 10px;
         border-top: 1px solid rgba(255, 255, 255, 0.07);
     }
 
@@ -123,7 +124,7 @@
     }
 
     .action-tile-section {
-        margin-top: 14px;
+        margin-top: 10px;
     }
 
     .action-tile-section:first-child {
@@ -133,28 +134,28 @@
     .action-tile-section-title {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        font-size: 12px;
+        gap: 6px;
+        font-size: 11px;
         font-weight: 800;
         letter-spacing: 0.04em;
         text-transform: uppercase;
         opacity: 0.82;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
     }
 
     .action-task-stack {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
     }
 
     .action-task-chip {
-        border-radius: 12px;
-        padding: 10px 12px;
+        border-radius: 10px;
+        padding: 8px 10px;
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.05);
-        line-height: 1.35;
-        font-size: 14px;
+        line-height: 1.3;
+        font-size: 13px;
         font-weight: 600;
     }
 
@@ -174,24 +175,25 @@
 
     .action-task-meta {
         display: block;
-        margin-top: 6px;
-        font-size: 11px;
+        margin-top: 4px;
+        font-size: 10px;
         font-weight: 600;
         opacity: 0.65;
         text-decoration: none;
     }
 
     .action-empty-state {
-        border-radius: 14px;
-        padding: 16px;
+        border-radius: 12px;
+        padding: 14px;
         text-align: center;
         opacity: 0.72;
         background: rgba(255, 255, 255, 0.03);
+        font-size: 13px;
     }
 
     .action-board-toolbar {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         align-items: center;
         flex-wrap: wrap;
     }
@@ -215,15 +217,17 @@
     <div class="panel-head">
         <h3>Supervisor / Admin Action Board</h3>
         <div class="action-board-toolbar">
+            <button type="button" class="summary-pill" id="expand-all-btn">Expand All</button>
+            <button type="button" class="summary-pill" id="collapse-all-btn">Collapse All</button>
             <button type="button" class="summary-pill" id="select-all-completed-btn">Select Completed</button>
         </div>
     </div>
-    <p class="subtitle" style="margin: 0 0 18px 0;">
+    <p class="subtitle" style="margin: 0 0 16px 0;">
         Open items stay front and center. Completed items remain visible in a dimmed state until leadership clears them.
     </p>
 
     <form method="POST" action="{{ url_for('dashboard.clear_weekly_focus_items') }}">
-        <div style="margin-bottom: 18px;">
+        <div style="margin-bottom: 16px;">
             <button type="submit" class="btn-primary">Clear Selected Completed</button>
         </div>
 
@@ -239,13 +243,13 @@
                     <div class="action-store-head">
                         <div>
                             <div class="action-store-number">{{ tile.store_number }}</div>
-                            <div class="action-store-sub">Click to view tasks</div>
+                            <div class="action-store-sub">{{ tile.store_name }}</div>
                         </div>
 
                         <div class="action-store-right">
                             <div class="action-store-counts">
                                 <span class="action-count-pill open">{{ tile.open_total }} open</span>
-                                <span class="action-count-pill completed">{{ tile.completed_total }} completed</span>
+                                <span class="action-count-pill completed">{{ tile.completed_total }} done</span>
                             </div>
                             <span class="action-chevron">Show ▼</span>
                         </div>
@@ -291,7 +295,7 @@
                         <div class="action-task-stack">
                             {% for item in tile.completed_cleaning %}
                             <div class="action-task-chip cleaning completed">
-                                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                                <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
                                     <input
                                         type="checkbox"
                                         name="item_ids"
@@ -310,7 +314,7 @@
 
                             {% for item in tile.completed_goal %}
                             <div class="action-task-chip goal completed">
-                                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                                <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
                                     <input
                                         type="checkbox"
                                         name="item_ids"
@@ -346,7 +350,24 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const selectCompletedBtn = document.getElementById("select-all-completed-btn");
+    const expandAllBtn = document.getElementById("expand-all-btn");
+    const collapseAllBtn = document.getElementById("collapse-all-btn");
     const completedBoxes = Array.from(document.querySelectorAll(".completed-item-box"));
+    const toggles = Array.from(document.querySelectorAll(".action-store-toggle"));
+
+    function setTileState(toggle, shouldOpen) {
+        const tile = toggle.closest(".action-store-tile");
+        if (!tile) return;
+
+        const body = tile.querySelector(".action-store-body");
+        const chevron = toggle.querySelector(".action-chevron");
+
+        if (!body || !chevron) return;
+
+        body.classList.toggle("open", shouldOpen);
+        toggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+        chevron.textContent = shouldOpen ? "Hide ▲" : "Show ▼";
+    }
 
     if (selectCompletedBtn) {
         selectCompletedBtn.addEventListener("click", function () {
@@ -357,20 +378,29 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    document.querySelectorAll(".action-store-toggle").forEach(toggle => {
+    if (expandAllBtn) {
+        expandAllBtn.addEventListener("click", function () {
+            toggles.forEach(toggle => setTileState(toggle, true));
+        });
+    }
+
+    if (collapseAllBtn) {
+        collapseAllBtn.addEventListener("click", function () {
+            toggles.forEach(toggle => setTileState(toggle, false));
+        });
+    }
+
+    toggles.forEach(toggle => {
         toggle.addEventListener("click", function () {
-            const tile = this.closest(".action-store-tile");
-            if (!tile) return;
+            const isOpen = this.getAttribute("aria-expanded") === "true";
 
-            const body = tile.querySelector(".action-store-body");
-            const chevron = this.querySelector(".action-chevron");
+            toggles.forEach(otherToggle => {
+                if (otherToggle !== this) {
+                    setTileState(otherToggle, false);
+                }
+            });
 
-            if (!body || !chevron) return;
-
-            const isOpen = body.classList.contains("open");
-            body.classList.toggle("open", !isOpen);
-            this.setAttribute("aria-expanded", !isOpen ? "true" : "false");
-            chevron.textContent = !isOpen ? "Hide ▲" : "Show ▼";
+            setTileState(this, !isOpen);
         });
     });
 });

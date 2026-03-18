@@ -9,6 +9,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: 16px;
+        align-items: start;
     }
 
     .action-store-tile {
@@ -17,11 +18,12 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(255, 255, 255, 0.025);
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
-        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        transition: border-color 0.18s ease, background 0.18s ease;
+        align-self: start;
+        height: auto;
     }
 
     .action-store-tile:hover {
-        transform: translateY(-2px);
         border-color: rgba(255, 255, 255, 0.14);
         background: rgba(255, 255, 255, 0.04);
     }
@@ -194,24 +196,7 @@
         flex-wrap: wrap;
     }
 
-    .action-board-filters {
-        display: grid;
-        grid-template-columns: 1.2fr 180px 180px 180px 180px;
-        gap: 12px;
-        align-items: end;
-    }
-
-    @media (max-width: 1180px) {
-        .action-board-filters {
-            grid-template-columns: 1fr 1fr;
-        }
-    }
-
     @media (max-width: 760px) {
-        .action-board-filters {
-            grid-template-columns: 1fr;
-        }
-
         .action-store-head {
             flex-direction: column;
         }
@@ -229,267 +214,134 @@
 <div class="panel premium-panel" style="margin-bottom: 24px;">
     <div class="panel-head">
         <h3>Supervisor / Admin Action Board</h3>
-        <span class="summary-pill">SVR Weekly Focus Tracking</span>
+        <div class="action-board-toolbar">
+            <button type="button" class="summary-pill" id="select-all-completed-btn">Select Completed</button>
+        </div>
     </div>
-    <p class="subtitle" style="margin: 0;">
+    <p class="subtitle" style="margin: 0 0 18px 0;">
         Open items stay front and center. Completed items remain visible in a dimmed state until leadership clears them.
     </p>
-</div>
 
-<div class="dashboard-grid dashboard-grid-premium" style="margin-bottom: 24px;">
-    <div class="metric-card premium-card premium-card-blue">
-        <span class="metric-label">Visible Items</span>
-        <h3>{{ items|length }}</h3>
-        <p class="metric-footnote">Filtered board total</p>
-    </div>
-
-    <div class="metric-card premium-card premium-card-alert">
-        <span class="metric-label">Open</span>
-        <h3>{{ open_count }}</h3>
-        <p class="metric-footnote">Still pending with the GM</p>
-    </div>
-
-    <div class="metric-card premium-card">
-        <span class="metric-label">Completed</span>
-        <h3>{{ completed_count }}</h3>
-        <p class="metric-footnote">Waiting for leadership clear</p>
-    </div>
-</div>
-
-<div class="panel premium-panel" style="margin-bottom: 24px;">
-    <div class="panel-head">
-        <h3>Filters</h3>
-        <span class="summary-pill">Sortable</span>
-    </div>
-
-    <form method="GET" action="{{ url_for('dashboard.action_board') }}" class="action-board-filters">
-        <div class="form-group" style="margin-bottom:0;">
-            <label for="search">Search</label>
-            <input
-                type="text"
-                id="search"
-                name="search"
-                value="{{ search }}"
-                placeholder="Store, type, task..."
-            >
+    <form method="POST" action="{{ url_for('dashboard.clear_weekly_focus_items') }}">
+        <div style="margin-bottom: 18px;">
+            <button type="submit" class="btn-primary">Clear Selected Completed</button>
         </div>
 
-        <div class="form-group" style="margin-bottom:0;">
-            <label for="status">Status</label>
-            <select id="status" name="status">
-                <option value="" {% if not status_filter %}selected{% endif %}>All</option>
-                <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
-                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom:0;">
-            <label for="item_type">Type</label>
-            <select id="item_type" name="item_type">
-                <option value="" {% if not type_filter %}selected{% endif %}>All</option>
-                <option value="cleaning" {% if type_filter == 'cleaning' %}selected{% endif %}>Cleaning</option>
-                <option value="goal" {% if type_filter == 'goal' %}selected{% endif %}>Goal</option>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom:0;">
-            <label for="store_number">Store</label>
-            <select id="store_number" name="store_number">
-                <option value="" {% if not store_filter %}selected{% endif %}>All Stores</option>
-                {% for store in stores %}
-                <option value="{{ store.store_number }}" {% if store_filter == store.store_number %}selected{% endif %}>
-                    {{ store.store_number }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom:0;">
-            <label for="sort">Sort</label>
-            <select id="sort" name="sort">
-                <option value="status_store" {% if sort_by == 'status_store' %}selected{% endif %}>Open First</option>
-                <option value="store" {% if sort_by == 'store' %}selected{% endif %}>Store</option>
-                <option value="type" {% if sort_by == 'type' %}selected{% endif %}>Type</option>
-                <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest Created</option>
-                <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest Created</option>
-                <option value="completed_recent" {% if sort_by == 'completed_recent' %}selected{% endif %}>Recently Completed</option>
-            </select>
-        </div>
-
-        <div style="grid-column: 1 / -1; display:flex; gap:12px; margin-top: 4px; flex-wrap: wrap;">
-            <button type="submit" class="btn-primary">Apply Filters</button>
-            <a href="{{ url_for('dashboard.action_board') }}" class="summary-pill" style="text-decoration:none;">Clear Filters</a>
-        </div>
-    </form>
-</div>
-
-<form method="POST" action="{{ url_for('dashboard.clear_weekly_focus_items') }}">
-    <div class="panel premium-panel">
-        <div class="panel-head">
-            <h3>Store Action Tiles</h3>
-            <div class="action-board-toolbar">
-                <button type="button" class="summary-pill" id="select-all-completed-btn">Select Completed</button>
-                <button type="submit" class="btn-primary">Clear Selected Completed</button>
-            </div>
-        </div>
-
-        {% set board = namespace(grouped={}) %}
-        {% for item in items %}
-            {% if item.store_number not in board.grouped %}
-                {% set _ = board.grouped.update({
-                    item.store_number: {
-                        'open_cleaning': [],
-                        'open_goal': [],
-                        'completed_cleaning': [],
-                        'completed_goal': []
-                    }
-                }) %}
-            {% endif %}
-
-            {% if item.is_completed %}
-                {% if item.item_type == 'cleaning' %}
-                    {% set _ = board.grouped[item.store_number]['completed_cleaning'].append(item) %}
-                {% else %}
-                    {% set _ = board.grouped[item.store_number]['completed_goal'].append(item) %}
-                {% endif %}
-            {% else %}
-                {% if item.item_type == 'cleaning' %}
-                    {% set _ = board.grouped[item.store_number]['open_cleaning'].append(item) %}
-                {% else %}
-                    {% set _ = board.grouped[item.store_number]['open_goal'].append(item) %}
-                {% endif %}
-            {% endif %}
-        {% endfor %}
-
-        {% if board.grouped %}
+        {% if store_tiles %}
         <div class="action-board-grid">
-            {% for store_number, groups in board.grouped|dictsort %}
-                {% set open_total = groups.open_cleaning|length + groups.open_goal|length %}
-                {% set completed_total = groups.completed_cleaning|length + groups.completed_goal|length %}
-                {% set total_items = open_total + completed_total %}
-
-                {% if total_items == 0 %}
-                    {% set tile_class = 'tile-gray' %}
-                {% elif open_total == 0 %}
-                    {% set tile_class = 'tile-green' %}
-                {% elif completed_total > 0 %}
-                    {% set tile_class = 'tile-yellow' %}
-                {% else %}
-                    {% set tile_class = 'tile-red' %}
-                {% endif %}
-
-                <div class="action-store-tile {{ tile_class }}">
-                    <button
-                        type="button"
-                        class="action-store-toggle"
-                        aria-expanded="false"
-                    >
-                        <div class="action-store-head">
-                            <div>
-                                <div class="action-store-number">{{ store_number }}</div>
-                                <div class="action-store-sub">Click to view tasks</div>
-                            </div>
-
-                            <div class="action-store-right">
-                                <div class="action-store-counts">
-                                    <span class="action-count-pill open">{{ open_total }} open</span>
-                                    <span class="action-count-pill completed">{{ completed_total }} completed</span>
-                                </div>
-                                <span class="action-chevron">Show ▼</span>
-                            </div>
+            {% for tile in store_tiles %}
+            <div class="action-store-tile {{ tile.tile_class }}">
+                <button
+                    type="button"
+                    class="action-store-toggle"
+                    aria-expanded="false"
+                >
+                    <div class="action-store-head">
+                        <div>
+                            <div class="action-store-number">{{ tile.store_number }}</div>
+                            <div class="action-store-sub">Click to view tasks</div>
                         </div>
-                    </button>
 
-                    <div class="action-store-body">
-                        {% if groups.open_cleaning %}
-                        <div class="action-tile-section">
-                            <div class="action-tile-section-title">Cleaning</div>
-                            <div class="action-task-stack">
-                                {% for item in groups.open_cleaning %}
-                                <div class="action-task-chip cleaning">
-                                    {{ item.item_text }}
-                                    <span class="action-task-meta">
-                                        Open • {{ item.created_at.strftime('%b %d, %Y %I:%M %p') if item.created_at else 'No date' }}
-                                    </span>
-                                </div>
-                                {% endfor %}
+                        <div class="action-store-right">
+                            <div class="action-store-counts">
+                                <span class="action-count-pill open">{{ tile.open_total }} open</span>
+                                <span class="action-count-pill completed">{{ tile.completed_total }} completed</span>
                             </div>
+                            <span class="action-chevron">Show ▼</span>
                         </div>
-                        {% endif %}
-
-                        {% if groups.open_goal %}
-                        <div class="action-tile-section">
-                            <div class="action-tile-section-title">Goals</div>
-                            <div class="action-task-stack">
-                                {% for item in groups.open_goal %}
-                                <div class="action-task-chip goal">
-                                    {{ item.item_text }}
-                                    <span class="action-task-meta">
-                                        Open • {{ item.created_at.strftime('%b %d, %Y %I:%M %p') if item.created_at else 'No date' }}
-                                    </span>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if groups.completed_cleaning or groups.completed_goal %}
-                        <div class="action-tile-section">
-                            <div class="action-tile-section-title">Completed</div>
-                            <div class="action-task-stack">
-                                {% for item in groups.completed_cleaning %}
-                                <div class="action-task-chip cleaning completed">
-                                    <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
-                                        <input
-                                            type="checkbox"
-                                            name="item_ids"
-                                            value="{{ item.id }}"
-                                            class="completed-item-box"
-                                        >
-                                        <span style="display:block;">
-                                            {{ item.item_text }}
-                                            <span class="action-task-meta">
-                                                Cleaning • {{ item.completed_at.strftime('%b %d, %Y %I:%M %p') if item.completed_at else 'Completed' }}
-                                            </span>
-                                        </span>
-                                    </label>
-                                </div>
-                                {% endfor %}
-
-                                {% for item in groups.completed_goal %}
-                                <div class="action-task-chip goal completed">
-                                    <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
-                                        <input
-                                            type="checkbox"
-                                            name="item_ids"
-                                            value="{{ item.id }}"
-                                            class="completed-item-box"
-                                        >
-                                        <span style="display:block;">
-                                            {{ item.item_text }}
-                                            <span class="action-task-meta">
-                                                Goal • {{ item.completed_at.strftime('%b %d, %Y %I:%M %p') if item.completed_at else 'Completed' }}
-                                            </span>
-                                        </span>
-                                    </label>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if not groups.open_cleaning and not groups.open_goal and not groups.completed_cleaning and not groups.completed_goal %}
-                        <div class="action-empty-state">No tasks for this store.</div>
-                        {% endif %}
                     </div>
+                </button>
+
+                <div class="action-store-body">
+                    {% if tile.open_cleaning %}
+                    <div class="action-tile-section">
+                        <div class="action-tile-section-title">Cleaning</div>
+                        <div class="action-task-stack">
+                            {% for item in tile.open_cleaning %}
+                            <div class="action-task-chip cleaning">
+                                {{ item.item_text }}
+                                <span class="action-task-meta">
+                                    Open • {{ item.created_at.strftime('%b %d, %Y %I:%M %p') if item.created_at else 'No date' }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if tile.open_goal %}
+                    <div class="action-tile-section">
+                        <div class="action-tile-section-title">Goals</div>
+                        <div class="action-task-stack">
+                            {% for item in tile.open_goal %}
+                            <div class="action-task-chip goal">
+                                {{ item.item_text }}
+                                <span class="action-task-meta">
+                                    Open • {{ item.created_at.strftime('%b %d, %Y %I:%M %p') if item.created_at else 'No date' }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if tile.completed_cleaning or tile.completed_goal %}
+                    <div class="action-tile-section">
+                        <div class="action-tile-section-title">Completed</div>
+                        <div class="action-task-stack">
+                            {% for item in tile.completed_cleaning %}
+                            <div class="action-task-chip cleaning completed">
+                                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                                    <input
+                                        type="checkbox"
+                                        name="item_ids"
+                                        value="{{ item.id }}"
+                                        class="completed-item-box"
+                                    >
+                                    <span style="display:block;">
+                                        {{ item.item_text }}
+                                        <span class="action-task-meta">
+                                            Cleaning • {{ item.completed_at.strftime('%b %d, %Y %I:%M %p') if item.completed_at else 'Completed' }}
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                            {% endfor %}
+
+                            {% for item in tile.completed_goal %}
+                            <div class="action-task-chip goal completed">
+                                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                                    <input
+                                        type="checkbox"
+                                        name="item_ids"
+                                        value="{{ item.id }}"
+                                        class="completed-item-box"
+                                    >
+                                    <span style="display:block;">
+                                        {{ item.item_text }}
+                                        <span class="action-task-meta">
+                                            Goal • {{ item.completed_at.strftime('%b %d, %Y %I:%M %p') if item.completed_at else 'Completed' }}
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if not tile.open_cleaning and not tile.open_goal and not tile.completed_cleaning and not tile.completed_goal %}
+                    <div class="action-empty-state">No tasks for this store.</div>
+                    {% endif %}
                 </div>
+            </div>
             {% endfor %}
         </div>
         {% else %}
-        <div class="action-empty-state">No action items match those filters.</div>
+        <div class="action-empty-state">No action items found.</div>
         {% endif %}
-    </div>
-</form>
+    </form>
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

@@ -375,95 +375,84 @@ def action_board():
     visible_stores = get_visible_stores()
     visible_store_numbers = {store.store_number for store in visible_stores}
 
-    search = request.args.get("search", "").strip().lower()
-    status_filter = request.args.get("status", "").strip().lower()
-    type_filter = request.args.get("item_type", "").strip().lower()
-    store_filter = request.args.get("store_number", "").strip()
-    sort_by = request.args.get("sort", "status_store").strip().lower()
-
     items = WeeklyFocusItem.query.filter(
         WeeklyFocusItem.source_type == "svr",
         WeeklyFocusItem.store_number.in_(visible_store_numbers)
+    ).order_by(
+        WeeklyFocusItem.store_number.asc(),
+        WeeklyFocusItem.is_completed.asc(),
+        WeeklyFocusItem.item_type.asc(),
+        WeeklyFocusItem.created_at.asc(),
+        WeeklyFocusItem.id.asc(),
     ).all() if visible_store_numbers else []
 
-    filtered_items = []
+    grouped = defaultdict(lambda: {
+        "open_cleaning": [],
+        "open_goal": [],
+        "completed_cleaning": [],
+        "completed_goal": [],
+    })
 
     for item in items:
-        if status_filter == "open" and item.is_completed:
-            continue
-        if status_filter == "completed" and not item.is_completed:
-            continue
-        if type_filter and item.item_type != type_filter:
-            continue
-        if store_filter and item.store_number != store_filter:
-            continue
+        item_payload = {
+            "id": item.id,
+            "item_text": item.item_text,
+            "item_type": item.item_type,
+            "created_at": item.created_at,
+            "completed_at": item.completed_at,
+            "is_completed": item.is_completed,
+            "store_number": item.store_number,
+        }
 
-        if search:
-            haystack = " ".join([
-                item.store_number or "",
-                item.item_type or "",
-                item.item_text or "",
-            ]).lower()
-            if search not in haystack:
-                continue
+        if item.is_completed:
+            if item.item_type == "cleaning":
+                grouped[item.store_number]["completed_cleaning"].append(item_payload)
+            else:
+                grouped[item.store_number]["completed_goal"].append(item_payload)
+        else:
+            if item.item_type == "cleaning":
+                grouped[item.store_number]["open_cleaning"].append(item_payload)
+            else:
+                grouped[item.store_number]["open_goal"].append(item_payload)
 
-        filtered_items.append(item)
+    store_tiles = []
 
-    if sort_by == "store":
-        filtered_items = sorted(
-            filtered_items,
-            key=lambda x: (x.store_number, x.item_type, x.created_at or datetime.min)
-        )
-    elif sort_by == "type":
-        filtered_items = sorted(
-            filtered_items,
-            key=lambda x: (x.item_type, x.store_number, x.created_at or datetime.min)
-        )
-    elif sort_by == "newest":
-        filtered_items = sorted(
-            filtered_items,
-            key=lambda x: x.created_at or datetime.min,
-            reverse=True
-        )
-    elif sort_by == "oldest":
-        filtered_items = sorted(
-            filtered_items,
-            key=lambda x: x.created_at or datetime.min
-        )
-    elif sort_by == "completed_recent":
-        filtered_items = sorted(
-            filtered_items,
-            key=lambda x: (
-                0 if x.is_completed else 1,
-                -(x.completed_at.timestamp()) if x.completed_at else float("inf"),
-                x.store_number
-            )
-        )
-    else:
-        filtered_items = sorted(
-            filtered_items,
-            key=lambda x: (
-                0 if not x.is_completed else 1,
-                x.store_number,
-                x.item_type,
-                x.created_at or datetime.min
-            )
-        )
+    for store in visible_stores:
+        groups = grouped.get(store.store_number, {
+            "open_cleaning": [],
+            "open_goal": [],
+            "completed_cleaning": [],
+            "completed_goal": [],
+        })
 
-    open_count = sum(1 for item in filtered_items if not item.is_completed)
-    completed_count = sum(1 for item in filtered_items if item.is_completed)
+        open_total = len(groups["open_cleaning"]) + len(groups["open_goal"])
+        completed_total = len(groups["completed_cleaning"]) + len(groups["completed_goal"])
+        total_items = open_total + completed_total
+
+        if total_items == 0:
+            tile_class = "tile-gray"
+        elif open_total == 0:
+            tile_class = "tile-green"
+        elif completed_total > 0:
+            tile_class = "tile-yellow"
+        else:
+            tile_class = "tile-red"
+
+        store_tiles.append({
+            "store_number": store.store_number,
+            "store_name": store.store_name or f"Store {store.store_number}",
+            "tile_class": tile_class,
+            "open_total": open_total,
+            "completed_total": completed_total,
+            "open_cleaning": groups["open_cleaning"],
+            "open_goal": groups["open_goal"],
+            "completed_cleaning": groups["completed_cleaning"],
+            "completed_goal": groups["completed_goal"],
+        })
 
     return render_template(
         "action_board.html",
-        items=filtered_items,
-        stores=visible_stores,
-        search=search,
-        status_filter=status_filter,
-        type_filter=type_filter,
-        store_filter=store_filter,
-        sort_by=sort_by,
-        open_count=open_count,
-        completed_count=completed_count,
+        store_tiles=store_tiles,
     )
 
 

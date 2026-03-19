@@ -171,8 +171,8 @@ def index():
     store_filter = request.args.get("store", "").strip()
 
     tickets = MaintenanceTicket.query.order_by(
-        MaintenanceTicket.created_at.desc(),
-        MaintenanceTicket.id.desc()
+        MaintenanceTicket.created_at.asc(),
+        MaintenanceTicket.id.asc()
     ).all()
 
     tickets = [t for t in tickets if t.store_number in visible_store_numbers]
@@ -183,18 +183,27 @@ def index():
     if store_filter:
         tickets = [t for t in tickets if t.store_number == store_filter]
 
-    open_tickets = [t for t in tickets if t.status == "open"]
-    assigned_tickets = [t for t in tickets if t.status == "assigned"]
-    in_progress_tickets = [t for t in tickets if t.status == "in_progress"]
-    complete_tickets = [t for t in tickets if t.status == "complete"]
+    open_tickets = sorted(
+        [t for t in tickets if t.status == "open"],
+        key=lambda t: (t.created_at or datetime.min, t.id or 0)
+    )
 
-    summary = {
-        "open_count": len(open_tickets),
-        "assigned_count": len(assigned_tickets),
-        "in_progress_count": len(in_progress_tickets),
-        "complete_count": len(complete_tickets),
-        "total_count": len(tickets),
-    }
+    assigned_tickets = sorted(
+        [t for t in tickets if t.status == "assigned"],
+        key=lambda t: (t.created_at or datetime.min, t.id or 0)
+    )
+
+    in_progress_tickets = sorted(
+        [t for t in tickets if t.status == "in_progress"],
+        key=lambda t: (t.created_at or datetime.min, t.id or 0),
+        reverse=True
+    )
+
+    complete_tickets = sorted(
+        [t for t in tickets if t.status == "complete"],
+        key=lambda t: (t.created_at or datetime.min, t.id or 0),
+        reverse=True
+    )
 
     return render_template(
         "maintenance.html",
@@ -203,7 +212,6 @@ def index():
         assigned_tickets=assigned_tickets,
         in_progress_tickets=in_progress_tickets,
         complete_tickets=complete_tickets,
-        summary=summary,
         stores=visible_stores,
         status_filter=status_filter,
         store_filter=store_filter,

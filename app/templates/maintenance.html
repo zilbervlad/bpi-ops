@@ -9,7 +9,7 @@
         <div class="command-eyebrow">MAINTENANCE</div>
         <h2 class="command-title">Maintenance Command Board</h2>
         <p class="command-subtitle">
-            Scan open work fast, expand only the ticket you want to edit, and keep the board clean as volume grows.
+            Scan work fast, update status quickly, and only expand the ticket you actually want to edit.
         </p>
     </div>
     <div class="command-bar-right">
@@ -123,9 +123,9 @@
     }
 
     .maintenance-row-card {
-        border: 1px solid rgba(255,255,255,0.08);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 16px;
-        background: rgba(255,255,255,0.03);
+        background: rgba(255, 255, 255, 0.03);
         overflow: hidden;
     }
 
@@ -149,44 +149,67 @@
         gap: 12px;
         min-width: 0;
         flex-wrap: wrap;
+        flex: 1;
+    }
+
+    .maintenance-row-title-wrap {
+        min-width: 0;
     }
 
     .maintenance-row-title {
         font-weight: 800;
         font-size: 15px;
         line-height: 1.2;
+        margin-bottom: 2px;
+        word-break: break-word;
     }
 
     .maintenance-row-meta {
         font-size: 12px;
         opacity: 0.72;
-        line-height: 1.2;
+        line-height: 1.25;
+        word-break: break-word;
     }
 
     .maintenance-row-right {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         flex-wrap: wrap;
         justify-content: flex-end;
     }
 
+    .maintenance-quick-btn {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: inherit;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .maintenance-quick-btn:hover {
+        background: rgba(255, 255, 255, 0.06);
+    }
+
     .maintenance-expand-chip {
-        min-width: 72px;
+        min-width: 78px;
         text-align: center;
     }
 
     .maintenance-row-body {
         display: none;
         padding: 0 18px 18px 18px;
-        border-top: 1px solid rgba(255,255,255,0.06);
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .maintenance-empty {
         padding: 18px;
         border-radius: 16px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         opacity: 0.8;
     }
 
@@ -224,7 +247,7 @@
 
             <span class="summary-pill">{{ ticket.source_type|upper }}</span>
 
-            <div>
+            <div class="maintenance-row-title-wrap">
                 <div class="maintenance-row-title">{{ ticket.title }}</div>
                 <div class="maintenance-row-meta">
                     {{ ticket.created_at.strftime('%b %d, %Y %I:%M %p') if ticket.created_at else '' }}
@@ -239,6 +262,38 @@
         </div>
 
         <div class="maintenance-row-right">
+            {% if ticket.status == "open" %}
+            <form method="POST" onclick="event.stopPropagation();">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
+                <input type="hidden" name="title" value="{{ ticket.title }}">
+                <input type="hidden" name="details" value="{{ ticket.details or '' }}">
+                <input type="hidden" name="status" value="assigned">
+                <button type="submit" class="maintenance-quick-btn">Assign</button>
+            </form>
+            {% elif ticket.status == "assigned" %}
+            <form method="POST" onclick="event.stopPropagation();">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
+                <input type="hidden" name="title" value="{{ ticket.title }}">
+                <input type="hidden" name="details" value="{{ ticket.details or '' }}">
+                <input type="hidden" name="status" value="in_progress">
+                <button type="submit" class="maintenance-quick-btn">Start</button>
+            </form>
+            {% elif ticket.status == "in_progress" %}
+            <form method="POST" onclick="event.stopPropagation();">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
+                <input type="hidden" name="title" value="{{ ticket.title }}">
+                <input type="hidden" name="details" value="{{ ticket.details or '' }}">
+                <input type="hidden" name="status" value="complete">
+                <button type="submit" class="maintenance-quick-btn">Complete</button>
+            </form>
+            {% endif %}
+
             <span class="summary-pill maintenance-expand-chip" data-ticket-chevron="{{ ticket.id }}">Edit ▼</span>
         </div>
     </button>
@@ -426,15 +481,30 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll("[data-ticket-toggle]").forEach(toggle => {
             toggle.addEventListener("click", function () {
                 const ticketId = this.getAttribute("data-ticket-toggle");
-                const body = document.querySelector(`[data-ticket-body="${ticketId}"]`);
-                const chevron = document.querySelector(`[data-ticket-chevron="${ticketId}"]`);
+                const targetBody = document.querySelector(`[data-ticket-body="${ticketId}"]`);
+                const targetChevron = document.querySelector(`[data-ticket-chevron="${ticketId}"]`);
 
-                if (!body || !chevron) return;
+                if (!targetBody || !targetChevron) return;
 
-                const isHidden = body.style.display === "none" || body.style.display === "";
-                body.style.display = isHidden ? "block" : "none";
-                this.setAttribute("aria-expanded", isHidden ? "true" : "false");
-                chevron.textContent = isHidden ? "Close ▲" : "Edit ▼";
+                const isOpening = targetBody.style.display === "none" || targetBody.style.display === "";
+
+                document.querySelectorAll("[data-ticket-body]").forEach(body => {
+                    body.style.display = "none";
+                });
+
+                document.querySelectorAll("[data-ticket-chevron]").forEach(chevron => {
+                    chevron.textContent = "Edit ▼";
+                });
+
+                document.querySelectorAll("[data-ticket-toggle]").forEach(btn => {
+                    btn.setAttribute("aria-expanded", "false");
+                });
+
+                if (isOpening) {
+                    targetBody.style.display = "block";
+                    targetChevron.textContent = "Close ▲";
+                    this.setAttribute("aria-expanded", "true");
+                }
             });
         });
     }

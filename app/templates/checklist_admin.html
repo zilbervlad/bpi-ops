@@ -4,234 +4,102 @@
 {% block header %}Checklist Admin{% endblock %}
 
 {% block content %}
-<div style="display: grid; gap: 24px;">
+<div class="content-grid">
     <section class="panel">
-        <button
-            type="button"
-            id="add-task-toggle"
-            class="panel-head"
-            style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
-            aria-expanded="false"
-        >
-            <div>
-                <h3 style="margin: 0;">Add New Task</h3>
-                <div class="area-subtitle">Create checklist template items</div>
-            </div>
-            <span id="add-task-chevron" class="summary-pill">Show ▼</span>
-        </button>
+        <h3>Add New Task</h3>
+        <form method="POST" class="login-form">
+            <input type="hidden" name="action" value="create">
 
-        <div id="add-task-body" style="display: none; margin-top: 16px;">
-            <form method="POST" class="login-form">
-                <input type="hidden" name="action" value="create">
-
-                <div class="form-group">
-                    <label for="section_name">Section</label>
-                    <select id="section_name" name="section_name" required>
-                        {% for section in section_options %}
-                        <option value="{{ section }}">{{ section }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="task_text">Task Text</label>
-                    <input type="text" id="task_text" name="task_text" required>
-                </div>
-
-                <div class="admin-task-grid">
-                    <div class="form-group">
-                        <label for="expected_minutes">Expected Minutes</label>
-                        <input type="number" id="expected_minutes" name="expected_minutes" value="0" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="sort_order">Sort Order</label>
-                        <input type="number" id="sort_order" name="sort_order" value="999" required>
-                    </div>
-                </div>
-
-                <label class="checkbox-inline">
-                    <input type="checkbox" name="is_required" checked>
-                    Required for integrity/completion
-                </label>
-
-                <button type="submit" class="btn-primary">Add Task</button>
-            </form>
-        </div>
-    </section>
-
-    <section class="panel">
-        <div class="panel-head" style="align-items: flex-start; gap: 12px;">
-            <div>
-                <h3>Checklist Template</h3>
-                <div class="area-subtitle">Filter by section and expand only the tasks you want to edit.</div>
-            </div>
-            <span class="summary-pill">{{ items|length }} tasks</span>
-        </div>
-
-        <div class="admin-task-grid" style="margin-bottom: 16px;">
             <div class="form-group">
-                <label for="section-filter">Search by Section</label>
-                <select id="section-filter">
-                    <option value="">All Sections</option>
+                <label for="section_name">Section</label>
+                <select id="section_name" name="section_name" required>
                     {% for section in section_options %}
                     <option value="{{ section }}">{{ section }}</option>
                     {% endfor %}
                 </select>
             </div>
 
-            <div class="form-group" style="display: flex; align-items: end;">
-                <button type="button" id="reset-section-filter" class="action-btn" style="width: 100%; max-width: 220px;">
-                    Reset Filter
-                </button>
+            <div class="form-group">
+                <label for="task_text">Task Text</label>
+                <input type="text" id="task_text" name="task_text" required>
             </div>
-        </div>
 
-        <div class="admin-check-row" style="margin-bottom: 16px;">
-            <span class="summary-pill" id="visible-task-count">{{ items|length }} visible</span>
-            <span class="summary-pill">All tasks collapsed by default</span>
-        </div>
+            <div class="form-group">
+                <label for="expected_minutes">Expected Minutes</label>
+                <input type="number" id="expected_minutes" name="expected_minutes" value="0" required>
+            </div>
 
-        <div class="admin-task-list" id="checklist-template-list">
+            <div class="form-group">
+                <label for="sort_order">Sort Order</label>
+                <input type="number" id="sort_order" name="sort_order" value="999" required>
+            </div>
+
+            <label class="checkbox-inline">
+                <input type="checkbox" name="is_required" checked>
+                Required for integrity/completion
+            </label>
+
+            <button type="submit" class="btn-primary">Add Task</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h3>Checklist Template</h3>
+        <div class="admin-task-list">
             {% for item in items %}
-            <div class="admin-task-card checklist-admin-card" data-section-name="{{ item.section_name }}">
-                <button
-                    type="button"
-                    class="checklist-task-toggle"
-                    data-task-toggle="{{ item.id }}"
-                    aria-expanded="false"
-                    style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px;"
-                >
-                    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
-                        <span class="summary-pill">ID {{ item.id }}</span>
-                        <span class="summary-pill">{{ item.section_name }}</span>
-                        <span style="font-weight: 700;">{{ item.task_text }}</span>
+            <form method="POST" class="admin-task-card">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="item_id" value="{{ item.id }}">
+
+                <div class="admin-task-top">
+                    <span class="summary-pill">ID {{ item.id }}</span>
+                    <span class="summary-pill">{{ item.section_name }}</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Section</label>
+                    <select name="section_name" required>
+                        {% for section in section_options %}
+                        <option value="{{ section }}" {% if item.section_name == section %}selected{% endif %}>
+                            {{ section }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Task Text</label>
+                    <input type="text" name="task_text" value="{{ item.task_text }}" required>
+                </div>
+
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label>Expected Minutes</label>
+                        <input type="number" name="expected_minutes" value="{{ item.expected_minutes }}" required>
                     </div>
 
-                    <span class="summary-pill" data-task-chevron="{{ item.id }}">Show ▼</span>
-                </button>
-
-                <div data-task-body="{{ item.id }}" style="display: none; margin-top: 16px;">
-                    <form method="POST" class="login-form">
-                        <input type="hidden" name="action" value="update">
-                        <input type="hidden" name="item_id" value="{{ item.id }}">
-
-                        <div class="form-group">
-                            <label>Section</label>
-                            <select name="section_name" required>
-                                {% for section in section_options %}
-                                <option value="{{ section }}" {% if item.section_name == section %}selected{% endif %}>
-                                    {{ section }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Task Text</label>
-                            <input type="text" name="task_text" value="{{ item.task_text }}" required>
-                        </div>
-
-                        <div class="admin-task-grid">
-                            <div class="form-group">
-                                <label>Expected Minutes</label>
-                                <input type="number" name="expected_minutes" value="{{ item.expected_minutes }}" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Sort Order</label>
-                                <input type="number" name="sort_order" value="{{ item.sort_order }}" required>
-                            </div>
-                        </div>
-
-                        <div class="admin-check-row">
-                            <label class="checkbox-inline">
-                                <input type="checkbox" name="is_required" {% if item.is_required %}checked{% endif %}>
-                                Required
-                            </label>
-
-                            <label class="checkbox-inline">
-                                <input type="checkbox" name="is_active" {% if item.is_active %}checked{% endif %}>
-                                Active
-                            </label>
-                        </div>
-
-                        <button type="submit" class="btn-primary">Save Task</button>
-                    </form>
+                    <div class="form-group">
+                        <label>Sort Order</label>
+                        <input type="number" name="sort_order" value="{{ item.sort_order }}" required>
+                    </div>
                 </div>
-            </div>
+
+                <div class="admin-check-row">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="is_required" {% if item.is_required %}checked{% endif %}>
+                        Required
+                    </label>
+
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="is_active" {% if item.is_active %}checked{% endif %}>
+                        Active
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary">Save Task</button>
+            </form>
             {% endfor %}
         </div>
     </section>
 </div>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const addTaskToggle = document.getElementById("add-task-toggle");
-    const addTaskBody = document.getElementById("add-task-body");
-    const addTaskChevron = document.getElementById("add-task-chevron");
-
-    if (addTaskToggle && addTaskBody && addTaskChevron) {
-        addTaskToggle.addEventListener("click", function () {
-            const isHidden = addTaskBody.style.display === "none";
-            addTaskBody.style.display = isHidden ? "block" : "none";
-            addTaskToggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
-            addTaskChevron.textContent = isHidden ? "Hide ▲" : "Show ▼";
-        });
-    }
-
-    const sectionFilter = document.getElementById("section-filter");
-    const resetButton = document.getElementById("reset-section-filter");
-    const cards = Array.from(document.querySelectorAll(".checklist-admin-card"));
-    const visibleCount = document.getElementById("visible-task-count");
-
-    function applySectionFilter() {
-        const selected = (sectionFilter.value || "").trim();
-        let shown = 0;
-
-        cards.forEach(card => {
-            const sectionName = (card.dataset.sectionName || "").trim();
-
-            if (!selected || sectionName === selected) {
-                card.style.display = "grid";
-                shown += 1;
-            } else {
-                card.style.display = "none";
-            }
-        });
-
-        if (visibleCount) {
-            visibleCount.textContent = `${shown} visible`;
-        }
-    }
-
-    if (sectionFilter) {
-        sectionFilter.addEventListener("change", applySectionFilter);
-    }
-
-    if (resetButton) {
-        resetButton.addEventListener("click", function () {
-            sectionFilter.value = "";
-            applySectionFilter();
-        });
-    }
-
-    document.querySelectorAll("[data-task-toggle]").forEach(toggle => {
-        toggle.addEventListener("click", function () {
-            const taskId = this.getAttribute("data-task-toggle");
-            const body = document.querySelector(`[data-task-body="${taskId}"]`);
-            const chevron = document.querySelector(`[data-task-chevron="${taskId}"]`);
-
-            if (!body || !chevron) return;
-
-            const isHidden = body.style.display === "none" || body.style.display === "";
-            body.style.display = isHidden ? "block" : "none";
-            this.setAttribute("aria-expanded", isHidden ? "true" : "false");
-            chevron.textContent = isHidden ? "Hide ▲" : "Show ▼";
-        });
-    });
-
-    applySectionFilter();
-});
-</script>
 {% endblock %}

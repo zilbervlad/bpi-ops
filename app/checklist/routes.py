@@ -385,6 +385,75 @@ def run_checklist_closeout(closeout_date: date):
     }
 
 
+def send_store_summary_email(store_number: str):
+    ops_date = current_ops_date()
+
+    checklist = DailyChecklist.query.filter_by(
+        store_number=store_number,
+        checklist_date=ops_date
+    ).first()
+
+    if not checklist:
+        return {"success": False, "error": f"No checklist found for store {store_number} for today."}
+
+    manager = User.query.filter_by(
+        store_number=store_number,
+        role="manager",
+        is_active=True
+    ).first()
+
+    if not manager:
+        return {"success": False, "error": f"No active manager user found for store {store_number}."}
+
+    manager_email = manager.get_notification_email()
+    if not manager_email:
+        return {"success": False, "error": f"Manager email is not configured for store {store_number}."}
+
+    store = Store.query.filter_by(store_number=store_number).first()
+
+    supervisor = None
+    if store:
+        supervisor = User.query.filter_by(
+            area_name=store.area_name,
+            role="supervisor",
+            is_active=True
+        ).first()
+
+    supervisor_email = supervisor.get_notification_email() if supervisor else None
+
+    incomplete_items = [item.task_text for item in checklist.items if not item.is_completed]
+    manager_walk_integrity = calculate_manager_walk_integrity(checklist)
+
+    if incomplete_items:
+        missing_tasks_text = "\n".join(f"- {task}" for task in incomplete_items)
+    else:
+        missing_tasks_text = "- None"
+
+    send_email(
+        to_email=manager_email,
+        subject=f"[{round(checklist.percent_complete)}%] Store {store_number} Checklist Summary",
+        body=(
+            f"Store: {store_number}\n"
+            f"Date: {ops_date.strftime('%B %d, %Y')}\n\n"
+            f"Completion: {round(checklist.percent_complete, 1)}%\n"
+            f"Integrity Score: {round(checklist.integrity_score, 1)}\n"
+            f"Manager's Walk Integrity: {round(manager_walk_integrity, 1)}\n"
+            f"Status: {checklist.status}\n\n"
+            f"Opening Manager: {(checklist.opening_manager or '').strip() or 'Not set'}\n"
+            f"Closing Manager: {(checklist.closing_manager or '').strip() or 'Not set'}\n\n"
+            f"Missing Tasks:\n{missing_tasks_text}\n\n"
+            f"- BPI Ops"
+        ),
+        cc_emails=supervisor_email
+    )
+
+    return {
+        "success": True,
+        "manager_email": manager_email,
+        "supervisor_email": supervisor_email,
+    }
+
+
 @checklist_bp.route("/overview")
 @login_required
 @role_required("admin", "supervisor", "manager")
@@ -475,78 +544,61 @@ def send_daily_summary(store_number):
         flash("You do not have access to that store.", "error")
         return redirect(url_for("checklist.overview"))
 
-    ops_date = current_ops_date()
-
-    checklist = DailyChecklist.query.filter_by(
-        store_number=store_number,
-        checklist_date=ops_date
-    ).first()
-
-    if not checklist:
-        flash(f"No checklist found for store {store_number} for today.", "error")
-        return redirect(url_for("checklist.overview"))
-
-    manager = User.query.filter_by(
-        store_number=store_number,
-        role="manager",
-        is_active=True
-    ).first()
-
-    if not manager:
-        flash(f"No active manager user found for store {store_number}.", "error")
-        return redirect(url_for("checklist.overview"))
-
-    manager_email = manager.get_notification_email()
-    if not manager_email:
-        flash(f"Manager email is not configured for store {store_number}.", "error")
-        return redirect(url_for("checklist.overview"))
-
-    store = Store.query.filter_by(store_number=store_number).first()
-
-    supervisor = None
-    if store:
-        supervisor = User.query.filter_by(
-            area_name=store.area_name,
-            role="supervisor",
-            is_active=True
-        ).first()
-
-    supervisor_email = supervisor.get_notification_email() if supervisor else None
-
-    incomplete_items = [item.task_text for item in checklist.items if not item.is_completed]
-    manager_walk_integrity = calculate_manager_walk_integrity(checklist)
-
-    if incomplete_items:
-        missing_tasks_text = "\n".join(f"- {task}" for task in incomplete_items)
-    else:
-        missing_tasks_text = "- None"
-
     try:
-        send_email(
-            to_email=manager_email,
-            subject=f"[{round(checklist.percent_complete)}%] Store {store_number} Checklist Summary",
-            body=(
-                f"Store: {store_number}\n"
-                f"Date: {ops_date.strftime('%B %d, %Y')}\n\n"
-                f"Completion: {round(checklist.percent_complete, 1)}%\n"
-                f"Integrity Score: {round(checklist.integrity_score, 1)}\n"
-                f"Manager's Walk Integrity: {round(manager_walk_integrity, 1)}\n"
-                f"Status: {checklist.status}\n\n"
-                f"Opening Manager: {(checklist.opening_manager or '').strip() or 'Not set'}\n"
-                f"Closing Manager: {(checklist.closing_manager or '').strip() or 'Not set'}\n\n"
-                f"Missing Tasks:\n{missing_tasks_text}\n\n"
-                f"- BPI Ops"
-            ),
-            cc_emails=supervisor_email
-        )
+        result = send_store_summary_email(store_number)
 
-        if supervisor_email:
-            flash(f"Summary sent to {manager_email} and cc'd to {supervisor_email}.", "success")
+        if not result["success"]:
+            flash(result["error"], "error")
+            return redirect(url_for("checklist.overview"))
+
+        if result["supervisor_email"]:
+            flash(
+                f"Summary sent to {result['manager_email']} and cc'd to {result['supervisor_email']}.",
+                "success"
+            )
         else:
-            flash(f"Summary sent to {manager_email}. No supervisor email was configured.", "success")
+            flash(
+                f"Summary sent to {result['manager_email']}. No supervisor email was configured.",
+                "success"
+            )
 
     except Exception as e:
         flash(f"Failed to send summary: {str(e)}", "error")
+
+    return redirect(url_for("checklist.overview"))
+
+
+@checklist_bp.route("/send-all-summaries", methods=["POST"])
+@login_required
+@role_required("admin", "supervisor")
+def send_all_summaries():
+    visible_stores = get_visible_stores()
+
+    sent_count = 0
+    failed_count = 0
+    failed_stores = []
+
+    for store in visible_stores:
+        try:
+            result = send_store_summary_email(store.store_number)
+            if result["success"]:
+                sent_count += 1
+            else:
+                failed_count += 1
+                failed_stores.append(f"{store.store_number}: {result['error']}")
+        except Exception as e:
+            failed_count += 1
+            failed_stores.append(f"{store.store_number}: {str(e)}")
+
+    if failed_count == 0:
+        flash(f"Sent all summaries successfully. Total stores sent: {sent_count}.", "success")
+    else:
+        flash(
+            f"Send all complete. Sent: {sent_count}. Failed: {failed_count}.",
+            "success"
+        )
+        for failure in failed_stores[:10]:
+            flash(failure, "error")
 
     return redirect(url_for("checklist.overview"))
 
@@ -635,7 +687,6 @@ def index():
 
     daily = get_or_create_daily_checklist(store_number, selected_date)
 
-    # Backfill for older records that only have manager_on_duty
     if daily.manager_on_duty and not daily.opening_manager:
         daily.opening_manager = daily.manager_on_duty
         db.session.commit()

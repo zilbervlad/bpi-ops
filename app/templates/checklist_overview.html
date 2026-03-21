@@ -15,6 +15,18 @@
     <div class="command-bar-right">
         <div class="command-chip">Oversight View</div>
         <div class="command-chip">{{ today_label }}</div>
+
+        {% if session.get("user_role") in ["admin", "supervisor"] %}
+        <form method="POST" action="{{ url_for('checklist.send_all_summaries') }}" style="margin: 0;">
+            <button
+                type="submit"
+                class="btn-primary"
+                onclick="return confirm('Send individual summary emails for all visible stores?');"
+            >
+                Send All Summaries
+            </button>
+        </form>
+        {% endif %}
     </div>
 </div>
 
@@ -46,7 +58,6 @@
 
 <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
 
-    <!-- In Progress -->
     <details class="panel premium-panel" open>
         <summary class="panel-head" style="cursor:pointer;">
             <h3>In Progress</h3>
@@ -56,10 +67,7 @@
         <div class="admin-task-list">
             {% for item in in_progress %}
             <div class="admin-task-card">
-                <a
-                    href="{{ url_for('checklist.index', store=item.store_number) }}"
-                    style="display:block; color:inherit;"
-                >
+                <a href="{{ url_for('checklist.index', store=item.store_number) }}" style="display:block; color:inherit;">
                     <div class="admin-task-top">
                         <span class="summary-pill">Store {{ item.store_number }}</span>
                         <span class="table-badge badge-warning">{{ item.percent_complete }}%</span>
@@ -87,7 +95,6 @@
         </div>
     </details>
 
-    <!-- Not Started -->
     <details class="panel premium-panel">
         <summary class="panel-head" style="cursor:pointer;">
             <h3>Not Started</h3>
@@ -97,10 +104,7 @@
         <div class="admin-task-list">
             {% for item in not_started %}
             <div class="admin-task-card">
-                <a
-                    href="{{ url_for('checklist.index', store=item.store_number) }}"
-                    style="display:block; color:inherit;"
-                >
+                <a href="{{ url_for('checklist.index', store=item.store_number) }}" style="display:block; color:inherit;">
                     <div class="admin-task-top">
                         <span class="summary-pill">Store {{ item.store_number }}</span>
                         <span class="table-badge badge-neutral">0%</span>
@@ -126,7 +130,6 @@
 
 <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
 
-    <!-- Completed Today -->
     <details class="panel premium-panel">
         <summary class="panel-head" style="cursor:pointer;">
             <h3>Completed Today</h3>
@@ -136,10 +139,7 @@
         <div class="admin-task-list">
             {% for item in completed %}
             <div class="admin-task-card">
-                <a
-                    href="{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date.strftime('%Y-%m-%d')) }}"
-                    style="display:block; color:inherit;"
-                >
+                <a href="{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date.strftime('%Y-%m-%d')) }}" style="display:block; color:inherit;">
                     <div class="admin-task-top">
                         <span class="summary-pill">Store {{ item.store_number }}</span>
                         <span class="table-badge badge-success">{{ item.percent_complete }}%</span>
@@ -167,7 +167,6 @@
         </div>
     </details>
 
-    <!-- Checklist Archives -->
     <details class="panel premium-panel">
         <summary class="panel-head" style="cursor:pointer;">
             <h3>Checklist Archives</h3>
@@ -273,7 +272,6 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-
     const archiveSearch = document.getElementById("archiveSearch");
     const archiveTable = document.getElementById("archiveTable");
 
@@ -300,7 +298,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
-
 });
 </script>
 

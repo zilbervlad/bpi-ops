@@ -2,6 +2,7 @@ from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from app.models import User
 from app.extensions import db
+from app.services.email_service import send_email
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -255,3 +256,31 @@ def manage_users():
 
     users = User.query.order_by(User.name.asc()).all()
     return render_template("users.html", users=users)
+
+
+@auth_bp.route("/users/<int:user_id>/send-test-email", methods=["POST"])
+@login_required
+@role_required("admin")
+def send_test_email_to_user(user_id):
+    user = User.query.get_or_404(user_id)
+
+    to_email = user.get_notification_email()
+    if not to_email:
+        flash("This user does not have an email address configured for notifications.", "error")
+        return redirect(url_for("auth.manage_users"))
+
+    try:
+        send_email(
+            to_email=to_email,
+            subject="BPI Ops Test Email",
+            body=(
+                f"Hello {user.name},\n\n"
+                "This is a test email from BPI Ops.\n\n"
+                "If you received this, your email settings are working."
+            ),
+        )
+        flash(f"Test email sent to {to_email}.", "success")
+    except Exception as e:
+        flash(f"Failed to send test email: {str(e)}", "error")
+
+    return redirect(url_for("auth.manage_users"))

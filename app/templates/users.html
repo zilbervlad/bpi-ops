@@ -211,6 +211,14 @@
                     </button>
                     {% endif %}
                     {% endif %}
+
+                    <button type="submit"
+                            formaction="{{ url_for('auth.send_test_email_to_user', user_id=user.id) }}"
+                            formmethod="post"
+                            formnovalidate
+                            class="btn-primary">
+                        Send Test Email
+                    </button>
                 </div>
             </form>
             {% endfor %}

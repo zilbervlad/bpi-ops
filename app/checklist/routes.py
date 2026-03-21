@@ -496,10 +496,22 @@ def send_daily_summary(store_number):
         flash(f"No active manager user found for store {store_number}.", "error")
         return redirect(url_for("checklist.overview"))
 
-    to_email = manager.get_notification_email()
-    if not to_email:
+    manager_email = manager.get_notification_email()
+    if not manager_email:
         flash(f"Manager email is not configured for store {store_number}.", "error")
         return redirect(url_for("checklist.overview"))
+
+    store = Store.query.filter_by(store_number=store_number).first()
+
+    supervisor = None
+    if store:
+        supervisor = User.query.filter_by(
+            area_name=store.area_name,
+            role="supervisor",
+            is_active=True
+        ).first()
+
+    supervisor_email = supervisor.get_notification_email() if supervisor else None
 
     incomplete_items = [item.task_text for item in checklist.items if not item.is_completed]
     manager_walk_integrity = calculate_manager_walk_integrity(checklist)
@@ -511,8 +523,8 @@ def send_daily_summary(store_number):
 
     try:
         send_email(
-            to_email=to_email,
-            subject=f"Daily Checklist Summary - Store {store_number}",
+            to_email=manager_email,
+            subject=f"[{round(checklist.percent_complete)}%] Store {store_number} Checklist Summary",
             body=(
                 f"Store: {store_number}\n"
                 f"Date: {ops_date.strftime('%B %d, %Y')}\n\n"
@@ -524,9 +536,15 @@ def send_daily_summary(store_number):
                 f"Closing Manager: {(checklist.closing_manager or '').strip() or 'Not set'}\n\n"
                 f"Missing Tasks:\n{missing_tasks_text}\n\n"
                 f"- BPI Ops"
-            )
+            ),
+            cc_emails=supervisor_email
         )
-        flash(f"Summary sent to {to_email}.", "success")
+
+        if supervisor_email:
+            flash(f"Summary sent to {manager_email} and cc'd to {supervisor_email}.", "success")
+        else:
+            flash(f"Summary sent to {manager_email}. No supervisor email was configured.", "success")
+
     except Exception as e:
         flash(f"Failed to send summary: {str(e)}", "error")
 

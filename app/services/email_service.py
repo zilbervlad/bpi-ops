@@ -3,7 +3,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 
-def send_email(to_email: str, subject: str, body: str):
+def send_email(to_email: str, subject: str, body: str, cc_emails=None):
     if not to_email:
         raise ValueError("Missing recipient email address.")
 
@@ -23,7 +23,17 @@ def send_email(to_email: str, subject: str, body: str):
     msg["From"] = email_from
     msg["To"] = to_email
 
+    recipients = [to_email]
+
+    # Handle CC emails
+    if cc_emails:
+        if isinstance(cc_emails, str):
+            cc_emails = [cc_emails]
+
+        msg["Cc"] = ", ".join(cc_emails)
+        recipients.extend(cc_emails)
+
     with smtplib.SMTP(email_host, email_port) as server:
         server.starttls()
         server.login(email_user, email_password)
-        server.send_message(msg)
+        server.sendmail(email_from, recipients, msg.as_string())

@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Nightly Numbers | BPI Ops{% endblock %}
+{% block header %}Nightly Numbers{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <section class="panel">
+        <h3>Submit Nightly Numbers</h3>
+        <p class="subtitle" style="margin-top: 0;">
+            Store {{ store_number }} nightly report. This will email the manager, supervisor, and admin group after save.
+        </p>
+
+        <form method="POST" class="login-form">
+            <div class="form-group">
+                <label for="report_date">Report Date</label>
+                <input
+                    type="date"
+                    id="report_date"
+                    name="report_date"
+                    value="{{ report.report_date.strftime('%Y-%m-%d') if report and report.report_date else today_str }}"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Store</label>
+                <input type="text" value="Store {{ store_number }}" disabled>
+            </div>
+
+            <div class="form-group">
+                <label for="manager_name">Your Name</label>
+                <input
+                    type="text"
+                    id="manager_name"
+                    name="manager_name"
+                    value="{{ report.manager_name if report else '' }}"
+                    required
+                >
+            </div>
+
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="royalty_sales">Royalty Sales</label>
+                    <input
+                        type="text"
+                        id="royalty_sales"
+                        name="royalty_sales"
+                        value="{{ report.royalty_sales if report and report.royalty_sales is not none else '' }}"
+                        placeholder="Example: 8249.55"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="variable_labor">Variable Labor</label>
+                    <input
+                        type="text"
+                        id="variable_labor"
+                        name="variable_labor"
+                        value="{{ report.variable_labor if report and report.variable_labor is not none else '' }}"
+                        placeholder="Example: 20.00"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="labor_goal">Labor Goal</label>
+                <input
+                    type="text"
+                    id="labor_goal"
+                    name="labor_goal"
+                    value="{{ report.labor_goal if report and report.labor_goal is not none else '21.0' }}"
+                    placeholder="Example: 21.0"
+                >
+            </div>
+
+            <label class="checkbox-inline">
+                <input
+                    type="checkbox"
+                    name="invoices_transfers_checked"
+                    {% if report and report.invoices_transfers_checked %}checked{% endif %}
+                >
+                Invoices / Transfers Checked
+            </label>
+
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="food_variance">Food Variance</label>
+                    <input
+                        type="text"
+                        id="food_variance"
+                        name="food_variance"
+                        value="{{ report.food_variance if report and report.food_variance is not none else '' }}"
+                        placeholder="Example: 0.01"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="adt">ADT</label>
+                    <input
+                        type="text"
+                        id="adt"
+                        name="adt"
+                        value="{{ report.adt if report and report.adt is not none else '' }}"
+                        placeholder="Example: 27.83"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="food_variance_details">Food Variance Details</label>
+                <textarea
+                    id="food_variance_details"
+                    name="food_variance_details"
+                    rows="3"
+                    placeholder="Explain variances if needed"
+                >{{ report.food_variance_details if report and report.food_variance_details else '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="adt_reason">ADT Above 25 Min - Why?</label>
+                <textarea
+                    id="adt_reason"
+                    name="adt_reason"
+                    rows="3"
+                    placeholder="Explain if ADT was above target"
+                >{{ report.adt_reason if report and report.adt_reason else '' }}</textarea>
+            </div>
+
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="load_time">Load Time</label>
+                    <input
+                        type="text"
+                        id="load_time"
+                        name="load_time"
+                        value="{{ report.load_time if report and report.load_time else '' }}"
+                        placeholder="Example: 04:59"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="cash_diff">Cash +/-</label>
+                    <input
+                        type="text"
+                        id="cash_diff"
+                        name="cash_diff"
+                        value="{{ report.cash_diff if report and report.cash_diff is not none else '' }}"
+                        placeholder="Example: -11.53"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="bad_orders">Bad Orders - Record Order #</label>
+                <textarea
+                    id="bad_orders"
+                    name="bad_orders"
+                    rows="3"
+                    placeholder="Order numbers or notes"
+                >{{ report.bad_orders if report and report.bad_orders else '' }}</textarea>
+            </div>
+
+            <label class="checkbox-inline">
+                <input
+                    type="checkbox"
+                    name="food_order_placed"
+                    {% if report and report.food_order_placed %}checked{% endif %}
+                >
+                Food Order Placed
+            </label>
+
+            <button type="submit" class="btn-primary">Save & Email Nightly Numbers</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h3>Nightly Report Notes</h3>
+        <div class="svr-value-list">
+            <div class="svr-value-card">
+                <div class="svr-value-label">How this works</div>
+                <div class="svr-value-text">
+                    Submit one report per night for your assigned store. If you save again for the same date, the report updates instead of creating a duplicate.
+                </div>
+            </div>
+
+            <div class="svr-value-card">
+                <div class="svr-value-label">Email flow</div>
+                <div class="svr-value-text">
+                    After save, the report is emailed to the manager, supervisor, and admin recipients configured in the system.
+                </div>
+            </div>
+
+            <div class="svr-value-card">
+                <div class="svr-value-label">Tips</div>
+                <div class="svr-value-text">
+                    Enter numbers without dollar signs if possible. Use details fields for exceptions, missed targets, or unusual situations.
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

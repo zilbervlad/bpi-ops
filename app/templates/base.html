@@ -24,7 +24,6 @@
 
             <nav class="nav">
 
-                <!-- MAIN -->
                 <div class="nav-section">
                     <div class="nav-section-label">Main</div>
 
@@ -57,6 +56,13 @@
                     </a>
                     {% endif %}
 
+                    {% if session.get('user_role') in ['admin', 'supervisor', 'manager'] %}
+                    <a href="{{ url_for('nightly_numbers.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('nightly_numbers') and request.endpoint != 'nightly_numbers.admin' and request.endpoint != 'nightly_numbers.edit_report' %}active{% endif %}">
+                        Nightly Numbers
+                    </a>
+                    {% endif %}
+
                     {% if session.get('user_role') in ['admin', 'supervisor', 'maintenance'] %}
                     <a href="{{ url_for('maintenance.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
@@ -65,7 +71,6 @@
                     {% endif %}
                 </div>
 
-                <!-- ADMIN -->
                 {% if session.get('user_role') == 'admin' %}
                 <div class="nav-section">
                     <div class="nav-section-label">Admin</div>
@@ -80,6 +85,11 @@
                         SVR Admin
                     </a>
 
+                    <a href="{{ url_for('nightly_numbers.admin') }}"
+                       class="{% if request.endpoint == 'nightly_numbers.admin' or request.endpoint == 'nightly_numbers.edit_report' %}active{% endif %}">
+                        Nightly Numbers Admin
+                    </a>
+
                     <a href="{{ url_for('store_admin.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('store_admin') %}active{% endif %}">
                         Store Admin
@@ -92,7 +102,6 @@
                 </div>
                 {% endif %}
 
-                <!-- LOGOUT -->
                 <div class="nav-section nav-section-bottom">
                     <a href="{{ url_for('auth.logout') }}" class="logout-link">Logout</a>
                 </div>

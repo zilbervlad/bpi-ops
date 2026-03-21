@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Nightly Numbers Admin | BPI Ops{% endblock %}
+{% block header %}Nightly Numbers Admin{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <section class="panel">
+        <h3>Filter Reports</h3>
+
+        <form method="GET" class="login-form">
+            <div class="form-group">
+                <label for="store">Store</label>
+                <select id="store" name="store">
+                    <option value="">All Visible Stores</option>
+                    {% for store in stores %}
+                    <option value="{{ store.store_number }}" {% if selected_store == store.store_number %}selected{% endif %}>
+                        {{ store.store_number }}{% if store.store_name %} - {{ store.store_name }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Report Date</label>
+                <input type="date" id="date" name="date" value="{{ selected_date }}">
+            </div>
+
+            <button type="submit" class="btn-primary">Apply Filters</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h3>Submitted Reports</h3>
+
+        <div class="admin-task-list">
+            {% for report in reports %}
+            <div class="admin-task-card">
+                <div class="admin-task-top">
+                    <span class="summary-pill">Store {{ report.store_number }}</span>
+                    <span class="summary-pill">{{ report.report_date.strftime('%b %d, %Y') }}</span>
+
+                    {% if report.variable_labor is not none and report.labor_goal is not none %}
+                        {% if report.variable_labor > report.labor_goal %}
+                        <span class="table-badge badge-danger">Labor High</span>
+                        {% else %}
+                        <span class="table-badge badge-success">Labor OK</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="table-badge badge-neutral">Labor N/A</span>
+                    {% endif %}
+
+                    {% if report.adt is not none %}
+                        {% if report.adt > 25 %}
+                        <span class="table-badge badge-danger">ADT High</span>
+                        {% else %}
+                        <span class="table-badge badge-success">ADT OK</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="table-badge badge-neutral">ADT N/A</span>
+                    {% endif %}
+                </div>
+
+                <div class="admin-task-grid compact-grid">
+                    <div class="svr-value-card">
+                        <div class="svr-value-label">Manager</div>
+                        <div class="svr-value-text">{{ report.manager_name or "Not provided" }}</div>
+                    </div>
+
+                    <div class="svr-value-card">
+                        <div class="svr-value-label">Royalty Sales</div>
+                        <div class="svr-value-text">
+                            {{ report.royalty_sales if report.royalty_sales is not none else "Not provided" }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-task-grid compact-grid">
+                    <div class="svr-value-card">
+                        <div class="svr-value-label">Variable Labor / Goal</div>
+                        <div class="svr-value-text">
+                            {{ report.variable_labor if report.variable_labor is not none else "N/A" }}
+                            /
+                            {{ report.labor_goal if report.labor_goal is not none else "N/A" }}
+                        </div>
+                    </div>
+
+                    <div class="svr-value-card">
+                        <div class="svr-value-label">Food Variance</div>
+                        <div class="svr-value-text">
+                            {{ report.food_variance if report.food_variance is not none else "Not provided" }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-task-grid compact-grid">
+                    <div class="svr-value-card">
+                        <div class="svr-value-label">ADT</div>
+                        <div class="svr-value-text">
+                            {{ report.adt if report.adt is not none else "Not provided" }}
+                        </div>
+                    </div>
+
+                    <div class="svr-value-card">
+                        <div class="svr-value-label">Load Time</div>
+                        <div class="svr-value-text">{{ report.load_time or "Not provided" }}</div>
+                    </div>
+                </div>
+
+                <div class="admin-task-grid compact-grid">
+                    <div class="svr-value-card">
+                        <div class="svr-value-label">Cash +/-</div>
+                        <div class="svr-value-text">
+                            {{ report.cash_diff if report.cash_diff is not none else "Not provided" }}
+                        </div>
+                    </div>
+
+                    <div class="svr-value-card">
+                        <div class="svr-value-label">Invoices / Transfers Checked</div>
+                        <div class="svr-value-text">{{ "Yes" if report.invoices_transfers_checked else "No" }}</div>
+                    </div>
+                </div>
+
+                <div class="admin-task-grid compact-grid">
+                    <div class="svr-value-card">
+                        <div class="svr-value-label">Food Order Placed</div>
+                        <div class="svr-value-text">{{ "Yes" if report.food_order_placed else "No" }}</div>
+                    </div>
+
+                    <div class="svr-value-card">
+                        <div class="svr-value-label">Created</div>
+                        <div class="svr-value-text">
+                            {{ report.created_at.strftime('%b %d, %Y %I:%M %p') if report.created_at else "N/A" }}
+                        </div>
+                    </div>
+                </div>
+
+                {% if report.food_variance_details %}
+                <div class="svr-value-card">
+                    <div class="svr-value-label">Food Variance Details</div>
+                    <div class="svr-value-text">{{ report.food_variance_details }}</div>
+                </div>
+                {% endif %}
+
+                {% if report.adt_reason %}
+                <div class="svr-value-card">
+                    <div class="svr-value-label">ADT Reason</div>
+                    <div class="svr-value-text">{{ report.adt_reason }}</div>
+                </div>
+                {% endif %}
+
+                {% if report.bad_orders %}
+                <div class="svr-value-card">
+                    <div class="svr-value-label">Bad Orders</div>
+                    <div class="svr-value-text">{{ report.bad_orders }}</div>
+                </div>
+                {% endif %}
+
+                {% if session.get("user_role") == "admin" %}
+                <div class="admin-check-row compact-actions" style="margin-top: 10px;">
+                    <a href="{{ url_for('nightly_numbers.edit_report', report_id=report.id) }}" class="btn-primary">
+                        Edit Report
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="admin-task-card">
+                No nightly numbers reports found for the selected filters.
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

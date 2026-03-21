@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Nightly Numbers | BPI Ops{% endblock %}
+{% block header %}Edit Nightly Numbers{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <section class="panel">
+        <h3>Edit Nightly Numbers Report</h3>
+        <p class="subtitle" style="margin-top: 0;">
+            Store {{ report.store_number }} nightly report. Admin can adjust the full line.
+        </p>
+
+        <form method="POST" class="login-form">
+            <div class="form-group">
+                <label for="report_date">Report Date</label>
+                <input
+                    type="date"
+                    id="report_date"
+                    name="report_date"
+                    value="{{ report.report_date.strftime('%Y-%m-%d') }}"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Store</label>
+                <input type="text" value="Store {{ report.store_number }}" disabled>
+            </div>
+
+            <div class="form-group">
+                <label for="manager_name">Manager Name</label>
+                <input
+                    type="text"
+                    id="manager_name"
+                    name="manager_name"
+                    value="{{ report.manager_name or '' }}"
+                    required
+                >
+            </div>
+
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="royalty_sales">Royalty Sales</label>
+                    <input
+                        type="text"
+                        id="royalty_sales"
+                        name="royalty_sales"
+                        value="{{ report.royalty_sales if report.royalty_sales is not none else '' }}"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="variable_labor">Variable Labor</label>
+                    <input
+                        type="text"
+                        id="variable_labor"
+                        name="variable_labor"
+                        value="{{ report.variable_labor if report.variable_labor is not none else '' }}"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="labor_goal">Labor Goal</label>
+                <input
+                    type="text"
+                    id="labor_goal"
+                    name="labor_goal"
+                    value="{{ report.labor_goal if report.labor_goal is not none else '' }}"
+                >
+            </div>
+
+            <label class="checkbox-inline">
+                <input
+                    type="checkbox"
+                    name="invoices_transfers_checked"
+                    {% if report.invoices_transfers_checked %}checked{% endif %}
+                >
+                Invoices / Transfers Checked
+            </label>
+
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="food_variance">Food Variance</label>
+                    <input
+                        type="text"
+                        id="food_variance"
+                        name="food_variance"
+                        value="{{ report.food_variance if report.food_variance is not none else '' }}"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="adt">ADT</label>
+                    <input
+                        type="text"
+                        id="adt"
+                        name="adt"
+                        value="{{ report.adt if report.adt is not none else '' }}"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="food_variance_details">Food Variance Details</label>
+                <textarea
+                    id="food_variance_details"
+                    name="food_variance_details"
+                    rows="3"
+                >{{ report.food_variance_details or '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="adt_reason">ADT Above 25 Min - Why?</label>
+                <textarea
+                    id="adt_reason"
+                    name="adt_reason"
+                    rows="3"
+                >{{ report.adt_reason or '' }}</textarea>
+            </div>
+
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="load_time">Load Time</label>
+                    <input
+                        type="text"
+                        id="load_time"
+                        name="load_time"
+                        value="{{ report.load_time or '' }}"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="cash_diff">Cash +/-</label>
+                    <input
+                        type="text"
+                        id="cash_diff"
+                        name="cash_diff"
+                        value="{{ report.cash_diff if report.cash_diff is not none else '' }}"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="bad_orders">Bad Orders</label>
+                <textarea
+                    id="bad_orders"
+                    name="bad_orders"
+                    rows="3"
+                >{{ report.bad_orders or '' }}</textarea>
+            </div>
+
+            <label class="checkbox-inline">
+                <input
+                    type="checkbox"
+                    name="food_order_placed"
+                    {% if report.food_order_placed %}checked{% endif %}
+                >
+                Food Order Placed
+            </label>
+
+            <div class="admin-check-row compact-actions" style="margin-top: 10px;">
+                <button type="submit" class="btn-primary">Save Report</button>
+                <a href="{{ url_for('nightly_numbers.admin') }}" class="btn-primary">Back</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h3>Report Info</h3>
+
+        <div class="svr-value-list">
+            <div class="svr-value-card">
+                <div class="svr-value-label">Created By</div>
+                <div class="svr-value-text">
+                    {% if report.created_by %}
+                        {{ report.created_by.name }}
+                    {% else %}
+                        Unknown
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="svr-value-card">
+                <div class="svr-value-label">Created At</div>
+                <div class="svr-value-text">
+                    {{ report.created_at.strftime('%b %d, %Y %I:%M %p') if report.created_at else 'N/A' }}
+                </div>
+            </div>
+
+            <div class="svr-value-card">
+                <div class="svr-value-label">Last Updated</div>
+                <div class="svr-value-text">
+                    {{ report.updated_at.strftime('%b %d, %Y %I:%M %p') if report.updated_at else 'N/A' }}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -81,10 +81,7 @@ class DailyChecklist(db.Model):
     store_number = db.Column(db.String(20), nullable=False)
     checklist_date = db.Column(db.Date, nullable=False, default=today_et)
 
-    # Keep old field temporarily for compatibility
     manager_on_duty = db.Column(db.String(120), nullable=True)
-
-    # New ownership fields
     opening_manager = db.Column(db.String(120), nullable=True)
     closing_manager = db.Column(db.String(120), nullable=True)
 
@@ -215,7 +212,7 @@ class WeeklyFocusItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     store_number = db.Column(db.String(10), nullable=False)
 
-    item_type = db.Column(db.String(50), nullable=False)  # cleaning / goal
+    item_type = db.Column(db.String(50), nullable=False)
     item_text = db.Column(db.String(255), nullable=False)
 
     is_completed = db.Column(db.Boolean, default=False)
@@ -245,3 +242,38 @@ class MaintenanceTicket(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     svr_report = db.relationship("SVRReport")
+
+
+class NightlyNumbersReport(db.Model):
+    __tablename__ = "nightly_numbers_reports"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    store_number = db.Column(db.String(10), nullable=False)
+    report_date = db.Column(db.Date, nullable=False, default=today_et)
+
+    manager_name = db.Column(db.String(120), nullable=True)
+
+    royalty_sales = db.Column(db.Float, nullable=True)
+    variable_labor = db.Column(db.Float, nullable=True)
+    labor_goal = db.Column(db.Float, nullable=True)
+
+    invoices_transfers_checked = db.Column(db.Boolean, default=False)
+
+    food_variance = db.Column(db.Float, nullable=True)
+    food_variance_details = db.Column(db.Text, nullable=True)
+
+    adt = db.Column(db.Float, nullable=True)
+    adt_reason = db.Column(db.Text, nullable=True)
+
+    load_time = db.Column(db.String(20), nullable=True)
+    bad_orders = db.Column(db.Text, nullable=True)
+
+    cash_diff = db.Column(db.Float, nullable=True)
+    food_order_placed = db.Column(db.Boolean, default=False)
+
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    created_by = db.relationship("User")

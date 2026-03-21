@@ -17,6 +17,7 @@ def create_app():
     from app.maintenance.routes import maintenance_bp
     from app.store_admin.routes import store_admin_bp
     from app.reports.routes import reports_bp
+    from app.nightly_numbers.routes import nightly_numbers_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -25,6 +26,7 @@ def create_app():
     app.register_blueprint(maintenance_bp)
     app.register_blueprint(store_admin_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(nightly_numbers_bp)
 
     @app.route("/create-db")
     def create_db():

@@ -126,22 +126,10 @@ def send_nightly_numbers_email(report: NightlyNumbersReport):
     }
 
 
-@nightly_numbers_bp.route("/", methods=["GET"])
+@nightly_numbers_bp.route("/", methods=["GET", "POST"])
 @login_required
 @role_required("manager", "admin", "supervisor")
 def index():
-    role = session.get("user_role")
-
-    if role == "manager":
-        return redirect(url_for("nightly_numbers.submit"))
-
-    return redirect(url_for("nightly_numbers.admin"))
-
-
-@nightly_numbers_bp.route("/submit", methods=["GET", "POST"])
-@login_required
-@role_required("manager", "admin", "supervisor")
-def submit():
     role = session.get("user_role")
     user_store = session.get("user_store")
 
@@ -161,7 +149,7 @@ def submit():
             report_date = datetime.strptime(report_date_str, "%Y-%m-%d").date()
         except ValueError:
             flash("Invalid report date.", "error")
-            return redirect(url_for("nightly_numbers.submit"))
+            return redirect(url_for("nightly_numbers.index"))
 
         report = NightlyNumbersReport.query.filter_by(
             store_number=user_store,
@@ -201,7 +189,7 @@ def submit():
         except Exception as e:
             flash(f"Nightly numbers saved, but email failed: {str(e)}", "error")
 
-        return redirect(url_for("nightly_numbers.submit"))
+        return redirect(url_for("nightly_numbers.index"))
 
     existing_report = NightlyNumbersReport.query.filter_by(
         store_number=user_store,

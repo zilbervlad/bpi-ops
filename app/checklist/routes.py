@@ -11,7 +11,9 @@ from app.models import (
     DailyChecklistItem,
     Store,
     ChecklistException,
+    User,
 )
+from app.services.email_service import send_email
 
 checklist_bp = Blueprint("checklist", __name__, url_prefix="/checklist")
 
@@ -462,6 +464,73 @@ def overview():
         recent_archives=recent_archives,
         today_label=today.strftime("%B %d, %Y"),
     )
+
+
+@checklist_bp.route("/send-summary/<store_number>", methods=["POST"])
+@login_required
+@role_required("admin", "supervisor")
+def send_daily_summary(store_number):
+    visible_store_numbers = {store.store_number for store in get_visible_stores()}
+    if store_number not in visible_store_numbers:
+        flash("You do not have access to that store.", "error")
+        return redirect(url_for("checklist.overview"))
+
+    ops_date = current_ops_date()
+
+    checklist = DailyChecklist.query.filter_by(
+        store_number=store_number,
+        checklist_date=ops_date
+    ).first()
+
+    if not checklist:
+        flash(f"No checklist found for store {store_number} for today.", "error")
+        return redirect(url_for("checklist.overview"))
+
+    manager = User.query.filter_by(
+        store_number=store_number,
+        role="manager",
+        is_active=True
+    ).first()
+
+    if not manager:
+        flash(f"No active manager user found for store {store_number}.", "error")
+        return redirect(url_for("checklist.overview"))
+
+    to_email = manager.get_notification_email()
+    if not to_email:
+        flash(f"Manager email is not configured for store {store_number}.", "error")
+        return redirect(url_for("checklist.overview"))
+
+    incomplete_items = [item.task_text for item in checklist.items if not item.is_completed]
+    manager_walk_integrity = calculate_manager_walk_integrity(checklist)
+
+    if incomplete_items:
+        missing_tasks_text = "\n".join(f"- {task}" for task in incomplete_items)
+    else:
+        missing_tasks_text = "- None"
+
+    try:
+        send_email(
+            to_email=to_email,
+            subject=f"Daily Checklist Summary - Store {store_number}",
+            body=(
+                f"Store: {store_number}\n"
+                f"Date: {ops_date.strftime('%B %d, %Y')}\n\n"
+                f"Completion: {round(checklist.percent_complete, 1)}%\n"
+                f"Integrity Score: {round(checklist.integrity_score, 1)}\n"
+                f"Manager's Walk Integrity: {round(manager_walk_integrity, 1)}\n"
+                f"Status: {checklist.status}\n\n"
+                f"Opening Manager: {(checklist.opening_manager or '').strip() or 'Not set'}\n"
+                f"Closing Manager: {(checklist.closing_manager or '').strip() or 'Not set'}\n\n"
+                f"Missing Tasks:\n{missing_tasks_text}\n\n"
+                f"- BPI Ops"
+            )
+        )
+        flash(f"Summary sent to {to_email}.", "success")
+    except Exception as e:
+        flash(f"Failed to send summary: {str(e)}", "error")
+
+    return redirect(url_for("checklist.overview"))
 
 
 @checklist_bp.route("/delete-archive", methods=["POST"])

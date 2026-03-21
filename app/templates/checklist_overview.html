@@ -46,231 +46,260 @@
 
 <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
 
-<!-- In Progress -->
-<details class="panel premium-panel" open>
-<summary class="panel-head" style="cursor:pointer;">
-<h3>In Progress</h3>
-<span class="summary-pill">{{ in_progress|length }} stores</span>
-</summary>
+    <!-- In Progress -->
+    <details class="panel premium-panel" open>
+        <summary class="panel-head" style="cursor:pointer;">
+            <h3>In Progress</h3>
+            <span class="summary-pill">{{ in_progress|length }} stores</span>
+        </summary>
 
-<div class="admin-task-list">
-{% for item in in_progress %}
-<a class="admin-task-card" href="{{ url_for('checklist.index', store=item.store_number) }}">
-<div class="admin-task-top">
-<span class="summary-pill">Store {{ item.store_number }}</span>
-<span class="table-badge badge-warning">{{ item.percent_complete }}%</span>
-<span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-Integrity {{ item.integrity_score }}%
-</span>
-<span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-Walk {{ item.manager_walk_integrity }}%
-</span>
-</div>
-<div class="area-subtitle">{{ item.store_name }} | {{ item.area_name }}</div>
-</a>
-{% else %}
-<div class="admin-task-card">No stores currently in progress.</div>
-{% endfor %}
-</div>
-</details>
+        <div class="admin-task-list">
+            {% for item in in_progress %}
+            <div class="admin-task-card">
+                <a
+                    href="{{ url_for('checklist.index', store=item.store_number) }}"
+                    style="display:block; color:inherit;"
+                >
+                    <div class="admin-task-top">
+                        <span class="summary-pill">Store {{ item.store_number }}</span>
+                        <span class="table-badge badge-warning">{{ item.percent_complete }}%</span>
+                        <span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                            Integrity {{ item.integrity_score }}%
+                        </span>
+                        <span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                            Walk {{ item.manager_walk_integrity }}%
+                        </span>
+                    </div>
+                    <div class="area-subtitle">{{ item.store_name }} | {{ item.area_name }}</div>
+                </a>
 
-<!-- Not Started -->
-<details class="panel premium-panel">
-<summary class="panel-head" style="cursor:pointer;">
-<h3>Not Started</h3>
-<span class="summary-pill">{{ not_started|length }} stores</span>
-</summary>
+                {% if session.get("user_role") in ["admin", "supervisor"] %}
+                <div style="margin-top: 14px;">
+                    <form method="POST" action="{{ url_for('checklist.send_daily_summary', store_number=item.store_number) }}">
+                        <button type="submit" class="btn-primary">Send Summary</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="admin-task-card">No stores currently in progress.</div>
+            {% endfor %}
+        </div>
+    </details>
 
-<div class="admin-task-list">
-{% for item in not_started %}
-<a class="admin-task-card" href="{{ url_for('checklist.index', store=item.store_number) }}">
-<div class="admin-task-top">
-<span class="summary-pill">Store {{ item.store_number }}</span>
-<span class="table-badge badge-neutral">0%</span>
-</div>
-<div class="area-subtitle">{{ item.store_name }} | {{ item.area_name }}</div>
-</a>
-{% else %}
-<div class="admin-task-card">Every visible store has started today’s checklist.</div>
-{% endfor %}
-</div>
-</details>
+    <!-- Not Started -->
+    <details class="panel premium-panel">
+        <summary class="panel-head" style="cursor:pointer;">
+            <h3>Not Started</h3>
+            <span class="summary-pill">{{ not_started|length }} stores</span>
+        </summary>
+
+        <div class="admin-task-list">
+            {% for item in not_started %}
+            <div class="admin-task-card">
+                <a
+                    href="{{ url_for('checklist.index', store=item.store_number) }}"
+                    style="display:block; color:inherit;"
+                >
+                    <div class="admin-task-top">
+                        <span class="summary-pill">Store {{ item.store_number }}</span>
+                        <span class="table-badge badge-neutral">0%</span>
+                    </div>
+                    <div class="area-subtitle">{{ item.store_name }} | {{ item.area_name }}</div>
+                </a>
+
+                {% if session.get("user_role") in ["admin", "supervisor"] %}
+                <div style="margin-top: 14px;">
+                    <form method="POST" action="{{ url_for('checklist.send_daily_summary', store_number=item.store_number) }}">
+                        <button type="submit" class="btn-primary">Send Summary</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="admin-task-card">Every visible store has started today’s checklist.</div>
+            {% endfor %}
+        </div>
+    </details>
 
 </div>
 
 <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
 
-<!-- Completed Today -->
-<details class="panel premium-panel">
-<summary class="panel-head" style="cursor:pointer;">
-<h3>Completed Today</h3>
-<span class="summary-pill">{{ completed|length }} stores</span>
-</summary>
+    <!-- Completed Today -->
+    <details class="panel premium-panel">
+        <summary class="panel-head" style="cursor:pointer;">
+            <h3>Completed Today</h3>
+            <span class="summary-pill">{{ completed|length }} stores</span>
+        </summary>
 
-<div class="admin-task-list">
-{% for item in completed %}
-<a class="admin-task-card" href="{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date.strftime('%Y-%m-%d')) }}">
-<div class="admin-task-top">
-<span class="summary-pill">Store {{ item.store_number }}</span>
-<span class="table-badge badge-success">{{ item.percent_complete }}%</span>
-<span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-Integrity {{ item.integrity_score }}%
-</span>
-<span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-Walk {{ item.manager_walk_integrity }}%
-</span>
-</div>
-<div class="area-subtitle">{{ item.store_name }} | {{ item.area_name }}</div>
-</a>
-{% else %}
-<div class="admin-task-card">No stores have completed today’s checklist yet.</div>
-{% endfor %}
-</div>
-</details>
+        <div class="admin-task-list">
+            {% for item in completed %}
+            <div class="admin-task-card">
+                <a
+                    href="{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date.strftime('%Y-%m-%d')) }}"
+                    style="display:block; color:inherit;"
+                >
+                    <div class="admin-task-top">
+                        <span class="summary-pill">Store {{ item.store_number }}</span>
+                        <span class="table-badge badge-success">{{ item.percent_complete }}%</span>
+                        <span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                            Integrity {{ item.integrity_score }}%
+                        </span>
+                        <span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                            Walk {{ item.manager_walk_integrity }}%
+                        </span>
+                    </div>
+                    <div class="area-subtitle">{{ item.store_name }} | {{ item.area_name }}</div>
+                </a>
 
-<!-- Checklist Archives -->
-<details class="panel premium-panel">
-<summary class="panel-head" style="cursor:pointer;">
-<h3>Checklist Archives</h3>
-<span class="summary-pill">{{ recent_archives|length }} items</span>
-</summary>
+                {% if session.get("user_role") in ["admin", "supervisor"] %}
+                <div style="margin-top: 14px;">
+                    <form method="POST" action="{{ url_for('checklist.send_daily_summary', store_number=item.store_number) }}">
+                        <button type="submit" class="btn-primary">Send Summary</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="admin-task-card">No stores have completed today’s checklist yet.</div>
+            {% endfor %}
+        </div>
+    </details>
 
-<div style="margin-bottom: 16px;">
-<input
-id="archiveSearch"
-type="text"
-placeholder="Search store, name, area, date, status..."
-style="
-width: 100%;
-padding: 10px 12px;
-border-radius: 10px;
-border: 1px solid #d1d5db;
-font-size: 14px;
-box-sizing: border-box;
-"
-/>
-</div>
+    <!-- Checklist Archives -->
+    <details class="panel premium-panel">
+        <summary class="panel-head" style="cursor:pointer;">
+            <h3>Checklist Archives</h3>
+            <span class="summary-pill">{{ recent_archives|length }} items</span>
+        </summary>
 
-<div class="table-wrap premium-table-wrap">
-<table class="data-table premium-table" id="archiveTable">
-<thead>
-<tr>
-<th>Store</th>
-<th>Name</th>
-<th>Area</th>
-<th>Date</th>
-<th>Completion</th>
-<th>Integrity</th>
-<th>Walk Integrity</th>
-<th>Status</th>
-{% if session.get("user_role") == "admin" %}
-<th>Actions</th>
-{% endif %}
-</tr>
-</thead>
-<tbody>
-{% for item in recent_archives %}
-<tr onclick="window.location='{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date.strftime('%Y-%m-%d')) }}'" style="cursor:pointer;">
-<td>{{ item.store_number }}</td>
-<td>{{ item.store_name }}</td>
-<td>{{ item.area_name }}</td>
-<td>{{ item.checklist_date.strftime('%b %d, %Y') }}</td>
+        <div style="margin-bottom: 16px;">
+            <input
+                id="archiveSearch"
+                type="text"
+                placeholder="Search store, name, area, date, status..."
+                style="
+                    width: 100%;
+                    padding: 10px 12px;
+                    border-radius: 10px;
+                    border: 1px solid #d1d5db;
+                    font-size: 14px;
+                    box-sizing: border-box;
+                "
+            />
+        </div>
 
-<td>
-<span class="table-badge {% if item.percent_complete >= 100 %}badge-success{% elif item.percent_complete > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-{{ item.percent_complete }}%
-</span>
-</td>
+        <div class="table-wrap premium-table-wrap">
+            <table class="data-table premium-table" id="archiveTable">
+                <thead>
+                    <tr>
+                        <th>Store</th>
+                        <th>Name</th>
+                        <th>Area</th>
+                        <th>Date</th>
+                        <th>Completion</th>
+                        <th>Integrity</th>
+                        <th>Walk Integrity</th>
+                        <th>Status</th>
+                        {% if session.get("user_role") == "admin" %}
+                        <th>Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in recent_archives %}
+                    <tr onclick="window.location='{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date.strftime('%Y-%m-%d')) }}'" style="cursor:pointer;">
+                        <td>{{ item.store_number }}</td>
+                        <td>{{ item.store_name }}</td>
+                        <td>{{ item.area_name }}</td>
+                        <td>{{ item.checklist_date.strftime('%b %d, %Y') }}</td>
 
-<td>
-<span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-{{ item.integrity_score }}%
-</span>
-</td>
+                        <td>
+                            <span class="table-badge {% if item.percent_complete >= 100 %}badge-success{% elif item.percent_complete > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                                {{ item.percent_complete }}%
+                            </span>
+                        </td>
 
-<td>
-<span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-{{ item.manager_walk_integrity }}%
-</span>
-</td>
+                        <td>
+                            <span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                                {{ item.integrity_score }}%
+                            </span>
+                        </td>
 
-<td>{{ item.status.replace('_', ' ')|title }}</td>
+                        <td>
+                            <span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
+                                {{ item.manager_walk_integrity }}%
+                            </span>
+                        </td>
 
-{% if session.get("user_role") == "admin" %}
-<td onclick="event.stopPropagation();">
-    <form
-        method="POST"
-        action="{{ url_for('checklist.delete_archive') }}"
-        onsubmit="event.stopPropagation(); return confirm('Delete archived checklist for store {{ item.store_number }} on {{ item.checklist_date.strftime('%b %d, %Y') }}?');"
-        style="margin:0;"
-    >
-        <input type="hidden" name="store_number" value="{{ item.store_number }}">
-        <input type="hidden" name="checklist_date" value="{{ item.checklist_date.strftime('%Y-%m-%d') }}">
-        <button
-            type="submit"
-            class="table-badge"
-            style="border:none; background:#ef4444; color:#fff; padding:8px 10px; border-radius:8px; cursor:pointer;"
-        >
-            Delete
-        </button>
-    </form>
-</td>
-{% endif %}
-</tr>
-{% else %}
-<tr>
-<td colspan="{% if session.get('user_role') == 'admin' %}9{% else %}8{% endif %}">No archive history available yet.</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-</div>
+                        <td>{{ item.status.replace('_', ' ')|title }}</td>
 
-</details>
+                        {% if session.get("user_role") == "admin" %}
+                        <td onclick="event.stopPropagation();">
+                            <form
+                                method="POST"
+                                action="{{ url_for('checklist.delete_archive') }}"
+                                onsubmit="event.stopPropagation(); return confirm('Delete archived checklist for store {{ item.store_number }} on {{ item.checklist_date.strftime('%b %d, %Y') }}?');"
+                                style="margin:0;"
+                            >
+                                <input type="hidden" name="store_number" value="{{ item.store_number }}">
+                                <input type="hidden" name="checklist_date" value="{{ item.checklist_date.strftime('%Y-%m-%d') }}">
+                                <button
+                                    type="submit"
+                                    class="table-badge"
+                                    style="border:none; background:#ef4444; color:#fff; padding:8px 10px; border-radius:8px; cursor:pointer;"
+                                >
+                                    Delete
+                                </button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{% if session.get('user_role') == 'admin' %}9{% else %}8{% endif %}">
+                            No archive history available yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </details>
 
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-const archiveSearch = document.getElementById("archiveSearch");
-const archiveTable = document.getElementById("archiveTable");
+    const archiveSearch = document.getElementById("archiveSearch");
+    const archiveTable = document.getElementById("archiveTable");
 
-if (archiveSearch && archiveTable) {
+    if (archiveSearch && archiveTable) {
+        archiveSearch.addEventListener("keyup", function () {
+            const search = this.value.toLowerCase();
+            const rows = archiveTable.querySelectorAll("tbody tr");
 
-archiveSearch.addEventListener("keyup", function () {
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(search) ? "" : "none";
+            });
+        });
+    }
 
-const search = this.value.toLowerCase();
-const rows = archiveTable.querySelectorAll("tbody tr");
-
-rows.forEach(row => {
-const text = row.innerText.toLowerCase();
-row.style.display = text.includes(search) ? "" : "none";
-});
-
-});
-
-}
-
-document.querySelectorAll("details.premium-panel").forEach(section => {
-
-section.addEventListener("toggle", function () {
-
-if (this.open) {
-
-document.querySelectorAll("details.premium-panel").forEach(other => {
-
-if (other !== this) {
-other.removeAttribute("open");
-}
-
-});
-
-}
-
-});
-
-});
+    document.querySelectorAll("details.premium-panel").forEach(section => {
+        section.addEventListener("toggle", function () {
+            if (this.open) {
+                document.querySelectorAll("details.premium-panel").forEach(other => {
+                    if (other !== this) {
+                        other.removeAttribute("open");
+                    }
+                });
+            }
+        });
+    });
 
 });
 </script>

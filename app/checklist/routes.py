@@ -451,7 +451,91 @@ def send_store_summary_email(store_number: str):
         "success": True,
         "manager_email": manager_email,
         "supervisor_email": supervisor_email,
+        "store_number": store_number,
+        "percent_complete": round(checklist.percent_complete, 1),
+        "integrity_score": round(checklist.integrity_score, 1),
+        "manager_walk_integrity": round(manager_walk_integrity, 1),
+        "status": checklist.status,
     }
+
+
+def send_owner_summary_email(user_id: int, visible_stores, send_results):
+    user = User.query.get(user_id)
+    if not user:
+        return {"success": False, "error": "Sending user not found."}
+
+    owner_email = user.get_notification_email()
+    if not owner_email:
+        return {"success": False, "error": "Your notification email is not configured."}
+
+    ops_date = current_ops_date()
+
+    total_visible = len(visible_stores)
+    sent_count = len([r for r in send_results if r.get("success")])
+    failed_results = [r for r in send_results if not r.get("success")]
+    failed_count = len(failed_results)
+
+    store_numbers = [store.store_number for store in visible_stores]
+
+    today_checklists = DailyChecklist.query.filter(
+        DailyChecklist.store_number.in_(store_numbers),
+        DailyChecklist.checklist_date == ops_date
+    ).all() if store_numbers else []
+
+    not_started_count = total_visible - len(today_checklists)
+    completed_count = sum(1 for c in today_checklists if c.status == "completed")
+    in_progress_count = len(today_checklists) - completed_count
+
+    avg_completion = round(
+        sum(c.percent_complete or 0 for c in today_checklists) / len(today_checklists),
+        1
+    ) if today_checklists else 0.0
+
+    avg_integrity = round(
+        sum(c.integrity_score or 0 for c in today_checklists) / len(today_checklists),
+        1
+    ) if today_checklists else 0.0
+
+    lines = []
+    for result in send_results:
+        if result.get("success"):
+            lines.append(
+                f"Store {result['store_number']}: "
+                f"{result['percent_complete']}% complete | "
+                f"Integrity {result['integrity_score']} | "
+                f"Walk {result['manager_walk_integrity']} | "
+                f"{result['status'].replace('_', ' ').title()}"
+            )
+
+    failed_lines = []
+    for result in failed_results[:10]:
+        failed_lines.append(f"- {result.get('store_number', 'Unknown')}: {result.get('error', 'Unknown error')}")
+
+    body = (
+        f"BPI Ops Send-All Summary\n"
+        f"Date: {ops_date.strftime('%B %d, %Y')}\n\n"
+        f"Visible Stores: {total_visible}\n"
+        f"Emails Sent: {sent_count}\n"
+        f"Failed Sends: {failed_count}\n\n"
+        f"Completed Stores: {completed_count}\n"
+        f"In Progress Stores: {in_progress_count}\n"
+        f"Not Started Stores: {not_started_count}\n\n"
+        f"Average Completion: {avg_completion}%\n"
+        f"Average Integrity: {avg_integrity}%\n\n"
+        f"Store Summary:\n"
+        f"{chr(10).join(lines) if lines else '- No successful sends'}\n\n"
+        f"Failed Sends:\n"
+        f"{chr(10).join(failed_lines) if failed_lines else '- None'}\n\n"
+        f"- BPI Ops"
+    )
+
+    send_email(
+        to_email=owner_email,
+        subject=f"BPI Ops Send-All Recap - {ops_date.strftime('%b %d, %Y')}",
+        body=body
+    )
+
+    return {"success": True, "owner_email": owner_email}
 
 
 @checklist_bp.route("/overview")
@@ -576,29 +660,51 @@ def send_all_summaries():
 
     sent_count = 0
     failed_count = 0
-    failed_stores = []
+    send_results = []
 
     for store in visible_stores:
         try:
             result = send_store_summary_email(store.store_number)
+            result["store_number"] = store.store_number
+            send_results.append(result)
+
             if result["success"]:
                 sent_count += 1
             else:
                 failed_count += 1
-                failed_stores.append(f"{store.store_number}: {result['error']}")
         except Exception as e:
             failed_count += 1
-            failed_stores.append(f"{store.store_number}: {str(e)}")
+            send_results.append({
+                "success": False,
+                "store_number": store.store_number,
+                "error": str(e),
+            })
+
+    summary_email_result = None
+    try:
+        summary_email_result = send_owner_summary_email(
+            user_id=session.get("user_id"),
+            visible_stores=visible_stores,
+            send_results=send_results
+        )
+    except Exception as e:
+        summary_email_result = {"success": False, "error": str(e)}
 
     if failed_count == 0:
-        flash(f"Sent all summaries successfully. Total stores sent: {sent_count}.", "success")
+        flash(f"Sent all store summaries successfully. Total stores sent: {sent_count}.", "success")
+    else:
+        flash(f"Send all complete. Sent: {sent_count}. Failed: {failed_count}.", "success")
+
+    if summary_email_result and summary_email_result.get("success"):
+        flash(f"Your recap email was sent to {summary_email_result['owner_email']}.", "success")
     else:
         flash(
-            f"Send all complete. Sent: {sent_count}. Failed: {failed_count}.",
-            "success"
+            f"Store summaries sent, but your recap email was not sent: {summary_email_result.get('error', 'Unknown error')}",
+            "error"
         )
-        for failure in failed_stores[:10]:
-            flash(failure, "error")
+
+    for failure in [r for r in send_results if not r.get("success")][:10]:
+        flash(f"{failure.get('store_number', 'Unknown')}: {failure.get('error', 'Unknown error')}", "error")
 
     return redirect(url_for("checklist.overview"))
 

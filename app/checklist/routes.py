@@ -177,6 +177,18 @@ def update_checklist_progress(daily: DailyChecklist):
         else 0.40
     )
 
+    burst_threshold = (
+        settings.burst_threshold
+        if settings and settings.burst_threshold is not None
+        else 4
+    )
+
+    burst_window_seconds = (
+        settings.burst_window_seconds
+        if settings and settings.burst_window_seconds is not None
+        else 60
+    )
+
     section_one_items = [
         item for item in daily.items
         if item.section_name == integrity_section and item.is_required
@@ -204,9 +216,6 @@ def update_checklist_progress(daily: DailyChecklist):
         completed_times = sorted(valid_completed_times)
 
         timing_score = 0.0
-
-        burst_threshold = 4
-        burst_window_seconds = 60
 
         burst_detected = False
         if len(completed_times) >= burst_threshold:
@@ -914,16 +923,28 @@ def admin():
             try:
                 completion_weight = float(request.form.get("completion_weight", "0.60").strip())
                 timing_weight = float(request.form.get("timing_weight", "0.40").strip())
+                burst_threshold = int(request.form.get("burst_threshold", "4").strip())
+                burst_window_seconds = int(request.form.get("burst_window_seconds", "60").strip())
             except ValueError:
-                flash("Completion weight and timing weight must be valid numbers.", "error")
+                flash("Integrity settings must be valid numbers.", "error")
                 return redirect(url_for("checklist.admin"))
 
             if completion_weight < 0 or completion_weight > 1 or timing_weight < 0 or timing_weight > 1:
                 flash("Weights must be between 0.00 and 1.00.", "error")
                 return redirect(url_for("checklist.admin"))
 
+            if burst_threshold < 2:
+                flash("Burst threshold must be at least 2.", "error")
+                return redirect(url_for("checklist.admin"))
+
+            if burst_window_seconds < 1:
+                flash("Burst window seconds must be at least 1.", "error")
+                return redirect(url_for("checklist.admin"))
+
             settings.completion_weight = completion_weight
             settings.timing_weight = timing_weight
+            settings.burst_threshold = burst_threshold
+            settings.burst_window_seconds = burst_window_seconds
 
             db.session.commit()
             flash("Integrity settings updated.", "success")

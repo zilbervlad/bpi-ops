@@ -12,7 +12,7 @@
             <div>
                 <h3>Integrity Settings</h3>
                 <div class="area-subtitle">
-                    Control which section is used for checklist integrity scoring and how completion vs timing are weighted.
+                    Control which section is used for checklist integrity scoring, how completion vs timing are weighted, and how burst completion is detected.
                 </div>
             </div>
             <span class="summary-pill">Integrity</span>
@@ -37,7 +37,7 @@
                 <div class="svr-value-card">
                     <div class="svr-value-label">Current Rule</div>
                     <div class="svr-value-text">
-                        Integrity is based on required tasks in the selected section. Completion and timing are blended using the weights below.
+                        Integrity is based on required tasks in the selected section. Completion and timing are blended using the weights below. Burst detection prevents rapid checkbox dumping from earning timing credit.
                     </div>
                 </div>
             </div>
@@ -72,11 +72,38 @@
                 </div>
             </div>
 
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="burst_threshold">Burst Threshold</label>
+                    <input
+                        type="number"
+                        id="burst_threshold"
+                        name="burst_threshold"
+                        min="2"
+                        value="{{ integrity_settings.burst_threshold if integrity_settings else '4' }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="burst_window_seconds">Burst Window Seconds</label>
+                    <input
+                        type="number"
+                        id="burst_window_seconds"
+                        name="burst_window_seconds"
+                        min="1"
+                        value="{{ integrity_settings.burst_window_seconds if integrity_settings else '60' }}"
+                        required
+                    >
+                </div>
+            </div>
+
             <div class="svr-value-card" style="margin-top: 4px;">
                 <div class="svr-value-label">Tip</div>
                 <div class="svr-value-text">
                     Best practice is for completion weight + timing weight to equal 1.00.
                     Example: 0.60 and 0.40.
+                    Burst example: if 4 tasks are completed within 60 seconds, timing score is forced to 0.
                 </div>
             </div>
 
@@ -86,7 +113,6 @@
         </form>
     </section>
 
-    <!-- EXISTING HEADER -->
     <div class="command-bar panel" style="margin-bottom: 24px;">
         <div class="command-bar-left">
             <div class="command-eyebrow">ADMIN</div>
@@ -101,7 +127,6 @@
         </div>
     </div>
 
-    <!-- ADD NEW TASK -->
     <section class="panel premium-panel" style="margin-bottom: 24px;">
         <div class="panel-head">
             <div>
@@ -157,7 +182,6 @@
         </form>
     </section>
 
-    <!-- EXISTING TASKS -->
     <section class="panel premium-panel">
         <div class="panel-head">
             <div>

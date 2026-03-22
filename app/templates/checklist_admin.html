@@ -4,74 +4,134 @@
 {% block header %}Checklist Admin{% endblock %}
 
 {% block content %}
-<div class="content-grid">
-    <section class="panel">
-        <h3>Add New Task</h3>
+<div class="admin-page">
+
+    <div class="command-bar panel" style="margin-bottom: 24px;">
+        <div class="command-bar-left">
+            <div class="command-eyebrow">ADMIN</div>
+            <h2 class="command-title">Checklist Template Manager</h2>
+            <p class="command-subtitle">
+                Add new tasks, update existing ones, and keep your checklist clean and organized.
+            </p>
+        </div>
+        <div class="command-bar-right">
+            <div class="command-chip">{{ items|length }} Tasks</div>
+            <div class="command-chip">{{ section_options|length }} Sections</div>
+        </div>
+    </div>
+
+    <!-- ADD NEW TASK -->
+    <section class="panel premium-panel" style="margin-bottom: 24px;">
+        <div class="panel-head">
+            <div>
+                <h3>Add New Task</h3>
+                <div class="area-subtitle">
+                    Create a new checklist item and assign it to the correct section.
+                </div>
+            </div>
+            <span class="summary-pill">New</span>
+        </div>
+
         <form method="POST" class="login-form">
             <input type="hidden" name="action" value="create">
 
-            <div class="form-group">
-                <label for="section_name">Section</label>
-                <select id="section_name" name="section_name" required>
-                    {% for section in section_options %}
-                    <option value="{{ section }}">{{ section }}</option>
-                    {% endfor %}
-                </select>
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="section_name">Section</label>
+                    <select id="section_name" name="section_name" required>
+                        {% for section in section_options %}
+                        <option value="{{ section }}">{{ section }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="task_text">Task Text</label>
+                    <input type="text" id="task_text" name="task_text" required>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="task_text">Task Text</label>
-                <input type="text" id="task_text" name="task_text" required>
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="expected_minutes">Expected Minutes</label>
+                    <input type="number" id="expected_minutes" name="expected_minutes" value="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="sort_order">Sort Order</label>
+                    <input type="number" id="sort_order" name="sort_order" value="999" required>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="expected_minutes">Expected Minutes</label>
-                <input type="number" id="expected_minutes" name="expected_minutes" value="0" required>
+            <div class="admin-check-row" style="margin-top: 8px;">
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="is_required" checked>
+                    Required for integrity/completion
+                </label>
             </div>
 
-            <div class="form-group">
-                <label for="sort_order">Sort Order</label>
-                <input type="number" id="sort_order" name="sort_order" value="999" required>
+            <div class="admin-check-row" style="margin-top: 10px;">
+                <button type="submit" class="btn-primary">Add Task</button>
             </div>
-
-            <label class="checkbox-inline">
-                <input type="checkbox" name="is_required" checked>
-                Required for integrity/completion
-            </label>
-
-            <button type="submit" class="btn-primary">Add Task</button>
         </form>
     </section>
 
-    <section class="panel">
-        <h3>Checklist Template</h3>
+    <!-- EXISTING TASKS -->
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <div>
+                <h3>Checklist Template</h3>
+                <div class="area-subtitle">
+                    Edit tasks below. Each card saves independently.
+                </div>
+            </div>
+            <span class="summary-pill">{{ items|length }} Items</span>
+        </div>
+
         <div class="admin-task-list">
             {% for item in items %}
             <form method="POST" class="admin-task-card">
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="item_id" value="{{ item.id }}">
 
+                <!-- TOP ROW -->
                 <div class="admin-task-top">
                     <span class="summary-pill">ID {{ item.id }}</span>
                     <span class="summary-pill">{{ item.section_name }}</span>
+
+                    {% if item.is_active %}
+                    <span class="table-badge badge-success">Active</span>
+                    {% else %}
+                    <span class="table-badge badge-neutral">Inactive</span>
+                    {% endif %}
+
+                    {% if item.is_required %}
+                    <span class="table-badge badge-danger">Required</span>
+                    {% else %}
+                    <span class="table-badge badge-neutral">Optional</span>
+                    {% endif %}
                 </div>
 
-                <div class="form-group">
-                    <label>Section</label>
-                    <select name="section_name" required>
-                        {% for section in section_options %}
-                        <option value="{{ section }}" {% if item.section_name == section %}selected{% endif %}>
-                            {{ section }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                <!-- MAIN FIELDS -->
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label>Section</label>
+                        <select name="section_name" required>
+                            {% for section in section_options %}
+                            <option value="{{ section }}" {% if item.section_name == section %}selected{% endif %}>
+                                {{ section }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Task Text</label>
+                        <input type="text" name="task_text" value="{{ item.task_text }}" required>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Task Text</label>
-                    <input type="text" name="task_text" value="{{ item.task_text }}" required>
-                </div>
-
+                <!-- NUMBERS -->
                 <div class="admin-task-grid">
                     <div class="form-group">
                         <label>Expected Minutes</label>
@@ -84,6 +144,7 @@
                     </div>
                 </div>
 
+                <!-- CHECKBOXES -->
                 <div class="admin-check-row">
                     <label class="checkbox-inline">
                         <input type="checkbox" name="is_required" {% if item.is_required %}checked{% endif %}>
@@ -96,10 +157,18 @@
                     </label>
                 </div>
 
-                <button type="submit" class="btn-primary">Save Task</button>
+                <!-- ACTION -->
+                <div class="admin-check-row compact-actions">
+                    <button type="submit" class="btn-primary">Save Task</button>
+                </div>
             </form>
+            {% else %}
+            <div class="admin-task-card">
+                No checklist template items found.
+            </div>
             {% endfor %}
         </div>
     </section>
+
 </div>
 {% endblock %}

@@ -1526,3 +1526,60 @@ textarea:focus {
     color: #ffffff;
     font-weight: 600;
 }
+/* ------------------------------
+   Admin Page Layout Fix
+------------------------------ */
+
+/* Force admin pages to stack vertically instead of side-by-side */
+.admin-page {
+    display: grid;
+    gap: 24px;
+}
+
+/* Override default content-grid when used for admin */
+.admin-page .content-grid {
+    grid-template-columns: 1fr !important;
+}
+
+/* Add spacing to admin panels */
+.admin-page .panel {
+    padding: 24px;
+}
+
+/* Improve admin task cards */
+.admin-task-card {
+    padding: 20px;
+    border-radius: 16px;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    transition: border 0.2s ease, transform 0.15s ease;
+}
+
+.admin-task-card:hover {
+    border-color: #334155;
+    transform: translateY(-1px);
+}
+
+/* Better spacing between form rows */
+.admin-task-grid {
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+/* Make form inputs feel less cramped */
+.form-group input,
+.form-group select,
+textarea {
+    padding: 12px;
+}
+
+/* Action row cleanup */
+.compact-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Improve section separation */
+.panel-head {
+    margin-bottom: 18px;
+}

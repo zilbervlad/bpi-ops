@@ -369,7 +369,7 @@ def build_report_payload():
         rollup["avg_completion_total"] += row["avg_completion"]
         rollup["avg_integrity_total"] += row["avg_integrity"]
         rollup["avg_opening_total"] += row["avg_opening"]
-        rollup["avg_restock_TOTAL"] = rollup.get("avg_restock_TOTAL", 0.0) + row["avg_restock"]
+        rollup["avg_restock_total"] += row["avg_restock"]
         rollup["avg_manager_walk_total"] += row["avg_manager_walk"]
         rollup["completed_count"] += row["completed_count"]
         rollup["in_progress_count"] += row["in_progress_count"]
@@ -386,7 +386,7 @@ def build_report_payload():
             "avg_completion": round(rollup["avg_completion_total"] / store_count, 1) if store_count else 0.0,
             "avg_integrity": round(rollup["avg_integrity_total"] / store_count, 1) if store_count else 0.0,
             "avg_opening": round(rollup["avg_opening_total"] / store_count, 1) if store_count else 0.0,
-            "avg_restock": round(rollup.get("avg_restock_TOTAL", 0.0) / store_count, 1) if store_count else 0.0,
+            "avg_restock": round(rollup["avg_restock_total"] / store_count, 1) if store_count else 0.0,
             "avg_manager_walk": round(rollup["avg_manager_walk_total"] / store_count, 1) if store_count else 0.0,
             "completed_count": rollup["completed_count"],
             "in_progress_count": rollup["in_progress_count"],
@@ -457,6 +457,7 @@ def build_report_payload():
         "store_report_rows": store_report_rows,
         "area_report_rows": area_report_rows,
         "task_analysis": task_analysis,
+        "checklist_rows": checklist_rows,
     }
 
 
@@ -589,6 +590,56 @@ def create_excel_report(payload):
 
     style_header_row(area_ws)
     autosize_worksheet_columns(area_ws)
+
+    timeline_ws = wb.create_sheet(title="Timeline Audit")
+    timeline_ws.append([
+        "Store",
+        "Checklist Date",
+        "Task",
+        "Section",
+        "Completed Time (ET)",
+        "Gap From Previous (min)",
+    ])
+
+    filtered_lookup = {
+        (row.store_number, row.checklist_date): row
+        for row in payload["checklist_rows"]
+    }
+
+    for _, checklist in sorted(filtered_lookup.items(), key=lambda x: (x[0][0], x[0][1])):
+        if not getattr(checklist, "items", None):
+            continue
+
+        completed_items = [
+            item for item in checklist.items
+            if item.is_completed and item.completed_at
+        ]
+        completed_items = sorted(completed_items, key=lambda x: x.completed_at)
+
+        prev_time = None
+
+        for item in completed_items:
+            completed_at_et = utc_naive_to_et(item.completed_at)
+
+            gap_minutes = None
+            if prev_time:
+                gap_minutes = round(
+                    (item.completed_at - prev_time).total_seconds() / 60, 1
+                )
+
+            timeline_ws.append([
+                checklist.store_number,
+                checklist.checklist_date.strftime("%Y-%m-%d"),
+                item.task_text,
+                item.section_name,
+                completed_at_et.strftime("%I:%M %p") if completed_at_et else "",
+                gap_minutes if gap_minutes is not None else "",
+            ])
+
+            prev_time = item.completed_at
+
+    style_header_row(timeline_ws)
+    autosize_worksheet_columns(timeline_ws)
 
     output = BytesIO()
     wb.save(output)

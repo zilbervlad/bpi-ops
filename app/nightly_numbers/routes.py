@@ -3,26 +3,182 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 
 from app.auth.routes import login_required, role_required
 from app.extensions import db
-from app.models import NightlyNumbersReport, Store, User
+from app.models import NightlyNumbersReport, NightlyNumbersFieldConfig, Store, User
 from app.services.email_service import send_email
 
 nightly_numbers_bp = Blueprint("nightly_numbers", __name__, url_prefix="/nightly-numbers")
 
-FIELD_CONFIG = {
-    "manager_name": {"label": "Manager", "enabled": True, "required": True},
-    "royalty_sales": {"label": "Royalty Sales", "enabled": True, "required": True},
-    "variable_labor": {"label": "Variable Labor", "enabled": True, "required": True},
-    "labor_goal": {"label": "Labor Goal", "enabled": True, "required": True},
-    "invoices_transfers_checked": {"label": "Invoices / Transfers Checked", "enabled": True, "required": False},
-    "food_variance": {"label": "Food Variance", "enabled": True, "required": True},
-    "food_variance_details": {"label": "Food Variance Details", "enabled": True, "required": False},
-    "adt": {"label": "ADT", "enabled": True, "required": True},
-    "adt_reason": {"label": "ADT Reason", "enabled": True, "required": False},
-    "load_time": {"label": "Load Time", "enabled": True, "required": True},
-    "bad_orders": {"label": "Bad Orders", "enabled": True, "required": False},
-    "cash_diff": {"label": "Cash +/-", "enabled": True, "required": True},
-    "food_order_placed": {"label": "Food Order Placed", "enabled": True, "required": False},
+DEFAULT_FIELD_CONFIG = [
+    {
+        "field_key": "manager_name",
+        "field_label": "Your Name",
+        "field_type": "text",
+        "sort_order": 0,
+        "is_enabled": True,
+        "is_required": True,
+    },
+    {
+        "field_key": "royalty_sales",
+        "field_label": "Royalty Sales",
+        "field_type": "text",
+        "sort_order": 1,
+        "is_enabled": True,
+        "is_required": True,
+    },
+    {
+        "field_key": "variable_labor",
+        "field_label": "Variable Labor",
+        "field_type": "text",
+        "sort_order": 2,
+        "is_enabled": True,
+        "is_required": True,
+    },
+    {
+        "field_key": "labor_goal",
+        "field_label": "Labor Goal",
+        "field_type": "text",
+        "sort_order": 3,
+        "is_enabled": True,
+        "is_required": True,
+    },
+    {
+        "field_key": "invoices_transfers_checked",
+        "field_label": "Invoices / Transfers Checked",
+        "field_type": "checkbox",
+        "sort_order": 4,
+        "is_enabled": True,
+        "is_required": False,
+    },
+    {
+        "field_key": "food_variance",
+        "field_label": "Food Variance",
+        "field_type": "text",
+        "sort_order": 5,
+        "is_enabled": True,
+        "is_required": True,
+    },
+    {
+        "field_key": "food_variance_details",
+        "field_label": "Food Variance Details",
+        "field_type": "textarea",
+        "sort_order": 6,
+        "is_enabled": True,
+        "is_required": False,
+    },
+    {
+        "field_key": "adt",
+        "field_label": "ADT",
+        "field_type": "text",
+        "sort_order": 7,
+        "is_enabled": True,
+        "is_required": True,
+    },
+    {
+        "field_key": "adt_reason",
+        "field_label": "ADT Above 25 Min - Why?",
+        "field_type": "textarea",
+        "sort_order": 8,
+        "is_enabled": True,
+        "is_required": False,
+    },
+    {
+        "field_key": "load_time",
+        "field_label": "Load Time",
+        "field_type": "text",
+        "sort_order": 9,
+        "is_enabled": True,
+        "is_required": True,
+    },
+    {
+        "field_key": "bad_orders",
+        "field_label": "Bad Orders - Record Order #",
+        "field_type": "textarea",
+        "sort_order": 10,
+        "is_enabled": True,
+        "is_required": False,
+    },
+    {
+        "field_key": "cash_diff",
+        "field_label": "Cash +/-",
+        "field_type": "text",
+        "sort_order": 11,
+        "is_enabled": True,
+        "is_required": True,
+    },
+    {
+        "field_key": "food_order_placed",
+        "field_label": "Food Order Placed",
+        "field_type": "checkbox",
+        "sort_order": 12,
+        "is_enabled": True,
+        "is_required": False,
+    },
+]
+
+FIELD_META = {
+    "manager_name": {
+        "placeholder": "Enter your name",
+    },
+    "royalty_sales": {
+        "placeholder": "Example: 8249.55",
+    },
+    "variable_labor": {
+        "placeholder": "Example: 20.00",
+    },
+    "labor_goal": {
+        "placeholder": "Example: 21.0",
+        "default": "21.0",
+    },
+    "food_variance": {
+        "placeholder": "Example: 0.01",
+    },
+    "food_variance_details": {
+        "placeholder": "Explain variances if needed",
+        "rows": 3,
+    },
+    "adt": {
+        "placeholder": "Example: 27.83",
+    },
+    "adt_reason": {
+        "placeholder": "Explain if ADT was above target",
+        "rows": 3,
+    },
+    "load_time": {
+        "placeholder": "Example: 04:59",
+    },
+    "bad_orders": {
+        "placeholder": "Order numbers or notes",
+        "rows": 3,
+    },
+    "cash_diff": {
+        "placeholder": "Example: -11.53",
+    },
 }
+
+
+def ensure_field_config_seeded():
+    existing = {
+        field.field_key: field
+        for field in NightlyNumbersFieldConfig.query.all()
+    }
+
+    changed = False
+
+    for field_def in DEFAULT_FIELD_CONFIG:
+        if field_def["field_key"] not in existing:
+            db.session.add(NightlyNumbersFieldConfig(**field_def))
+            changed = True
+
+    if changed:
+        db.session.commit()
+
+
+def get_field_config():
+    ensure_field_config_seeded()
+    return NightlyNumbersFieldConfig.query.order_by(
+        NightlyNumbersFieldConfig.sort_order.asc(),
+        NightlyNumbersFieldConfig.id.asc()
+    ).all()
 
 
 def get_visible_stores():
@@ -56,6 +212,35 @@ def parse_float(value):
         return float(value)
     except ValueError:
         return None
+
+
+def get_report_value(report, field_key):
+    if not report:
+        return None
+    return getattr(report, field_key, None)
+
+
+def apply_form_value_to_report(report, field):
+    field_key = field.field_key
+
+    if field.field_type == "checkbox":
+        setattr(report, field_key, request.form.get(field_key) == "on")
+        return
+
+    raw_value = request.form.get(field_key, "").strip()
+
+    if field_key in [
+        "royalty_sales",
+        "variable_labor",
+        "labor_goal",
+        "food_variance",
+        "adt",
+        "cash_diff",
+    ]:
+        setattr(report, field_key, parse_float(raw_value))
+        return
+
+    setattr(report, field_key, raw_value or None)
 
 
 def send_nightly_numbers_email(report: NightlyNumbersReport):
@@ -155,6 +340,7 @@ def index():
         flash("No store is assigned to this manager.", "error")
         return redirect(url_for("dashboard.home"))
 
+    fields = get_field_config()
     today_str = datetime.now().strftime("%Y-%m-%d")
 
     if request.method == "POST":
@@ -179,19 +365,8 @@ def index():
             )
             db.session.add(report)
 
-        report.manager_name = request.form.get("manager_name", "").strip() or None
-        report.royalty_sales = parse_float(request.form.get("royalty_sales"))
-        report.variable_labor = parse_float(request.form.get("variable_labor"))
-        report.labor_goal = parse_float(request.form.get("labor_goal"))
-        report.invoices_transfers_checked = request.form.get("invoices_transfers_checked") == "on"
-        report.food_variance = parse_float(request.form.get("food_variance"))
-        report.food_variance_details = request.form.get("food_variance_details", "").strip() or None
-        report.adt = parse_float(request.form.get("adt"))
-        report.adt_reason = request.form.get("adt_reason", "").strip() or None
-        report.load_time = request.form.get("load_time", "").strip() or None
-        report.bad_orders = request.form.get("bad_orders", "").strip() or None
-        report.cash_diff = parse_float(request.form.get("cash_diff"))
-        report.food_order_placed = request.form.get("food_order_placed") == "on"
+        for field in fields:
+            apply_form_value_to_report(report, field)
 
         db.session.commit()
 
@@ -204,12 +379,9 @@ def index():
         except Exception as e:
             flash(f"Nightly numbers saved, but email failed: {str(e)}", "error")
 
-        # ✅ UPDATED REDIRECT
         return redirect(url_for("nightly_numbers.index", reset=1))
 
-    # ✅ RESET LOGIC ADDED
     reset = request.args.get("reset")
-
     existing_report = None
 
     if not reset:
@@ -218,19 +390,50 @@ def index():
             report_date=datetime.strptime(today_str, "%Y-%m-%d").date()
         ).first()
 
+    field_values = {}
+    for field in fields:
+        value = get_report_value(existing_report, field.field_key)
+
+        if value is None and field.field_key in FIELD_META and "default" in FIELD_META[field.field_key]:
+            value = FIELD_META[field.field_key]["default"]
+
+        field_values[field.field_key] = value
+
     return render_template(
         "nightly_numbers.html",
         report=existing_report,
         today_str=today_str,
         store_number=user_store,
-        field_config=FIELD_CONFIG,
+        fields=fields,
+        field_values=field_values,
+        field_meta=FIELD_META,
     )
 
 
-@nightly_numbers_bp.route("/admin", methods=["GET"])
+@nightly_numbers_bp.route("/admin", methods=["GET", "POST"])
 @login_required
 @role_required("admin", "supervisor")
 def admin():
+    fields = get_field_config()
+
+    if request.method == "POST":
+        if session.get("user_role") != "admin":
+            flash("Only admins can update nightly form settings.", "error")
+            return redirect(url_for("nightly_numbers.admin"))
+
+        for field in fields:
+            field.field_label = request.form.get(
+                f"label_{field.id}",
+                field.field_label
+            ).strip() or field.field_label
+
+            field.is_enabled = request.form.get(f"enabled_{field.id}") == "on"
+            field.is_required = request.form.get(f"required_{field.id}") == "on"
+
+        db.session.commit()
+        flash("Nightly form settings updated.", "success")
+        return redirect(url_for("nightly_numbers.admin"))
+
     visible_stores = get_visible_stores()
     visible_store_numbers = {store.store_number for store in visible_stores}
 
@@ -262,7 +465,7 @@ def admin():
         stores=visible_stores,
         selected_store=selected_store,
         selected_date=selected_date,
-        field_config=FIELD_CONFIG,
+        fields=fields,
     )
 
 
@@ -302,5 +505,4 @@ def edit_report(report_id):
     return render_template(
         "nightly_numbers_edit.html",
         report=report,
-        field_config=FIELD_CONFIG,
     )

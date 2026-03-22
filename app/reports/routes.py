@@ -692,12 +692,45 @@ def store_detail(store_number):
             if value and value.strip()
         ]
 
+        timeline = []
+
+        if getattr(row, "items", None):
+            completed_items = [
+                item for item in row.items
+                if item.is_completed and item.completed_at
+            ]
+
+            completed_items = sorted(
+                completed_items,
+                key=lambda x: x.completed_at
+            )
+
+            prev_time = None
+
+            for item in completed_items:
+                gap_minutes = None
+
+                if prev_time:
+                    gap_minutes = round(
+                        (item.completed_at - prev_time).total_seconds() / 60, 1
+                    )
+
+                timeline.append({
+                    "task_text": item.task_text,
+                    "section": item.section_name,
+                    "completed_at": item.completed_at,
+                    "gap_minutes": gap_minutes,
+                })
+
+                prev_time = item.completed_at
+
         daily_rows.append({
             "checklist_date": row.checklist_date,
             "status": row.status,
             "percent_complete": row.percent_complete,
             "integrity_score": row.integrity_score,
             "manager_display": " / ".join(dict.fromkeys(managers_for_day)) if managers_for_day else "—",
+            "timeline": timeline,
         })
 
     summary = {

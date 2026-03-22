@@ -14,6 +14,7 @@
     <a href="{{ url_for('reports.index') }}" class="action-btn" style="max-width: 220px;">Back to Reports</a>
 </div>
 {% else %}
+
 <div class="command-bar panel" style="margin-bottom: 24px;">
     <div class="command-bar-left">
         <div class="command-eyebrow">STORE DETAIL</div>
@@ -37,25 +38,21 @@
         <div class="metric-card premium-card">
             <span class="metric-label">Avg Completion</span>
             <h3>{{ summary.avg_completion }}%</h3>
-            <p class="metric-footnote">Average completion for this store</p>
         </div>
 
         <div class="metric-card premium-card premium-card-blue">
             <span class="metric-label">Avg Integrity</span>
             <h3>{{ summary.avg_integrity }}%</h3>
-            <p class="metric-footnote">Average integrity score for this store</p>
         </div>
 
         <div class="metric-card premium-card">
             <span class="metric-label">Completed</span>
             <h3>{{ summary.completed_count }}</h3>
-            <p class="metric-footnote">Completed checklist records</p>
         </div>
 
         <div class="metric-card premium-card premium-card-alert">
             <span class="metric-label">Not Started</span>
             <h3>{{ summary.not_started_count }}</h3>
-            <p class="metric-footnote">Days in range without a checklist</p>
         </div>
     </div>
 </div>
@@ -67,21 +64,17 @@
     </div>
 
     <div class="stack-list">
-        {% if manager_names %}
-            {% for name in manager_names %}
-            <div class="premium-list-row">
-                <div><strong>{{ name }}</strong></div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="empty-state">No manager names found in this date range.</div>
-        {% endif %}
+        {% for name in manager_names %}
+        <div class="premium-list-row">
+            <strong>{{ name }}</strong>
+        </div>
+        {% endfor %}
     </div>
 </div>
 
 <div class="panel premium-panel">
     <div class="panel-head">
-        <h3>Daily Checklist History</h3>
+        <h3>Daily Checklist History + Timeline</h3>
         <span class="summary-pill">{{ store_rows|length }} records</span>
     </div>
 
@@ -94,37 +87,101 @@
                     <th>Completion</th>
                     <th>Integrity</th>
                     <th>Managers</th>
+                    <th>Timeline</th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in store_rows %}
                 <tr>
                     <td>{{ row.checklist_date.strftime('%Y-%m-%d') }}</td>
+
                     <td>
                         <span class="table-badge {% if row.status == 'completed' %}badge-success{% elif row.status == 'in_progress' %}badge-warning{% else %}badge-danger{% endif %}">
                             {{ row.status.replace('_', ' ').title() }}
                         </span>
                     </td>
+
                     <td>
                         <span class="table-badge {% if row.percent_complete >= 90 %}badge-success{% elif row.percent_complete >= 70 %}badge-warning{% else %}badge-danger{% endif %}">
                             {{ row.percent_complete }}%
                         </span>
                     </td>
+
                     <td>
                         <span class="table-badge {% if row.integrity_score >= 90 %}badge-success{% elif row.integrity_score >= 75 %}badge-warning{% else %}badge-danger{% endif %}">
                             {{ row.integrity_score }}%
                         </span>
                     </td>
+
                     <td>{{ row.manager_display }}</td>
+
+                    <td>
+                        <button type="button" class="action-btn" onclick="toggleTimeline('tl{{ loop.index }}')">
+                            View
+                        </button>
+                    </td>
                 </tr>
+
+                <!-- Timeline Row -->
+                <tr id="tl{{ loop.index }}" style="display:none;">
+                    <td colspan="6">
+                        <div style="padding: 12px 0;">
+
+                            {% if row.timeline %}
+                                {% for item in row.timeline %}
+                                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #eee;">
+
+                                    <div>
+                                        <strong>{{ item.task_text }}</strong><br>
+                                        <small style="color:#777;">{{ item.section }}</small>
+                                    </div>
+
+                                    <div style="text-align:right;">
+                                        <div>{{ item.completed_at.strftime('%I:%M %p') }}</div>
+
+                                        {% if item.gap_minutes is not none %}
+                                            <div style="
+                                                font-size:12px;
+                                                {% if item.gap_minutes <= 1 %}
+                                                    color:#d9534f;
+                                                    font-weight:bold;
+                                                {% elif item.gap_minutes <= 3 %}
+                                                    color:#f0ad4e;
+                                                {% else %}
+                                                    color:#5cb85c;
+                                                {% endif %}
+                                            ">
+                                                +{{ item.gap_minutes }} min
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-state">No completed tasks for this day.</div>
+                            {% endif %}
+
+                        </div>
+                    </td>
+                </tr>
+
                 {% else %}
                 <tr>
-                    <td colspan="5">No checklist history found for this store in the selected date range.</td>
+                    <td colspan="6">No checklist history found.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<script>
+function toggleTimeline(id) {
+    const el = document.getElementById(id);
+    el.style.display = (el.style.display === "none") ? "table-row" : "none";
+}
+</script>
+
 {% endif %}
 {% endblock %}

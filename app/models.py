@@ -316,7 +316,9 @@ class NightlyNumbersFieldConfig(db.Model):
 
     is_enabled = db.Column(db.Boolean, default=True)
     is_required = db.Column(db.Boolean, default=False)
-    class CashLog(db.Model):
+
+
+class CashLog(db.Model):
     __tablename__ = "cash_logs"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -324,12 +326,11 @@ class NightlyNumbersFieldConfig(db.Model):
     store_number = db.Column(db.String(10), nullable=False)
     log_date = db.Column(db.Date, nullable=False, default=today_et)
 
-    shift_type = db.Column(db.String(20), nullable=False)  # opening / closing
+    shift_type = db.Column(db.String(20), nullable=False)
 
     back_till = db.Column(db.Float, nullable=True)
     front_till = db.Column(db.Float, nullable=True)
     driver_banks = db.Column(db.Float, nullable=True)
-
     total_cash = db.Column(db.Float, nullable=True)
 
     manager_name = db.Column(db.String(120), nullable=True)

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Cash Control | BPI Ops{% endblock %}
+{% block header %}Cash Control{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Submit Cash Log</h3>
+            <span class="summary-pill">Store {{ store_number }}</span>
+        </div>
+
+        <form method="POST" class="login-form">
+            <div class="form-group">
+                <label for="log_date">Log Date</label>
+                <input
+                    type="date"
+                    id="log_date"
+                    name="log_date"
+                    value="{{ today_str }}"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="shift_type">Shift</label>
+                <select id="shift_type" name="shift_type" required>
+                    <option value="opening">Opening</option>
+                    <option value="closing">Closing</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="manager_name">Manager</label>
+                <input
+                    type="text"
+                    id="manager_name"
+                    name="manager_name"
+                    value="{{ manager_name }}"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="back_till">Back Till</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    id="back_till"
+                    name="back_till"
+                    min="0"
+                    value="0.00"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="front_till">Front Till</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    id="front_till"
+                    name="front_till"
+                    min="0"
+                    value="0.00"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="driver_banks">Driver Banks</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    id="driver_banks"
+                    name="driver_banks"
+                    min="0"
+                    value="0.00"
+                >
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%;">
+                Submit Cash Log
+            </button>
+        </form>
+    </section>
+
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Recent Cash Logs</h3>
+            <span class="summary-pill">Last 10</span>
+        </div>
+
+        <div class="table-wrap premium-table-wrap">
+            <table class="data-table premium-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Shift</th>
+                        <th>Back</th>
+                        <th>Front</th>
+                        <th>Driver</th>
+                        <th>Total</th>
+                        <th>Manager</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.log_date.strftime('%m/%d/%Y') }}</td>
+                        <td>{{ log.shift_type|title }}</td>
+                        <td>${{ "%.2f"|format(log.back_till or 0) }}</td>
+                        <td>${{ "%.2f"|format(log.front_till or 0) }}</td>
+                        <td>${{ "%.2f"|format(log.driver_banks or 0) }}</td>
+                        <td>${{ "%.2f"|format(log.total_cash or 0) }}</td>
+                        <td>{{ log.manager_name or '—' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7">No cash logs yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

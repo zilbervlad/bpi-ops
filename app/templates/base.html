@@ -44,11 +44,17 @@
                     </a>
                     {% endif %}
 
-                    <!-- ✅ NEW: Nightly Numbers for Managers -->
                     {% if session.get('user_role') == 'manager' %}
                     <a href="{{ url_for('nightly_numbers.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('nightly_numbers') and request.endpoint != 'nightly_numbers.admin' %}active{% endif %}">
                         Nightly Numbers
+                    </a>
+                    {% endif %}
+
+                    {% if session.get('user_role') == 'manager' %}
+                    <a href="{{ url_for('cash.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('cash') %}active{% endif %}">
+                        Cash Control
                     </a>
                     {% endif %}
 

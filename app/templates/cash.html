@@ -7,7 +7,7 @@
 <div class="content-grid">
     <section class="panel premium-panel">
         <div class="panel-head">
-            <h3>{% if edit_log %}Edit Cash Log{% else %}Submit Cash Log{% endif %}</h3>
+            <h3>Submit Cash Log</h3>
             <span class="summary-pill">Store {{ store_number }}</span>
         </div>
 
@@ -26,9 +26,8 @@
             <div class="form-group">
                 <label for="shift_type">Shift</label>
                 <select id="shift_type" name="shift_type" required>
-                    <option value="opening" {% if edit_log and edit_log.shift_type == 'opening' %}selected{% endif %}>Opening</option>
-                    <option value="midshift" {% if edit_log and edit_log.shift_type == 'midshift' %}selected{% endif %}>Midshift</option>
-                    <option value="closing" {% if edit_log and edit_log.shift_type == 'closing' %}selected{% endif %}>Closing</option>
+                    <option value="opening">Opening</option>
+                    <option value="closing">Closing</option>
                 </select>
             </div>
 
@@ -51,7 +50,7 @@
                     id="back_till"
                     name="back_till"
                     min="0"
-                    value="{{ '%.2f'|format(edit_log.back_till if edit_log and edit_log.back_till is not none else 0) }}"
+                    value="0.00"
                 >
             </div>
 
@@ -63,7 +62,7 @@
                     id="front_till"
                     name="front_till"
                     min="0"
-                    value="{{ '%.2f'|format(edit_log.front_till if edit_log and edit_log.front_till is not none else 0) }}"
+                    value="0.00"
                 >
             </div>
 
@@ -75,19 +74,13 @@
                     id="driver_banks"
                     name="driver_banks"
                     min="0"
-                    value="{{ '%.2f'|format(edit_log.driver_banks if edit_log and edit_log.driver_banks is not none else 0) }}"
+                    value="0.00"
                 >
             </div>
 
             <button type="submit" class="btn-primary" style="width: 100%;">
-                {% if edit_log %}Update Cash Log{% else %}Submit Cash Log{% endif %}
+                Submit Cash Log
             </button>
-
-            {% if edit_log %}
-            <a href="{{ url_for('cash.index') }}" class="action-btn" style="width: 100%; display: block; text-align: center; margin-top: 12px;">
-                Cancel Edit
-            </a>
-            {% endif %}
         </form>
     </section>
 
@@ -108,7 +101,6 @@
                         <th>Driver</th>
                         <th>Total</th>
                         <th>Manager</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -121,15 +113,10 @@
                         <td>${{ "%.2f"|format(log.driver_banks or 0) }}</td>
                         <td>${{ "%.2f"|format(log.total_cash or 0) }}</td>
                         <td>{{ log.manager_name or '—' }}</td>
-                        <td>
-                            <a href="{{ url_for('cash.edit', log_id=log.id) }}" class="action-btn" style="padding: 8px 12px;">
-                                Edit
-                            </a>
-                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="8">No cash logs yet.</td>
+                        <td colspan="7">No cash logs yet.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

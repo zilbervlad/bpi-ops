@@ -4,77 +4,302 @@
 {% block header %}Store Admin{% endblock %}
 
 {% block content %}
-<div class="content-grid">
-    <section class="panel">
-        <h3>Add Store</h3>
-        <form method="POST" class="login-form">
-            <input type="hidden" name="action" value="create">
+<div class="command-bar panel" style="margin-bottom: 24px;">
+    <div class="command-bar-left">
+        <div class="command-eyebrow">STORE ADMIN</div>
+        <h2 class="command-title">Store Management</h2>
+        <p class="command-subtitle">
+            Add new stores, organize area assignments, and keep active locations clean and up to date.
+        </p>
+    </div>
+    <div class="command-bar-right">
+        <div class="command-chip">{{ stores|length }} Stores</div>
+        <div class="command-chip">{{ existing_areas|length }} Areas</div>
+    </div>
+</div>
 
-            <div class="form-group">
-                <label for="store_number">Store Number</label>
-                <input type="text" id="store_number" name="store_number" required>
+<div class="content-grid" style="margin-bottom: 24px;">
+    <section class="panel premium-panel">
+        <button
+            type="button"
+            id="create-store-toggle"
+            class="panel-head"
+            style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
+            aria-expanded="false"
+        >
+            <div>
+                <h3 style="margin: 0;">Add Store</h3>
+                <div class="area-subtitle">Create a new store and assign it to an area</div>
             </div>
+            <span id="create-store-chevron" class="summary-pill">Show ▼</span>
+        </button>
 
-            <div class="form-group">
-                <label for="store_name">Store Name</label>
-                <input type="text" id="store_name" name="store_name">
-            </div>
-
-            <div class="form-group">
-                <label for="area_name">Area</label>
-                <input type="text" id="area_name" name="area_name" list="area-options" required>
-                <datalist id="area-options">
-                    {% for area in existing_areas %}
-                    <option value="{{ area }}">
-                    {% endfor %}
-                </datalist>
-            </div>
-
-            <button type="submit" class="btn-primary">Add Store</button>
-        </form>
-    </section>
-
-    <section class="panel">
-        <h3>All Stores</h3>
-        <div class="admin-task-list">
-            {% for store in stores %}
-            <form method="POST" class="admin-task-card">
-                <input type="hidden" name="action" value="update">
-                <input type="hidden" name="store_id" value="{{ store.id }}">
-
-                <div class="admin-task-top">
-                    <span class="summary-pill">ID {{ store.id }}</span>
-                    <span class="summary-pill">{{ store.area_name }}</span>
-                </div>
+        <div id="create-store-body" style="display: none; margin-top: 16px;">
+            <form method="POST" class="login-form">
+                <input type="hidden" name="action" value="create">
 
                 <div class="admin-task-grid">
                     <div class="form-group">
-                        <label>Store Number</label>
-                        <input type="text" name="store_number" value="{{ store.store_number }}" required>
+                        <label for="store_number">Store Number</label>
+                        <input type="text" id="store_number" name="store_number" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Store Name</label>
-                        <input type="text" name="store_name" value="{{ store.store_name or '' }}">
+                        <label for="store_name">Store Name</label>
+                        <input type="text" id="store_name" name="store_name">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Area</label>
-                    <input type="text" name="area_name" value="{{ store.area_name }}" list="area-options" required>
+                    <label for="area_name">Area</label>
+                    <input type="text" id="area_name" name="area_name" list="area-options" required>
+                    <datalist id="area-options">
+                        {% for area in existing_areas %}
+                        <option value="{{ area }}">
+                        {% endfor %}
+                    </datalist>
                 </div>
 
-                <div class="admin-check-row">
-                    <label class="checkbox-inline">
-                        <input type="checkbox" name="is_active" {% if store.is_active %}checked{% endif %}>
-                        Active
-                    </label>
-                </div>
-
-                <button type="submit" class="btn-primary">Save Store</button>
+                <button type="submit" class="btn-primary">Add Store</button>
             </form>
-            {% endfor %}
         </div>
     </section>
 </div>
+
+<style>
+    .store-card-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .store-card {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        overflow: hidden;
+    }
+
+    .store-card-summary {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        text-align: left;
+    }
+
+    .store-card-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .store-name-wrap {
+        min-width: 0;
+    }
+
+    .store-name-main {
+        font-weight: 800;
+        font-size: 15px;
+        line-height: 1.2;
+        margin-bottom: 2px;
+        word-break: break-word;
+    }
+
+    .store-name-sub {
+        font-size: 12px;
+        opacity: 0.72;
+        line-height: 1.25;
+        word-break: break-word;
+    }
+
+    .store-card-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .store-card-body {
+        display: none;
+        padding: 0 18px 18px 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .store-section-label {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        opacity: 0.72;
+        margin-bottom: 10px;
+        margin-top: 14px;
+    }
+
+    .store-expand-chip {
+        min-width: 88px;
+        text-align: center;
+    }
+
+    @media (max-width: 900px) {
+        .store-card-summary {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .store-card-right {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+</style>
+
+<section class="panel premium-panel">
+    <div class="panel-head">
+        <div>
+            <h3>All Stores</h3>
+            <div class="area-subtitle">Expand a store card to edit name, number, area, and active status</div>
+        </div>
+        <span class="summary-pill">{{ stores|length }} total</span>
+    </div>
+
+    <div class="store-card-list" style="margin-top: 16px;">
+        {% for store in stores %}
+        <div class="store-card">
+            <button
+                type="button"
+                class="store-card-summary"
+                data-store-toggle="{{ store.id }}"
+                aria-expanded="false"
+            >
+                <div class="store-card-left">
+                    <span class="summary-pill">ID {{ store.id }}</span>
+
+                    <span class="status-badge {% if store.is_active %}status-completed{% else %}status-not-started{% endif %}">
+                        {{ "Active" if store.is_active else "Inactive" }}
+                    </span>
+
+                    <span class="summary-pill">{{ store.area_name }}</span>
+
+                    <div class="store-name-wrap">
+                        <div class="store-name-main">
+                            Store {{ store.store_number }}{% if store.store_name %} — {{ store.store_name }}{% endif %}
+                        </div>
+                        <div class="store-name-sub">
+                            Area: {{ store.area_name }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="store-card-right">
+                    <span class="summary-pill store-expand-chip" data-store-chevron="{{ store.id }}">Edit ▼</span>
+                </div>
+            </button>
+
+            <div class="store-card-body" data-store-body="{{ store.id }}">
+                <form method="POST" class="login-form" style="margin-top: 16px;">
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="store_id" value="{{ store.id }}">
+
+                    <div class="store-section-label">Store Info</div>
+                    <div class="admin-task-grid">
+                        <div class="form-group">
+                            <label>Store Number</label>
+                            <input type="text" name="store_number" value="{{ store.store_number }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Store Name</label>
+                            <input type="text" name="store_name" value="{{ store.store_name or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="store-section-label">Area Assignment</div>
+                    <div class="form-group">
+                        <label>Area</label>
+                        <input type="text" name="area_name" value="{{ store.area_name }}" list="area-options" required>
+                    </div>
+
+                    <div class="store-section-label">Status</div>
+                    <div class="admin-check-row compact-actions">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" name="is_active" {% if store.is_active %}checked{% endif %}>
+                            Active
+                        </label>
+                    </div>
+
+                    <div class="store-section-label">Actions</div>
+                    <div class="admin-check-row compact-actions">
+                        <button type="submit" class="btn-primary">Save Store</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function bindToggle(toggleId, bodyId, chevronId) {
+        const toggle = document.getElementById(toggleId);
+        const body = document.getElementById(bodyId);
+        const chevron = document.getElementById(chevronId);
+
+        if (!toggle || !body || !chevron) return;
+
+        toggle.addEventListener("click", function () {
+            const isHidden = body.style.display === "none";
+            body.style.display = isHidden ? "block" : "none";
+            toggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
+            chevron.textContent = isHidden ? "Hide ▲" : "Show ▼";
+        });
+    }
+
+    function bindStoreEditors() {
+        document.querySelectorAll("[data-store-toggle]").forEach(toggle => {
+            toggle.addEventListener("click", function () {
+                const storeId = this.getAttribute("data-store-toggle");
+                const targetBody = document.querySelector(`[data-store-body="${storeId}"]`);
+                const targetChevron = document.querySelector(`[data-store-chevron="${storeId}"]`);
+
+                if (!targetBody || !targetChevron) return;
+
+                const isOpening = targetBody.style.display === "none" || targetBody.style.display === "";
+
+                document.querySelectorAll("[data-store-body]").forEach(body => {
+                    body.style.display = "none";
+                });
+
+                document.querySelectorAll("[data-store-chevron]").forEach(chevron => {
+                    chevron.textContent = "Edit ▼";
+                });
+
+                document.querySelectorAll("[data-store-toggle]").forEach(btn => {
+                    btn.setAttribute("aria-expanded", "false");
+                });
+
+                if (isOpening) {
+                    targetBody.style.display = "block";
+                    targetChevron.textContent = "Close ▲";
+                    this.setAttribute("aria-expanded", "true");
+                }
+            });
+        });
+    }
+
+    bindToggle("create-store-toggle", "create-store-body", "create-store-chevron");
+    bindStoreEditors();
+});
+</script>
 {% endblock %}

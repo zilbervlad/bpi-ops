@@ -4,10 +4,11 @@
 {% block header %}Daily Checklist{% endblock %}
 
 {% block content %}
-<div class="checklist-page">
-    <div class="panel checklist-hero-panel">
+<div class="checklist-page mobile-checklist-page">
+    <div class="panel checklist-hero-panel mobile-checklist-hero">
         <div class="checklist-topbar checklist-topbar-mobile">
             <div class="checklist-hero-copy">
+                <div class="command-eyebrow">DAILY CHECKLIST</div>
                 <h3 class="checklist-store-title">Store {{ store_number }}</h3>
                 <p class="subtitle checklist-date-label">{{ today_label }}</p>
                 {% if is_read_only %}
@@ -16,30 +17,35 @@
             </div>
 
             <div class="checklist-score-grid checklist-score-grid-mobile">
-                <div class="checklist-progress-box">
+                <div class="checklist-progress-box mobile-score-box">
                     <span class="metric-label">Completion</span>
                     <h3 id="overall-completion">{{ daily.percent_complete }}%</h3>
                 </div>
 
-                <div class="checklist-progress-box">
+                <div class="checklist-progress-box mobile-score-box">
                     <span class="metric-label">Integrity</span>
                     <h3 id="integrity-score">{{ daily.integrity_score }}%</h3>
                 </div>
 
-                <div class="checklist-progress-box">
-                    <span class="metric-label">Manager's Walk Integrity</span>
+                <div class="checklist-progress-box mobile-score-box">
+                    <span class="metric-label">Walk Integrity</span>
                     <h3 id="manager-walk-integrity">{{ manager_walk_integrity }}%</h3>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="content-grid checklist-layout-grid">
+    <div class="content-grid checklist-layout-grid mobile-checklist-layout">
         <div class="checklist-main-column">
-            <form method="GET" class="panel checklist-load-panel" style="margin-bottom: 24px;">
-                <h3>Load Checklist</h3>
+            <form method="GET" class="panel checklist-load-panel mobile-checklist-load-panel" style="margin-bottom: 24px;">
+                <div class="panel-head checklist-panel-head-mobile">
+                    <div>
+                        <h3>Load Checklist</h3>
+                        <div class="area-subtitle">Switch store or date</div>
+                    </div>
+                </div>
 
-                <div class="checklist-load-grid">
+                <div class="checklist-load-grid mobile-checklist-load-grid">
                     <div class="form-group">
                         <label for="store">Store Number</label>
                         <select id="store" name="store" required>
@@ -57,19 +63,22 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-primary checklist-load-btn">Load Checklist</button>
+                <button type="submit" class="btn-primary checklist-load-btn mobile-full-btn">Load Checklist</button>
             </form>
 
             <form method="POST" id="checklist-form">
-                <div class="panel checklist-info-panel" style="margin-bottom: 24px;">
-                    <div class="panel-head checklist-info-head">
-                        <h3>Checklist Info</h3>
+                <div class="panel checklist-info-panel mobile-checklist-info-panel" style="margin-bottom: 24px;">
+                    <div class="panel-head checklist-info-head checklist-panel-head-mobile">
+                        <div>
+                            <h3>Checklist Info</h3>
+                            <div class="area-subtitle">Manager names and live autosave</div>
+                        </div>
                         {% if not is_read_only %}
                         <div id="autosave-status" class="autosave-status autosave-status-pill">Ready</div>
                         {% endif %}
                     </div>
 
-                    <div class="checklist-load-grid">
+                    <div class="checklist-load-grid mobile-checklist-load-grid">
                         <div class="form-group">
                             <label for="opening_manager">Opening Manager</label>
                             <input
@@ -102,25 +111,25 @@
                     {% set total_count = items | length %}
                     {% set section_percent = ((completed_count / total_count) * 100) if total_count > 0 else 0 %}
 
-                    <details class="accordion-section panel mobile-accordion-section" {% if loop.first %}open{% endif %}>
-                        <summary class="accordion-summary mobile-accordion-summary">
-                            <div class="accordion-title-wrap">
-                                <h3 class="accordion-title">{{ section }}</h3>
+                    <details class="accordion-section panel mobile-accordion-section checklist-section-card" {% if loop.first %}open{% endif %}>
+                        <summary class="accordion-summary mobile-accordion-summary checklist-section-summary">
+                            <div class="accordion-title-wrap checklist-section-title-wrap">
+                                <h3 class="accordion-title checklist-section-title">{{ section }}</h3>
                                 {% if section == "Before Open / Before 10:30" %}
-                                <span class="integrity-pill">Opening Manager Section</span>
+                                <span class="integrity-pill">Opening Manager</span>
                                 {% endif %}
                                 {% if section == "During Dayshift" %}
-                                <span class="integrity-pill">Opening Manager Section</span>
+                                <span class="integrity-pill">Opening Manager</span>
                                 {% endif %}
                                 {% if section == "3-O'Clock Restock" %}
-                                <span class="integrity-pill">Opening Manager Section</span>
+                                <span class="integrity-pill">Opening Manager</span>
                                 {% endif %}
                                 {% if section == "Manager's Walk" %}
-                                <span class="integrity-pill">Closing Manager Section</span>
+                                <span class="integrity-pill">Closing Manager</span>
                                 {% endif %}
                             </div>
 
-                            <div class="accordion-meta">
+                            <div class="accordion-meta checklist-section-meta">
                                 <span class="accordion-count" id="count-{{ section_index }}">{{ completed_count }}/{{ total_count }}</span>
                                 <span class="accordion-percent" id="percent-{{ section_index }}">{{ section_percent|round(0)|int }}%</span>
                             </div>
@@ -128,13 +137,13 @@
 
                         <div class="accordion-body mobile-accordion-body">
                             <div
-                                class="checklist-items"
+                                class="checklist-items mobile-checklist-items"
                                 data-section-index="{{ section_index }}"
                                 data-section-name="{{ section }}"
                             >
                                 {% for item in items %}
-                                <div class="checklist-item-card mobile-checklist-item-card">
-                                    <div class="checklist-item-main">
+                                <div class="checklist-item-card mobile-checklist-item-card mobile-checklist-card">
+                                    <div class="checklist-item-main mobile-checklist-item-main">
                                         <label class="checklist-checkbox-row mobile-checklist-checkbox-row">
                                             <input
                                                 type="checkbox"
@@ -154,7 +163,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-group checklist-note-group">
+                                    <div class="form-group checklist-note-group mobile-note-group">
                                         <label for="notes_{{ item.id }}">Notes</label>
                                         <input
                                             type="text"
@@ -175,20 +184,26 @@
                 {% endfor %}
 
                 {% if not is_read_only %}
-                <div class="checklist-save-wrap">
-                    <button type="submit" class="btn-primary checklist-save-btn">Save Checklist</button>
+                <div class="checklist-save-wrap mobile-sticky-save">
+                    <button type="submit" class="btn-primary checklist-save-btn mobile-full-btn">Save Checklist</button>
                 </div>
                 {% endif %}
             </form>
         </div>
 
         <div class="checklist-side-column">
-            <div class="panel checklist-history-panel">
-                <h3>Recent History</h3>
-                <div class="history-list">
+            <div class="panel checklist-history-panel mobile-history-panel">
+                <div class="panel-head checklist-panel-head-mobile">
+                    <div>
+                        <h3>Recent History</h3>
+                        <div class="area-subtitle">Last 14 checklists for this store</div>
+                    </div>
+                </div>
+
+                <div class="history-list mobile-history-list">
                     {% for entry in history %}
                     <a
-                        class="history-item"
+                        class="history-item mobile-history-item"
                         href="{{ url_for('checklist.index', store=store_number, date=entry.checklist_date.strftime('%Y-%m-%d')) }}"
                     >
                         <div>

@@ -1583,3 +1583,244 @@ textarea {
 .panel-head {
     margin-bottom: 18px;
 }
+/* =========================================================
+   Manager Checklist Mobile Cleanup
+   Append at end of style.css
+========================================================= */
+
+.mobile-checklist-page {
+    display: grid;
+    gap: 0;
+}
+
+.mobile-checklist-hero {
+    padding: 20px;
+}
+
+.mobile-checklist-layout {
+    align-items: start;
+}
+
+.checklist-panel-head-mobile {
+    margin-bottom: 14px;
+}
+
+.mobile-checklist-load-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.mobile-full-btn {
+    width: 100%;
+}
+
+.checklist-section-card {
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.checklist-section-summary {
+    padding: 18px 20px;
+}
+
+.checklist-section-title {
+    font-size: 19px;
+}
+
+.mobile-checklist-items {
+    gap: 14px;
+}
+
+.mobile-checklist-card {
+    border-radius: 18px;
+    padding: 16px;
+    background: #0f172a;
+    border: 1px solid #243244;
+}
+
+.mobile-checklist-item-main {
+    display: grid;
+    gap: 8px;
+}
+
+.mobile-checklist-checkbox-row {
+    align-items: flex-start;
+    gap: 14px;
+    font-size: 16px;
+    line-height: 1.35;
+}
+
+.mobile-checklist-checkbox-row input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.checklist-task-text {
+    display: block;
+    flex: 1;
+    word-break: break-word;
+}
+
+.mobile-note-group input {
+    min-height: 46px;
+}
+
+.mobile-history-panel {
+    position: sticky;
+    top: 20px;
+}
+
+.mobile-history-list {
+    gap: 10px;
+}
+
+.mobile-history-item {
+    border-radius: 16px;
+    padding: 14px 16px;
+}
+
+.autosave-status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.85);
+    font-weight: 700;
+}
+
+.autosave-ready {
+    color: #cbd5e1;
+}
+
+.autosave-saving {
+    color: #93c5fd;
+}
+
+.autosave-saved {
+    color: #86efac;
+}
+
+.autosave-failed {
+    color: #fca5a5;
+}
+
+.mobile-sticky-save {
+    position: sticky;
+    bottom: 12px;
+    z-index: 20;
+    margin-top: 18px;
+    padding: 12px;
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+@media (max-width: 1100px) {
+    .mobile-history-panel {
+        position: static;
+    }
+}
+
+@media (max-width: 800px) {
+    .mobile-checklist-hero {
+        padding: 18px;
+    }
+
+    .checklist-topbar-mobile {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .checklist-score-grid-mobile {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .mobile-score-box {
+        min-width: 0;
+        width: 100%;
+        text-align: left;
+        padding: 14px 16px;
+    }
+
+    .mobile-checklist-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .mobile-checklist-load-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .mobile-checklist-info-panel,
+    .mobile-checklist-load-panel {
+        padding: 18px;
+    }
+
+    .mobile-accordion-section {
+        margin-bottom: 18px;
+    }
+
+    .mobile-accordion-summary {
+        padding: 16px 18px;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .checklist-section-title-wrap {
+        width: 100%;
+    }
+
+    .checklist-section-meta {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+    }
+
+    .mobile-accordion-body {
+        padding: 0 16px 16px 16px;
+    }
+
+    .mobile-checklist-card {
+        padding: 14px;
+    }
+
+    .mobile-checklist-checkbox-row {
+        font-size: 16px;
+    }
+
+    .mobile-note-group label {
+        font-size: 13px;
+    }
+
+    .mobile-history-item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .history-metrics {
+        align-items: flex-start;
+        flex-direction: row;
+        gap: 10px;
+    }
+
+    .mobile-sticky-save {
+        bottom: 8px;
+        padding: 10px;
+    }
+
+    .checklist-save-btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}

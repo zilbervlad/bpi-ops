@@ -4,227 +4,412 @@
 {% block header %}User Management{% endblock %}
 
 {% block content %}
-<div class="content-grid">
+<div class="command-bar panel" style="margin-bottom: 24px;">
+    <div class="command-bar-left">
+        <div class="command-eyebrow">USER ADMIN</div>
+        <h2 class="command-title">User Management</h2>
+        <p class="command-subtitle">
+            Create users, manage access, control email settings, and keep roles aligned to stores and areas.
+        </p>
+    </div>
+    <div class="command-bar-right">
+        <div class="command-chip">{{ users|length }} Users</div>
+        <div class="command-chip">Admin Only</div>
+    </div>
+</div>
 
-    <section class="panel">
-        <h3>Create User</h3>
-
-        <form method="POST" class="login-form">
-            <input type="hidden" name="action" value="create">
-
-            <div class="form-group">
-                <label for="create_name">Full Name</label>
-                <input type="text" id="create_name" name="name" required>
+<div class="content-grid" style="margin-bottom: 24px;">
+    <section class="panel premium-panel">
+        <button
+            type="button"
+            id="create-user-toggle"
+            class="panel-head"
+            style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
+            aria-expanded="false"
+        >
+            <div>
+                <h3 style="margin: 0;">Create User</h3>
+                <div class="area-subtitle">Add a new manager, supervisor, maintenance user, or admin</div>
             </div>
+            <span id="create-user-chevron" class="summary-pill">Show ▼</span>
+        </button>
 
-            <div class="form-group">
-                <label for="create_username">Username</label>
-                <input type="text" id="create_username" name="username" required>
-            </div>
+        <div id="create-user-body" style="display: none; margin-top: 16px;">
+            <form method="POST" class="login-form">
+                <input type="hidden" name="action" value="create">
 
-            <div class="form-group">
-                <label for="create_password">Password</label>
-                <input type="password" id="create_password" name="password" required>
-            </div>
-
-            <div class="form-group">
-                <label for="create_role">Role</label>
-                <select id="create_role" name="role" required onchange="toggleCreateFields()">
-                    <option value="manager">Manager</option>
-                    <option value="supervisor">Supervisor</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="admin">Admin</option>
-                </select>
-            </div>
-
-            <div class="form-group" id="create-area-field" style="display:none;">
-                <label for="create_area_name">Assigned Area</label>
-                <input type="text" id="create_area_name" name="area_name" placeholder="Example: Area 2">
-            </div>
-
-            <div class="form-group" id="create-store-field">
-                <label for="create_store_number">Assigned Store</label>
-                <input type="text" id="create_store_number" name="store_number" placeholder="Example: 3209">
-            </div>
-
-            <div class="form-group">
-                <label for="create_email">Primary Email</label>
-                <input type="email" id="create_email" name="email" placeholder="name@example.com">
-            </div>
-
-            <div class="form-group">
-                <label for="create_notification_email">Notification Email</label>
-                <input type="email" id="create_notification_email" name="notification_email" placeholder="Optional override for auto emails">
-            </div>
-
-            <label class="checkbox-inline">
-                <input type="checkbox" name="email_enabled" checked>
-                Enable automated emails for this user
-            </label>
-
-            <button type="submit" class="btn-primary">Create User</button>
-        </form>
-    </section>
-
-    <section class="panel">
-        <h3>Edit Existing Users</h3>
-
-        <div class="admin-task-list">
-            {% for user in users %}
-            <form method="POST" class="admin-task-card">
-                <input type="hidden" name="user_id" value="{{ user.id }}">
-
-                <div class="admin-task-top">
-                    <span class="summary-pill">ID {{ user.id }}</span>
-                    <span class="summary-pill">
-                        {{ "Active" if user.is_active else "Inactive" }}
-                    </span>
-
-                    {% if user.role == 'admin' %}
-                    <span class="summary-pill">Protected</span>
-                    {% endif %}
-                </div>
-
-                <div class="admin-task-grid compact-grid">
-                    <div class="form-group compact-group">
-                        <label>Name</label>
-                        <input type="text"
-                               name="name"
-                               value="{{ user.name }}"
-                               {% if user.role == 'admin' %}disabled{% endif %}
-                               required>
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label for="create_name">Full Name</label>
+                        <input type="text" id="create_name" name="name" required>
                     </div>
 
-                    <div class="form-group compact-group">
-                        <label>Username</label>
-                        <input type="text"
-                               name="username"
-                               value="{{ user.username }}"
-                               {% if user.role == 'admin' %}disabled{% endif %}
-                               required>
+                    <div class="form-group">
+                        <label for="create_username">Username</label>
+                        <input type="text" id="create_username" name="username" required>
                     </div>
                 </div>
 
-                <div class="admin-task-grid compact-grid">
-                    <div class="form-group compact-group">
-                        <label>Role</label>
-                        <select name="role"
-                                class="edit-role-select"
-                                data-user-id="{{ user.id }}"
-                                onchange="toggleEditFields({{ user.id }})"
-                                {% if user.role == 'admin' %}disabled{% endif %}
-                                required>
-                            <option value="manager" {% if user.role == 'manager' %}selected{% endif %}>Manager</option>
-                            <option value="supervisor" {% if user.role == 'supervisor' %}selected{% endif %}>Supervisor</option>
-                            <option value="maintenance" {% if user.role == 'maintenance' %}selected{% endif %}>Maintenance</option>
-                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label for="create_password">Password</label>
+                        <input type="password" id="create_password" name="password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="create_role">Role</label>
+                        <select id="create_role" name="role" required onchange="toggleCreateFields()">
+                            <option value="manager">Manager</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="admin">Admin</option>
                         </select>
                     </div>
+                </div>
 
-                    <div class="form-group compact-group">
-                        <label>{% if user.role == 'admin' %}Reset Admin Password{% else %}Reset Password{% endif %}</label>
-                        <input type="password"
-                               name="password"
-                               placeholder="Leave blank">
+                <div class="admin-task-grid">
+                    <div class="form-group" id="create-area-field" style="display:none;">
+                        <label for="create_area_name">Assigned Area</label>
+                        <input type="text" id="create_area_name" name="area_name" placeholder="Example: Area 2">
+                    </div>
+
+                    <div class="form-group" id="create-store-field">
+                        <label for="create_store_number">Assigned Store</label>
+                        <input type="text" id="create_store_number" name="store_number" placeholder="Example: 3209">
                     </div>
                 </div>
 
-                <div class="form-group compact-group edit-area-field"
-                     id="edit-area-field-{{ user.id }}"
-                     style="display:none;">
-                    <label>Assigned Area</label>
-                    <input type="text"
-                           name="area_name"
-                           value="{{ user.area_name or '' }}"
-                           placeholder="Example: Area 2"
-                           {% if user.role == 'admin' %}disabled{% endif %}>
-                </div>
-
-                <div class="form-group compact-group edit-store-field"
-                     id="edit-store-field-{{ user.id }}"
-                     style="display:none;">
-                    <label>Assigned Store</label>
-                    <input type="text"
-                           name="store_number"
-                           value="{{ user.store_number or '' }}"
-                           placeholder="Example: 3209"
-                           {% if user.role == 'admin' %}disabled{% endif %}>
-                </div>
-
-                <div class="admin-task-grid compact-grid">
-                    <div class="form-group compact-group">
-                        <label>Primary Email</label>
-                        <input type="email"
-                               name="email"
-                               value="{{ user.email or '' }}">
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label for="create_email">Primary Email</label>
+                        <input type="email" id="create_email" name="email" placeholder="name@example.com">
                     </div>
 
-                    <div class="form-group compact-group">
-                        <label>Notification Email</label>
-                        <input type="email"
-                               name="notification_email"
-                               value="{{ user.notification_email or '' }}"
-                               placeholder="Optional override">
+                    <div class="form-group">
+                        <label for="create_notification_email">Notification Email</label>
+                        <input type="email" id="create_notification_email" name="notification_email" placeholder="Optional override for auto emails">
                     </div>
                 </div>
 
                 <div class="admin-check-row compact-actions">
                     <label class="checkbox-inline">
-                        <input type="checkbox"
-                               name="email_enabled"
-                               {% if user.email_enabled %}checked{% endif %}>
-                        Email Enabled
+                        <input type="checkbox" name="email_enabled" checked>
+                        Enable automated emails for this user
                     </label>
                 </div>
 
-                <div class="admin-check-row compact-actions">
-                    {% if user.role == 'admin' %}
-                    <button type="submit"
-                            name="action"
-                            value="update"
-                            class="btn-primary">
-                        Save Admin Settings
-                    </button>
-                    {% else %}
-                    <button type="submit"
-                            name="action"
-                            value="update"
-                            class="btn-primary">
-                        Save User
-                    </button>
-
-                    {% if user.is_active %}
-                    <button type="submit"
-                            name="action"
-                            value="deactivate"
-                            class="btn-danger"
-                            formnovalidate>
-                        Deactivate
-                    </button>
-                    {% else %}
-                    <button type="submit"
-                            name="action"
-                            value="activate"
-                            class="btn-primary"
-                            formnovalidate>
-                        Activate
-                    </button>
-                    {% endif %}
-                    {% endif %}
-
-                    <button type="submit"
-                            formaction="{{ url_for('auth.send_test_email_to_user', user_id=user.id) }}"
-                            formmethod="post"
-                            formnovalidate
-                            class="btn-primary">
-                        Send Test Email
-                    </button>
-                </div>
+                <button type="submit" class="btn-primary">Create User</button>
             </form>
-            {% endfor %}
         </div>
     </section>
 </div>
+
+<style>
+    .user-card-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .user-card {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        overflow: hidden;
+    }
+
+    .user-card-summary {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        text-align: left;
+    }
+
+    .user-card-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name-wrap {
+        min-width: 0;
+    }
+
+    .user-name-main {
+        font-weight: 800;
+        font-size: 15px;
+        line-height: 1.2;
+        margin-bottom: 2px;
+        word-break: break-word;
+    }
+
+    .user-name-sub {
+        font-size: 12px;
+        opacity: 0.72;
+        line-height: 1.25;
+        word-break: break-word;
+    }
+
+    .user-card-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .user-card-body {
+        display: none;
+        padding: 0 18px 18px 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .user-section-label {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        opacity: 0.72;
+        margin-bottom: 10px;
+        margin-top: 14px;
+    }
+
+    .user-expand-chip {
+        min-width: 88px;
+        text-align: center;
+    }
+
+    .protected-pill {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    @media (max-width: 900px) {
+        .user-card-summary {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .user-card-right {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+</style>
+
+<section class="panel premium-panel">
+    <div class="panel-head">
+        <div>
+            <h3>Existing Users</h3>
+            <div class="area-subtitle">Expand a user card to edit access, email, and account settings</div>
+        </div>
+        <span class="summary-pill">{{ users|length }} total</span>
+    </div>
+
+    <div class="user-card-list" style="margin-top: 16px;">
+        {% for user in users %}
+        <div class="user-card">
+            <button
+                type="button"
+                class="user-card-summary"
+                data-user-toggle="{{ user.id }}"
+                aria-expanded="false"
+            >
+                <div class="user-card-left">
+                    <span class="summary-pill">ID {{ user.id }}</span>
+
+                    <span class="status-badge {% if user.is_active %}status-completed{% else %}status-not-started{% endif %}">
+                        {{ "Active" if user.is_active else "Inactive" }}
+                    </span>
+
+                    <span class="summary-pill">{{ user.role|title }}</span>
+
+                    {% if user.role == 'admin' %}
+                    <span class="summary-pill protected-pill">Protected</span>
+                    {% endif %}
+
+                    <div class="user-name-wrap">
+                        <div class="user-name-main">{{ user.name }}</div>
+                        <div class="user-name-sub">
+                            @{{ user.username }}
+                            {% if user.area_name %}
+                            | Area: {{ user.area_name }}
+                            {% endif %}
+                            {% if user.store_number %}
+                            | Store: {{ user.store_number }}
+                            {% endif %}
+                            {% if user.email %}
+                            | {{ user.email }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="user-card-right">
+                    <span class="summary-pill user-expand-chip" data-user-chevron="{{ user.id }}">Edit ▼</span>
+                </div>
+            </button>
+
+            <div class="user-card-body" data-user-body="{{ user.id }}">
+                <form method="POST" class="login-form" style="margin-top: 16px;">
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
+
+                    <div class="user-section-label">Identity</div>
+                    <div class="admin-task-grid compact-grid">
+                        <div class="form-group compact-group">
+                            <label>Name</label>
+                            <input type="text"
+                                   name="name"
+                                   value="{{ user.name }}"
+                                   {% if user.role == 'admin' %}disabled{% endif %}
+                                   required>
+                        </div>
+
+                        <div class="form-group compact-group">
+                            <label>Username</label>
+                            <input type="text"
+                                   name="username"
+                                   value="{{ user.username }}"
+                                   {% if user.role == 'admin' %}disabled{% endif %}
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="user-section-label">Access</div>
+                    <div class="admin-task-grid compact-grid">
+                        <div class="form-group compact-group">
+                            <label>Role</label>
+                            <select name="role"
+                                    class="edit-role-select"
+                                    data-user-id="{{ user.id }}"
+                                    onchange="toggleEditFields({{ user.id }})"
+                                    {% if user.role == 'admin' %}disabled{% endif %}
+                                    required>
+                                <option value="manager" {% if user.role == 'manager' %}selected{% endif %}>Manager</option>
+                                <option value="supervisor" {% if user.role == 'supervisor' %}selected{% endif %}>Supervisor</option>
+                                <option value="maintenance" {% if user.role == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group compact-group">
+                            <label>{% if user.role == 'admin' %}Reset Admin Password{% else %}Reset Password{% endif %}</label>
+                            <input type="password"
+                                   name="password"
+                                   placeholder="Leave blank">
+                        </div>
+                    </div>
+
+                    <div class="admin-task-grid compact-grid">
+                        <div class="form-group compact-group edit-area-field"
+                             id="edit-area-field-{{ user.id }}"
+                             style="display:none;">
+                            <label>Assigned Area</label>
+                            <input type="text"
+                                   name="area_name"
+                                   value="{{ user.area_name or '' }}"
+                                   placeholder="Example: Area 2"
+                                   {% if user.role == 'admin' %}disabled{% endif %}>
+                        </div>
+
+                        <div class="form-group compact-group edit-store-field"
+                             id="edit-store-field-{{ user.id }}"
+                             style="display:none;">
+                            <label>Assigned Store</label>
+                            <input type="text"
+                                   name="store_number"
+                                   value="{{ user.store_number or '' }}"
+                                   placeholder="Example: 3209"
+                                   {% if user.role == 'admin' %}disabled{% endif %}>
+                        </div>
+                    </div>
+
+                    <div class="user-section-label">Email Settings</div>
+                    <div class="admin-task-grid compact-grid">
+                        <div class="form-group compact-group">
+                            <label>Primary Email</label>
+                            <input type="email"
+                                   name="email"
+                                   value="{{ user.email or '' }}">
+                        </div>
+
+                        <div class="form-group compact-group">
+                            <label>Notification Email</label>
+                            <input type="email"
+                                   name="notification_email"
+                                   value="{{ user.notification_email or '' }}"
+                                   placeholder="Optional override">
+                        </div>
+                    </div>
+
+                    <div class="admin-check-row compact-actions">
+                        <label class="checkbox-inline">
+                            <input type="checkbox"
+                                   name="email_enabled"
+                                   {% if user.email_enabled %}checked{% endif %}>
+                            Email Enabled
+                        </label>
+                    </div>
+
+                    <div class="user-section-label">Actions</div>
+                    <div class="admin-check-row compact-actions">
+                        {% if user.role == 'admin' %}
+                        <button type="submit"
+                                name="action"
+                                value="update"
+                                class="btn-primary">
+                            Save Admin Settings
+                        </button>
+                        {% else %}
+                        <button type="submit"
+                                name="action"
+                                value="update"
+                                class="btn-primary">
+                            Save User
+                        </button>
+
+                        {% if user.is_active %}
+                        <button type="submit"
+                                name="action"
+                                value="deactivate"
+                                class="btn-danger"
+                                formnovalidate>
+                            Deactivate
+                        </button>
+                        {% else %}
+                        <button type="submit"
+                                name="action"
+                                value="activate"
+                                class="btn-primary"
+                                formnovalidate>
+                            Activate
+                        </button>
+                        {% endif %}
+                        {% endif %}
+
+                        <button type="submit"
+                                formaction="{{ url_for('auth.send_test_email_to_user', user_id=user.id) }}"
+                                formmethod="post"
+                                formnovalidate
+                                class="btn-primary">
+                            Send Test Email
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
 
 <script>
 function toggleCreateFields() {
@@ -298,11 +483,61 @@ function toggleEditFields(userId) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+    function bindToggle(toggleId, bodyId, chevronId) {
+        const toggle = document.getElementById(toggleId);
+        const body = document.getElementById(bodyId);
+        const chevron = document.getElementById(chevronId);
+
+        if (!toggle || !body || !chevron) return;
+
+        toggle.addEventListener("click", function () {
+            const isHidden = body.style.display === "none";
+            body.style.display = isHidden ? "block" : "none";
+            toggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
+            chevron.textContent = isHidden ? "Hide ▲" : "Show ▼";
+        });
+    }
+
+    function bindUserEditors() {
+        document.querySelectorAll("[data-user-toggle]").forEach(toggle => {
+            toggle.addEventListener("click", function () {
+                const userId = this.getAttribute("data-user-toggle");
+                const targetBody = document.querySelector(`[data-user-body="${userId}"]`);
+                const targetChevron = document.querySelector(`[data-user-chevron="${userId}"]`);
+
+                if (!targetBody || !targetChevron) return;
+
+                const isOpening = targetBody.style.display === "none" || targetBody.style.display === "";
+
+                document.querySelectorAll("[data-user-body]").forEach(body => {
+                    body.style.display = "none";
+                });
+
+                document.querySelectorAll("[data-user-chevron]").forEach(chevron => {
+                    chevron.textContent = "Edit ▼";
+                });
+
+                document.querySelectorAll("[data-user-toggle]").forEach(btn => {
+                    btn.setAttribute("aria-expanded", "false");
+                });
+
+                if (isOpening) {
+                    targetBody.style.display = "block";
+                    targetChevron.textContent = "Close ▲";
+                    this.setAttribute("aria-expanded", "true");
+                }
+            });
+        });
+    }
+
     toggleCreateFields();
 
     document.querySelectorAll(".edit-role-select").forEach(select => {
         toggleEditFields(select.dataset.userId);
     });
+
+    bindToggle("create-user-toggle", "create-user-body", "create-user-chevron");
+    bindUserEditors();
 });
 </script>
 

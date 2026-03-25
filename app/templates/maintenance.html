@@ -105,13 +105,6 @@
                 <div class="admin-check-row">
                     <button type="submit" class="btn-primary">Apply Filters</button>
                     <a href="{{ url_for('maintenance.index') }}" class="action-btn" style="max-width: 180px;">Reset Filters</a>
-                    <a
-                        href="{{ url_for('maintenance.export_excel', store=store_filter, status=status_filter) }}"
-                        class="action-btn"
-                        style="max-width: 220px;"
-                    >
-                        Export to Excel
-                    </a>
                 </div>
             </form>
         </div>

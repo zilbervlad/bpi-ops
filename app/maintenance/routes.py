@@ -1,11 +1,5 @@
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from datetime import datetime
-from io import BytesIO
-
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment
-from openpyxl.utils import get_column_letter
-
 from app.auth.routes import login_required, role_required
 from app.extensions import db
 from app.models import MaintenanceTicket, Store
@@ -46,103 +40,6 @@ def get_visible_store_numbers():
 
 def split_lines_to_tasks(text: str):
     return [line.strip() for line in (text or "").splitlines() if line.strip()]
-
-
-def get_filtered_tickets():
-    visible_stores = get_visible_stores()
-    visible_store_numbers = {store.store_number for store in visible_stores}
-
-    status_filter = request.args.get("status", "").strip()
-    store_filter = request.args.get("store", "").strip()
-
-    tickets = MaintenanceTicket.query.order_by(
-        MaintenanceTicket.created_at.asc(),
-        MaintenanceTicket.id.asc()
-    ).all()
-
-    tickets = [t for t in tickets if t.store_number in visible_store_numbers]
-
-    if status_filter:
-        tickets = [t for t in tickets if t.status == status_filter]
-
-    if store_filter:
-        tickets = [t for t in tickets if t.store_number == store_filter]
-
-    return tickets, visible_stores, status_filter, store_filter
-
-
-def autosize_worksheet_columns(worksheet):
-    for column_cells in worksheet.columns:
-        max_length = 0
-        column_letter = get_column_letter(column_cells[0].column)
-
-        for cell in column_cells:
-            try:
-                cell_value = "" if cell.value is None else str(cell.value)
-                max_length = max(max_length, len(cell_value))
-            except Exception:
-                pass
-
-        worksheet.column_dimensions[column_letter].width = min(max(max_length + 2, 12), 40)
-
-
-def style_header_row(worksheet, row_number=1):
-    header_fill = PatternFill(fill_type="solid", fgColor="1F4E78")
-    header_font = Font(color="FFFFFF", bold=True)
-
-    for cell in worksheet[row_number]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(horizontal="center", vertical="center")
-
-
-def create_maintenance_excel(tickets, status_filter, store_filter):
-    wb = Workbook()
-
-    summary_ws = wb.active
-    summary_ws.title = "Summary"
-    summary_ws.append(["Metric", "Value"])
-    summary_ws.append(["Selected Store", store_filter or "All"])
-    summary_ws.append(["Selected Status", status_filter or "All"])
-    summary_ws.append(["Total Tickets", len(tickets)])
-
-    style_header_row(summary_ws)
-    autosize_worksheet_columns(summary_ws)
-
-    tickets_ws = wb.create_sheet(title="Maintenance Tickets")
-    tickets_ws.append([
-        "Store",
-        "Title",
-        "Details",
-        "Status",
-        "Source Type",
-        "Created At",
-        "SVR Report ID",
-    ])
-
-    for ticket in tickets:
-        created_at_display = (
-            ticket.created_at.strftime("%Y-%m-%d %I:%M %p")
-            if ticket.created_at else ""
-        )
-
-        tickets_ws.append([
-            ticket.store_number,
-            ticket.title or "",
-            ticket.details or "",
-            ticket.status.replace("_", " ").title() if ticket.status else "",
-            (ticket.source_type or "").upper(),
-            created_at_display,
-            ticket.svr_report_id if ticket.svr_report_id is not None else "",
-        ])
-
-    style_header_row(tickets_ws)
-    autosize_worksheet_columns(tickets_ws)
-
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return output
 
 
 @maintenance_bp.route("/", methods=["GET", "POST"])
@@ -319,27 +216,4 @@ def index():
         status_filter=status_filter,
         store_filter=store_filter,
         user_role=role,
-    )
-
-
-@maintenance_bp.route("/export/excel")
-@login_required
-@role_required("admin", "supervisor", "maintenance", "manager")
-def export_excel():
-    tickets, _, status_filter, store_filter = get_filtered_tickets()
-    workbook_stream = create_maintenance_excel(tickets, status_filter, store_filter)
-
-    filename_parts = ["maintenance_export"]
-    if store_filter:
-        filename_parts.append(store_filter)
-    if status_filter:
-        filename_parts.append(status_filter)
-
-    filename = "_".join(filename_parts) + ".xlsx"
-
-    return send_file(
-        workbook_stream,
-        as_attachment=True,
-        download_name=filename,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )

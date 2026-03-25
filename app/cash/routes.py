@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from app.extensions import db
@@ -6,6 +7,20 @@ from app.models import CashLog
 from app.auth.routes import login_required
 
 cash_bp = Blueprint("cash", __name__, url_prefix="/cash")
+
+APP_TZ = ZoneInfo("America/New_York")
+BUSINESS_DAY_CUTOFF = time(5, 0)
+
+
+def now_et():
+    return datetime.now(APP_TZ)
+
+
+def get_business_date():
+    current = now_et()
+    if current.time() < BUSINESS_DAY_CUTOFF:
+        return (current - timedelta(days=1)).date()
+    return current.date()
 
 
 def get_manager_store():
@@ -23,12 +38,18 @@ def get_manager_store():
     return store_number
 
 
+def is_log_date_editable(log_date):
+    return log_date == get_business_date()
+
+
 @cash_bp.route("/", methods=["GET", "POST"])
 @login_required
 def index():
     store_number = get_manager_store()
     if not store_number:
         return redirect(url_for("dashboard.home"))
+
+    active_business_date = get_business_date()
 
     if request.method == "POST":
         edit_log_id = (request.form.get("edit_log_id") or "").strip()
@@ -48,6 +69,10 @@ def index():
             log_date = datetime.strptime(log_date_raw, "%Y-%m-%d").date()
         except ValueError:
             flash("Invalid log date.", "error")
+            return redirect(url_for("cash.index"))
+
+        if not is_log_date_editable(log_date):
+            flash("Only the active business day can be edited. Older cash logs are read-only.", "error")
             return redirect(url_for("cash.index"))
 
         try:
@@ -81,6 +106,10 @@ def index():
 
             if log.store_number != store_number:
                 flash("You can only edit cash logs for your own store.", "error")
+                return redirect(url_for("cash.index"))
+
+            if not is_log_date_editable(log.log_date):
+                flash("That cash log is read-only because it is from a prior business day.", "error")
                 return redirect(url_for("cash.index"))
 
             log.shift_type = shift_type
@@ -125,7 +154,7 @@ def index():
             flash("Cash log not found.", "error")
             return redirect(url_for("cash.index"))
         if edit_log.store_number != store_number:
-            flash("You can only edit cash logs for your own store.", "error")
+            flash("You can only view cash logs for your own store.", "error")
             return redirect(url_for("cash.index"))
 
     logs = (
@@ -135,13 +164,19 @@ def index():
         .all()
     )
 
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    read_only = False
+    if edit_log:
+        read_only = not is_log_date_editable(edit_log.log_date)
+
+    form_log_date = edit_log.log_date if edit_log else active_business_date
 
     return render_template(
         "cash.html",
         logs=logs,
-        today_str=edit_log.log_date.strftime("%Y-%m-%d") if edit_log else today_str,
+        today_str=form_log_date.strftime("%Y-%m-%d"),
+        active_business_date_str=active_business_date.strftime("%Y-%m-%d"),
         store_number=store_number,
         manager_name=edit_log.manager_name if edit_log and edit_log.manager_name else session.get("user_name", ""),
         edit_log=edit_log,
+        read_only=read_only,
     )

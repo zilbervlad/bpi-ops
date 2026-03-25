@@ -7,9 +7,26 @@
 <div class="content-grid">
     <section class="panel premium-panel">
         <div class="panel-head">
-            <h3>{% if edit_log %}Edit Cash Log{% else %}Submit Cash Log{% endif %}</h3>
+            <div>
+                <h3>
+                    {% if edit_log %}
+                        {% if read_only %}View Cash Log{% else %}Edit Cash Log{% endif %}
+                    {% else %}
+                        Submit Cash Log
+                    {% endif %}
+                </h3>
+                <div class="area-subtitle">
+                    Active business day: {{ active_business_date_str }}
+                </div>
+            </div>
             <span class="summary-pill">Store {{ store_number }}</span>
         </div>
+
+        {% if read_only %}
+        <div class="flash flash-error" style="margin-bottom: 16px;">
+            This cash log is from a prior business day and is read-only.
+        </div>
+        {% endif %}
 
         <form method="POST" class="login-form">
             {% if edit_log %}
@@ -24,16 +41,23 @@
                     name="log_date"
                     value="{{ today_str }}"
                     required
+                    {% if read_only %}disabled{% endif %}
                 >
+                {% if read_only %}
+                <input type="hidden" name="log_date" value="{{ today_str }}">
+                {% endif %}
             </div>
 
             <div class="form-group">
                 <label for="shift_type">Shift</label>
-                <select id="shift_type" name="shift_type" required>
+                <select id="shift_type" name="shift_type" required {% if read_only %}disabled{% endif %}>
                     <option value="opening" {% if edit_log and edit_log.shift_type == 'opening' %}selected{% endif %}>Opening</option>
                     <option value="midshift" {% if edit_log and edit_log.shift_type == 'midshift' %}selected{% endif %}>Midshift</option>
                     <option value="closing" {% if edit_log and edit_log.shift_type == 'closing' %}selected{% endif %}>Closing</option>
                 </select>
+                {% if read_only and edit_log %}
+                <input type="hidden" name="shift_type" value="{{ edit_log.shift_type }}">
+                {% endif %}
             </div>
 
             <div class="form-group">
@@ -44,6 +68,7 @@
                     name="manager_name"
                     value="{{ manager_name }}"
                     required
+                    {% if read_only %}readonly{% endif %}
                 >
             </div>
 
@@ -56,6 +81,7 @@
                     name="back_till"
                     min="0"
                     value="{{ '%.2f'|format(edit_log.back_till if edit_log and edit_log.back_till is not none else 0) }}"
+                    {% if read_only %}readonly{% endif %}
                 >
             </div>
 
@@ -68,6 +94,7 @@
                     name="front_till"
                     min="0"
                     value="{{ '%.2f'|format(edit_log.front_till if edit_log and edit_log.front_till is not none else 0) }}"
+                    {% if read_only %}readonly{% endif %}
                 >
             </div>
 
@@ -80,6 +107,7 @@
                     name="driver_banks"
                     min="0"
                     value="{{ '%.2f'|format(edit_log.driver_banks if edit_log and edit_log.driver_banks is not none else 0) }}"
+                    {% if read_only %}readonly{% endif %}
                 >
             </div>
 
@@ -93,6 +121,7 @@
                         name="amount_to_account_for"
                         min="0"
                         value="{{ '%.2f'|format(edit_log.amount_to_account_for if edit_log and edit_log.amount_to_account_for is not none else 0) }}"
+                        {% if read_only %}readonly{% endif %}
                     >
                 </div>
 
@@ -109,13 +138,15 @@
                 </div>
             </div>
 
+            {% if not read_only %}
             <button type="submit" class="btn-primary" style="width: 100%;">
                 {% if edit_log %}Update Cash Log{% else %}Submit Cash Log{% endif %}
             </button>
+            {% endif %}
 
             {% if edit_log %}
             <a href="{{ url_for('cash.index') }}" class="action-btn" style="width: 100%; display: block; text-align: center; margin-top: 12px;">
-                Cancel Edit
+                {% if read_only %}Back to Cash Control{% else %}Cancel Edit{% endif %}
             </a>
             {% endif %}
         </form>
@@ -145,6 +176,7 @@
                 </thead>
                 <tbody>
                     {% for log in logs %}
+                    {% set log_is_editable = log.log_date.strftime('%Y-%m-%d') == active_business_date_str %}
                     <tr>
                         <td>{{ log.log_date.strftime('%m/%d/%Y') }}</td>
                         <td>{{ log.shift_type|title }}</td>
@@ -169,7 +201,7 @@
                         <td>{{ log.manager_name or '—' }}</td>
                         <td>
                             <a href="{{ url_for('cash.index', edit=log.id) }}" class="action-btn" style="padding: 8px 12px;">
-                                Edit
+                                {% if log_is_editable %}Edit{% else %}View{% endif %}
                             </a>
                         </td>
                     </tr>

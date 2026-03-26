@@ -4,9 +4,157 @@
 {% block header %}Cash Control{% endblock %}
 
 {% block content %}
-<div class="content-grid">
+<style>
+    .cash-control-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+    }
+
+    .cash-panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .cash-panel-head h3 {
+        margin: 0 0 4px 0;
+    }
+
+    .cash-form-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .cash-full-btn {
+        width: 100%;
+        display: block;
+        text-align: center;
+    }
+
+    .cash-mobile-list {
+        display: none;
+    }
+
+    .cash-mobile-card {
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 16px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        margin-bottom: 12px;
+    }
+
+    .cash-mobile-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .cash-mobile-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+
+    .cash-mobile-date {
+        font-weight: 700;
+        font-size: 0.98rem;
+        line-height: 1.2;
+    }
+
+    .cash-mobile-shift {
+        font-size: 0.82rem;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        white-space: nowrap;
+    }
+
+    .cash-mobile-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+        margin-bottom: 12px;
+    }
+
+    .cash-mobile-item {
+        min-width: 0;
+    }
+
+    .cash-mobile-label {
+        font-size: 0.76rem;
+        opacity: 0.72;
+        margin-bottom: 2px;
+    }
+
+    .cash-mobile-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    .cash-mobile-action .action-btn {
+        width: 100%;
+        display: block;
+        text-align: center;
+        padding: 10px 12px;
+    }
+
+    @media (max-width: 980px) {
+        .cash-control-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 860px) {
+        .cash-desktop-table {
+            display: none;
+        }
+
+        .cash-mobile-list {
+            display: block;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .cash-mobile-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cash-panel-head {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .cash-panel-head .summary-pill {
+            align-self: flex-start;
+        }
+
+        .premium-panel {
+            padding: 16px;
+        }
+
+        .form-group label {
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            font-size: 16px;
+        }
+    }
+</style>
+
+<div class="content-grid cash-control-grid">
     <section class="panel premium-panel">
-        <div class="panel-head">
+        <div class="panel-head cash-panel-head">
             <div>
                 <h3>
                     {% if edit_log %}
@@ -139,26 +287,30 @@
             </div>
 
             {% if not read_only %}
-            <button type="submit" class="btn-primary" style="width: 100%;">
-                {% if edit_log %}Update Cash Log{% else %}Submit Cash Log{% endif %}
-            </button>
+            <div class="cash-form-actions">
+                <button type="submit" class="btn-primary cash-full-btn">
+                    {% if edit_log %}Update Cash Log{% else %}Submit Cash Log{% endif %}
+                </button>
+            </div>
             {% endif %}
 
             {% if edit_log %}
-            <a href="{{ url_for('cash.index') }}" class="action-btn" style="width: 100%; display: block; text-align: center; margin-top: 12px;">
-                {% if read_only %}Back to Cash Control{% else %}Cancel Edit{% endif %}
-            </a>
+            <div class="cash-form-actions">
+                <a href="{{ url_for('cash.index') }}" class="action-btn cash-full-btn">
+                    {% if read_only %}Back to Cash Control{% else %}Cancel Edit{% endif %}
+                </a>
+            </div>
             {% endif %}
         </form>
     </section>
 
     <section class="panel premium-panel">
-        <div class="panel-head">
+        <div class="panel-head cash-panel-head">
             <h3>Recent Cash Logs</h3>
             <span class="summary-pill">Last 10</span>
         </div>
 
-        <div class="table-wrap premium-table-wrap">
+        <div class="table-wrap premium-table-wrap cash-desktop-table">
             <table class="data-table premium-table">
                 <thead>
                     <tr>
@@ -212,6 +364,77 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+
+        <div class="cash-mobile-list">
+            {% for log in logs %}
+            {% set log_is_editable = log.log_date.strftime('%Y-%m-%d') == active_business_date_str %}
+            <div class="cash-mobile-card">
+                <div class="cash-mobile-card-top">
+                    <div class="cash-mobile-date">{{ log.log_date.strftime('%m/%d/%Y') }}</div>
+                    <div class="cash-mobile-shift">{{ log.shift_type|title }}</div>
+                </div>
+
+                <div class="cash-mobile-grid">
+                    <div class="cash-mobile-item">
+                        <div class="cash-mobile-label">Back Till</div>
+                        <div class="cash-mobile-value">${{ "%.2f"|format(log.back_till or 0) }}</div>
+                    </div>
+
+                    <div class="cash-mobile-item">
+                        <div class="cash-mobile-label">Front Till</div>
+                        <div class="cash-mobile-value">${{ "%.2f"|format(log.front_till or 0) }}</div>
+                    </div>
+
+                    <div class="cash-mobile-item">
+                        <div class="cash-mobile-label">Driver Banks</div>
+                        <div class="cash-mobile-value">${{ "%.2f"|format(log.driver_banks or 0) }}</div>
+                    </div>
+
+                    <div class="cash-mobile-item">
+                        <div class="cash-mobile-label">Total</div>
+                        <div class="cash-mobile-value">${{ "%.2f"|format(log.total_cash or 0) }}</div>
+                    </div>
+
+                    <div class="cash-mobile-item">
+                        <div class="cash-mobile-label">Account For</div>
+                        <div class="cash-mobile-value">
+                            {% if log.shift_type == 'midshift' and log.amount_to_account_for is not none %}
+                                ${{ "%.2f"|format(log.amount_to_account_for) }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="cash-mobile-item">
+                        <div class="cash-mobile-label">Over / Short</div>
+                        <div class="cash-mobile-value">
+                            {% if log.shift_type == 'midshift' and log.cash_over_short is not none %}
+                                ${{ "%.2f"|format(log.cash_over_short) }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="cash-mobile-item">
+                        <div class="cash-mobile-label">Manager</div>
+                        <div class="cash-mobile-value">{{ log.manager_name or '—' }}</div>
+                    </div>
+                </div>
+
+                <div class="cash-mobile-action">
+                    <a href="{{ url_for('cash.index', edit=log.id) }}" class="action-btn">
+                        {% if log_is_editable %}Edit{% else %}View{% endif %}
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="cash-mobile-card">
+                <div class="cash-mobile-value">No cash logs yet.</div>
+            </div>
+            {% endfor %}
         </div>
     </section>
 </div>

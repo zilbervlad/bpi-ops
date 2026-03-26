@@ -239,7 +239,7 @@
     </section>
 
     <section class="panel premium-panel">
-        <div class="panel-head">
+        <div class="panel-head" style="margin-bottom: 16px;">
             <div>
                 <h3>Checklist Template</h3>
                 <div class="area-subtitle">
@@ -249,9 +249,28 @@
             <span class="summary-pill">{{ items|length }} Items</span>
         </div>
 
-        <div class="admin-task-list">
+        <div class="admin-task-grid" style="margin-bottom: 18px;">
+            <div class="form-group">
+                <label for="section_filter">Filter by Section</label>
+                <select id="section_filter">
+                    <option value="all">All Sections</option>
+                    {% for section in section_options %}
+                    <option value="{{ section }}">{{ section }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="svr-value-card">
+                <div class="svr-value-label">Quick Filter</div>
+                <div class="svr-value-text">
+                    Choose a section to show only those tasks. This does not affect saving and does not change task data.
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-task-list" id="admin-task-list">
             {% for item in items %}
-            <form method="POST" class="admin-task-card">
+            <form method="POST" class="admin-task-card" data-section="{{ item.section_name }}">
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="item_id" value="{{ item.id }}">
 
@@ -327,4 +346,32 @@
     </section>
 
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const sectionFilter = document.getElementById("section_filter");
+    const taskCards = document.querySelectorAll(".admin-task-card[data-section]");
+
+    function applySectionFilter() {
+        if (!sectionFilter) return;
+
+        const selected = sectionFilter.value;
+
+        taskCards.forEach(function (card) {
+            const section = card.getAttribute("data-section");
+
+            if (selected === "all" || section === selected) {
+                card.style.display = "";
+            } else {
+                card.style.display = "none";
+            }
+        });
+    }
+
+    if (sectionFilter) {
+        sectionFilter.addEventListener("change", applySectionFilter);
+        applySectionFilter();
+    }
+});
+</script>
 {% endblock %}

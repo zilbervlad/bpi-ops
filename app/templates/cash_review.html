@@ -52,7 +52,17 @@
             </div>
 
             <div class="form-group">
-                <label for="date">Date</label>
+                <label for="preset">Preset</label>
+                <select id="preset" name="preset">
+                    <option value="">None</option>
+                    <option value="today" {% if preset_filter == 'today' %}selected{% endif %}>Today</option>
+                    <option value="week_to_date" {% if preset_filter == 'week_to_date' %}selected{% endif %}>Week to Date</option>
+                    <option value="last_week" {% if preset_filter == 'last_week' %}selected{% endif %}>Last Week</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Single Date Override</label>
                 <input type="date" id="date" name="date" value="{{ date_filter }}">
             </div>
 
@@ -60,7 +70,7 @@
                 <button type="submit" class="btn-primary">Apply Filters</button>
                 <a href="{{ url_for('cash_review.index') }}" class="action-btn" style="max-width: 180px;">Reset Filters</a>
                 <a
-                    href="{{ url_for('cash_review.export_excel', store=store_filter, shift=shift_filter, date=date_filter) }}"
+                    href="{{ url_for('cash_review.export_excel', store=store_filter, shift=shift_filter, date=date_filter, preset=preset_filter) }}"
                     class="action-btn"
                     style="max-width: 220px;"
                 >
@@ -260,6 +270,23 @@ document.addEventListener("DOMContentLoaded", function () {
             body.style.display = isHidden ? "block" : "none";
             toggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
             chevron.textContent = isHidden ? "Hide ▲" : "Show ▼";
+        });
+    }
+
+    const preset = document.getElementById("preset");
+    const dateInput = document.getElementById("date");
+
+    if (preset && dateInput) {
+        dateInput.addEventListener("change", function () {
+            if (dateInput.value) {
+                preset.value = "";
+            }
+        });
+
+        preset.addEventListener("change", function () {
+            if (preset.value) {
+                dateInput.value = "";
+            }
         });
     }
 

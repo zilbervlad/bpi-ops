@@ -86,21 +86,27 @@ def build_cash_review_payload():
     shift_filter = (request.args.get("shift") or "").strip()
     date_filter = (request.args.get("date") or "").strip()
 
-    query = CashLog.query.filter(CashLog.store_number.in_(visible_store_numbers)).order_by(
-        CashLog.log_date.desc(),
+    today = datetime.today().date()
+    selected_date = None
+
+    if date_filter:
+        try:
+            selected_date = datetime.strptime(date_filter, "%Y-%m-%d").date()
+        except ValueError:
+            selected_date = None
+            date_filter = ""
+
+    dashboard_date = selected_date or today
+
+    query = CashLog.query.filter(
+        CashLog.store_number.in_(visible_store_numbers),
+        CashLog.log_date == dashboard_date
+    ).order_by(
         CashLog.created_at.desc()
     )
 
     if store_filter:
         query = query.filter(CashLog.store_number == store_filter)
-
-    selected_date = None
-    if date_filter:
-        try:
-            selected_date = datetime.strptime(date_filter, "%Y-%m-%d").date()
-            query = query.filter(CashLog.log_date == selected_date)
-        except ValueError:
-            selected_date = None
 
     if shift_filter:
         query = query.filter(CashLog.shift_type == shift_filter)
@@ -122,16 +128,17 @@ def build_cash_review_payload():
         reverse=True
     )
 
-    diff_base_query = CashLog.query.filter(CashLog.store_number.in_(visible_store_numbers))
+    diff_base_query = CashLog.query.filter(
+        CashLog.store_number.in_(visible_store_numbers)
+    )
 
     if store_filter:
         diff_base_query = diff_base_query.filter(CashLog.store_number == store_filter)
 
-    if selected_date:
-        diff_base_query = diff_base_query.filter(
-            CashLog.log_date >= selected_date - timedelta(days=1),
-            CashLog.log_date <= selected_date + timedelta(days=1)
-        )
+    diff_base_query = diff_base_query.filter(
+        CashLog.log_date >= dashboard_date - timedelta(days=1),
+        CashLog.log_date <= dashboard_date
+    )
 
     diff_logs = diff_base_query.all()
     closing_opening_diffs = build_closing_to_opening_diffs(diff_logs)
@@ -190,7 +197,7 @@ def create_cash_review_excel(payload):
     summary_rows = [
         ("Selected Store", payload["store_filter"] or "All"),
         ("Selected Shift", payload["shift_filter"] or "All"),
-        ("Selected Date", payload["date_filter"] or "All"),
+        ("Selected Date", payload["date_filter"] or "Today"),
         ("Stores In Scope", payload["summary"]["stores_in_scope"]),
         ("Recent Cash Logs", payload["summary"]["log_count"]),
         ("Midshift Exceptions", payload["summary"]["midshift_count"]),
@@ -323,6 +330,8 @@ def export_excel():
         filename_parts.append(payload["shift_filter"])
     if payload["date_filter"]:
         filename_parts.append(payload["date_filter"])
+    else:
+        filename_parts.append("today")
 
     filename = "_".join(filename_parts) + ".xlsx"
 

@@ -29,38 +29,67 @@
         </div>
 
         <form method="GET" class="login-form">
-            <div class="form-group">
-                <label for="store">Store</label>
-                <select id="store" name="store">
-                    <option value="">All Stores</option>
-                    {% for store in stores %}
-                    <option value="{{ store.store_number }}" {% if store.store_number == store_filter %}selected{% endif %}>
-                        {{ store.store_number }}
-                    </option>
-                    {% endfor %}
-                </select>
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="store">Store</label>
+                    <select id="store" name="store">
+                        <option value="">All Stores</option>
+                        {% for store in stores %}
+                        <option value="{{ store.store_number }}" {% if store.store_number == store_filter %}selected{% endif %}>
+                            {{ store.store_number }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="shift">Shift</label>
+                    <select id="shift" name="shift">
+                        <option value="">All Shifts</option>
+                        <option value="opening" {% if shift_filter == 'opening' %}selected{% endif %}>Opening</option>
+                        <option value="midshift" {% if shift_filter == 'midshift' %}selected{% endif %}>Midshift</option>
+                        <option value="closing" {% if shift_filter == 'closing' %}selected{% endif %}>Closing</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="shift">Shift</label>
-                <select id="shift" name="shift">
-                    <option value="">All Shifts</option>
-                    <option value="opening" {% if shift_filter == 'opening' %}selected{% endif %}>Opening</option>
-                    <option value="midshift" {% if shift_filter == 'midshift' %}selected{% endif %}>Midshift</option>
-                    <option value="closing" {% if shift_filter == 'closing' %}selected{% endif %}>Closing</option>
-                </select>
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="preset">Preset Date Range</label>
+                    <select id="preset" name="preset">
+                        <option value="">Custom / All Dates</option>
+                        <option value="today" {% if preset_filter == 'today' %}selected{% endif %}>Today</option>
+                        <option value="week_to_date" {% if preset_filter == 'week_to_date' %}selected{% endif %}>Week to Date</option>
+                        <option value="last_week" {% if preset_filter == 'last_week' %}selected{% endif %}>Last Week</option>
+                        <option value="last_7_days" {% if preset_filter == 'last_7_days' %}selected{% endif %}>Last 7 Days</option>
+                    </select>
+                </div>
+
+                <div class="svr-value-card">
+                    <div class="svr-value-label">Date Filters</div>
+                    <div class="svr-value-text">
+                        Use a preset for speed, or enter a custom start and end date below. Manual dates override the preset.
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="date">Date</label>
-                <input type="date" id="date" name="date" value="{{ date_filter }}">
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="start_date">Start Date</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ start_date_filter }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="end_date">End Date</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ end_date_filter }}">
+                </div>
             </div>
 
             <div class="admin-check-row">
                 <button type="submit" class="btn-primary">Apply Filters</button>
                 <a href="{{ url_for('cash_review.index') }}" class="action-btn" style="max-width: 180px;">Reset Filters</a>
                 <a
-                    href="{{ url_for('cash_review.export_excel', store=store_filter, shift=shift_filter, date=date_filter) }}"
+                    href="{{ url_for('cash_review.export_excel', store=store_filter, shift=shift_filter, preset=preset_filter, start_date=start_date_filter, end_date=end_date_filter) }}"
                     class="action-btn"
                     style="max-width: 220px;"
                 >
@@ -261,6 +290,24 @@ document.addEventListener("DOMContentLoaded", function () {
             toggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
             chevron.textContent = isHidden ? "Hide ▲" : "Show ▼";
         });
+    }
+
+    const presetSelect = document.getElementById("preset");
+    const startDateInput = document.getElementById("start_date");
+    const endDateInput = document.getElementById("end_date");
+
+    function clearPresetOnManualDateChange() {
+        if (presetSelect) {
+            presetSelect.value = "";
+        }
+    }
+
+    if (startDateInput) {
+        startDateInput.addEventListener("change", clearPresetOnManualDateChange);
+    }
+
+    if (endDateInput) {
+        endDateInput.addEventListener("change", clearPresetOnManualDateChange);
     }
 
     bindToggle("midshift-exceptions-toggle", "midshift-exceptions-body", "midshift-exceptions-chevron");

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from io import BytesIO
 
 from flask import Blueprint, render_template, request, session, send_file
@@ -27,6 +27,37 @@ def get_visible_stores():
         ).order_by(Store.store_number.asc()).all()
 
     return []
+
+
+def parse_date(date_str):
+    if not date_str:
+        return None
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def get_preset_date_range(preset_value):
+    today = date.today()
+
+    if preset_value == "today":
+        return today, today
+
+    if preset_value == "week_to_date":
+        start = today - timedelta(days=today.weekday())
+        return start, today
+
+    if preset_value == "last_week":
+        this_week_start = today - timedelta(days=today.weekday())
+        last_week_start = this_week_start - timedelta(days=7)
+        last_week_end = this_week_start - timedelta(days=1)
+        return last_week_start, last_week_end
+
+    if preset_value == "last_7_days":
+        return today - timedelta(days=6), today
+
+    return None, None
 
 
 def build_closing_to_opening_diffs(logs):
@@ -84,7 +115,38 @@ def build_cash_review_payload():
 
     store_filter = (request.args.get("store") or "").strip()
     shift_filter = (request.args.get("shift") or "").strip()
+
+    # New filters
+    preset_filter = (request.args.get("preset") or "").strip()
+    start_date_filter = (request.args.get("start_date") or "").strip()
+    end_date_filter = (request.args.get("end_date") or "").strip()
+
+    # Legacy single-date support kept for safety/backward compatibility
     date_filter = (request.args.get("date") or "").strip()
+
+    selected_start_date = None
+    selected_end_date = None
+
+    manual_start = parse_date(start_date_filter)
+    manual_end = parse_date(end_date_filter)
+
+    if manual_start or manual_end:
+        selected_start_date = manual_start
+        selected_end_date = manual_end
+
+        if selected_start_date and not selected_end_date:
+            selected_end_date = selected_start_date
+        elif selected_end_date and not selected_start_date:
+            selected_start_date = selected_end_date
+    elif preset_filter:
+        selected_start_date, selected_end_date = get_preset_date_range(preset_filter)
+    elif date_filter:
+        legacy_date = parse_date(date_filter)
+        if legacy_date:
+            selected_start_date = legacy_date
+            selected_end_date = legacy_date
+            start_date_filter = legacy_date.strftime("%Y-%m-%d")
+            end_date_filter = legacy_date.strftime("%Y-%m-%d")
 
     query = CashLog.query.filter(CashLog.store_number.in_(visible_store_numbers)).order_by(
         CashLog.log_date.desc(),
@@ -94,13 +156,11 @@ def build_cash_review_payload():
     if store_filter:
         query = query.filter(CashLog.store_number == store_filter)
 
-    selected_date = None
-    if date_filter:
-        try:
-            selected_date = datetime.strptime(date_filter, "%Y-%m-%d").date()
-            query = query.filter(CashLog.log_date == selected_date)
-        except ValueError:
-            selected_date = None
+    if selected_start_date:
+        query = query.filter(CashLog.log_date >= selected_start_date)
+
+    if selected_end_date:
+        query = query.filter(CashLog.log_date <= selected_end_date)
 
     if shift_filter:
         query = query.filter(CashLog.shift_type == shift_filter)
@@ -127,10 +187,14 @@ def build_cash_review_payload():
     if store_filter:
         diff_base_query = diff_base_query.filter(CashLog.store_number == store_filter)
 
-    if selected_date:
+    if selected_start_date:
         diff_base_query = diff_base_query.filter(
-            CashLog.log_date >= selected_date - timedelta(days=1),
-            CashLog.log_date <= selected_date + timedelta(days=1)
+            CashLog.log_date >= selected_start_date - timedelta(days=1)
+        )
+
+    if selected_end_date:
+        diff_base_query = diff_base_query.filter(
+            CashLog.log_date <= selected_end_date + timedelta(days=1)
         )
 
     diff_logs = diff_base_query.all()
@@ -150,7 +214,12 @@ def build_cash_review_payload():
         "closing_opening_diffs": closing_opening_diffs,
         "store_filter": store_filter,
         "shift_filter": shift_filter,
-        "date_filter": date_filter,
+        "date_filter": date_filter,  # kept for compatibility
+        "preset_filter": preset_filter,
+        "start_date_filter": start_date_filter,
+        "end_date_filter": end_date_filter,
+        "selected_start_date": selected_start_date,
+        "selected_end_date": selected_end_date,
         "summary": summary,
     }
 
@@ -187,10 +256,21 @@ def create_cash_review_excel(payload):
     summary_ws.title = "Summary"
     summary_ws.append(["Metric", "Value"])
 
+    selected_range_text = "All"
+    if payload["selected_start_date"] and payload["selected_end_date"]:
+        if payload["selected_start_date"] == payload["selected_end_date"]:
+            selected_range_text = payload["selected_start_date"].strftime("%Y-%m-%d")
+        else:
+            selected_range_text = (
+                f'{payload["selected_start_date"].strftime("%Y-%m-%d")} to '
+                f'{payload["selected_end_date"].strftime("%Y-%m-%d")}'
+            )
+
     summary_rows = [
         ("Selected Store", payload["store_filter"] or "All"),
         ("Selected Shift", payload["shift_filter"] or "All"),
-        ("Selected Date", payload["date_filter"] or "All"),
+        ("Preset", payload["preset_filter"] or "Custom / None"),
+        ("Selected Range", selected_range_text),
         ("Stores In Scope", payload["summary"]["stores_in_scope"]),
         ("Recent Cash Logs", payload["summary"]["log_count"]),
         ("Midshift Exceptions", payload["summary"]["midshift_count"]),
@@ -305,6 +385,9 @@ def index():
         store_filter=payload["store_filter"],
         shift_filter=payload["shift_filter"],
         date_filter=payload["date_filter"],
+        preset_filter=payload["preset_filter"],
+        start_date_filter=payload["start_date_filter"],
+        end_date_filter=payload["end_date_filter"],
         summary=payload["summary"],
     )
 
@@ -317,12 +400,18 @@ def export_excel():
     workbook_stream = create_cash_review_excel(payload)
 
     filename_parts = ["cash_review"]
+
     if payload["store_filter"]:
         filename_parts.append(payload["store_filter"])
+
     if payload["shift_filter"]:
         filename_parts.append(payload["shift_filter"])
-    if payload["date_filter"]:
-        filename_parts.append(payload["date_filter"])
+
+    if payload["preset_filter"]:
+        filename_parts.append(payload["preset_filter"])
+    elif payload["start_date_filter"] and payload["end_date_filter"]:
+        filename_parts.append(payload["start_date_filter"])
+        filename_parts.append(payload["end_date_filter"])
 
     filename = "_".join(filename_parts) + ".xlsx"
 
@@ -331,4 +420,5 @@ def export_excel():
         as_attachment=True,
         download_name=filename,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
     )

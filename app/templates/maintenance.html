@@ -7,13 +7,13 @@
 <div class="command-bar panel" style="margin-bottom: 24px;">
     <div class="command-bar-left">
         <div class="command-eyebrow">MAINTENANCE</div>
-        <h2 class="command-title">Maintenance Command Board</h2>
+        <h2 class="command-title">What’s Broken by Store</h2>
         <p class="command-subtitle">
-            Scan work fast, update status quickly, and only expand the ticket you actually want to edit.
+            Open the store, see what is broken, and update the ticket you need.
         </p>
     </div>
     <div class="command-bar-right">
-        <div class="command-chip">{{ tickets|length }} Tasks</div>
+        <div class="command-chip">{{ tickets|length }} Open Tasks</div>
         <div class="command-chip">{{ stores|length }} Stores</div>
     </div>
 </div>
@@ -29,7 +29,7 @@
         >
             <div>
                 <h3 style="margin: 0;">Add Maintenance Task</h3>
-                <div class="area-subtitle">Manual + SVR auto tickets</div>
+                <div class="area-subtitle">Hidden by default to keep the board clean</div>
             </div>
             <span id="maintenance-create-chevron" class="summary-pill">Show ▼</span>
         </button>
@@ -83,7 +83,7 @@
         >
             <div>
                 <h3 style="margin: 0;">Filters</h3>
-                <div class="area-subtitle">Refine the maintenance board</div>
+                <div class="area-subtitle">Hidden by default to keep the board simple</div>
             </div>
             <span id="maintenance-filters-chevron" class="summary-pill">Show ▼</span>
         </button>
@@ -130,94 +130,177 @@
 </div>
 
 <style>
-    .maintenance-board-section + .maintenance-board-section {
-        margin-top: 24px;
+    .maintenance-store-section + .maintenance-store-section {
+        margin-top: 20px;
     }
 
-    .maintenance-card-list {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-
-    .maintenance-card {
+    .maintenance-store-card {
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 18px;
         background: rgba(255, 255, 255, 0.03);
         overflow: hidden;
     }
 
-    .maintenance-card-summary {
+    .maintenance-store-header {
         width: 100%;
         background: transparent;
         border: none;
         color: inherit;
         cursor: pointer;
+        text-align: left;
         padding: 18px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
+    }
+
+    .maintenance-store-title {
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1.1;
+        margin: 0;
+    }
+
+    .maintenance-store-subtitle {
+        font-size: 12px;
+        opacity: 0.72;
+        margin-top: 4px;
+    }
+
+    .maintenance-store-body {
+        display: block;
+        padding: 0 18px 18px 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .maintenance-ticket-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .maintenance-ticket {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.03);
+        overflow: hidden;
+    }
+
+    .maintenance-ticket.status-open {
+        border-left: 5px solid #ff4d4f;
+    }
+
+    .maintenance-ticket.status-assigned {
+        border-left: 5px solid #f0c419;
+    }
+
+    .maintenance-ticket.status-in_progress {
+        border-left: 5px solid #3b82f6;
+    }
+
+    .maintenance-ticket.status-complete {
+        border-left: 5px solid #22c55e;
+    }
+
+    .maintenance-ticket-summary {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        padding: 16px 18px;
         text-align: left;
     }
 
-    .maintenance-card-left {
+    .maintenance-problem-line {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 12px;
         flex-wrap: wrap;
+    }
+
+    .maintenance-problem-title {
+        font-size: 19px;
+        font-weight: 800;
+        line-height: 1.2;
+        word-break: break-word;
         flex: 1;
         min-width: 0;
     }
 
-    .maintenance-title-wrap {
-        min-width: 0;
-    }
-
-    .maintenance-title-main {
-        font-weight: 800;
-        font-size: 15px;
-        line-height: 1.2;
-        margin-bottom: 2px;
-        word-break: break-word;
-    }
-
-    .maintenance-title-sub {
-        font-size: 12px;
-        opacity: 0.72;
-        line-height: 1.25;
-        word-break: break-word;
-    }
-
-    .maintenance-card-right {
+    .maintenance-problem-meta {
         display: flex;
         align-items: center;
         gap: 8px;
         flex-wrap: wrap;
-        justify-content: flex-end;
+    }
+
+    .maintenance-status-pill {
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.05);
+    }
+
+    .maintenance-status-pill.status-open {
+        background: rgba(255, 77, 79, 0.14);
+        color: #ffb3b5;
+    }
+
+    .maintenance-status-pill.status-assigned {
+        background: rgba(240, 196, 25, 0.14);
+        color: #ffe38a;
+    }
+
+    .maintenance-status-pill.status-in_progress {
+        background: rgba(59, 130, 246, 0.14);
+        color: #9ac5ff;
+    }
+
+    .maintenance-status-pill.status-complete {
+        background: rgba(34, 197, 94, 0.14);
+        color: #9df0bb;
     }
 
     .maintenance-quick-btn {
-        background: transparent;
+        background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.12);
         color: inherit;
         border-radius: 999px;
-        padding: 6px 10px;
+        padding: 7px 12px;
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 800;
         cursor: pointer;
     }
 
     .maintenance-quick-btn:hover {
-        background: rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.08);
     }
 
-    .maintenance-expand-chip {
-        min-width: 88px;
-        text-align: center;
+    .maintenance-ticket-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
     }
 
-    .maintenance-card-body {
+    .maintenance-edit-chip {
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 800;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.03);
+    }
+
+    .maintenance-ticket-body {
         display: none;
         padding: 0 18px 18px 18px;
         border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -242,54 +325,59 @@
     }
 
     @media (max-width: 900px) {
-        .maintenance-card-summary {
+        .maintenance-store-header,
+        .maintenance-problem-line {
             align-items: flex-start;
             flex-direction: column;
         }
 
-        .maintenance-card-right {
+        .maintenance-problem-meta {
             width: 100%;
             justify-content: flex-start;
         }
     }
 </style>
 
+{% macro problem_icon(title) %}
+    {% set lower_title = (title or '')|lower %}
+    {% if 'walk-in' in lower_title or 'cooler' in lower_title or 'freezer' in lower_title or 'cold' in lower_title %}
+        ❄️
+    {% elif 'oven' in lower_title or 'heat' in lower_title %}
+        🔥
+    {% elif 'sink' in lower_title or 'leak' in lower_title or 'bathroom' in lower_title or 'water' in lower_title %}
+        🚰
+    {% elif 'light' in lower_title or 'bulb' in lower_title or 'electric' in lower_title %}
+        💡
+    {% elif 'door' in lower_title or 'lock' in lower_title %}
+        🚪
+    {% elif 'pest' in lower_title %}
+        🚨
+    {% else %}
+        ⚠️
+    {% endif %}
+{% endmacro %}
+
 {% macro render_ticket_card(ticket, stores, user_role) %}
-<div class="maintenance-card">
+<div class="maintenance-ticket status-{{ ticket.status }}">
     <button
         type="button"
-        class="maintenance-card-summary"
+        class="maintenance-ticket-summary"
         data-ticket-toggle="{{ ticket.id }}"
         aria-expanded="false"
     >
-        <div class="maintenance-card-left">
-            <span class="summary-pill">Store {{ ticket.store_number }}</span>
+        <div class="maintenance-problem-line">
+            <div class="maintenance-problem-title">
+                {{ problem_icon(ticket.title) }} {{ ticket.title }}
+            </div>
 
-            <span class="status-badge
-                {% if ticket.status == 'complete' %}status-completed
-                {% elif ticket.status == 'in_progress' %}status-progress
-                {% elif ticket.status == 'assigned' %}status-progress
-                {% else %}status-not-started{% endif %}">
-                {{ ticket.status.replace('_', ' ')|title }}
-            </span>
-
-            <span class="summary-pill">{{ ticket.source_type|upper }}</span>
-
-            <div class="maintenance-title-wrap">
-                <div class="maintenance-title-main">{{ ticket.title }}</div>
-                <div class="maintenance-title-sub">
-                    {{ ticket.created_at.strftime('%b %d, %Y %I:%M %p') if ticket.created_at else '' }}
-                    {% if ticket.svr_report_id %}
-                    | Linked SVR #{{ ticket.svr_report_id }}
-                    {% endif %}
-                    {% if ticket.details %}
-                    | {{ ticket.details[:90] }}{% if ticket.details|length > 90 %}...{% endif %}
-                    {% endif %}
-                </div>
+            <div class="maintenance-problem-meta">
+                <span class="maintenance-status-pill status-{{ ticket.status }}">
+                    {{ ticket.status.replace('_', ' ')|title }}
+                </span>
             </div>
         </div>
 
-        <div class="maintenance-card-right">
+        <div class="maintenance-ticket-actions">
             {% if ticket.status == "open" %}
             <form method="POST" onclick="event.stopPropagation();">
                 <input type="hidden" name="action" value="update">
@@ -298,7 +386,7 @@
                 <input type="hidden" name="title" value="{{ ticket.title }}">
                 <input type="hidden" name="details" value="{{ ticket.details or '' }}">
                 <input type="hidden" name="status" value="assigned">
-                <button type="submit" class="maintenance-quick-btn">Assign</button>
+                <button type="submit" class="maintenance-quick-btn">Start Fix</button>
             </form>
             {% elif ticket.status == "assigned" %}
             <form method="POST" onclick="event.stopPropagation();">
@@ -308,7 +396,7 @@
                 <input type="hidden" name="title" value="{{ ticket.title }}">
                 <input type="hidden" name="details" value="{{ ticket.details or '' }}">
                 <input type="hidden" name="status" value="in_progress">
-                <button type="submit" class="maintenance-quick-btn">Start</button>
+                <button type="submit" class="maintenance-quick-btn">Start Fix</button>
             </form>
             {% elif ticket.status == "in_progress" %}
             <form method="POST" onclick="event.stopPropagation();">
@@ -318,15 +406,17 @@
                 <input type="hidden" name="title" value="{{ ticket.title }}">
                 <input type="hidden" name="details" value="{{ ticket.details or '' }}">
                 <input type="hidden" name="status" value="complete">
-                <button type="submit" class="maintenance-quick-btn">Complete</button>
+                <button type="submit" class="maintenance-quick-btn">Mark Done</button>
             </form>
+            {% else %}
+            <span class="maintenance-quick-btn">Completed</span>
             {% endif %}
 
-            <span class="summary-pill maintenance-expand-chip" data-ticket-chevron="{{ ticket.id }}">Edit ▼</span>
+            <span class="maintenance-edit-chip" data-ticket-chevron="{{ ticket.id }}">Edit ▼</span>
         </div>
     </button>
 
-    <div class="maintenance-card-body" data-ticket-body="{{ ticket.id }}">
+    <div class="maintenance-ticket-body" data-ticket-body="{{ ticket.id }}">
         <form method="POST" class="login-form" style="margin-top: 16px;">
             <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
 
@@ -387,109 +477,52 @@
 </div>
 {% endmacro %}
 
-<div class="maintenance-board-section panel premium-panel">
-    <button
-        type="button"
-        id="maintenance-open-toggle"
-        class="panel-head"
-        style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
-        aria-expanded="true"
-    >
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <h3 style="margin: 0;">Open</h3>
-            <span class="summary-pill">{{ open_tickets|length }} tasks</span>
-        </div>
-        <span id="maintenance-open-chevron" class="summary-pill">Hide ▲</span>
-    </button>
+{% set ns = namespace(any_tickets=false) %}
 
-    <div id="maintenance-open-body" style="display: block; margin-top: 16px;">
-        <div class="maintenance-card-list">
-            {% for ticket in open_tickets %}
-                {{ render_ticket_card(ticket, stores, user_role) }}
-            {% else %}
-                <div class="maintenance-empty">No open maintenance tasks.</div>
-            {% endfor %}
+{% for store in stores %}
+    {% set store_ns = namespace(count=0) %}
+    {% for ticket in tickets %}
+        {% if ticket.store_number == store.store_number %}
+            {% set store_ns.count = store_ns.count + 1 %}
+        {% endif %}
+    {% endfor %}
+
+    {% if store_ns.count > 0 %}
+        {% set ns.any_tickets = true %}
+        <div class="maintenance-store-section maintenance-store-card">
+            <button
+                type="button"
+                id="store-toggle-{{ store.store_number }}"
+                class="maintenance-store-header"
+                aria-expanded="true"
+            >
+                <div>
+                    <h3 class="maintenance-store-title">Store {{ store.store_number }}</h3>
+                    <div class="maintenance-store-subtitle">
+                        {{ store_ns.count }} problem{% if store_ns.count != 1 %}s{% endif %}
+                    </div>
+                </div>
+                <span id="store-chevron-{{ store.store_number }}" class="summary-pill">Hide ▲</span>
+            </button>
+
+            <div id="store-body-{{ store.store_number }}" class="maintenance-store-body">
+                <div class="maintenance-ticket-list">
+                    {% for ticket in tickets %}
+                        {% if ticket.store_number == store.store_number %}
+                            {{ render_ticket_card(ticket, stores, user_role) }}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
         </div>
-    </div>
+    {% endif %}
+{% endfor %}
+
+{% if not ns.any_tickets %}
+<div class="panel premium-panel">
+    <div class="maintenance-empty">No maintenance tasks found.</div>
 </div>
-
-<div class="maintenance-board-section panel premium-panel">
-    <button
-        type="button"
-        id="maintenance-assigned-toggle"
-        class="panel-head"
-        style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
-        aria-expanded="false"
-    >
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <h3 style="margin: 0;">Assigned</h3>
-            <span class="summary-pill">{{ assigned_tickets|length }} tasks</span>
-        </div>
-        <span id="maintenance-assigned-chevron" class="summary-pill">Show ▼</span>
-    </button>
-
-    <div id="maintenance-assigned-body" style="display: none; margin-top: 16px;">
-        <div class="maintenance-card-list">
-            {% for ticket in assigned_tickets %}
-                {{ render_ticket_card(ticket, stores, user_role) }}
-            {% else %}
-                <div class="maintenance-empty">No assigned maintenance tasks.</div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-
-<div class="maintenance-board-section panel premium-panel">
-    <button
-        type="button"
-        id="maintenance-progress-toggle"
-        class="panel-head"
-        style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
-        aria-expanded="true"
-    >
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <h3 style="margin: 0;">In Progress</h3>
-            <span class="summary-pill">{{ in_progress_tickets|length }} tasks</span>
-        </div>
-        <span id="maintenance-progress-chevron" class="summary-pill">Hide ▲</span>
-    </button>
-
-    <div id="maintenance-progress-body" style="display: block; margin-top: 16px;">
-        <div class="maintenance-card-list">
-            {% for ticket in in_progress_tickets %}
-                {{ render_ticket_card(ticket, stores, user_role) }}
-            {% else %}
-                <div class="maintenance-empty">No in-progress maintenance tasks.</div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-
-<div class="maintenance-board-section panel premium-panel">
-    <button
-        type="button"
-        id="maintenance-complete-toggle"
-        class="panel-head"
-        style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
-        aria-expanded="false"
-    >
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <h3 style="margin: 0;">Complete</h3>
-            <span class="summary-pill">{{ complete_tickets|length }} tasks</span>
-        </div>
-        <span id="maintenance-complete-chevron" class="summary-pill">Show ▼</span>
-    </button>
-
-    <div id="maintenance-complete-body" style="display: none; margin-top: 16px;">
-        <div class="maintenance-card-list">
-            {% for ticket in complete_tickets %}
-                {{ render_ticket_card(ticket, stores, user_role) }}
-            {% else %}
-                <div class="maintenance-empty">No completed maintenance tasks.</div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
+{% endif %}
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -542,10 +575,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     bindToggle("maintenance-create-toggle", "maintenance-create-body", "maintenance-create-chevron");
     bindToggle("maintenance-filters-toggle", "maintenance-filters-body", "maintenance-filters-chevron");
-    bindToggle("maintenance-open-toggle", "maintenance-open-body", "maintenance-open-chevron");
-    bindToggle("maintenance-assigned-toggle", "maintenance-assigned-body", "maintenance-assigned-chevron");
-    bindToggle("maintenance-progress-toggle", "maintenance-progress-body", "maintenance-progress-chevron");
-    bindToggle("maintenance-complete-toggle", "maintenance-complete-body", "maintenance-complete-chevron");
+
+    {% for store in stores %}
+    bindToggle("store-toggle-{{ store.store_number }}", "store-body-{{ store.store_number }}", "store-chevron-{{ store.store_number }}");
+    {% endfor %}
 
     bindTicketEditors();
 });

@@ -138,6 +138,7 @@
 
     .maintenance-status-panel {
         padding: 18px;
+        overflow: hidden;
     }
 
     .maintenance-status-header {
@@ -160,21 +161,17 @@
     }
 
     .maintenance-row-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
         width: 100%;
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 18px;
         overflow: hidden;
-        background: rgba(255, 255, 255, 0.025);
+        background: rgba(255, 255, 255, 0.02);
     }
 
     .maintenance-row {
         width: 100%;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
         background: transparent;
-        overflow: hidden;
     }
 
     .maintenance-row:last-child {
@@ -182,7 +179,7 @@
     }
 
     .maintenance-row.is-open {
-        background: rgba(255, 255, 255, 0.04);
+        background: rgba(255, 255, 255, 0.035);
     }
 
     .maintenance-row-summary {
@@ -192,25 +189,20 @@
         color: inherit;
         cursor: pointer;
         padding: 14px 18px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
         text-align: left;
-        transition: background 0.16s ease;
+        transition: background 0.15s ease;
     }
 
     .maintenance-row-summary:hover {
-        background: rgba(255, 255, 255, 0.04);
+        background: rgba(255, 255, 255, 0.035);
     }
 
-    .maintenance-row-left {
+    .maintenance-row-grid {
         display: grid;
-        grid-template-columns: 120px minmax(0, 1fr);
+        grid-template-columns: 130px minmax(0, 1fr) auto;
+        gap: 16px;
         align-items: center;
-        gap: 14px;
-        flex: 1;
-        min-width: 0;
+        width: 100%;
     }
 
     .maintenance-store-block {
@@ -222,19 +214,18 @@
         font-weight: 800;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        opacity: 0.72;
+        opacity: 0.74;
         margin-bottom: 4px;
     }
 
     .maintenance-source-line {
         font-size: 11px;
-        opacity: 0.6;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        opacity: 0.58;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
     }
 
-    .maintenance-title-wrap {
+    .maintenance-main {
         min-width: 0;
     }
 
@@ -242,35 +233,34 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        min-width: 0;
-        margin-bottom: 4px;
         flex-wrap: wrap;
+        margin-bottom: 4px;
     }
 
     .maintenance-title-main {
         font-size: 15px;
-        font-weight: 700;
+        font-weight: 800;
         line-height: 1.25;
         letter-spacing: 0.1px;
-        word-break: break-word;
         min-width: 0;
-        margin: 0;
+        word-break: break-word;
     }
 
-    .maintenance-row-meta {
+    .maintenance-meta {
         font-size: 12px;
         line-height: 1.35;
-        opacity: 0.68;
+        opacity: 0.7;
+        min-width: 0;
         word-break: break-word;
     }
 
-    .maintenance-card-right {
+    .maintenance-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
         justify-content: flex-end;
-        flex-shrink: 0;
+        gap: 8px;
+        flex-wrap: nowrap;
+        white-space: nowrap;
     }
 
     .maintenance-status-pill {
@@ -313,7 +303,7 @@
         font-size: 12px;
         font-weight: 800;
         cursor: pointer;
-        transition: background 0.16s ease, border-color 0.16s ease;
+        transition: background 0.15s ease, border-color 0.15s ease;
     }
 
     .maintenance-quick-btn:hover {
@@ -322,13 +312,13 @@
     }
 
     .maintenance-expand-chip {
-        min-width: 88px;
+        min-width: 84px;
         text-align: center;
     }
 
-    .maintenance-card-body {
+    .maintenance-row-body {
         display: none;
-        padding: 16px 18px 18px 152px;
+        padding: 16px 18px 18px 164px;
         border-top: 1px solid rgba(255, 255, 255, 0.06);
         background: rgba(255, 255, 255, 0.02);
     }
@@ -349,24 +339,30 @@
         opacity: 0.8;
     }
 
-    @media (max-width: 900px) {
-        .maintenance-row-summary {
-            flex-direction: column;
-            align-items: flex-start;
+    @media (max-width: 1100px) {
+        .maintenance-row-grid {
+            grid-template-columns: 110px minmax(0, 1fr);
+            align-items: start;
         }
 
-        .maintenance-row-left {
-            grid-template-columns: 1fr;
-            width: 100%;
-        }
-
-        .maintenance-card-right {
-            width: 100%;
+        .maintenance-actions {
+            grid-column: 2;
             justify-content: flex-start;
+            margin-top: 8px;
         }
 
-        .maintenance-card-body {
+        .maintenance-row-body {
             padding: 16px 18px 18px 18px;
+        }
+    }
+
+    @media (max-width: 700px) {
+        .maintenance-row-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .maintenance-actions {
+            grid-column: 1;
         }
     }
 </style>
@@ -390,7 +386,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro render_ticket_card(ticket, stores, user_role) %}
+{% macro render_ticket_row(ticket, stores, user_role) %}
 <div class="maintenance-row" data-ticket-card="{{ ticket.id }}">
     <button
         type="button"
@@ -398,74 +394,71 @@
         data-ticket-toggle="{{ ticket.id }}"
         aria-expanded="false"
     >
-        <div class="maintenance-row-left">
+        <div class="maintenance-row-grid">
             <div class="maintenance-store-block">
                 <div class="maintenance-store-line">Store {{ ticket.store_number }}</div>
-                <div class="maintenance-source-line">{{ ticket.source_type|upper }}</div>
+                <div class="maintenance-source-line">{{ ticket.source_type }}</div>
             </div>
 
-            <div class="maintenance-title-wrap">
+            <div class="maintenance-main">
                 <div class="maintenance-title-line">
-                    <div class="maintenance-title-main">
-                        {{ problem_icon(ticket.title) }} {{ ticket.title }}
-                    </div>
-
+                    <div class="maintenance-title-main">{{ problem_icon(ticket.title) }} {{ ticket.title }}</div>
                     <span class="maintenance-status-pill status-{{ ticket.status }}">
                         {{ ticket.status.replace('_', ' ')|title }}
                     </span>
                 </div>
 
-                <div class="maintenance-row-meta">
+                <div class="maintenance-meta">
                     {{ ticket.created_at.strftime('%b %d, %Y %I:%M %p') if ticket.created_at else '' }}
                     {% if ticket.svr_report_id %}
                     | Linked SVR #{{ ticket.svr_report_id }}
                     {% endif %}
                     {% if ticket.details %}
-                    | {{ ticket.details[:90] }}{% if ticket.details|length > 90 %}...{% endif %}
+                    | {{ ticket.details[:110] }}{% if ticket.details|length > 110 %}...{% endif %}
                     {% endif %}
                 </div>
             </div>
-        </div>
 
-        <div class="maintenance-card-right">
-            {% if ticket.status == "open" %}
-            <form method="POST" onclick="event.stopPropagation();">
-                <input type="hidden" name="action" value="update">
-                <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
-                <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
-                <input type="hidden" name="title" value="{{ ticket.title }}">
-                <input type="hidden" name="details" value="{{ ticket.details or '' }}">
-                <input type="hidden" name="status" value="assigned">
-                <button type="submit" class="maintenance-quick-btn">Start Fix</button>
-            </form>
-            {% elif ticket.status == "assigned" %}
-            <form method="POST" onclick="event.stopPropagation();">
-                <input type="hidden" name="action" value="update">
-                <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
-                <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
-                <input type="hidden" name="title" value="{{ ticket.title }}">
-                <input type="hidden" name="details" value="{{ ticket.details or '' }}">
-                <input type="hidden" name="status" value="in_progress">
-                <button type="submit" class="maintenance-quick-btn">Start Fix</button>
-            </form>
-            {% elif ticket.status == "in_progress" %}
-            <form method="POST" onclick="event.stopPropagation();">
-                <input type="hidden" name="action" value="update">
-                <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
-                <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
-                <input type="hidden" name="title" value="{{ ticket.title }}">
-                <input type="hidden" name="details" value="{{ ticket.details or '' }}">
-                <input type="hidden" name="status" value="complete">
-                <button type="submit" class="maintenance-quick-btn">Mark Done</button>
-            </form>
-            {% endif %}
+            <div class="maintenance-actions">
+                {% if ticket.status == "open" %}
+                <form method="POST" onclick="event.stopPropagation();">
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                    <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
+                    <input type="hidden" name="title" value="{{ ticket.title }}">
+                    <input type="hidden" name="details" value="{{ ticket.details or '' }}">
+                    <input type="hidden" name="status" value="assigned">
+                    <button type="submit" class="maintenance-quick-btn">Start Fix</button>
+                </form>
+                {% elif ticket.status == "assigned" %}
+                <form method="POST" onclick="event.stopPropagation();">
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                    <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
+                    <input type="hidden" name="title" value="{{ ticket.title }}">
+                    <input type="hidden" name="details" value="{{ ticket.details or '' }}">
+                    <input type="hidden" name="status" value="in_progress">
+                    <button type="submit" class="maintenance-quick-btn">Start Fix</button>
+                </form>
+                {% elif ticket.status == "in_progress" %}
+                <form method="POST" onclick="event.stopPropagation();">
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                    <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
+                    <input type="hidden" name="title" value="{{ ticket.title }}">
+                    <input type="hidden" name="details" value="{{ ticket.details or '' }}">
+                    <input type="hidden" name="status" value="complete">
+                    <button type="submit" class="maintenance-quick-btn">Mark Done</button>
+                </form>
+                {% endif %}
 
-            <span class="summary-pill maintenance-expand-chip" data-ticket-chevron="{{ ticket.id }}">Edit ▼</span>
+                <span class="summary-pill maintenance-expand-chip" data-ticket-chevron="{{ ticket.id }}">Edit ▼</span>
+            </div>
         </div>
     </button>
 
-    <div class="maintenance-card-body" data-ticket-body="{{ ticket.id }}">
-        <form method="POST" class="login-form" style="margin-top: 16px;">
+    <div class="maintenance-row-body" data-ticket-body="{{ ticket.id }}">
+        <form method="POST" class="login-form">
             <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
 
             <div class="maintenance-section-label">Ticket Settings</div>
@@ -543,7 +536,7 @@
         <div id="maintenance-open-body" class="maintenance-status-body" style="display: block;">
             <div class="maintenance-row-list">
                 {% for ticket in open_tickets %}
-                    {{ render_ticket_card(ticket, stores, user_role) }}
+                    {{ render_ticket_row(ticket, stores, user_role) }}
                 {% else %}
                     <div class="maintenance-empty">No open maintenance tasks.</div>
                 {% endfor %}
@@ -568,7 +561,7 @@
         <div id="maintenance-assigned-body" class="maintenance-status-body" style="display: none;">
             <div class="maintenance-row-list">
                 {% for ticket in assigned_tickets %}
-                    {{ render_ticket_card(ticket, stores, user_role) }}
+                    {{ render_ticket_row(ticket, stores, user_role) }}
                 {% else %}
                     <div class="maintenance-empty">No assigned maintenance tasks.</div>
                 {% endfor %}
@@ -593,7 +586,7 @@
         <div id="maintenance-progress-body" class="maintenance-status-body" style="display: block;">
             <div class="maintenance-row-list">
                 {% for ticket in in_progress_tickets %}
-                    {{ render_ticket_card(ticket, stores, user_role) }}
+                    {{ render_ticket_row(ticket, stores, user_role) }}
                 {% else %}
                     <div class="maintenance-empty">No in-progress maintenance tasks.</div>
                 {% endfor %}
@@ -618,7 +611,7 @@
         <div id="maintenance-complete-body" class="maintenance-status-body" style="display: none;">
             <div class="maintenance-row-list">
                 {% for ticket in complete_tickets %}
-                    {{ render_ticket_card(ticket, stores, user_role) }}
+                    {{ render_ticket_row(ticket, stores, user_role) }}
                 {% else %}
                     <div class="maintenance-empty">No completed maintenance tasks.</div>
                 {% endfor %}

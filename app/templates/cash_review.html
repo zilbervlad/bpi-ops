@@ -4,21 +4,319 @@
 {% block header %}Cash Review{% endblock %}
 
 {% block content %}
-<div class="command-bar panel" style="margin-bottom: 24px;">
-    <div class="command-bar-left">
-        <div class="command-eyebrow">CASH REVIEW</div>
-        <h2 class="command-title">Cash Review Board</h2>
-        <p class="command-subtitle">
-            Review midshift accountability, scan recent cash logs, and spot closing-to-opening handoff differences fast.
-        </p>
-    </div>
-    <div class="command-bar-right">
-        <div class="command-chip">{{ logs|length }} Logs</div>
-        <div class="command-chip">{{ stores|length }} Stores</div>
-    </div>
-</div>
+<style>
+    .cash-review-page {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
 
-<div class="content-grid" style="margin-bottom: 24px;">
+    .cash-command-bar {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .cash-command-bar-left {
+        flex: 1 1 420px;
+        min-width: 0;
+    }
+
+    .cash-command-bar-right {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        flex: 0 1 auto;
+    }
+
+    .cash-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .cash-stat-card {
+        padding: 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03);
+    }
+
+    .cash-stat-label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        opacity: 0.72;
+        margin-bottom: 6px;
+    }
+
+    .cash-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .cash-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        align-items: end;
+    }
+
+    .cash-filter-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+    }
+
+    .cash-section-toggle {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        text-align: left;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .cash-section-toggle-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        flex-wrap: wrap;
+    }
+
+    .cash-section-title {
+        margin: 0;
+    }
+
+    .cash-mobile-list {
+        display: none;
+        margin-top: 16px;
+        gap: 12px;
+        flex-direction: column;
+    }
+
+    .cash-mobile-card {
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03);
+        border-radius: 18px;
+        padding: 14px;
+    }
+
+    .cash-mobile-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .cash-mobile-store {
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .cash-mobile-date {
+        font-size: 0.82rem;
+        opacity: 0.72;
+        margin-top: 3px;
+    }
+
+    .cash-mobile-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 12px;
+    }
+
+    .cash-mobile-item {
+        min-width: 0;
+    }
+
+    .cash-mobile-label {
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        opacity: 0.68;
+        margin-bottom: 3px;
+    }
+
+    .cash-mobile-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        line-height: 1.25;
+        word-break: break-word;
+    }
+
+    .cash-mobile-footer {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .cash-empty-state {
+        padding: 18px;
+        border-radius: 16px;
+        border: 1px dashed rgba(255,255,255,0.14);
+        opacity: 0.8;
+    }
+
+    .cash-desktop-table {
+        display: block;
+    }
+
+    .cash-mobile-only {
+        display: none;
+    }
+
+    .cash-pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .cash-money-positive {
+        color: #f6c85f;
+        font-weight: 700;
+    }
+
+    .cash-money-negative {
+        color: #ff7b7b;
+        font-weight: 700;
+    }
+
+    .cash-money-neutral {
+        color: #7ee0a0;
+        font-weight: 700;
+    }
+
+    @media (max-width: 1100px) {
+        .cash-summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .cash-filter-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .cash-command-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .cash-command-bar-right {
+            justify-content: flex-start;
+        }
+
+        .cash-summary-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .cash-filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cash-filter-actions {
+            flex-direction: column;
+        }
+
+        .cash-filter-actions .btn-primary,
+        .cash-filter-actions .action-btn {
+            width: 100%;
+            max-width: none !important;
+            justify-content: center;
+        }
+
+        .cash-desktop-table {
+            display: none;
+        }
+
+        .cash-mobile-list {
+            display: flex;
+        }
+
+        .cash-mobile-only {
+            display: block;
+        }
+
+        .cash-section-toggle {
+            align-items: flex-start;
+        }
+
+        .cash-section-toggle-left {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .cash-mobile-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 520px) {
+        .cash-summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cash-mobile-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cash-stat-value {
+            font-size: 1.3rem;
+        }
+    }
+</style>
+
+<div class="cash-review-page">
+    <div class="command-bar panel cash-command-bar">
+        <div class="cash-command-bar-left">
+            <div class="command-eyebrow">CASH REVIEW</div>
+            <h2 class="command-title">Cash Review Board</h2>
+            <p class="command-subtitle">
+                Review midshift accountability, recent log activity, and closing-to-opening differences without fighting the screen.
+            </p>
+        </div>
+        <div class="cash-command-bar-right">
+            <div class="command-chip">{{ logs|length }} Logs</div>
+            <div class="command-chip">{{ stores|length }} Stores</div>
+            <div class="command-chip">{{ midshift_logs|length }} Midshift</div>
+            <div class="command-chip">{{ closing_opening_diffs|length }} Handoffs</div>
+        </div>
+    </div>
+
+    <div class="cash-summary-grid">
+        <div class="panel premium-panel cash-stat-card">
+            <div class="cash-stat-label">Visible Logs</div>
+            <div class="cash-stat-value">{{ logs|length }}</div>
+        </div>
+        <div class="panel premium-panel cash-stat-card">
+            <div class="cash-stat-label">Midshift Exceptions</div>
+            <div class="cash-stat-value">{{ midshift_logs|length }}</div>
+        </div>
+        <div class="panel premium-panel cash-stat-card">
+            <div class="cash-stat-label">Closing → Opening Pairs</div>
+            <div class="cash-stat-value">{{ closing_opening_diffs|length }}</div>
+        </div>
+        <div class="panel premium-panel cash-stat-card">
+            <div class="cash-stat-label">Stores in View</div>
+            <div class="cash-stat-value">{{ stores|length }}</div>
+        </div>
+    </div>
+
     <section class="panel premium-panel">
         <div class="panel-head">
             <div>
@@ -29,34 +327,45 @@
         </div>
 
         <form method="GET" class="login-form">
-            <div class="form-group">
-                <label for="store">Store</label>
-                <select id="store" name="store">
-                    <option value="">All Stores</option>
-                    {% for store in stores %}
-                    <option value="{{ store.store_number }}" {% if store.store_number == store_filter %}selected{% endif %}>
-                        {{ store.store_number }}
-                    </option>
-                    {% endfor %}
-                </select>
+            <div class="cash-filter-grid">
+                <div class="form-group">
+                    <label for="store">Store</label>
+                    <select id="store" name="store">
+                        <option value="">All Stores</option>
+                        {% for store in stores %}
+                        <option value="{{ store.store_number }}" {% if store.store_number == store_filter %}selected{% endif %}>
+                            {{ store.store_number }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="shift">Shift</label>
+                    <select id="shift" name="shift">
+                        <option value="">All Shifts</option>
+                        <option value="opening" {% if shift_filter == 'opening' %}selected{% endif %}>Opening</option>
+                        <option value="midshift" {% if shift_filter == 'midshift' %}selected{% endif %}>Midshift</option>
+                        <option value="closing" {% if shift_filter == 'closing' %}selected{% endif %}>Closing</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" name="date" value="{{ date_filter }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Quick View</label>
+                    <div class="cash-pill-row">
+                        <span class="summary-pill">{{ logs|length }} Total</span>
+                        <span class="summary-pill">{{ midshift_logs|length }} Midshift</span>
+                        <span class="summary-pill">{{ closing_opening_diffs|length }} Pairs</span>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="shift">Shift</label>
-                <select id="shift" name="shift">
-                    <option value="">All Shifts</option>
-                    <option value="opening" {% if shift_filter == 'opening' %}selected{% endif %}>Opening</option>
-                    <option value="midshift" {% if shift_filter == 'midshift' %}selected{% endif %}>Midshift</option>
-                    <option value="closing" {% if shift_filter == 'closing' %}selected{% endif %}>Closing</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="date">Date</label>
-                <input type="date" id="date" name="date" value="{{ date_filter }}">
-            </div>
-
-            <div class="admin-check-row">
+            <div class="cash-filter-actions">
                 <button type="submit" class="btn-primary">Apply Filters</button>
                 <a href="{{ url_for('cash_review.index') }}" class="action-btn" style="max-width: 180px;">Reset Filters</a>
                 <a
@@ -69,179 +378,322 @@
             </div>
         </form>
     </section>
-</div>
 
-<div class="panel premium-panel" style="margin-bottom: 24px;">
-    <button
-        type="button"
-        id="midshift-exceptions-toggle"
-        class="panel-head"
-        style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
-        aria-expanded="true"
-    >
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <h3 style="margin: 0;">Midshift Exceptions</h3>
-            <span class="summary-pill">{{ midshift_logs|length }} logs</span>
-        </div>
-        <span id="midshift-exceptions-chevron" class="summary-pill">Hide ▲</span>
-    </button>
+    <div class="panel premium-panel">
+        <button
+            type="button"
+            id="midshift-exceptions-toggle"
+            class="cash-section-toggle"
+            aria-expanded="true"
+        >
+            <div class="cash-section-toggle-left">
+                <h3 class="cash-section-title">Midshift Exceptions</h3>
+                <span class="summary-pill">{{ midshift_logs|length }} logs</span>
+            </div>
+            <span id="midshift-exceptions-chevron" class="summary-pill">Hide ▲</span>
+        </button>
 
-    <div id="midshift-exceptions-body" style="display: block; margin-top: 16px;">
-        <div class="table-wrap premium-table-wrap">
-            <table class="data-table premium-table">
-                <thead>
-                    <tr>
-                        <th>Store</th>
-                        <th>Date</th>
-                        <th>Total Cash</th>
-                        <th>Account For</th>
-                        <th>Over / Short</th>
-                        <th>Manager</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in midshift_logs %}
-                    <tr>
-                        <td>{{ log.store_number }}</td>
-                        <td>{{ log.log_date.strftime('%m/%d/%Y') }}</td>
-                        <td>${{ "%.2f"|format(log.total_cash or 0) }}</td>
-                        <td>${{ "%.2f"|format(log.amount_to_account_for or 0) }}</td>
-                        <td>
-                            <span class="table-badge {% if (log.cash_over_short or 0) == 0 %}badge-success{% elif (log.cash_over_short or 0) > 0 %}badge-warning{% else %}badge-danger{% endif %}">
-                                ${{ "%.2f"|format(log.cash_over_short or 0) }}
-                            </span>
-                        </td>
-                        <td>{{ log.manager_name or '—' }}</td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6">No midshift cash logs found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div id="midshift-exceptions-body" style="display: block; margin-top: 16px;">
+            <div class="cash-desktop-table">
+                <div class="table-wrap premium-table-wrap">
+                    <table class="data-table premium-table">
+                        <thead>
+                            <tr>
+                                <th>Store</th>
+                                <th>Date</th>
+                                <th>Total Cash</th>
+                                <th>Account For</th>
+                                <th>Over / Short</th>
+                                <th>Manager</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in midshift_logs %}
+                            <tr>
+                                <td>{{ log.store_number }}</td>
+                                <td>{{ log.log_date.strftime('%m/%d/%Y') }}</td>
+                                <td>${{ "%.2f"|format(log.total_cash or 0) }}</td>
+                                <td>${{ "%.2f"|format(log.amount_to_account_for or 0) }}</td>
+                                <td>
+                                    <span class="table-badge {% if (log.cash_over_short or 0) == 0 %}badge-success{% elif (log.cash_over_short or 0) > 0 %}badge-warning{% else %}badge-danger{% endif %}">
+                                        ${{ "%.2f"|format(log.cash_over_short or 0) }}
+                                    </span>
+                                </td>
+                                <td>{{ log.manager_name or '—' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6">No midshift cash logs found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="cash-mobile-list">
+                {% for log in midshift_logs %}
+                <div class="cash-mobile-card">
+                    <div class="cash-mobile-card-head">
+                        <div>
+                            <div class="cash-mobile-store">Store {{ log.store_number }}</div>
+                            <div class="cash-mobile-date">{{ log.log_date.strftime('%m/%d/%Y') }}</div>
+                        </div>
+                        <span class="table-badge {% if (log.cash_over_short or 0) == 0 %}badge-success{% elif (log.cash_over_short or 0) > 0 %}badge-warning{% else %}badge-danger{% endif %}">
+                            ${{ "%.2f"|format(log.cash_over_short or 0) }}
+                        </span>
+                    </div>
+
+                    <div class="cash-mobile-grid">
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Total Cash</div>
+                            <div class="cash-mobile-value">${{ "%.2f"|format(log.total_cash or 0) }}</div>
+                        </div>
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Account For</div>
+                            <div class="cash-mobile-value">${{ "%.2f"|format(log.amount_to_account_for or 0) }}</div>
+                        </div>
+                    </div>
+
+                    <div class="cash-mobile-footer">
+                        <div class="cash-mobile-label">Manager</div>
+                        <div class="cash-mobile-value">{{ log.manager_name or '—' }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="cash-empty-state">No midshift cash logs found.</div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
 
-<div class="panel premium-panel" style="margin-bottom: 24px;">
-    <button
-        type="button"
-        id="closing-opening-toggle"
-        class="panel-head"
-        style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
-        aria-expanded="true"
-    >
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <h3 style="margin: 0;">Closing → Opening Differences</h3>
-            <span class="summary-pill">{{ closing_opening_diffs|length }} pairs</span>
-        </div>
-        <span id="closing-opening-chevron" class="summary-pill">Hide ▲</span>
-    </button>
+    <div class="panel premium-panel">
+        <button
+            type="button"
+            id="closing-opening-toggle"
+            class="cash-section-toggle"
+            aria-expanded="true"
+        >
+            <div class="cash-section-toggle-left">
+                <h3 class="cash-section-title">Closing → Opening Differences</h3>
+                <span class="summary-pill">{{ closing_opening_diffs|length }} pairs</span>
+            </div>
+            <span id="closing-opening-chevron" class="summary-pill">Hide ▲</span>
+        </button>
 
-    <div id="closing-opening-body" style="display: block; margin-top: 16px;">
-        <div class="table-wrap premium-table-wrap">
-            <table class="data-table premium-table">
-                <thead>
-                    <tr>
-                        <th>Store</th>
-                        <th>Closing Date</th>
-                        <th>Closing Total</th>
-                        <th>Opening Date</th>
-                        <th>Opening Total</th>
-                        <th>Difference</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in closing_opening_diffs %}
-                    <tr>
-                        <td>{{ row.store_number }}</td>
-                        <td>{{ row.closing_date.strftime('%m/%d/%Y') }}</td>
-                        <td>${{ "%.2f"|format(row.closing_total or 0) }}</td>
-                        <td>{{ row.opening_date.strftime('%m/%d/%Y') }}</td>
-                        <td>${{ "%.2f"|format(row.opening_total or 0) }}</td>
-                        <td>
-                            <span class="table-badge {% if row.difference == 0 %}badge-success{% elif row.difference > 0 %}badge-warning{% else %}badge-danger{% endif %}">
-                                ${{ "%.2f"|format(row.difference or 0) }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6">No closing-to-opening pairs found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div id="closing-opening-body" style="display: block; margin-top: 16px;">
+            <div class="cash-desktop-table">
+                <div class="table-wrap premium-table-wrap">
+                    <table class="data-table premium-table">
+                        <thead>
+                            <tr>
+                                <th>Store</th>
+                                <th>Closing Date</th>
+                                <th>Closing Total</th>
+                                <th>Opening Date</th>
+                                <th>Opening Total</th>
+                                <th>Difference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in closing_opening_diffs %}
+                            <tr>
+                                <td>{{ row.store_number }}</td>
+                                <td>{{ row.closing_date.strftime('%m/%d/%Y') }}</td>
+                                <td>${{ "%.2f"|format(row.closing_total or 0) }}</td>
+                                <td>{{ row.opening_date.strftime('%m/%d/%Y') }}</td>
+                                <td>${{ "%.2f"|format(row.opening_total or 0) }}</td>
+                                <td>
+                                    <span class="table-badge {% if row.difference == 0 %}badge-success{% elif row.difference > 0 %}badge-warning{% else %}badge-danger{% endif %}">
+                                        ${{ "%.2f"|format(row.difference or 0) }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6">No closing-to-opening pairs found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="cash-mobile-list">
+                {% for row in closing_opening_diffs %}
+                <div class="cash-mobile-card">
+                    <div class="cash-mobile-card-head">
+                        <div>
+                            <div class="cash-mobile-store">Store {{ row.store_number }}</div>
+                            <div class="cash-mobile-date">
+                                {{ row.closing_date.strftime('%m/%d/%Y') }} → {{ row.opening_date.strftime('%m/%d/%Y') }}
+                            </div>
+                        </div>
+                        <span class="table-badge {% if row.difference == 0 %}badge-success{% elif row.difference > 0 %}badge-warning{% else %}badge-danger{% endif %}">
+                            ${{ "%.2f"|format(row.difference or 0) }}
+                        </span>
+                    </div>
+
+                    <div class="cash-mobile-grid">
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Closing Total</div>
+                            <div class="cash-mobile-value">${{ "%.2f"|format(row.closing_total or 0) }}</div>
+                        </div>
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Opening Total</div>
+                            <div class="cash-mobile-value">${{ "%.2f"|format(row.opening_total or 0) }}</div>
+                        </div>
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Closing Date</div>
+                            <div class="cash-mobile-value">{{ row.closing_date.strftime('%m/%d/%Y') }}</div>
+                        </div>
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Opening Date</div>
+                            <div class="cash-mobile-value">{{ row.opening_date.strftime('%m/%d/%Y') }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="cash-empty-state">No closing-to-opening pairs found.</div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
 
-<div class="panel premium-panel">
-    <button
-        type="button"
-        id="recent-cash-toggle"
-        class="panel-head"
-        style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
-        aria-expanded="false"
-    >
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <h3 style="margin: 0;">Recent Cash Logs</h3>
-            <span class="summary-pill">{{ logs|length }} logs</span>
-        </div>
-        <span id="recent-cash-chevron" class="summary-pill">Show ▼</span>
-    </button>
+    <div class="panel premium-panel">
+        <button
+            type="button"
+            id="recent-cash-toggle"
+            class="cash-section-toggle"
+            aria-expanded="false"
+        >
+            <div class="cash-section-toggle-left">
+                <h3 class="cash-section-title">Recent Cash Logs</h3>
+                <span class="summary-pill">{{ logs|length }} logs</span>
+            </div>
+            <span id="recent-cash-chevron" class="summary-pill">Show ▼</span>
+        </button>
 
-    <div id="recent-cash-body" style="display: none; margin-top: 16px;">
-        <div class="table-wrap premium-table-wrap">
-            <table class="data-table premium-table">
-                <thead>
-                    <tr>
-                        <th>Store</th>
-                        <th>Date</th>
-                        <th>Shift</th>
-                        <th>Back</th>
-                        <th>Front</th>
-                        <th>Driver</th>
-                        <th>Total</th>
-                        <th>Account For</th>
-                        <th>Over / Short</th>
-                        <th>Manager</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td>{{ log.store_number }}</td>
-                        <td>{{ log.log_date.strftime('%m/%d/%Y') }}</td>
-                        <td>{{ log.shift_type|title }}</td>
-                        <td>${{ "%.2f"|format(log.back_till or 0) }}</td>
-                        <td>${{ "%.2f"|format(log.front_till or 0) }}</td>
-                        <td>${{ "%.2f"|format(log.driver_banks or 0) }}</td>
-                        <td>${{ "%.2f"|format(log.total_cash or 0) }}</td>
-                        <td>
-                            {% if log.amount_to_account_for is not none %}
-                                ${{ "%.2f"|format(log.amount_to_account_for) }}
+        <div id="recent-cash-body" style="display: none; margin-top: 16px;">
+            <div class="cash-desktop-table">
+                <div class="table-wrap premium-table-wrap">
+                    <table class="data-table premium-table">
+                        <thead>
+                            <tr>
+                                <th>Store</th>
+                                <th>Date</th>
+                                <th>Shift</th>
+                                <th>Back</th>
+                                <th>Front</th>
+                                <th>Driver</th>
+                                <th>Total</th>
+                                <th>Account For</th>
+                                <th>Over / Short</th>
+                                <th>Manager</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td>{{ log.store_number }}</td>
+                                <td>{{ log.log_date.strftime('%m/%d/%Y') }}</td>
+                                <td>{{ log.shift_type|title }}</td>
+                                <td>${{ "%.2f"|format(log.back_till or 0) }}</td>
+                                <td>${{ "%.2f"|format(log.front_till or 0) }}</td>
+                                <td>${{ "%.2f"|format(log.driver_banks or 0) }}</td>
+                                <td>${{ "%.2f"|format(log.total_cash or 0) }}</td>
+                                <td>
+                                    {% if log.amount_to_account_for is not none %}
+                                        ${{ "%.2f"|format(log.amount_to_account_for) }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.cash_over_short is not none %}
+                                        <span class="table-badge {% if log.cash_over_short == 0 %}badge-success{% elif log.cash_over_short > 0 %}badge-warning{% else %}badge-danger{% endif %}">
+                                            ${{ "%.2f"|format(log.cash_over_short) }}
+                                        </span>
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.manager_name or '—' }}</td>
+                            </tr>
                             {% else %}
-                                —
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if log.cash_over_short is not none %}
-                                ${{ "%.2f"|format(log.cash_over_short) }}
-                            {% else %}
-                                —
-                            {% endif %}
-                        </td>
-                        <td>{{ log.manager_name or '—' }}</td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="10">No cash logs found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            <tr>
+                                <td colspan="10">No cash logs found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="cash-mobile-list">
+                {% for log in logs %}
+                <div class="cash-mobile-card">
+                    <div class="cash-mobile-card-head">
+                        <div>
+                            <div class="cash-mobile-store">Store {{ log.store_number }} · {{ log.shift_type|title }}</div>
+                            <div class="cash-mobile-date">{{ log.log_date.strftime('%m/%d/%Y') }}</div>
+                        </div>
+
+                        {% if log.cash_over_short is not none %}
+                        <span class="table-badge {% if log.cash_over_short == 0 %}badge-success{% elif log.cash_over_short > 0 %}badge-warning{% else %}badge-danger{% endif %}">
+                            ${{ "%.2f"|format(log.cash_over_short) }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="cash-mobile-grid">
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Back Till</div>
+                            <div class="cash-mobile-value">${{ "%.2f"|format(log.back_till or 0) }}</div>
+                        </div>
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Front Till</div>
+                            <div class="cash-mobile-value">${{ "%.2f"|format(log.front_till or 0) }}</div>
+                        </div>
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Driver Banks</div>
+                            <div class="cash-mobile-value">${{ "%.2f"|format(log.driver_banks or 0) }}</div>
+                        </div>
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Total Cash</div>
+                            <div class="cash-mobile-value">${{ "%.2f"|format(log.total_cash or 0) }}</div>
+                        </div>
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Account For</div>
+                            <div class="cash-mobile-value">
+                                {% if log.amount_to_account_for is not none %}
+                                    ${{ "%.2f"|format(log.amount_to_account_for) }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="cash-mobile-item">
+                            <div class="cash-mobile-label">Over / Short</div>
+                            <div class="cash-mobile-value">
+                                {% if log.cash_over_short is not none %}
+                                    ${{ "%.2f"|format(log.cash_over_short) }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cash-mobile-footer">
+                        <div class="cash-mobile-label">Manager</div>
+                        <div class="cash-mobile-value">{{ log.manager_name or '—' }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="cash-empty-state">No cash logs found.</div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>

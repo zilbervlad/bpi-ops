@@ -8,9 +8,11 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
 
+    # Import blueprints
     from app.auth.routes import auth_bp
     from app.dashboard.routes import dashboard_bp
     from app.checklist.routes import checklist_bp
@@ -21,7 +23,9 @@ def create_app():
     from app.nightly_numbers.routes import nightly_numbers_bp
     from app.cash.routes import cash_bp
     from app.cash_review.routes import cash_review_bp
+    from app.verification.routes import verification_bp  # ✅ NEW
 
+    # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(checklist_bp)
@@ -32,6 +36,7 @@ def create_app():
     app.register_blueprint(nightly_numbers_bp)
     app.register_blueprint(cash_bp)
     app.register_blueprint(cash_review_bp)
+    app.register_blueprint(verification_bp)  # ✅ NEW
 
     @app.route("/create-db")
     def create_db():
@@ -39,6 +44,7 @@ def create_app():
         db.create_all()
         return "Database tables created"
 
+    # Seed data + ensure tables exist
     with app.app_context():
         from app import models
         db.create_all()

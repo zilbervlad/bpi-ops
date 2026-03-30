@@ -73,6 +73,12 @@
                        class="{% if request.endpoint and request.endpoint.startswith('svr') and request.endpoint != 'svr.admin' %}active{% endif %}">
                         SVR
                     </a>
+
+                    <!-- ✅ NEW MODULE -->
+                    <a href="{{ url_for('verification.new_report') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('verification') %}active{% endif %}">
+                        Verification
+                    </a>
                     {% endif %}
 
                     {% if session.get('user_role') in ['admin', 'supervisor', 'maintenance'] %}

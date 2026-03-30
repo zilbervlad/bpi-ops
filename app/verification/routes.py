@@ -1,14 +1,17 @@
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+
 from app.auth.routes import login_required, role_required
 from app.extensions import db
 from app.models import (
     VerificationTemplateField,
     VerificationReport,
     VerificationReportValue,
-    Store
+    Store,
+    User,
 )
 from app.services.email_service import send_email
+import os
 
 verification_bp = Blueprint("verification", __name__, url_prefix="/verification")
 
@@ -130,9 +133,19 @@ def new_report():
                 val = (request.form.get(field.field_key) or "").strip()
                 body += f"{field.field_label}:\n{val or '—'}\n\n"
 
-            supervisor_email = session.get("user_email") or session.get("notification_email")
+            to_email = (os.getenv("EMAIL_FROM", "") or os.getenv("EMAIL_USER", "")).strip()
+            if not to_email:
+                raise ValueError("Missing EMAIL_FROM / EMAIL_USER in environment settings.")
+
+            supervisor_email = None
+            user_id = session.get("user_id")
+            if user_id:
+                submitting_user = User.query.get(user_id)
+                if submitting_user:
+                    supervisor_email = submitting_user.get_notification_email()
+
             send_email(
-                to_email="YOUR_EMAIL@gmail.com",
+                to_email=to_email,
                 subject=f"Verification - Store {store_number}",
                 body=body,
                 cc_emails=supervisor_email if supervisor_email else None

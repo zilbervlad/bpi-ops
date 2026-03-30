@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Verification | BPI Ops{% endblock %}
+{% block header %}Verification{% endblock %}
+
+{% block content %}
+<div class="panel premium-panel" style="max-width: 900px; margin: 0 auto;">
+    <div class="panel-head">
+        <div>
+            <h3>New Verification</h3>
+            <div class="area-subtitle">Complete and submit a supervisor verification report.</div>
+        </div>
+        <span class="summary-pill">Supervisor Module</span>
+    </div>
+
+    <form method="POST" class="login-form" style="margin-top: 20px;">
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label for="store_number">Store</label>
+            <select id="store_number" name="store_number" required>
+                <option value="">Select a store</option>
+                {% for store in stores %}
+                <option value="{{ store.store_number }}">
+                    {{ store.store_number }}{% if store.store_name %} - {{ store.store_name }}{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% for field in fields %}
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label for="{{ field.field_key }}">{{ field.field_label }}</label>
+
+            {% if field.field_type == "text" %}
+                <input
+                    type="text"
+                    id="{{ field.field_key }}"
+                    name="{{ field.field_key }}"
+                >
+            {% else %}
+                <textarea
+                    id="{{ field.field_key }}"
+                    name="{{ field.field_key }}"
+                    rows="4"
+                    style="width: 100%; resize: vertical;"
+                ></textarea>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px;">
+            <button type="submit" class="btn-primary">Submit Verification</button>
+            <a href="{{ url_for('dashboard.home') }}" class="action-btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

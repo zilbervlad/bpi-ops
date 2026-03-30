@@ -9,7 +9,7 @@
         <div class="command-eyebrow">MAINTENANCE</div>
         <h2 class="command-title">Maintenance Command Board</h2>
         <p class="command-subtitle">
-            See what is broken fast, then open only the ticket you need to update.
+            Clean list view for fast scanning and quick updates.
         </p>
     </div>
     <div class="command-bar-right">
@@ -18,7 +18,7 @@
     </div>
 </div>
 
-<div class="content-grid maintenance-content-grid" style="margin-bottom: 24px;">
+<div class="content-grid" style="margin-bottom: 24px;">
     <section class="panel premium-panel">
         <button
             type="button"
@@ -160,74 +160,69 @@
         margin-top: 16px;
     }
 
-    .maintenance-row-list {
+    .maintenance-list-shell {
         width: 100%;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255,255,255,0.08);
         border-radius: 16px;
         overflow: hidden;
-        background: rgba(255, 255, 255, 0.015);
+        background: rgba(255,255,255,0.015);
     }
 
-    .maintenance-row {
-        width: 100%;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        background: transparent;
+    .maintenance-list-head {
+        display: grid;
+        grid-template-columns: 90px minmax(0, 1fr) 130px 170px 160px;
+        gap: 12px;
+        padding: 10px 14px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0.58;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        background: rgba(255,255,255,0.02);
     }
 
-    .maintenance-row:last-child {
+    .maintenance-list-row {
+        display: grid;
+        grid-template-columns: 90px minmax(0, 1fr) 130px 170px 160px;
+        gap: 12px;
+        align-items: center;
+        padding: 11px 14px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        transition: background 0.14s ease;
+    }
+
+    .maintenance-list-row:last-child {
         border-bottom: none;
     }
 
-    .maintenance-row.is-open {
-        background: rgba(255, 255, 255, 0.03);
+    .maintenance-list-row:hover {
+        background: rgba(255,255,255,0.03);
     }
 
-    .maintenance-row-summary {
-        width: 100%;
-        background: transparent;
-        border: none;
-        color: inherit;
-        cursor: pointer;
-        padding: 12px 16px;
-        text-align: left;
-        transition: background 0.15s ease;
-    }
-
-    .maintenance-row-summary:hover {
-        background: rgba(255, 255, 255, 0.03);
-    }
-
-    .maintenance-row-grid {
-        display: grid;
-        grid-template-columns: 105px minmax(0, 1fr) 160px;
-        gap: 16px;
-        align-items: center;
-        width: 100%;
-    }
-
-    .maintenance-store-block {
+    .maintenance-store-cell {
         min-width: 0;
     }
 
-    .maintenance-store-line {
-        font-size: 11px;
+    .maintenance-store-number {
+        font-size: 12px;
         font-weight: 800;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        opacity: 0.72;
-        margin-bottom: 3px;
-        white-space: nowrap;
+        opacity: 0.82;
+        line-height: 1.2;
     }
 
-    .maintenance-source-line {
+    .maintenance-source {
         font-size: 11px;
-        opacity: 0.56;
+        opacity: 0.54;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
-        white-space: nowrap;
+        letter-spacing: 0.05em;
+        margin-top: 2px;
+        line-height: 1.2;
     }
 
-    .maintenance-main {
+    .maintenance-title-cell {
         min-width: 0;
     }
 
@@ -235,36 +230,33 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 3px;
         min-width: 0;
+        margin-bottom: 2px;
     }
 
-    .maintenance-title-main {
+    .maintenance-title-text {
         font-size: 14px;
         font-weight: 800;
         line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
         min-width: 0;
-        word-break: break-word;
     }
 
     .maintenance-meta {
         font-size: 12px;
-        line-height: 1.3;
         opacity: 0.68;
-        min-width: 0;
-        word-break: break-word;
-    }
-
-    .maintenance-actions {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 8px;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.25;
     }
 
     .maintenance-status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         border-radius: 999px;
         padding: 4px 9px;
         font-size: 10px;
@@ -273,6 +265,7 @@
         letter-spacing: 0.05em;
         border: 1px solid rgba(255,255,255,0.08);
         background: rgba(255,255,255,0.05);
+        white-space: nowrap;
     }
 
     .maintenance-status-pill.status-open {
@@ -295,123 +288,154 @@
         color: #9df0bb;
     }
 
+    .maintenance-date-cell {
+        font-size: 12px;
+        opacity: 0.82;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .maintenance-actions-cell {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        white-space: nowrap;
+    }
+
     .maintenance-quick-btn {
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.12);
         color: inherit;
         border-radius: 999px;
         padding: 6px 10px;
         font-size: 12px;
         font-weight: 800;
         cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease;
+        transition: background 0.14s ease, border-color 0.14s ease;
     }
 
     .maintenance-quick-btn:hover {
-        background: rgba(255, 255, 255, 0.06);
-        border-color: rgba(255, 255, 255, 0.18);
-    }
-
-    .maintenance-expand-chip {
-        min-width: 74px;
-        text-align: center;
-    }
-
-    .maintenance-row-body {
-        display: none;
-        padding: 12px 16px 14px 137px;
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.02);
-    }
-
-    .maintenance-compact-form {
-        display: grid;
-        gap: 10px;
-    }
-
-    .maintenance-edit-grid {
-        display: grid;
-        grid-template-columns: 140px 180px minmax(0, 1fr) auto;
-        gap: 10px;
-        align-items: end;
-    }
-
-    .maintenance-edit-grid .form-group {
-        margin-bottom: 0;
-    }
-
-    .maintenance-edit-grid label {
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        opacity: 0.7;
-        margin-bottom: 4px;
-        display: block;
-    }
-
-    .maintenance-edit-grid input,
-    .maintenance-edit-grid select,
-    .maintenance-edit-grid textarea {
-        width: 100%;
-    }
-
-    .maintenance-edit-actions {
-        display: flex;
-        gap: 8px;
-        align-items: end;
-        justify-content: flex-end;
-        height: 100%;
-    }
-
-    .maintenance-edit-actions .btn-primary,
-    .maintenance-edit-actions .btn-danger {
-        white-space: nowrap;
+        background: rgba(255,255,255,0.06);
+        border-color: rgba(255,255,255,0.18);
     }
 
     .maintenance-empty {
-        width: 100%;
-        padding: 16px;
+        padding: 16px 14px;
         opacity: 0.8;
     }
 
+    .maintenance-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(3, 8, 20, 0.62);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        z-index: 9999;
+    }
+
+    .maintenance-modal-backdrop.is-open {
+        display: flex;
+    }
+
+    .maintenance-modal {
+        width: min(760px, 100%);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(9,20,53,0.98), rgba(6,14,38,0.98));
+        box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+        overflow: hidden;
+    }
+
+    .maintenance-modal-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .maintenance-modal-title {
+        font-size: 18px;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .maintenance-modal-subtitle {
+        font-size: 12px;
+        opacity: 0.66;
+        margin-top: 2px;
+    }
+
+    .maintenance-modal-close {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 999px;
+        color: inherit;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .maintenance-modal-body {
+        padding: 18px;
+    }
+
+    .maintenance-modal-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .maintenance-modal-grid .form-group {
+        margin-bottom: 0;
+    }
+
+    .maintenance-modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 16px;
+    }
+
     @media (max-width: 1200px) {
-        .maintenance-row-grid {
-            grid-template-columns: 95px minmax(0, 1fr);
-            align-items: start;
+        .maintenance-list-head,
+        .maintenance-list-row {
+            grid-template-columns: 90px minmax(0, 1fr) 120px 140px;
         }
 
-        .maintenance-actions {
-            grid-column: 2;
-            justify-content: flex-start;
-            margin-top: 6px;
-        }
-
-        .maintenance-row-body {
-            padding: 12px 16px 14px 16px;
-        }
-
-        .maintenance-edit-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-
-        .maintenance-edit-actions {
-            grid-column: 1 / -1;
-            justify-content: flex-start;
+        .maintenance-date-cell {
+            display: none;
         }
     }
 
-    @media (max-width: 760px) {
-        .maintenance-row-grid {
+    @media (max-width: 900px) {
+        .maintenance-list-head {
+            display: none;
+        }
+
+        .maintenance-list-row {
+            grid-template-columns: 1fr;
+            gap: 8px;
+            align-items: start;
+        }
+
+        .maintenance-actions-cell {
+            justify-content: flex-start;
+        }
+
+        .maintenance-modal-grid {
             grid-template-columns: 1fr;
         }
 
-        .maintenance-actions {
-            grid-column: 1;
-        }
-
-        .maintenance-edit-grid {
-            grid-template-columns: 1fr;
+        .maintenance-modal-actions {
+            justify-content: flex-start;
+            flex-wrap: wrap;
         }
     }
 </style>
@@ -435,111 +459,181 @@
     {% endif %}
 {% endmacro %}
 
-{% macro render_ticket_row(ticket, stores, user_role) %}
-<div class="maintenance-row" data-ticket-card="{{ ticket.id }}">
+{% macro render_ticket_row(ticket, user_role) %}
+<div class="maintenance-list-row">
+    <div class="maintenance-store-cell">
+        <div class="maintenance-store-number">{{ ticket.store_number }}</div>
+        <div class="maintenance-source">{{ ticket.source_type }}</div>
+    </div>
+
+    <div class="maintenance-title-cell">
+        <div class="maintenance-title-line">
+            <div class="maintenance-title-text">{{ problem_icon(ticket.title) }} {{ ticket.title }}</div>
+        </div>
+        <div class="maintenance-meta">
+            {% if ticket.details %}
+                {{ ticket.details[:110] }}{% if ticket.details|length > 110 %}...{% endif %}
+            {% elif ticket.svr_report_id %}
+                Linked SVR #{{ ticket.svr_report_id }}
+            {% else %}
+                No details
+            {% endif %}
+        </div>
+    </div>
+
+    <div>
+        <span class="maintenance-status-pill status-{{ ticket.status }}">
+            {{ ticket.status.replace('_', ' ')|title }}
+        </span>
+    </div>
+
+    <div class="maintenance-date-cell">
+        {{ ticket.created_at.strftime('%b %d, %Y %I:%M %p') if ticket.created_at else '' }}
+    </div>
+
+    <div class="maintenance-actions-cell">
+        {% if ticket.status == "open" %}
+        <form method="POST">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+            <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
+            <input type="hidden" name="title" value="{{ ticket.title }}">
+            <input type="hidden" name="details" value="{{ ticket.details or '' }}">
+            <input type="hidden" name="status" value="assigned">
+            <button type="submit" class="maintenance-quick-btn">Start Fix</button>
+        </form>
+        {% elif ticket.status == "assigned" %}
+        <form method="POST">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+            <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
+            <input type="hidden" name="title" value="{{ ticket.title }}">
+            <input type="hidden" name="details" value="{{ ticket.details or '' }}">
+            <input type="hidden" name="status" value="in_progress">
+            <button type="submit" class="maintenance-quick-btn">Start Fix</button>
+        </form>
+        {% elif ticket.status == "in_progress" %}
+        <form method="POST">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+            <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
+            <input type="hidden" name="title" value="{{ ticket.title }}">
+            <input type="hidden" name="details" value="{{ ticket.details or '' }}">
+            <input type="hidden" name="status" value="complete">
+            <button type="submit" class="maintenance-quick-btn">Mark Done</button>
+        </form>
+        {% endif %}
+
+        <button
+            type="button"
+            class="maintenance-quick-btn js-open-maintenance-modal"
+            data-ticket-id="{{ ticket.id }}"
+            data-ticket-store="{{ ticket.store_number }}"
+            data-ticket-title="{{ ticket.title }}"
+            data-ticket-details="{{ ticket.details or '' }}"
+            data-ticket-status="{{ ticket.status }}"
+        >
+            Edit
+        </button>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro render_section(title, section_id, tickets, default_open=True) %}
+<section class="panel premium-panel maintenance-status-panel">
     <button
         type="button"
-        class="maintenance-row-summary"
-        data-ticket-toggle="{{ ticket.id }}"
-        aria-expanded="false"
+        id="maintenance-{{ section_id }}-toggle"
+        class="maintenance-status-header"
+        aria-expanded="{{ 'true' if default_open else 'false' }}"
     >
-        <div class="maintenance-row-grid">
-            <div class="maintenance-store-block">
-                <div class="maintenance-store-line">Store {{ ticket.store_number }}</div>
-                <div class="maintenance-source-line">{{ ticket.source_type }}</div>
-            </div>
-
-            <div class="maintenance-main">
-                <div class="maintenance-title-line">
-                    <div class="maintenance-title-main">{{ problem_icon(ticket.title) }} {{ ticket.title }}</div>
-                    <span class="maintenance-status-pill status-{{ ticket.status }}">
-                        {{ ticket.status.replace('_', ' ')|title }}
-                    </span>
-                </div>
-
-                <div class="maintenance-meta">
-                    {{ ticket.created_at.strftime('%b %d, %Y %I:%M %p') if ticket.created_at else '' }}
-                    {% if ticket.svr_report_id %}
-                    | Linked SVR #{{ ticket.svr_report_id }}
-                    {% endif %}
-                    {% if ticket.details %}
-                    | {{ ticket.details[:95] }}{% if ticket.details|length > 95 %}...{% endif %}
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="maintenance-actions">
-                {% if ticket.status == "open" %}
-                <form method="POST" onclick="event.stopPropagation();">
-                    <input type="hidden" name="action" value="update">
-                    <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
-                    <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
-                    <input type="hidden" name="title" value="{{ ticket.title }}">
-                    <input type="hidden" name="details" value="{{ ticket.details or '' }}">
-                    <input type="hidden" name="status" value="assigned">
-                    <button type="submit" class="maintenance-quick-btn">Start Fix</button>
-                </form>
-                {% elif ticket.status == "assigned" %}
-                <form method="POST" onclick="event.stopPropagation();">
-                    <input type="hidden" name="action" value="update">
-                    <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
-                    <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
-                    <input type="hidden" name="title" value="{{ ticket.title }}">
-                    <input type="hidden" name="details" value="{{ ticket.details or '' }}">
-                    <input type="hidden" name="status" value="in_progress">
-                    <button type="submit" class="maintenance-quick-btn">Start Fix</button>
-                </form>
-                {% elif ticket.status == "in_progress" %}
-                <form method="POST" onclick="event.stopPropagation();">
-                    <input type="hidden" name="action" value="update">
-                    <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
-                    <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
-                    <input type="hidden" name="title" value="{{ ticket.title }}">
-                    <input type="hidden" name="details" value="{{ ticket.details or '' }}">
-                    <input type="hidden" name="status" value="complete">
-                    <button type="submit" class="maintenance-quick-btn">Mark Done</button>
-                </form>
-                {% endif %}
-
-                <span class="summary-pill maintenance-expand-chip" data-ticket-chevron="{{ ticket.id }}">Edit ▼</span>
-            </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <h3 style="margin: 0;">{{ title }}</h3>
+            <span class="summary-pill">{{ tickets|length }} tasks</span>
         </div>
+        <span id="maintenance-{{ section_id }}-chevron" class="summary-pill">
+            {{ 'Hide ▲' if default_open else 'Show ▼' }}
+        </span>
     </button>
 
-    <div class="maintenance-row-body" data-ticket-body="{{ ticket.id }}">
-        <form method="POST" class="maintenance-compact-form">
-            <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+    <div
+        id="maintenance-{{ section_id }}-body"
+        class="maintenance-status-body"
+        style="display: {{ 'block' if default_open else 'none' }};"
+    >
+        <div class="maintenance-list-shell">
+            <div class="maintenance-list-head">
+                <div>Store</div>
+                <div>Name</div>
+                <div>Status</div>
+                <div>Date Modified</div>
+                <div style="text-align:right;">Actions</div>
+            </div>
 
-            <div class="maintenance-edit-grid">
-                <div class="form-group">
-                    <label>Store</label>
-                    <select name="store_number" required>
-                        {% for store in stores %}
-                        <option value="{{ store.store_number }}" {% if store.store_number == ticket.store_number %}selected{% endif %}>
-                            {{ store.store_number }}
-                        </option>
-                        {% endfor %}
-                    </select>
+            {% for ticket in tickets %}
+                {{ render_ticket_row(ticket, user_role) }}
+            {% else %}
+                <div class="maintenance-empty">No {{ title|lower }} maintenance tasks.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endmacro %}
+
+<div class="maintenance-sections">
+    {{ render_section('Open', 'open', open_tickets, True) }}
+    {{ render_section('Assigned', 'assigned', assigned_tickets, False) }}
+    {{ render_section('In Progress', 'progress', in_progress_tickets, True) }}
+    {{ render_section('Complete', 'complete', complete_tickets, False) }}
+</div>
+
+<div id="maintenance-edit-modal-backdrop" class="maintenance-modal-backdrop">
+    <div class="maintenance-modal" role="dialog" aria-modal="true" aria-labelledby="maintenance-modal-title">
+        <div class="maintenance-modal-header">
+            <div>
+                <h3 id="maintenance-modal-title" class="maintenance-modal-title">Edit Maintenance Task</h3>
+                <div id="maintenance-modal-subtitle" class="maintenance-modal-subtitle">Update task details</div>
+            </div>
+            <button type="button" class="maintenance-modal-close" id="maintenance-modal-close">Close</button>
+        </div>
+
+        <div class="maintenance-modal-body">
+            <form method="POST" id="maintenance-modal-form">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="ticket_id" id="modal_ticket_id">
+
+                <div class="maintenance-modal-grid">
+                    <div class="form-group">
+                        <label>Store</label>
+                        <select name="store_number" id="modal_store_number" required>
+                            {% for store in stores %}
+                            <option value="{{ store.store_number }}">{{ store.store_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status" id="modal_status" required>
+                            <option value="open">Open</option>
+                            <option value="assigned">Assigned</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="complete">Complete</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Task Title</label>
+                        <input type="text" name="title" id="modal_title" required>
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Details</label>
+                        <textarea name="details" id="modal_details" rows="4"></textarea>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Status</label>
-                    <select name="status" required>
-                        <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
-                        <option value="assigned" {% if ticket.status == 'assigned' %}selected{% endif %}>Assigned</option>
-                        <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-                        <option value="complete" {% if ticket.status == 'complete' %}selected{% endif %}>Complete</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Task Title</label>
-                    <input type="text" name="title" value="{{ ticket.title }}" required>
-                </div>
-
-                <div class="maintenance-edit-actions">
-                    <button type="submit" name="action" value="update" class="btn-primary">Save</button>
-
+                <div class="maintenance-modal-actions">
                     {% if user_role in ["admin", "supervisor", "maintenance"] %}
                     <button
                         type="submit"
@@ -552,120 +646,11 @@
                         Delete
                     </button>
                     {% endif %}
+                    <button type="submit" class="btn-primary">Save Task</button>
                 </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; margin-bottom: 4px; display: block;">
-                    Details
-                </label>
-                <textarea name="details" rows="2">{{ ticket.details or '' }}</textarea>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
-{% endmacro %}
-
-<div class="maintenance-sections">
-    <section class="panel premium-panel maintenance-status-panel">
-        <button
-            type="button"
-            id="maintenance-open-toggle"
-            class="maintenance-status-header"
-            aria-expanded="true"
-        >
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <h3 style="margin: 0;">Open</h3>
-                <span class="summary-pill">{{ open_tickets|length }} tasks</span>
-            </div>
-            <span id="maintenance-open-chevron" class="summary-pill">Hide ▲</span>
-        </button>
-
-        <div id="maintenance-open-body" class="maintenance-status-body" style="display: block;">
-            <div class="maintenance-row-list">
-                {% for ticket in open_tickets %}
-                    {{ render_ticket_row(ticket, stores, user_role) }}
-                {% else %}
-                    <div class="maintenance-empty">No open maintenance tasks.</div>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
-
-    <section class="panel premium-panel maintenance-status-panel">
-        <button
-            type="button"
-            id="maintenance-assigned-toggle"
-            class="maintenance-status-header"
-            aria-expanded="false"
-        >
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <h3 style="margin: 0;">Assigned</h3>
-                <span class="summary-pill">{{ assigned_tickets|length }} tasks</span>
-            </div>
-            <span id="maintenance-assigned-chevron" class="summary-pill">Show ▼</span>
-        </button>
-
-        <div id="maintenance-assigned-body" class="maintenance-status-body" style="display: none;">
-            <div class="maintenance-row-list">
-                {% for ticket in assigned_tickets %}
-                    {{ render_ticket_row(ticket, stores, user_role) }}
-                {% else %}
-                    <div class="maintenance-empty">No assigned maintenance tasks.</div>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
-
-    <section class="panel premium-panel maintenance-status-panel">
-        <button
-            type="button"
-            id="maintenance-progress-toggle"
-            class="maintenance-status-header"
-            aria-expanded="true"
-        >
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <h3 style="margin: 0;">In Progress</h3>
-                <span class="summary-pill">{{ in_progress_tickets|length }} tasks</span>
-            </div>
-            <span id="maintenance-progress-chevron" class="summary-pill">Hide ▲</span>
-        </button>
-
-        <div id="maintenance-progress-body" class="maintenance-status-body" style="display: block;">
-            <div class="maintenance-row-list">
-                {% for ticket in in_progress_tickets %}
-                    {{ render_ticket_row(ticket, stores, user_role) }}
-                {% else %}
-                    <div class="maintenance-empty">No in-progress maintenance tasks.</div>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
-
-    <section class="panel premium-panel maintenance-status-panel">
-        <button
-            type="button"
-            id="maintenance-complete-toggle"
-            class="maintenance-status-header"
-            aria-expanded="false"
-        >
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <h3 style="margin: 0;">Complete</h3>
-                <span class="summary-pill">{{ complete_tickets|length }} tasks</span>
-            </div>
-            <span id="maintenance-complete-chevron" class="summary-pill">Show ▼</span>
-        </button>
-
-        <div id="maintenance-complete-body" class="maintenance-status-body" style="display: none;">
-            <div class="maintenance-row-list">
-                {% for ticket in complete_tickets %}
-                    {{ render_ticket_row(ticket, stores, user_role) }}
-                {% else %}
-                    <div class="maintenance-empty">No completed maintenance tasks.</div>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
 </div>
 
 <script>
@@ -685,44 +670,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function bindTicketEditors() {
-        document.querySelectorAll("[data-ticket-toggle]").forEach(toggle => {
-            toggle.addEventListener("click", function () {
-                const ticketId = this.getAttribute("data-ticket-toggle");
-                const targetBody = document.querySelector(`[data-ticket-body="${ticketId}"]`);
-                const targetChevron = document.querySelector(`[data-ticket-chevron="${ticketId}"]`);
-                const targetCard = document.querySelector(`[data-ticket-card="${ticketId}"]`);
-
-                if (!targetBody || !targetChevron || !targetCard) return;
-
-                const isOpening = targetBody.style.display === "none" || targetBody.style.display === "";
-
-                document.querySelectorAll("[data-ticket-body]").forEach(body => {
-                    body.style.display = "none";
-                });
-
-                document.querySelectorAll("[data-ticket-chevron]").forEach(chevron => {
-                    chevron.textContent = "Edit ▼";
-                });
-
-                document.querySelectorAll("[data-ticket-toggle]").forEach(btn => {
-                    btn.setAttribute("aria-expanded", "false");
-                });
-
-                document.querySelectorAll("[data-ticket-card]").forEach(card => {
-                    card.classList.remove("is-open");
-                });
-
-                if (isOpening) {
-                    targetBody.style.display = "block";
-                    targetChevron.textContent = "Close ▲";
-                    this.setAttribute("aria-expanded", "true");
-                    targetCard.classList.add("is-open");
-                }
-            });
-        });
-    }
-
     bindToggle("maintenance-create-toggle", "maintenance-create-body", "maintenance-create-chevron");
     bindToggle("maintenance-filters-toggle", "maintenance-filters-body", "maintenance-filters-chevron");
     bindToggle("maintenance-open-toggle", "maintenance-open-body", "maintenance-open-chevron");
@@ -730,7 +677,59 @@ document.addEventListener("DOMContentLoaded", function () {
     bindToggle("maintenance-progress-toggle", "maintenance-progress-body", "maintenance-progress-chevron");
     bindToggle("maintenance-complete-toggle", "maintenance-complete-body", "maintenance-complete-chevron");
 
-    bindTicketEditors();
+    const modalBackdrop = document.getElementById("maintenance-edit-modal-backdrop");
+    const modalClose = document.getElementById("maintenance-modal-close");
+    const modalSubtitle = document.getElementById("maintenance-modal-subtitle");
+
+    const ticketIdInput = document.getElementById("modal_ticket_id");
+    const storeInput = document.getElementById("modal_store_number");
+    const statusInput = document.getElementById("modal_status");
+    const titleInput = document.getElementById("modal_title");
+    const detailsInput = document.getElementById("modal_details");
+
+    function openModal(data) {
+        ticketIdInput.value = data.ticketId || "";
+        storeInput.value = data.store || "";
+        statusInput.value = data.status || "open";
+        titleInput.value = data.title || "";
+        detailsInput.value = data.details || "";
+        modalSubtitle.textContent = `Store ${data.store || ""} • ${data.status ? data.status.replace('_', ' ') : 'Open'}`;
+        modalBackdrop.classList.add("is-open");
+    }
+
+    function closeModal() {
+        modalBackdrop.classList.remove("is-open");
+    }
+
+    document.querySelectorAll(".js-open-maintenance-modal").forEach(btn => {
+        btn.addEventListener("click", function () {
+            openModal({
+                ticketId: this.dataset.ticketId,
+                store: this.dataset.ticketStore,
+                title: this.dataset.ticketTitle,
+                details: this.dataset.ticketDetails,
+                status: this.dataset.ticketStatus
+            });
+        });
+    });
+
+    if (modalClose) {
+        modalClose.addEventListener("click", closeModal);
+    }
+
+    if (modalBackdrop) {
+        modalBackdrop.addEventListener("click", function (e) {
+            if (e.target === modalBackdrop) {
+                closeModal();
+            }
+        });
+    }
+
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+            closeModal();
+        }
+    });
 });
 </script>
 {% endblock %}

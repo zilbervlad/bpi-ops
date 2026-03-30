@@ -74,9 +74,8 @@
                         SVR
                     </a>
 
-                    <!-- ✅ NEW MODULE -->
                     <a href="{{ url_for('verification.new_report') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('verification') %}active{% endif %}">
+                       class="{% if request.endpoint and request.endpoint.startswith('verification') and request.endpoint != 'verification.admin' %}active{% endif %}">
                         Verification
                     </a>
                     {% endif %}
@@ -101,6 +100,11 @@
                     <a href="{{ url_for('svr.admin') }}"
                        class="{% if request.endpoint == 'svr.admin' %}active{% endif %}">
                         SVR Admin
+                    </a>
+
+                    <a href="{{ url_for('verification.admin') }}"
+                       class="{% if request.endpoint == 'verification.admin' %}active{% endif %}">
+                        Verification Admin
                     </a>
 
                     <a href="{{ url_for('nightly_numbers.admin') }}"

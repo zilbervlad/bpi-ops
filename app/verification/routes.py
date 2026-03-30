@@ -38,9 +38,16 @@ def ensure_default_template():
     ]
 
     existing = {f.field_key: f for f in VerificationTemplateField.query.all()}
+    active_keys = {key for key, _, _ in defaults}
 
     for i, (key, label, ftype) in enumerate(defaults, start=1):
-        if key not in existing:
+        if key in existing:
+            field = existing[key]
+            field.field_label = label
+            field.field_type = ftype
+            field.sort_order = i
+            field.is_active = True
+        else:
             db.session.add(
                 VerificationTemplateField(
                     field_key=key,
@@ -51,7 +58,18 @@ def ensure_default_template():
                 )
             )
 
+    for field in existing.values():
+        if field.field_key not in active_keys:
+            field.is_active = field.is_active
+
     db.session.commit()
+
+
+@verification_bp.route("/")
+@login_required
+@role_required("admin", "supervisor")
+def index():
+    return redirect(url_for("verification.new_report"))
 
 
 @verification_bp.route("/new", methods=["GET", "POST"])
@@ -66,7 +84,8 @@ def new_report():
         return redirect(url_for("dashboard.home"))
 
     fields = VerificationTemplateField.query.filter_by(is_active=True).order_by(
-        VerificationTemplateField.sort_order.asc()
+        VerificationTemplateField.sort_order.asc(),
+        VerificationTemplateField.id.asc()
     ).all()
 
     allowed_store_numbers = {store.store_number for store in stores}
@@ -111,11 +130,12 @@ def new_report():
                 val = (request.form.get(field.field_key) or "").strip()
                 body += f"{field.field_label}:\n{val or '—'}\n\n"
 
+            supervisor_email = session.get("user_email") or session.get("notification_email")
             send_email(
                 to_email="YOUR_EMAIL@gmail.com",
                 subject=f"Verification - Store {store_number}",
                 body=body,
-                cc_emails=session.get("user_email")
+                cc_emails=supervisor_email if supervisor_email else None
             )
         except Exception as e:
             print("Email failed:", e)
@@ -128,3 +148,90 @@ def new_report():
         stores=stores,
         fields=fields
     )
+
+
+@verification_bp.route("/admin", methods=["GET", "POST"])
+@login_required
+@role_required("admin")
+def admin():
+    ensure_default_template()
+
+    if request.method == "POST":
+        action = (request.form.get("action") or "").strip()
+
+        if action == "create":
+            field_key = (request.form.get("field_key") or "").strip()
+            field_label = (request.form.get("field_label") or "").strip()
+            field_type = (request.form.get("field_type") or "textarea").strip()
+            sort_order_raw = (request.form.get("sort_order") or "999").strip()
+
+            if not field_key or not field_label:
+                flash("Field key and label are required.", "error")
+                return redirect(url_for("verification.admin"))
+
+            try:
+                sort_order = int(sort_order_raw)
+            except ValueError:
+                flash("Sort order must be a number.", "error")
+                return redirect(url_for("verification.admin"))
+
+            existing = VerificationTemplateField.query.filter_by(field_key=field_key).first()
+            if existing:
+                flash("That field key already exists.", "error")
+                return redirect(url_for("verification.admin"))
+
+            db.session.add(
+                VerificationTemplateField(
+                    field_key=field_key,
+                    field_label=field_label,
+                    field_type=field_type,
+                    sort_order=sort_order,
+                    is_active=True,
+                )
+            )
+            db.session.commit()
+            flash("Verification field created.", "success")
+            return redirect(url_for("verification.admin"))
+
+        if action == "update":
+            field_id = (request.form.get("field_id") or "").strip()
+            field = VerificationTemplateField.query.get(field_id)
+
+            if not field:
+                flash("Field not found.", "error")
+                return redirect(url_for("verification.admin"))
+
+            field.field_key = (request.form.get("field_key") or "").strip()
+            field.field_label = (request.form.get("field_label") or "").strip()
+            field.field_type = (request.form.get("field_type") or "textarea").strip()
+
+            try:
+                field.sort_order = int((request.form.get("sort_order") or "999").strip())
+            except ValueError:
+                flash("Sort order must be a number.", "error")
+                return redirect(url_for("verification.admin"))
+
+            field.is_active = request.form.get("is_active") == "on"
+
+            duplicate = VerificationTemplateField.query.filter(
+                VerificationTemplateField.field_key == field.field_key,
+                VerificationTemplateField.id != field.id
+            ).first()
+            if duplicate:
+                flash("That field key already exists.", "error")
+                return redirect(url_for("verification.admin"))
+
+            if not field.field_key or not field.field_label:
+                flash("Field key and label are required.", "error")
+                return redirect(url_for("verification.admin"))
+
+            db.session.commit()
+            flash("Verification field updated.", "success")
+            return redirect(url_for("verification.admin"))
+
+    fields = VerificationTemplateField.query.order_by(
+        VerificationTemplateField.sort_order.asc(),
+        VerificationTemplateField.id.asc()
+    ).all()
+
+    return render_template("verification_admin.html", fields=fields)

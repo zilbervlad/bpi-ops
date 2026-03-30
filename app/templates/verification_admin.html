@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Verification Admin | BPI Ops{% endblock %}
+{% block header %}Verification Admin{% endblock %}
+
+{% block content %}
+<div class="panel premium-panel" style="margin-bottom: 24px;">
+    <div class="panel-head">
+        <div>
+            <h3>Verification Template Manager</h3>
+            <div class="area-subtitle">Edit the live verification questions supervisors see.</div>
+        </div>
+        <span class="summary-pill">Admin Only</span>
+    </div>
+</div>
+
+<div class="content-grid" style="grid-template-columns: 1.05fr 1.4fr; gap: 20px;">
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Create Field</h3>
+            <span class="summary-pill">New</span>
+        </div>
+
+        <form method="POST" class="login-form" style="margin-top: 16px;">
+            <input type="hidden" name="action" value="create">
+
+            <div class="form-group">
+                <label for="field_key">Field Key</label>
+                <input type="text" id="field_key" name="field_key" placeholder="example: bad_orders" required>
+            </div>
+
+            <div class="form-group">
+                <label for="field_label">Field Label</label>
+                <input type="text" id="field_label" name="field_label" placeholder="Question shown to supervisors" required>
+            </div>
+
+            <div class="form-group">
+                <label for="field_type">Field Type</label>
+                <select id="field_type" name="field_type">
+                    <option value="textarea">Textarea</option>
+                    <option value="text">Text</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="sort_order">Sort Order</label>
+                <input type="number" id="sort_order" name="sort_order" value="999" required>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%;">Create Field</button>
+        </form>
+    </section>
+
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Current Fields</h3>
+            <span class="summary-pill">{{ fields|length }} total</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 16px;">
+            {% for field in fields %}
+            <form method="POST" class="panel" style="padding: 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="field_id" value="{{ field.id }}">
+
+                <div class="form-group">
+                    <label>Field Key</label>
+                    <input type="text" name="field_key" value="{{ field.field_key }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Field Label</label>
+                    <input type="text" name="field_label" value="{{ field.field_label }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Field Type</label>
+                    <select name="field_type">
+                        <option value="textarea" {% if field.field_type == 'textarea' %}selected{% endif %}>Textarea</option>
+                        <option value="text" {% if field.field_type == 'text' %}selected{% endif %}>Text</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Sort Order</label>
+                    <input type="number" name="sort_order" value="{{ field.sort_order }}" required>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="is_active_{{ field.id }}" name="is_active" {% if field.is_active %}checked{% endif %}>
+                    <label for="is_active_{{ field.id }}" style="margin: 0;">Active</label>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%;">Save Field</button>
+            </form>
+            {% else %}
+            <div class="summary-pill">No verification fields yet.</div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime, date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 
@@ -66,10 +67,13 @@ def ensure_default_template():
                 )
             )
 
+    for field in existing.values():
+        if field.field_key not in active_keys:
+            field.is_active = field.is_active
+
     db.session.commit()
 
 
-# 🔥 UPDATED ROOT ROUTE (SAFE SWITCH)
 @verification_bp.route("/")
 @login_required
 @role_required("admin", "supervisor")
@@ -79,32 +83,77 @@ def index():
     return redirect(url_for("verification.new_report"))
 
 
-# 🆕 ADMIN DASHBOARD
 @verification_bp.route("/dashboard")
 @login_required
 @role_required("admin")
 def dashboard():
     today = today_et()
 
-    stores = Store.query.filter_by(is_active=True).order_by(Store.store_number).all()
+    stores = Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
 
-    reports = (
-        VerificationReport.query
-        .order_by(VerificationReport.created_at.desc())
-        .all()
-    )
+    reports = VerificationReport.query.order_by(
+        VerificationReport.report_date.desc(),
+        VerificationReport.created_at.desc()
+    ).all()
 
     latest_by_store = {}
-
     for report in reports:
         if report.store_number not in latest_by_store:
             latest_by_store[report.store_number] = report
+
+    submitted_today_store_numbers = {
+        report.store_number
+        for report in latest_by_store.values()
+        if report.report_date == today
+    }
+
+    total_stores = len(stores)
+    submitted_count = len(submitted_today_store_numbers)
+    missing_count = max(total_stores - submitted_count, 0)
+    overall_compliance = round((submitted_count / total_stores) * 100, 1) if total_stores else 0.0
+
+    stores_by_area = defaultdict(list)
+    for store in stores:
+        area_name = store.area_name or "Unassigned"
+        stores_by_area[area_name].append(store)
+
+    area_summary_rows = []
+    areas_fully_complete = 0
+
+    for area_name, area_stores in sorted(stores_by_area.items()):
+        area_store_numbers = {store.store_number for store in area_stores}
+        submitted_area_store_numbers = area_store_numbers & submitted_today_store_numbers
+
+        store_count = len(area_stores)
+        submitted_area_count = len(submitted_area_store_numbers)
+        missing_area_count = max(store_count - submitted_area_count, 0)
+        compliance = round((submitted_area_count / store_count) * 100, 1) if store_count else 0.0
+
+        if missing_area_count == 0 and store_count > 0:
+            areas_fully_complete += 1
+
+        missing_store_numbers = sorted(list(area_store_numbers - submitted_today_store_numbers))
+
+        area_summary_rows.append({
+            "area_name": area_name,
+            "store_count": store_count,
+            "submitted_count": submitted_area_count,
+            "missing_count": missing_area_count,
+            "missing_store_numbers": missing_store_numbers,
+            "compliance": compliance,
+        })
 
     return render_template(
         "verification_dashboard.html",
         stores=stores,
         latest_by_store=latest_by_store,
-        today=today
+        today=today,
+        submitted_count=submitted_count,
+        missing_count=missing_count,
+        total_stores=total_stores,
+        overall_compliance=overall_compliance,
+        areas_fully_complete=areas_fully_complete,
+        area_summary_rows=area_summary_rows,
     )
 
 
@@ -156,6 +205,52 @@ def new_report():
             )
 
         db.session.commit()
+
+        try:
+            body = f"Verification Report - Store {store_number}\n\n"
+            body += f"Submitted by: {session.get('user_name') or 'Unknown'}\n"
+            body += f"Submitted at: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}\n\n"
+
+            for field in fields:
+                val = (request.form.get(field.field_key) or "").strip()
+                body += f"{field.field_label}:\n{val or '—'}\n\n"
+
+            to_email = (os.getenv("EMAIL_FROM", "") or os.getenv("EMAIL_USER", "")).strip()
+            if not to_email:
+                raise ValueError("Missing EMAIL_FROM / EMAIL_USER in environment settings.")
+
+            supervisor_email = None
+            user_id = session.get("user_id")
+            if user_id:
+                submitting_user = User.query.get(user_id)
+                if submitting_user:
+                    supervisor_email = submitting_user.get_notification_email()
+
+            admin_users = User.query.filter_by(role="admin", is_active=True).all()
+            admin_emails = [
+                user.get_notification_email()
+                for user in admin_users
+                if user.get_notification_email()
+            ]
+
+            cc_list = []
+
+            if supervisor_email:
+                cc_list.append(supervisor_email)
+
+            for email in admin_emails:
+                if email and email not in cc_list and email != to_email:
+                    cc_list.append(email)
+
+            send_email(
+                to_email=to_email,
+                subject=f"Verification - Store {store_number}",
+                body=body,
+                cc_emails=cc_list if cc_list else None
+            )
+
+        except Exception as e:
+            print("Email failed:", e)
 
         flash("Verification submitted.", "success")
         return redirect(url_for("dashboard.home"))
@@ -229,6 +324,18 @@ def admin():
                 return redirect(url_for("verification.admin"))
 
             field.is_active = request.form.get("is_active") == "on"
+
+            duplicate = VerificationTemplateField.query.filter(
+                VerificationTemplateField.field_key == field.field_key,
+                VerificationTemplateField.id != field.id
+            ).first()
+            if duplicate:
+                flash("That field key already exists.", "error")
+                return redirect(url_for("verification.admin"))
+
+            if not field.field_key or not field.field_label:
+                flash("Field key and label are required.", "error")
+                return redirect(url_for("verification.admin"))
 
             db.session.commit()
             flash("Verification field updated.", "success")

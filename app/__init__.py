@@ -23,7 +23,10 @@ def create_app():
     from app.nightly_numbers.routes import nightly_numbers_bp
     from app.cash.routes import cash_bp
     from app.cash_review.routes import cash_review_bp
-    from app.verification.routes import verification_bp  # ✅ NEW
+    from app.verification.routes import verification_bp
+
+    # NEW
+    from app.store_dashboard import store_dashboard_bp
 
     # Register blueprints
     app.register_blueprint(auth_bp)
@@ -36,7 +39,8 @@ def create_app():
     app.register_blueprint(nightly_numbers_bp)
     app.register_blueprint(cash_bp)
     app.register_blueprint(cash_review_bp)
-    app.register_blueprint(verification_bp)  # ✅ NEW
+    app.register_blueprint(verification_bp)
+    app.register_blueprint(store_dashboard_bp)
 
     @app.route("/create-db")
     def create_db():

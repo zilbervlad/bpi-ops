@@ -32,6 +32,11 @@
                         Dashboard
                     </a>
 
+                    <a href="{{ url_for('store_dashboard.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('store_dashboard') %}active{% endif %}">
+                        Store Dashboard
+                    </a>
+
                     {% if session.get('user_role') in ['admin', 'supervisor'] %}
                     <a href="{{ url_for('checklist.overview') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">

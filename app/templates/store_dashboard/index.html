@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Store Dashboard{% endblock %}
+{% block header %}Store Dashboard{% endblock %}
+
+{% block content %}
+
+{% if not selected_store %}
+
+<div class="panel">
+    <h3>Select Store</h3>
+
+    <div class="content-grid">
+        {% for store in stores %}
+        <a href="{{ url_for('store_dashboard.detail', store_number=store.store_number) }}" class="panel" style="text-decoration:none;">
+            <h4>{{ store.store_number }}</h4>
+            <p>{{ store.store_name }}</p>
+            <small>{{ store.area_name }}</small>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+{% else %}
+
+<div class="panel">
+    <h2>{{ selected_store.store_number }} - {{ selected_store.store_name }}</h2>
+    <p>Area: {{ selected_store.area_name }}</p>
+</div>
+
+<div class="content-grid">
+
+    <div class="panel">
+        <h3>Checklist</h3>
+        {% if daily %}
+            <p>Status: {{ daily.status }}</p>
+            <p>Completion: {{ daily.percent_complete }}%</p>
+            <p>Integrity: {{ daily.integrity_score }}%</p>
+        {% else %}
+            <p>No checklist started today</p>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <h3>Maintenance</h3>
+        {% for m in maintenance %}
+            <div>
+                <strong>{{ m.title }}</strong> ({{ m.status }})
+            </div>
+        {% else %}
+            <p>No maintenance issues</p>
+        {% endfor %}
+    </div>
+
+    <div class="panel">
+        <h3>Weekly Focus</h3>
+        {% for item in weekly_focus %}
+            <div>
+                {{ item.item_text }}
+                {% if item.is_completed %} ✅ {% endif %}
+            </div>
+        {% else %}
+            <p>No items</p>
+        {% endfor %}
+    </div>
+
+    <div class="panel">
+        <h3>Latest Verification</h3>
+        {% if latest_verification %}
+            <p>Date: {{ latest_verification.report_date }}</p>
+        {% else %}
+            <p>No verification submitted</p>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

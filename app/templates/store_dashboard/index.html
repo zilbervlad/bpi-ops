@@ -4,77 +4,513 @@
 {% block header %}Store Dashboard{% endblock %}
 
 {% block content %}
+<style>
+    .tv-board {
+        display: grid;
+        gap: 12px;
+    }
 
-{% if not selected_store %}
+    .tv-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
 
-<div class="panel">
-    <h3>Select Store</h3>
+    .tv-title-wrap h1,
+    .tv-title-wrap h2,
+    .tv-title-wrap h3,
+    .tv-title-wrap p {
+        margin: 0;
+    }
 
-    <div class="content-grid">
-        {% for store in stores %}
-        <a href="{{ url_for('store_dashboard.detail', store_number=store.store_number) }}" class="panel" style="text-decoration:none;">
-            <h4>{{ store.store_number }}</h4>
-            <p>{{ store.store_name }}</p>
-            <small>{{ store.area_name }}</small>
-        </a>
-        {% endfor %}
+    .tv-page-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 4px;
+        color: #182540;
+    }
+
+    .tv-page-subtitle {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #5f6f8c;
+    }
+
+    .tv-top-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .tv-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: #dfe7fb;
+        color: #27458f;
+        font-size: 0.95rem;
+        font-weight: 800;
+    }
+
+    .tv-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 9px 16px;
+        border-radius: 12px;
+        background: #ffffff;
+        border: 1px solid #b9c3d6;
+        color: #24314d;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .tv-summary-card {
+        background: #ffffff;
+        border: 1px solid #d6dde8;
+        border-radius: 20px;
+        padding: 18px 18px 14px;
+        box-shadow: 0 4px 14px rgba(18, 35, 74, 0.06);
+    }
+
+    .tv-summary-title {
+        font-size: 1.15rem;
+        font-weight: 800;
+        margin: 0 0 2px 0;
+        color: #16233e;
+    }
+
+    .tv-summary-subtitle {
+        margin: 0 0 14px 0;
+        color: #586987;
+        font-weight: 700;
+    }
+
+    .tv-pill-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .tv-pill {
+        background: #dfe7fb;
+        color: #284690;
+        border-radius: 999px;
+        padding: 9px 14px;
+        font-size: 0.95rem;
+        font-weight: 800;
+    }
+
+    .tv-main-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 420px;
+        gap: 12px;
+        align-items: stretch;
+    }
+
+    .tv-panel {
+        background: #ffffff;
+        border: 1px solid #d6dde8;
+        border-radius: 20px;
+        box-shadow: 0 4px 14px rgba(18, 35, 74, 0.06);
+        overflow: hidden;
+    }
+
+    .tv-panel-header {
+        padding: 14px 16px 10px;
+        border-bottom: 1px solid #e5ebf4;
+    }
+
+    .tv-panel-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #182540;
+    }
+
+    .tv-panel-body {
+        padding: 12px;
+    }
+
+    .tv-heatmap-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .tv-tile {
+        display: block;
+        text-decoration: none;
+        border-radius: 12px;
+        min-height: 84px;
+        padding: 10px 10px 8px;
+        color: #ffffff;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15), 0 2px 8px rgba(20, 34, 64, 0.10);
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .tv-tile:hover {
+        transform: translateY(-1px);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 4px 12px rgba(20, 34, 64, 0.16);
+    }
+
+    .tv-tile.active-tile {
+        outline: 3px solid #1b2340;
+        outline-offset: -3px;
+    }
+
+    .tile-gray {
+        background: linear-gradient(180deg, #a3b1c7 0%, #7f90ab 100%);
+    }
+
+    .tile-red {
+        background: linear-gradient(180deg, #ff5a5f 0%, #ea2d2f 100%);
+    }
+
+    .tile-green {
+        background: linear-gradient(180deg, #42c58a 0%, #229a63 100%);
+    }
+
+    .tv-tile-store {
+        font-size: 1.25rem;
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .tv-tile-percent {
+        font-size: 1.6rem;
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .tv-tile-status {
+        font-size: 0.83rem;
+        font-weight: 900;
+        line-height: 1.1;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+
+    .tv-side-stack {
+        display: grid;
+        gap: 12px;
+    }
+
+    .tv-scroll-panel {
+        min-height: 0;
+    }
+
+    .tv-scroll-body {
+        padding: 10px 12px 12px;
+        height: 182px;
+        overflow-y: auto;
+    }
+
+    .tv-list {
+        display: grid;
+        gap: 8px;
+    }
+
+    .tv-list-item {
+        border: 1px dashed #cfd8e6;
+        border-radius: 12px;
+        padding: 11px 12px;
+        background: #f9fbff;
+        color: #2d3d5d;
+        font-weight: 700;
+        line-height: 1.25;
+    }
+
+    .tv-empty {
+        border: 1px dashed #cfd8e6;
+        border-radius: 12px;
+        padding: 12px;
+        background: #f9fbff;
+        color: #7184a4;
+        font-weight: 700;
+    }
+
+    .tv-bottom-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .tv-progress-stack {
+        display: grid;
+        gap: 10px;
+    }
+
+    .tv-progress-card {
+        border: 1px solid #dbe2ee;
+        border-radius: 14px;
+        padding: 10px 12px;
+        background: #fbfcff;
+    }
+
+    .tv-progress-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .tv-progress-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #1c2943;
+    }
+
+    .tv-progress-metric {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #445779;
+    }
+
+    .tv-progress-bar {
+        width: 100%;
+        height: 14px;
+        background: #dbe3ef;
+        border-radius: 999px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+
+    .tv-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #6e8dff 0%, #3656c9 100%);
+    }
+
+    .tv-progress-status {
+        font-size: 0.95rem;
+        color: #647799;
+        font-weight: 700;
+    }
+
+    .tv-store-switcher {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+    .tv-store-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        text-decoration: none;
+        background: #edf2fb;
+        color: #29417f;
+        font-weight: 800;
+        font-size: 0.92rem;
+    }
+
+    .tv-store-link.active {
+        background: #29417f;
+        color: #ffffff;
+    }
+
+    @media (max-width: 1400px) {
+        .tv-heatmap-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 1200px) {
+        .tv-main-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .tv-side-stack {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .tv-heatmap-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .tv-side-stack {
+            grid-template-columns: 1fr;
+        }
+
+        .tv-page-title {
+            font-size: 2rem;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .tv-heatmap-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .tv-page-title {
+            font-size: 1.8rem;
+        }
+
+        .tv-scroll-body {
+            height: 170px;
+        }
+    }
+</style>
+
+<div class="tv-board">
+    <div class="tv-topbar">
+        <div class="tv-title-wrap">
+            <div class="tv-page-title">Store Dashboard</div>
+            <div class="tv-page-subtitle">
+                Store {{ selected_store.store_number }} · {{ today.strftime('%B %-d, %Y') if today else '' }}
+            </div>
+        </div>
+
+        <div class="tv-top-actions">
+            <div class="tv-chip">Company Heat Map: {{ heat_map|length }} Stores</div>
+        </div>
     </div>
-</div>
 
-{% else %}
+    <div class="tv-summary-card">
+        <div class="tv-summary-title">
+            Store {{ selected_store.store_number }}{% if selected_store.store_name %} · {{ selected_store.store_name }}{% endif %}
+        </div>
+        <div class="tv-summary-subtitle">
+            Store {{ selected_store.store_number }} · {{ today.strftime('%B %-d, %Y') if today else '' }}
+        </div>
 
-<div class="panel">
-    <h2>{{ selected_store.store_number }} - {{ selected_store.store_name }}</h2>
-    <p>Area: {{ selected_store.area_name }}</p>
-</div>
+        <div class="tv-pill-row">
+            <div class="tv-pill">Overall Completion: {{ overall_completion }}%</div>
+            <div class="tv-pill">Checklist Status: {{ checklist_status_label }}</div>
+            <div class="tv-pill">Manager: {{ manager_name }}</div>
+        </div>
 
-<div class="content-grid">
-
-    <div class="panel">
-        <h3>Checklist</h3>
-        {% if daily %}
-            <p>Status: {{ daily.status }}</p>
-            <p>Completion: {{ daily.percent_complete }}%</p>
-            <p>Integrity: {{ daily.integrity_score }}%</p>
-        {% else %}
-            <p>No checklist started today</p>
+        {% if not is_manager %}
+        <div class="tv-store-switcher">
+            {% for store in visible_stores %}
+            <a href="{{ url_for('store_dashboard.detail', store_number=store.store_number) }}"
+               class="tv-store-link {% if store.store_number == selected_store.store_number %}active{% endif %}">
+                {{ store.store_number }}
+            </a>
+            {% endfor %}
+        </div>
         {% endif %}
     </div>
 
-    <div class="panel">
-        <h3>Maintenance</h3>
-        {% for m in maintenance %}
-            <div>
-                <strong>{{ m.title }}</strong> ({{ m.status }})
+    <div class="tv-main-grid">
+        <div class="tv-panel">
+            <div class="tv-panel-header">
+                <h3 class="tv-panel-title">Company Heat Map</h3>
             </div>
-        {% else %}
-            <p>No maintenance issues</p>
-        {% endfor %}
-    </div>
-
-    <div class="panel">
-        <h3>Weekly Focus</h3>
-        {% for item in weekly_focus %}
-            <div>
-                {{ item.item_text }}
-                {% if item.is_completed %} ✅ {% endif %}
+            <div class="tv-panel-body">
+                <div class="tv-heatmap-grid">
+                    {% for tile in heat_map %}
+                    <a href="{{ url_for('store_dashboard.detail', store_number=tile.store_number) }}"
+                       class="tv-tile {{ tile.tile_class }} {% if tile.store_number == selected_store.store_number %}active-tile{% endif %}">
+                        <div class="tv-tile-store">{{ tile.store_number }}</div>
+                        <div class="tv-tile-percent">{{ tile.percent }}%</div>
+                        <div class="tv-tile-status">{{ tile.status_label }}</div>
+                    </a>
+                    {% endfor %}
+                </div>
             </div>
-        {% else %}
-            <p>No items</p>
-        {% endfor %}
+        </div>
+
+        <div class="tv-side-stack">
+            <div class="tv-panel tv-scroll-panel">
+                <div class="tv-panel-header">
+                    <h3 class="tv-panel-title">Cleaning List</h3>
+                </div>
+                <div class="tv-scroll-body">
+                    {% if cleaning_items %}
+                    <div class="tv-list">
+                        {% for item in cleaning_items[:5] %}
+                        <div class="tv-list-item">{{ item.item_text }}</div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="tv-empty">No cleaning list items found for this store yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="tv-panel tv-scroll-panel">
+                <div class="tv-panel-header">
+                    <h3 class="tv-panel-title">Goals</h3>
+                </div>
+                <div class="tv-scroll-body">
+                    {% if goal_items %}
+                    <div class="tv-list">
+                        {% for item in goal_items[:5] %}
+                        <div class="tv-list-item">{{ item.item_text }}</div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="tv-empty">No goals found for this store yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="panel">
-        <h3>Latest Verification</h3>
-        {% if latest_verification %}
-            <p>Date: {{ latest_verification.report_date }}</p>
-        {% else %}
-            <p>No verification submitted</p>
-        {% endif %}
-    </div>
+    <div class="tv-bottom-grid">
+        <div class="tv-panel">
+            <div class="tv-panel-header">
+                <h3 class="tv-panel-title">Checklist Progress</h3>
+            </div>
+            <div class="tv-panel-body">
+                <div class="tv-progress-stack">
+                    <div class="tv-progress-card">
+                        <div class="tv-progress-top">
+                            <div class="tv-progress-title">Before Open / Before 10:30</div>
+                            <div class="tv-progress-metric">
+                                {{ before_open_stats.completed }}/{{ before_open_stats.total }} · {{ before_open_stats.percent }}%
+                            </div>
+                        </div>
+                        <div class="tv-progress-bar">
+                            <div class="tv-progress-fill" style="width: {{ before_open_stats.percent }}%;"></div>
+                        </div>
+                        <div class="tv-progress-status">{{ before_open_stats.status_text }}</div>
+                    </div>
 
+                    <div class="tv-progress-card">
+                        <div class="tv-progress-top">
+                            <div class="tv-progress-title">3-O'Clock Restock</div>
+                            <div class="tv-progress-metric">
+                                {{ restock_stats.completed }}/{{ restock_stats.total }} · {{ restock_stats.percent }}%
+                            </div>
+                        </div>
+                        <div class="tv-progress-bar">
+                            <div class="tv-progress-fill" style="width: {{ restock_stats.percent }}%;"></div>
+                        </div>
+                        <div class="tv-progress-status">{{ restock_stats.status_text }}</div>
+                    </div>
+
+                    <div class="tv-progress-card">
+                        <div class="tv-progress-top">
+                            <div class="tv-progress-title">Manager's Walk</div>
+                            <div class="tv-progress-metric">
+                                {{ manager_walk_stats.completed }}/{{ manager_walk_stats.total }} · {{ manager_walk_stats.percent }}%
+                            </div>
+                        </div>
+                        <div class="tv-progress-bar">
+                            <div class="tv-progress-fill" style="width: {{ manager_walk_stats.percent }}%;"></div>
+                        </div>
+                        <div class="tv-progress-status">{{ manager_walk_stats.status_text }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-{% endif %}
-
 {% endblock %}

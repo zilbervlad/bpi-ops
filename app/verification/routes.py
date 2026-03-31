@@ -1,6 +1,6 @@
 from collections import defaultdict
-from datetime import datetime, date
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from datetime import datetime, date, timedelta
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, Response
 
 from app.auth.routes import login_required, role_required
 from app.extensions import db
@@ -83,11 +83,21 @@ def index():
     return redirect(url_for("verification.new_report"))
 
 
+# =========================
+# 🔥 WEEKLY DASHBOARD (UPDATED)
+# =========================
 @verification_bp.route("/dashboard")
 @login_required
 @role_required("admin")
 def dashboard():
     today = today_et()
+
+    # ✅ WEEK RANGE
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+
+    week_start_label = week_start.strftime("%m/%d")
+    week_end_label = week_end.strftime("%m/%d")
 
     stores = Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
 
@@ -101,14 +111,15 @@ def dashboard():
         if report.store_number not in latest_by_store:
             latest_by_store[report.store_number] = report
 
-    submitted_today_store_numbers = {
+    # ✅ CHANGED FROM "today" → "this week"
+    submitted_this_week_store_numbers = {
         report.store_number
-        for report in latest_by_store.values()
-        if report.report_date == today
+        for report in reports
+        if report.report_date and week_start <= report.report_date <= week_end
     }
 
     total_stores = len(stores)
-    submitted_count = len(submitted_today_store_numbers)
+    submitted_count = len(submitted_this_week_store_numbers)
     missing_count = max(total_stores - submitted_count, 0)
     overall_compliance = round((submitted_count / total_stores) * 100, 1) if total_stores else 0.0
 
@@ -122,7 +133,7 @@ def dashboard():
 
     for area_name, area_stores in sorted(stores_by_area.items()):
         area_store_numbers = {store.store_number for store in area_stores}
-        submitted_area_store_numbers = area_store_numbers & submitted_today_store_numbers
+        submitted_area_store_numbers = area_store_numbers & submitted_this_week_store_numbers
 
         store_count = len(area_stores)
         submitted_area_count = len(submitted_area_store_numbers)
@@ -132,7 +143,7 @@ def dashboard():
         if missing_area_count == 0 and store_count > 0:
             areas_fully_complete += 1
 
-        missing_store_numbers = sorted(list(area_store_numbers - submitted_today_store_numbers))
+        missing_store_numbers = sorted(list(area_store_numbers - submitted_this_week_store_numbers))
 
         area_summary_rows.append({
             "area_name": area_name,
@@ -147,7 +158,10 @@ def dashboard():
         "verification_dashboard.html",
         stores=stores,
         latest_by_store=latest_by_store,
-        today=today,
+        week_start=week_start,
+        week_end=week_end,
+        week_start_label=week_start_label,
+        week_end_label=week_end_label,
         submitted_count=submitted_count,
         missing_count=missing_count,
         total_stores=total_stores,
@@ -157,6 +171,39 @@ def dashboard():
     )
 
 
+# =========================
+# 📂 EXPORT WEEKLY FILE (NEW)
+# =========================
+@verification_bp.route("/export-weekly")
+@login_required
+@role_required("admin")
+def export_weekly_file():
+    today = today_et()
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+
+    reports = VerificationReport.query.filter(
+        VerificationReport.report_date >= week_start,
+        VerificationReport.report_date <= week_end
+    ).order_by(VerificationReport.store_number.asc()).all()
+
+    def generate():
+        yield "Store,Date,Submitted By\n"
+        for r in reports:
+            yield f"{r.store_number},{r.report_date},{r.supervisor_name or ''}\n"
+
+    return Response(
+        generate(),
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition": f"attachment;filename=verification_week_{week_start}.csv"
+        },
+    )
+
+
+# =========================
+# EXISTING (UNCHANGED)
+# =========================
 @verification_bp.route("/new", methods=["GET", "POST"])
 @login_required
 @role_required("admin", "supervisor")

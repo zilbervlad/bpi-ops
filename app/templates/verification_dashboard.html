@@ -7,27 +7,29 @@
 
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-title">Verifications Submitted Today</div>
+        <div class="stat-title">Verifications Submitted This Week</div>
         <div class="stat-value">{{ submitted_count }}</div>
-        <div class="stat-subtext">Unique stores with a verification today</div>
+        <div class="stat-subtext">
+            Unique stores with at least one verification from {{ week_start_label }} to {{ week_end_label }}
+        </div>
     </div>
 
     <div class="stat-card danger">
-        <div class="stat-title">Stores Missing Verification</div>
+        <div class="stat-title">Stores Missing This Week</div>
         <div class="stat-value">{{ missing_count }}</div>
-        <div class="stat-subtext">Visible stores still missing today</div>
+        <div class="stat-subtext">Visible stores still missing a verification this week</div>
     </div>
 
     <div class="stat-card">
         <div class="stat-title">Areas Fully Complete</div>
         <div class="stat-value">{{ areas_fully_complete }}</div>
-        <div class="stat-subtext">Areas with zero missed stores</div>
+        <div class="stat-subtext">Areas with zero missed stores this week</div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-title">Overall Compliance</div>
+        <div class="stat-title">Overall Weekly Compliance</div>
         <div class="stat-value">{{ overall_compliance }}%</div>
-        <div class="stat-subtext">Submitted vs visible store count</div>
+        <div class="stat-subtext">Stores verified this week vs visible store count</div>
     </div>
 </div>
 
@@ -36,12 +38,17 @@
         <div>
             <h3>Area Verification Summary</h3>
             <div class="area-subtitle">
-                Today’s verification compliance by area.
+                Weekly verification compliance by area for {{ week_start_label }} – {{ week_end_label }}.
             </div>
         </div>
 
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <span class="summary-pill">Daily Compliance</span>
+            <span class="summary-pill">Weekly Compliance</span>
+
+            <a href="{{ url_for('verification.export_weekly_file') }}" class="btn-secondary">
+                Download Weekly File
+            </a>
+
             <a href="{{ url_for('verification.new_report') }}" class="btn-primary">
                 + New Verification
             </a>
@@ -104,9 +111,9 @@
 <div class="panel premium-panel" style="margin-top: 24px;">
     <div class="panel-head">
         <div>
-            <h3>Latest Store Status</h3>
+            <h3>Weekly Store Status</h3>
             <div class="area-subtitle">
-                Most recent verification on file for each store.
+                Most recent verification on file for each store during {{ week_start_label }} – {{ week_end_label }}.
             </div>
         </div>
     </div>
@@ -114,7 +121,7 @@
     <div style="margin-top: 20px;">
         {% for store in stores %}
             {% set report = latest_by_store.get(store.store_number) %}
-            {% set is_today = report and report.report_date == today %}
+            {% set is_this_week = report and report.report_date >= week_start and report.report_date <= week_end %}
 
             <div style="
                 display: flex;
@@ -123,8 +130,8 @@
                 padding: 16px 18px;
                 margin-bottom: 12px;
                 border-radius: 12px;
-                background: {% if is_today %}rgba(34, 197, 94, 0.14){% else %}rgba(239, 68, 68, 0.12){% endif %};
-                border: 1px solid {% if is_today %}rgba(34, 197, 94, 0.28){% else %}rgba(239, 68, 68, 0.22){% endif %};
+                background: {% if is_this_week %}rgba(34, 197, 94, 0.14){% else %}rgba(239, 68, 68, 0.12){% endif %};
+                border: 1px solid {% if is_this_week %}rgba(34, 197, 94, 0.28){% else %}rgba(239, 68, 68, 0.22){% endif %};
                 color: white;
             ">
 
@@ -150,13 +157,13 @@
                             {{ report.created_at.strftime("%m/%d %I:%M %p") }}
                         </div>
 
-                        {% if is_today %}
+                        {% if is_this_week %}
                             <div style="font-size: 12px; color: #86efac; margin-top: 5px;">
-                                Submitted today
+                                Submitted this week
                             </div>
                         {% else %}
                             <div style="font-size: 12px; color: #fca5a5; margin-top: 5px;">
-                                Not submitted today
+                                Not submitted this week
                             </div>
                         {% endif %}
                     {% else %}

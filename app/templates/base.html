@@ -74,10 +74,17 @@
                         SVR
                     </a>
 
+                    {% if session.get('user_role') == 'admin' %}
+                    <a href="{{ url_for('verification.dashboard') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('verification') and request.endpoint != 'verification.admin' %}active{% endif %}">
+                        Verification
+                    </a>
+                    {% else %}
                     <a href="{{ url_for('verification.new_report') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('verification') and request.endpoint != 'verification.admin' %}active{% endif %}">
                         Verification
                     </a>
+                    {% endif %}
                     {% endif %}
 
                     {% if session.get('user_role') in ['admin', 'supervisor', 'maintenance'] %}

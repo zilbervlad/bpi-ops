@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 
 from app.auth.routes import login_required, role_required
@@ -14,6 +14,11 @@ from app.services.email_service import send_email
 import os
 
 verification_bp = Blueprint("verification", __name__, url_prefix="/verification")
+
+
+def today_et():
+    from zoneinfo import ZoneInfo
+    return datetime.now(ZoneInfo("America/New_York")).date()
 
 
 def get_supervisor_stores():
@@ -61,18 +66,46 @@ def ensure_default_template():
                 )
             )
 
-    for field in existing.values():
-        if field.field_key not in active_keys:
-            field.is_active = field.is_active
-
     db.session.commit()
 
 
+# 🔥 UPDATED ROOT ROUTE (SAFE SWITCH)
 @verification_bp.route("/")
 @login_required
 @role_required("admin", "supervisor")
 def index():
+    if session.get("user_role") == "admin":
+        return redirect(url_for("verification.dashboard"))
     return redirect(url_for("verification.new_report"))
+
+
+# 🆕 ADMIN DASHBOARD
+@verification_bp.route("/dashboard")
+@login_required
+@role_required("admin")
+def dashboard():
+    today = today_et()
+
+    stores = Store.query.filter_by(is_active=True).order_by(Store.store_number).all()
+
+    reports = (
+        VerificationReport.query
+        .order_by(VerificationReport.created_at.desc())
+        .all()
+    )
+
+    latest_by_store = {}
+
+    for report in reports:
+        if report.store_number not in latest_by_store:
+            latest_by_store[report.store_number] = report
+
+    return render_template(
+        "verification_dashboard.html",
+        stores=stores,
+        latest_by_store=latest_by_store,
+        today=today
+    )
 
 
 @verification_bp.route("/new", methods=["GET", "POST"])
@@ -123,55 +156,6 @@ def new_report():
             )
 
         db.session.commit()
-
-        try:
-            body = f"Verification Report - Store {store_number}\n\n"
-            body += f"Submitted by: {session.get('user_name') or 'Unknown'}\n"
-            body += f"Submitted at: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}\n\n"
-
-            for field in fields:
-                val = (request.form.get(field.field_key) or "").strip()
-                body += f"{field.field_label}:\n{val or '—'}\n\n"
-
-            # ORIGINAL recipient logic (unchanged)
-            to_email = (os.getenv("EMAIL_FROM", "") or os.getenv("EMAIL_USER", "")).strip()
-            if not to_email:
-                raise ValueError("Missing EMAIL_FROM / EMAIL_USER in environment settings.")
-
-            # Supervisor email (unchanged)
-            supervisor_email = None
-            user_id = session.get("user_id")
-            if user_id:
-                submitting_user = User.query.get(user_id)
-                if submitting_user:
-                    supervisor_email = submitting_user.get_notification_email()
-
-            # ✅ ADD ADMIN CC (ONLY CHANGE)
-            admin_users = User.query.filter_by(role="admin", is_active=True).all()
-            admin_emails = [
-                user.get_notification_email()
-                for user in admin_users
-                if user.get_notification_email()
-            ]
-
-            cc_list = []
-
-            if supervisor_email:
-                cc_list.append(supervisor_email)
-
-            for email in admin_emails:
-                if email and email not in cc_list and email != to_email:
-                    cc_list.append(email)
-
-            send_email(
-                to_email=to_email,
-                subject=f"Verification - Store {store_number}",
-                body=body,
-                cc_emails=cc_list if cc_list else None
-            )
-
-        except Exception as e:
-            print("Email failed:", e)
 
         flash("Verification submitted.", "success")
         return redirect(url_for("dashboard.home"))
@@ -245,18 +229,6 @@ def admin():
                 return redirect(url_for("verification.admin"))
 
             field.is_active = request.form.get("is_active") == "on"
-
-            duplicate = VerificationTemplateField.query.filter(
-                VerificationTemplateField.field_key == field.field_key,
-                VerificationTemplateField.id != field.id
-            ).first()
-            if duplicate:
-                flash("That field key already exists.", "error")
-                return redirect(url_for("verification.admin"))
-
-            if not field.field_key or not field.field_label:
-                flash("Field key and label are required.", "error")
-                return redirect(url_for("verification.admin"))
 
             db.session.commit()
             flash("Verification field updated.", "success")

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Verification Dashboard | BPI Ops{% endblock %}
+{% block header %}Verification{% endblock %}
+
+{% block content %}
+
+<div class="panel premium-panel">
+
+    <div class="panel-head">
+        <div>
+            <h3>Verification Status</h3>
+            <div class="area-subtitle">
+                Live view of all stores — who submitted and who is missing.
+            </div>
+        </div>
+
+        <a href="{{ url_for('verification.new_report') }}" class="btn-primary">
+            + New Verification
+        </a>
+    </div>
+
+    <div style="margin-top: 20px;">
+
+        {% for store in stores %}
+            {% set report = latest_by_store.get(store.store_number) %}
+            {% set is_today = report and report.report_date == today %}
+
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px 18px;
+                margin-bottom: 12px;
+                border-radius: 12px;
+                background: {% if is_today %}#0f5132{% else %}#3a1a1a{% endif %};
+                color: white;
+                transition: all 0.2s ease;
+            ">
+
+                <!-- LEFT SIDE -->
+                <div>
+                    <div style="font-size: 16px; font-weight: 600;">
+                        Store {{ store.store_number }}
+                        {% if store.store_name %}
+                            - {{ store.store_name }}
+                        {% endif %}
+                    </div>
+
+                    {% if not report %}
+                        <div style="font-size: 13px; opacity: 0.8;">
+                            No submissions yet
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- RIGHT SIDE -->
+                <div style="text-align: right;">
+
+                    {% if report %}
+                        <div style="font-size: 14px; font-weight: 500;">
+                            {{ report.created_by.name if report.created_by else "Unknown" }}
+                        </div>
+
+                        <div style="font-size: 12px; opacity: 0.85;">
+                            {{ report.created_at.strftime("%m/%d %I:%M %p") }}
+                        </div>
+
+                        {% if not is_today %}
+                            <div style="
+                                font-size: 11px;
+                                margin-top: 4px;
+                                color: #ffb3b3;
+                            ">
+                                Not submitted today
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div style="
+                            font-size: 13px;
+                            font-weight: 500;
+                            color: #ffb3b3;
+                        ">
+                            Missing
+                        </div>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+</div>
+
+{% endblock %}

@@ -42,11 +42,9 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <span class="summary-pill">Weekly Compliance</span>
-
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <a href="{{ url_for('verification.export_weekly_file') }}" class="btn-secondary">
-                Download Weekly File
+                Download Weekly Excel
             </a>
 
             <a href="{{ url_for('verification.new_report') }}" class="btn-primary">
@@ -111,73 +109,44 @@
 <div class="panel premium-panel" style="margin-top: 24px;">
     <div class="panel-head">
         <div>
-            <h3>Weekly Store Status</h3>
+            <h3>Weekly Reports</h3>
             <div class="area-subtitle">
-                Most recent verification on file for each store during {{ week_start_label }} – {{ week_end_label }}.
+                Open any report to see exactly what was submitted.
             </div>
         </div>
     </div>
 
-    <div style="margin-top: 20px;">
-        {% for store in stores %}
-            {% set report = latest_by_store.get(store.store_number) %}
-            {% set is_this_week = report and report.report_date >= week_start and report.report_date <= week_end %}
-
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 16px 18px;
-                margin-bottom: 12px;
-                border-radius: 12px;
-                background: {% if is_this_week %}rgba(34, 197, 94, 0.14){% else %}rgba(239, 68, 68, 0.12){% endif %};
-                border: 1px solid {% if is_this_week %}rgba(34, 197, 94, 0.28){% else %}rgba(239, 68, 68, 0.22){% endif %};
-                color: white;
-            ">
-
-                <div>
-                    <div style="font-size: 16px; font-weight: 700;">
-                        Store {{ store.store_number }}
-                        {% if store.store_name %}
-                            - {{ store.store_name }}
-                        {% endif %}
-                    </div>
-                    <div style="font-size: 13px; opacity: 0.8; margin-top: 4px;">
-                        {{ store.area_name or "Unassigned" }}
-                    </div>
-                </div>
-
-                <div style="text-align: right;">
-                    {% if report %}
-                        <div style="font-size: 14px; font-weight: 600;">
-                            {{ report.created_by.name if report.created_by else (report.supervisor_name or "Unknown") }}
-                        </div>
-
-                        <div style="font-size: 12px; opacity: 0.85; margin-top: 3px;">
-                            {{ report.created_at.strftime("%m/%d %I:%M %p") }}
-                        </div>
-
-                        {% if is_this_week %}
-                            <div style="font-size: 12px; color: #86efac; margin-top: 5px;">
-                                Submitted this week
-                            </div>
-                        {% else %}
-                            <div style="font-size: 12px; color: #fca5a5; margin-top: 5px;">
-                                Not submitted this week
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div style="font-size: 13px; font-weight: 600; color: #fca5a5;">
-                            Missing
-                        </div>
-                        <div style="font-size: 12px; opacity: 0.8; margin-top: 3px;">
-                            No submissions yet
-                        </div>
-                    {% endif %}
-                </div>
-
-            </div>
-        {% endfor %}
+    <div style="overflow-x: auto; margin-top: 18px;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Store</th>
+                    <th>Date</th>
+                    <th>Submitted By</th>
+                    <th>Created At</th>
+                    <th style="width: 140px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in weekly_reports %}
+                <tr>
+                    <td>{{ report.store_number }}</td>
+                    <td>{{ report.report_date.strftime("%m/%d/%Y") if report.report_date else "" }}</td>
+                    <td>{{ report.supervisor_name or "Unknown" }}</td>
+                    <td>{{ report.created_at.strftime("%m/%d/%Y %I:%M %p") if report.created_at else "" }}</td>
+                    <td>
+                        <a href="{{ url_for('verification.view_report', report_id=report.id) }}" class="btn-secondary">
+                            View Report
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align:center; opacity:0.8;">No reports submitted this week.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 

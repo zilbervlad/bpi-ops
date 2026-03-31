@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Verification Report Detail | BPI Ops{% endblock %}
+{% block header %}Verification Report Detail{% endblock %}
+
+{% block content %}
+
+<div class="panel premium-panel">
+    <div class="panel-head">
+        <div>
+            <h3>Store {{ report.store_number }} Verification</h3>
+            <div class="area-subtitle">
+                {% if store %}
+                    {{ store.area_name or "Unassigned" }}
+                    {% if store.store_name %} • {{ store.store_name }}{% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="{{ url_for('verification.dashboard') }}" class="btn-secondary">
+                Back to Dashboard
+            </a>
+            <a href="{{ url_for('verification.new_report') }}" class="btn-primary">
+                + New Verification
+            </a>
+        </div>
+    </div>
+
+    <div style="
+        display:grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap:16px;
+        margin-top:20px;
+    ">
+        <div class="stat-card">
+            <div class="stat-title">Store</div>
+            <div class="stat-value">{{ report.store_number }}</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">Report Date</div>
+            <div class="stat-value" style="font-size: 24px;">
+                {{ report.report_date.strftime("%m/%d/%Y") if report.report_date else "—" }}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">Submitted By</div>
+            <div class="stat-value" style="font-size: 24px;">
+                {{ report.supervisor_name or "Unknown" }}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">Created At</div>
+            <div class="stat-value" style="font-size: 24px;">
+                {{ report.created_at.strftime("%m/%d/%Y %I:%M %p") if report.created_at else "—" }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel premium-panel" style="margin-top: 24px;">
+    <div class="panel-head">
+        <div>
+            <h3>Report Responses</h3>
+            <div class="area-subtitle">
+                Exact answers submitted on this verification.
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 18px;">
+        {% for value in values %}
+            <div style="
+                border: 1px solid rgba(255,255,255,0.08);
+                background: rgba(255,255,255,0.03);
+                border-radius: 14px;
+                padding: 16px 18px;
+                margin-bottom: 14px;
+            ">
+                <div style="
+                    font-size: 14px;
+                    font-weight: 700;
+                    color: #dbe7ff;
+                    margin-bottom: 8px;
+                ">
+                    {{ value.field_label or value.field_key }}
+                </div>
+
+                <div style="
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: rgba(255,255,255,0.92);
+                    white-space: pre-wrap;
+                ">
+                    {{ value.value_text or "—" }}
+                </div>
+            </div>
+        {% else %}
+            <div style="opacity:0.8;">No saved responses found for this report.</div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

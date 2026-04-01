@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Store Dashboard | BPI Ops</title>
+
     <style>
         :root {
             --bg: #dfe4ec;
@@ -14,63 +15,64 @@
             --muted: #5f6f8c;
             --chip-bg: #dfe7fb;
             --chip-text: #294894;
-            --shadow-soft: 0 8px 24px rgba(16, 30, 58, 0.08);
-            --shadow-tile: 0 6px 16px rgba(20, 34, 64, 0.16);
+            --shadow-soft: 0 5px 16px rgba(16, 30, 58, 0.06);
+            --shadow-tile: 0 4px 10px rgba(20, 34, 64, 0.12);
         }
 
         * {
             box-sizing: border-box;
         }
 
-        html, body {
+        html,
+        body {
             margin: 0;
             padding: 0;
             width: 100%;
             min-height: 100%;
             font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background:
-                radial-gradient(circle at top left, rgba(255,255,255,0.55), transparent 30%),
-                radial-gradient(circle at top right, rgba(255,255,255,0.35), transparent 22%),
+                radial-gradient(circle at top left, rgba(255,255,255,0.50), transparent 28%),
+                radial-gradient(circle at top right, rgba(255,255,255,0.28), transparent 20%),
                 linear-gradient(180deg, #e6ebf2 0%, #dfe4ec 100%);
             color: var(--text);
         }
 
         body {
-            padding: 12px;
+            padding: 8px;
         }
 
         .tv-shell {
             display: grid;
-            gap: 12px;
+            gap: 8px;
         }
 
         .tv-topbar {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 14px;
+            gap: 10px;
             flex-wrap: wrap;
         }
 
         .tv-title {
             margin: 0;
-            font-size: 3.35rem;
-            line-height: 0.95;
+            font-size: 2.35rem;
+            line-height: 0.96;
             font-weight: 950;
             letter-spacing: -0.04em;
             color: #14203a;
         }
 
         .tv-subtitle {
-            margin: 6px 0 0 0;
-            font-size: 1.05rem;
+            margin: 4px 0 0 0;
+            font-size: 0.90rem;
             font-weight: 800;
             color: #60718e;
         }
 
         .tv-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -79,61 +81,62 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 9px 16px;
+            padding: 7px 12px;
             border-radius: 999px;
             background: var(--chip-bg);
             color: var(--chip-text);
-            font-size: 0.98rem;
+            font-size: 0.82rem;
             font-weight: 900;
-            box-shadow: inset 0 0 0 1px rgba(41,72,148,0.06);
+            box-shadow: inset 0 0 0 1px rgba(41,72,148,0.05);
         }
 
         .tv-button {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 9px 16px;
-            border-radius: 14px;
+            padding: 7px 12px;
+            border-radius: 10px;
             border: 1px solid #bcc7d9;
             background: rgba(255,255,255,0.92);
             color: #1f2e4e;
             text-decoration: none;
+            font-size: 0.82rem;
             font-weight: 900;
-            box-shadow: 0 3px 8px rgba(18, 35, 74, 0.08);
+            box-shadow: 0 2px 6px rgba(18, 35, 74, 0.06);
             transition: transform 0.12s ease, box-shadow 0.12s ease;
         }
 
         .tv-button:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 12px rgba(18, 35, 74, 0.12);
+            box-shadow: 0 4px 10px rgba(18, 35, 74, 0.10);
         }
 
         .tv-summary {
             background: var(--panel);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(8px);
             border: 1px solid var(--border);
-            border-radius: 22px;
-            padding: 15px 18px;
+            border-radius: 16px;
+            padding: 10px 12px;
             box-shadow: var(--shadow-soft);
         }
 
         .tv-summary-title {
             margin: 0;
-            font-size: 1.18rem;
+            font-size: 1rem;
             font-weight: 950;
             color: #15223d;
         }
 
         .tv-summary-subtitle {
-            margin: 3px 0 12px 0;
-            font-size: 1rem;
+            margin: 2px 0 8px 0;
+            font-size: 0.88rem;
             color: #61708b;
             font-weight: 800;
         }
 
         .tv-pill-row {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
@@ -141,64 +144,64 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 8px 14px;
+            padding: 7px 12px;
             border-radius: 999px;
             background: linear-gradient(180deg, #e7eefc 0%, #dbe5fb 100%);
             color: #27458f;
-            font-size: 0.96rem;
+            font-size: 0.82rem;
             font-weight: 900;
-            box-shadow: inset 0 0 0 1px rgba(39,69,143,0.05);
+            box-shadow: inset 0 0 0 1px rgba(39,69,143,0.04);
         }
 
         .tv-main-grid {
             display: grid;
-            grid-template-columns: 2.9fr 1fr;
-            gap: 12px;
+            grid-template-columns: 3fr 1fr;
+            gap: 8px;
             align-items: start;
         }
 
         .tv-panel {
             background: var(--panel);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(8px);
             border: 1px solid var(--border);
-            border-radius: 22px;
+            border-radius: 16px;
             overflow: hidden;
             box-shadow: var(--shadow-soft);
         }
 
         .tv-panel-header {
-            padding: 12px 14px 10px;
+            padding: 8px 10px 6px;
         }
 
         .tv-panel-title {
             margin: 0;
-            font-size: 1.05rem;
+            font-size: 0.90rem;
             font-weight: 950;
             color: #16233e;
             letter-spacing: -0.01em;
         }
 
         .tv-panel-body {
-            padding: 0 10px 10px 10px;
+            padding: 0 8px 8px 8px;
         }
 
         .tv-heat-grid {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 5px;
             align-items: start;
         }
 
         .tv-tile {
             display: block;
             text-decoration: none;
-            min-height: 92px;
-            padding: 10px 12px;
-            border-radius: 16px;
+            min-height: 66px;
+            padding: 7px 8px;
+            border-radius: 10px;
             color: #ffffff;
             box-shadow:
                 inset 0 0 0 1px rgba(255,255,255,0.14),
-                inset 0 12px 24px rgba(255,255,255,0.06),
+                inset 0 8px 14px rgba(255,255,255,0.05),
                 var(--shadow-tile);
             transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
             position: relative;
@@ -209,22 +212,22 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.00) 42%);
+            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.00) 38%);
             pointer-events: none;
         }
 
         .tv-tile:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.02);
+            transform: translateY(-1px);
+            filter: brightness(1.01);
             box-shadow:
-                inset 0 0 0 1px rgba(255,255,255,0.16),
-                inset 0 12px 24px rgba(255,255,255,0.07),
-                0 10px 18px rgba(20, 34, 64, 0.22);
+                inset 0 0 0 1px rgba(255,255,255,0.15),
+                inset 0 8px 14px rgba(255,255,255,0.06),
+                0 6px 12px rgba(20, 34, 64, 0.14);
         }
 
         .tv-tile.active {
-            outline: 4px solid #1d2743;
-            outline-offset: -3px;
+            outline: 3px solid #1d2743;
+            outline-offset: -2px;
         }
 
         .tile-gray {
@@ -240,25 +243,25 @@
         }
 
         .tv-tile-store {
-            font-size: 1.15rem;
+            font-size: 0.86rem;
             line-height: 1;
             font-weight: 950;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             position: relative;
             z-index: 1;
         }
 
         .tv-tile-percent {
-            font-size: 1.9rem;
+            font-size: 1.28rem;
             line-height: 1;
             font-weight: 950;
-            margin-bottom: 6px;
+            margin-bottom: 3px;
             position: relative;
             z-index: 1;
         }
 
         .tv-tile-status {
-            font-size: 0.76rem;
+            font-size: 0.58rem;
             line-height: 1.05;
             font-weight: 950;
             text-transform: uppercase;
@@ -270,91 +273,92 @@
 
         .tv-side {
             display: grid;
-            gap: 12px;
+            gap: 8px;
             align-content: start;
         }
 
         .tv-scroll-box {
-            padding: 0 10px 10px 10px;
-            height: 260px;
-            overflow: hidden;
-            position: relative;
+            padding: 0 8px 8px 8px;
+            max-height: 210px;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .tv-scroll-track {
             display: grid;
-            gap: 8px;
-            will-change: transform;
+            gap: 6px;
         }
 
         .tv-list-item {
             border: 1px solid #d8e0ec;
-            border-radius: 12px;
+            border-radius: 10px;
             background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
-            padding: 11px 12px;
+            padding: 8px 9px;
             color: #4f6284;
+            font-size: 0.78rem;
             font-weight: 800;
-            line-height: 1.25;
-            box-shadow: 0 2px 6px rgba(18, 35, 74, 0.05);
+            line-height: 1.2;
+            box-shadow: 0 1px 4px rgba(18, 35, 74, 0.04);
         }
 
         .tv-empty {
             border: 1px dashed #cfd8e5;
-            border-radius: 12px;
+            border-radius: 10px;
             background: #f9fbff;
-            padding: 12px;
+            padding: 10px;
             color: #617392;
+            font-size: 0.78rem;
             font-weight: 800;
         }
 
         .tv-bottom {
             display: grid;
-            grid-template-columns: 2.9fr 1fr;
-            gap: 12px;
+            grid-template-columns: 3fr 1fr;
+            gap: 8px;
         }
 
         .tv-progress-stack {
             display: grid;
-            gap: 10px;
-            padding: 0 10px 10px 10px;
+            gap: 8px;
+            padding: 0 8px 8px 8px;
         }
 
         .tv-progress-card {
             border: 1px solid #d7dfea;
-            border-radius: 14px;
+            border-radius: 12px;
             background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,250,255,0.92) 100%);
-            padding: 12px 14px;
-            box-shadow: 0 2px 8px rgba(18, 35, 74, 0.05);
+            padding: 9px 10px;
+            box-shadow: 0 1px 5px rgba(18, 35, 74, 0.04);
         }
 
         .tv-progress-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
+            gap: 8px;
+            margin-bottom: 6px;
         }
 
         .tv-progress-title {
-            font-size: 1rem;
+            font-size: 0.86rem;
             font-weight: 950;
             color: #1a2741;
         }
 
         .tv-progress-metric {
-            font-size: 0.96rem;
+            font-size: 0.80rem;
             font-weight: 900;
             color: #455a7c;
         }
 
         .tv-progress-bar {
             width: 100%;
-            height: 14px;
+            height: 10px;
             border-radius: 999px;
             background: #dbe3ef;
             overflow: hidden;
-            margin-bottom: 8px;
-            box-shadow: inset 0 1px 3px rgba(16, 30, 58, 0.08);
+            margin-bottom: 6px;
+            box-shadow: inset 0 1px 2px rgba(16, 30, 58, 0.06);
         }
 
         .tv-progress-fill {
@@ -364,49 +368,49 @@
         }
 
         .tv-progress-status {
-            font-size: 0.94rem;
+            font-size: 0.78rem;
             color: #647799;
             font-weight: 800;
         }
 
         @media (min-width: 1900px) {
             body {
-                padding: 16px;
+                padding: 12px;
             }
 
             .tv-title {
-                font-size: 4rem;
+                font-size: 2.85rem;
             }
 
             .tv-subtitle {
-                font-size: 1.15rem;
+                font-size: 0.96rem;
             }
 
             .tv-heat-grid {
-                grid-template-columns: repeat(5, minmax(0, 1fr));
+                grid-template-columns: repeat(6, minmax(0, 1fr));
             }
 
             .tv-tile {
-                min-height: 108px;
-                padding: 12px 14px;
+                min-height: 76px;
+                padding: 8px 9px;
             }
 
             .tv-tile-store {
-                font-size: 1.28rem;
+                font-size: 0.92rem;
             }
 
             .tv-tile-percent {
-                font-size: 2.2rem;
+                font-size: 1.45rem;
             }
 
             .tv-scroll-box {
-                height: 300px;
+                max-height: 240px;
             }
         }
 
         @media (max-width: 1400px) {
             .tv-heat-grid {
-                grid-template-columns: repeat(4, minmax(0, 1fr));
+                grid-template-columns: repeat(5, minmax(0, 1fr));
             }
         }
 
@@ -423,11 +427,15 @@
 
         @media (max-width: 800px) {
             body {
-                padding: 8px;
+                padding: 6px;
             }
 
             .tv-title {
-                font-size: 2.2rem;
+                font-size: 1.95rem;
+            }
+
+            .tv-subtitle {
+                font-size: 0.82rem;
             }
 
             .tv-heat-grid {
@@ -439,7 +447,7 @@
             }
 
             .tv-scroll-box {
-                height: 200px;
+                max-height: 180px;
             }
         }
 
@@ -449,13 +457,14 @@
             }
 
             .tv-title {
-                font-size: 1.7rem;
+                font-size: 1.55rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="tv-shell">
+
         <div class="tv-topbar">
             <div>
                 <h1 class="tv-title">Store Dashboard</h1>
@@ -488,6 +497,7 @@
                 <div class="tv-panel-header">
                     <h3 class="tv-panel-title">Company Heat Map</h3>
                 </div>
+
                 <div class="tv-panel-body">
                     <div class="tv-heat-grid">
                         {% for tile in heat_map %}
@@ -507,12 +517,10 @@
                     <div class="tv-panel-header">
                         <h3 class="tv-panel-title">Cleaning List</h3>
                     </div>
+
                     <div class="tv-scroll-box">
                         {% if cleaning_items %}
-                        <div class="tv-scroll-track auto-scroll" data-duplicate="true">
-                            {% for item in cleaning_items %}
-                            <div class="tv-list-item">{{ item.item_text }}</div>
-                            {% endfor %}
+                        <div class="tv-scroll-track">
                             {% for item in cleaning_items %}
                             <div class="tv-list-item">{{ item.item_text }}</div>
                             {% endfor %}
@@ -527,12 +535,10 @@
                     <div class="tv-panel-header">
                         <h3 class="tv-panel-title">Goals</h3>
                     </div>
+
                     <div class="tv-scroll-box">
                         {% if goal_items %}
-                        <div class="tv-scroll-track auto-scroll" data-duplicate="true">
-                            {% for item in goal_items %}
-                            <div class="tv-list-item">{{ item.item_text }}</div>
-                            {% endfor %}
+                        <div class="tv-scroll-track">
                             {% for item in goal_items %}
                             <div class="tv-list-item">{{ item.item_text }}</div>
                             {% endfor %}
@@ -550,6 +556,7 @@
                 <div class="tv-panel-header">
                     <h3 class="tv-panel-title">Checklist Progress</h3>
                 </div>
+
                 <div class="tv-progress-stack">
                     <div class="tv-progress-card">
                         <div class="tv-progress-top">
@@ -558,9 +565,11 @@
                                 {{ before_open_stats.completed }}/{{ before_open_stats.total }} · {{ before_open_stats.percent }}%
                             </div>
                         </div>
+
                         <div class="tv-progress-bar">
                             <div class="tv-progress-fill" style="width: {{ before_open_stats.percent }}%;"></div>
                         </div>
+
                         <div class="tv-progress-status">{{ before_open_stats.status_text }}</div>
                     </div>
 
@@ -571,9 +580,11 @@
                                 {{ restock_stats.completed }}/{{ restock_stats.total }} · {{ restock_stats.percent }}%
                             </div>
                         </div>
+
                         <div class="tv-progress-bar">
                             <div class="tv-progress-fill" style="width: {{ restock_stats.percent }}%;"></div>
                         </div>
+
                         <div class="tv-progress-status">{{ restock_stats.status_text }}</div>
                     </div>
 
@@ -584,9 +595,11 @@
                                 {{ manager_walk_stats.completed }}/{{ manager_walk_stats.total }} · {{ manager_walk_stats.percent }}%
                             </div>
                         </div>
+
                         <div class="tv-progress-bar">
                             <div class="tv-progress-fill" style="width: {{ manager_walk_stats.percent }}%;"></div>
                         </div>
+
                         <div class="tv-progress-status">{{ manager_walk_stats.status_text }}</div>
                     </div>
                 </div>
@@ -595,34 +608,5 @@
             <div></div>
         </div>
     </div>
-
-    <script>
-        (function () {
-            function setupAutoScroll(container) {
-                if (!container) return;
-
-                const contentHeight = container.scrollHeight / 2;
-                if (!contentHeight || contentHeight <= container.parentElement.clientHeight) {
-                    return;
-                }
-
-                let position = 0;
-                const speed = 0.35;
-
-                function step() {
-                    position += speed;
-                    if (position >= contentHeight) {
-                        position = 0;
-                    }
-                    container.style.transform = `translateY(-${position}px)`;
-                    requestAnimationFrame(step);
-                }
-
-                requestAnimationFrame(step);
-            }
-
-            document.querySelectorAll(".auto-scroll").forEach(setupAutoScroll);
-        })();
-    </script>
 </body>
 </html>

@@ -94,6 +94,48 @@ def calculate_section_stats(daily, section_name):
     }
 
 
+def build_heat_map(today):
+    all_stores = Store.query.filter_by(is_active=True).order_by(
+        Store.area_name.asc(),
+        Store.store_number.asc()
+    ).all()
+
+    all_daily = DailyChecklist.query.filter_by(
+        checklist_date=today
+    ).all()
+
+    daily_by_store = {row.store_number: row for row in all_daily}
+
+    heat_map = []
+
+    for store in all_stores:
+        daily = daily_by_store.get(store.store_number)
+
+        percent = int(round(daily.percent_complete)) if daily else 0
+        status = daily.status if daily else "not_started"
+
+        if status == "completed":
+            tile_class = "tile-green"
+            status_label = "Completed"
+        elif status == "in_progress":
+            tile_class = "tile-red"
+            status_label = "In Progress"
+        else:
+            tile_class = "tile-gray"
+            status_label = "Not Started"
+
+        heat_map.append({
+            "store_number": store.store_number,
+            "store_name": store.store_name or f"Store {store.store_number}",
+            "percent": percent,
+            "status": status,
+            "status_label": status_label,
+            "tile_class": tile_class,
+        })
+
+    return heat_map, daily_by_store
+
+
 @store_dashboard_bp.route("/")
 @login_required
 def index():
@@ -128,17 +170,7 @@ def detail(store_number):
         is_active=True
     ).first_or_404()
 
-    all_stores = Store.query.filter_by(is_active=True).order_by(
-        Store.area_name.asc(),
-        Store.store_number.asc()
-    ).all()
-
-    all_daily = DailyChecklist.query.filter_by(
-        checklist_date=today
-    ).all()
-
-    daily_by_store = {row.store_number: row for row in all_daily}
-
+    heat_map, daily_by_store = build_heat_map(today)
     selected_daily = daily_by_store.get(store_number)
 
     overall_completion = int(round(selected_daily.percent_complete)) if selected_daily else 0
@@ -174,30 +206,6 @@ def detail(store_number):
     before_open_stats = calculate_section_stats(selected_daily, "Before Open / Before 10:30")
     restock_stats = calculate_section_stats(selected_daily, "3-O'Clock Restock")
     manager_walk_stats = calculate_section_stats(selected_daily, "Manager's Walk")
-
-    heat_map = []
-    for store in all_stores:
-        daily = daily_by_store.get(store.store_number)
-
-        percent = int(round(daily.percent_complete)) if daily else 0
-        status = daily.status if daily else "not_started"
-
-        if status == "completed":
-            tile_class = "tile-green"
-            status_label = "Completed"
-        elif status == "in_progress":
-            tile_class = "tile-red"
-            status_label = "In Progress"
-        else:
-            tile_class = "tile-gray"
-            status_label = "Not Started"
-
-        heat_map.append({
-            "store_number": store.store_number,
-            "percent": percent,
-            "status_label": status_label,
-            "tile_class": tile_class,
-        })
 
     return render_template(
         "store_dashboard/index.html",

@@ -5,12 +5,12 @@
 
 {% block content %}
 <style>
-    .tv-board {
+    .store-tv-wrap {
         display: grid;
         gap: 12px;
     }
 
-    .tv-topbar {
+    .store-tv-topbar {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
@@ -18,245 +18,261 @@
         flex-wrap: wrap;
     }
 
-    .tv-title-wrap h1,
-    .tv-title-wrap h2,
-    .tv-title-wrap h3,
-    .tv-title-wrap p {
+    .store-tv-title {
         margin: 0;
-    }
-
-    .tv-page-title {
         font-size: 2.5rem;
-        font-weight: 800;
         line-height: 1;
-        margin-bottom: 4px;
-        color: #182540;
+        font-weight: 800;
+        color: #16233e;
     }
 
-    .tv-page-subtitle {
+    .store-tv-subtitle {
+        margin: 4px 0 0 0;
+        color: #5d6f8c;
         font-size: 1rem;
         font-weight: 700;
-        color: #5f6f8c;
     }
 
-    .tv-top-actions {
+    .store-tv-top-actions {
         display: flex;
         align-items: center;
         gap: 10px;
         flex-wrap: wrap;
     }
 
-    .tv-chip {
+    .store-tv-chip {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        justify-content: center;
         padding: 8px 14px;
         border-radius: 999px;
         background: #dfe7fb;
-        color: #27458f;
+        color: #294894;
         font-size: 0.95rem;
         font-weight: 800;
     }
 
-    .tv-button {
+    .store-tv-button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         padding: 9px 16px;
         border-radius: 12px;
+        border: 1px solid #bcc7d9;
         background: #ffffff;
-        border: 1px solid #b9c3d6;
-        color: #24314d;
-        font-weight: 700;
+        color: #1f2e4e;
         text-decoration: none;
-    }
-
-    .tv-summary-card {
-        background: #ffffff;
-        border: 1px solid #d6dde8;
-        border-radius: 20px;
-        padding: 18px 18px 14px;
-        box-shadow: 0 4px 14px rgba(18, 35, 74, 0.06);
-    }
-
-    .tv-summary-title {
-        font-size: 1.15rem;
         font-weight: 800;
-        margin: 0 0 2px 0;
+    }
+
+    .store-tv-summary {
+        background: #ffffff;
+        border: 1px solid #d5deea;
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: 0 2px 10px rgba(18, 35, 74, 0.05);
+    }
+
+    .store-tv-summary-title {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 800;
         color: #16233e;
     }
 
-    .tv-summary-subtitle {
-        margin: 0 0 14px 0;
-        color: #586987;
+    .store-tv-summary-subtitle {
+        margin: 2px 0 12px 0;
+        color: #5d6f8c;
+        font-size: 0.98rem;
         font-weight: 700;
     }
 
-    .tv-pill-row {
+    .store-tv-pill-row {
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
     }
 
-    .tv-pill {
-        background: #dfe7fb;
-        color: #284690;
+    .store-tv-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 14px;
         border-radius: 999px;
-        padding: 9px 14px;
-        font-size: 0.95rem;
+        background: #dfe7fb;
+        color: #294894;
+        font-size: 0.94rem;
         font-weight: 800;
     }
 
-    .tv-main-grid {
+    .store-tv-switcher {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+
+    .store-tv-switcher a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 58px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        text-decoration: none;
+        background: #edf2fb;
+        color: #294894;
+        font-weight: 800;
+        font-size: 0.9rem;
+    }
+
+    .store-tv-switcher a.active {
+        background: #294894;
+        color: #ffffff;
+    }
+
+    .store-tv-main {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 420px;
+        grid-template-columns: 2.8fr 1fr;
         gap: 12px;
         align-items: stretch;
     }
 
-    .tv-panel {
+    .store-tv-panel {
         background: #ffffff;
-        border: 1px solid #d6dde8;
-        border-radius: 20px;
-        box-shadow: 0 4px 14px rgba(18, 35, 74, 0.06);
+        border: 1px solid #d5deea;
+        border-radius: 18px;
+        box-shadow: 0 2px 10px rgba(18, 35, 74, 0.05);
         overflow: hidden;
     }
 
-    .tv-panel-header {
-        padding: 14px 16px 10px;
-        border-bottom: 1px solid #e5ebf4;
+    .store-tv-panel-header {
+        padding: 12px 14px 8px;
     }
 
-    .tv-panel-title {
+    .store-tv-panel-title {
         margin: 0;
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         font-weight: 800;
-        color: #182540;
+        color: #16233e;
     }
 
-    .tv-panel-body {
-        padding: 12px;
+    .store-tv-panel-body {
+        padding: 0 12px 12px 12px;
     }
 
-    .tv-heatmap-grid {
+    .store-tv-heat-grid {
         display: grid;
         grid-template-columns: repeat(6, minmax(0, 1fr));
-        gap: 6px;
+        gap: 4px;
+        align-items: start;
     }
 
-    .tv-tile {
+    .store-tv-tile {
         display: block;
         text-decoration: none;
-        border-radius: 12px;
-        min-height: 84px;
-        padding: 10px 10px 8px;
+        min-height: 56px;
+        padding: 8px 10px;
+        border-radius: 10px;
         color: #ffffff;
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15), 0 2px 8px rgba(20, 34, 64, 0.10);
-        transition: transform 0.12s ease, box-shadow 0.12s ease;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16), 0 1px 4px rgba(24, 38, 71, 0.14);
     }
 
-    .tv-tile:hover {
-        transform: translateY(-1px);
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 4px 12px rgba(20, 34, 64, 0.16);
-    }
-
-    .tv-tile.active-tile {
-        outline: 3px solid #1b2340;
-        outline-offset: -3px;
+    .store-tv-tile.active {
+        outline: 3px solid #1d2743;
+        outline-offset: -2px;
     }
 
     .tile-gray {
-        background: linear-gradient(180deg, #a3b1c7 0%, #7f90ab 100%);
+        background: linear-gradient(180deg, #9eacc3 0%, #7b8ca8 100%);
     }
 
     .tile-red {
-        background: linear-gradient(180deg, #ff5a5f 0%, #ea2d2f 100%);
+        background: linear-gradient(180deg, #ff565c 0%, #e92628 100%);
     }
 
     .tile-green {
-        background: linear-gradient(180deg, #42c58a 0%, #229a63 100%);
+        background: linear-gradient(180deg, #45c78d 0%, #239c66 100%);
     }
 
-    .tv-tile-store {
-        font-size: 1.25rem;
-        font-weight: 900;
+    .store-tv-tile-store {
+        font-size: 1rem;
         line-height: 1;
+        font-weight: 900;
         margin-bottom: 4px;
     }
 
-    .tv-tile-percent {
-        font-size: 1.6rem;
-        font-weight: 900;
+    .store-tv-tile-percent {
+        font-size: 1.35rem;
         line-height: 1;
-        margin-bottom: 4px;
+        font-weight: 900;
+        margin-bottom: 3px;
     }
 
-    .tv-tile-status {
-        font-size: 0.83rem;
+    .store-tv-tile-status {
+        font-size: 0.74rem;
+        line-height: 1.05;
         font-weight: 900;
-        line-height: 1.1;
-        letter-spacing: 0.02em;
         text-transform: uppercase;
+        letter-spacing: 0.02em;
     }
 
-    .tv-side-stack {
+    .store-tv-side {
         display: grid;
-        gap: 12px;
+        gap: 10px;
+        align-content: start;
     }
 
-    .tv-scroll-panel {
-        min-height: 0;
-    }
-
-    .tv-scroll-body {
-        padding: 10px 12px 12px;
-        height: 182px;
+    .store-tv-scroll-box {
+        padding: 0 12px 12px 12px;
+        height: 118px;
         overflow-y: auto;
     }
 
-    .tv-list {
+    .store-tv-list {
         display: grid;
         gap: 8px;
     }
 
-    .tv-list-item {
-        border: 1px dashed #cfd8e6;
-        border-radius: 12px;
-        padding: 11px 12px;
+    .store-tv-list-item {
+        border: 1px dashed #cfd8e5;
+        border-radius: 10px;
         background: #f9fbff;
-        color: #2d3d5d;
+        padding: 10px 12px;
+        color: #617392;
         font-weight: 700;
         line-height: 1.25;
     }
 
-    .tv-empty {
-        border: 1px dashed #cfd8e6;
-        border-radius: 12px;
-        padding: 12px;
+    .store-tv-empty {
+        border: 1px dashed #cfd8e5;
+        border-radius: 10px;
         background: #f9fbff;
-        color: #7184a4;
+        padding: 10px 12px;
+        color: #617392;
         font-weight: 700;
     }
 
-    .tv-bottom-grid {
+    .store-tv-bottom {
         display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: 2.8fr 1fr;
         gap: 12px;
     }
 
-    .tv-progress-stack {
+    .store-tv-progress-stack {
         display: grid;
-        gap: 10px;
+        gap: 8px;
+        padding: 0 12px 12px 12px;
     }
 
-    .tv-progress-card {
-        border: 1px solid #dbe2ee;
-        border-radius: 14px;
-        padding: 10px 12px;
+    .store-tv-progress-card {
+        border: 1px solid #d7dfea;
+        border-radius: 12px;
         background: #fbfcff;
+        padding: 10px 12px;
     }
 
-    .tv-progress-top {
+    .store-tv-progress-top {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -264,142 +280,115 @@
         margin-bottom: 8px;
     }
 
-    .tv-progress-title {
-        font-size: 1rem;
+    .store-tv-progress-title {
+        font-size: 0.98rem;
         font-weight: 800;
-        color: #1c2943;
+        color: #1a2741;
     }
 
-    .tv-progress-metric {
+    .store-tv-progress-metric {
         font-size: 0.95rem;
         font-weight: 800;
-        color: #445779;
+        color: #455a7c;
     }
 
-    .tv-progress-bar {
+    .store-tv-progress-bar {
         width: 100%;
-        height: 14px;
-        background: #dbe3ef;
+        height: 12px;
         border-radius: 999px;
+        background: #dbe3ef;
         overflow: hidden;
         margin-bottom: 8px;
     }
 
-    .tv-progress-fill {
+    .store-tv-progress-fill {
         height: 100%;
         border-radius: 999px;
-        background: linear-gradient(90deg, #6e8dff 0%, #3656c9 100%);
+        background: #c4cfdf;
     }
 
-    .tv-progress-status {
-        font-size: 0.95rem;
+    .store-tv-progress-status {
+        font-size: 0.94rem;
         color: #647799;
         font-weight: 700;
     }
 
-    .tv-store-switcher {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-top: 10px;
-    }
-
-    .tv-store-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 8px 12px;
-        border-radius: 999px;
-        text-decoration: none;
-        background: #edf2fb;
-        color: #29417f;
-        font-weight: 800;
-        font-size: 0.92rem;
-    }
-
-    .tv-store-link.active {
-        background: #29417f;
-        color: #ffffff;
-    }
-
     @media (max-width: 1400px) {
-        .tv-heatmap-grid {
+        .store-tv-heat-grid {
             grid-template-columns: repeat(5, minmax(0, 1fr));
         }
     }
 
     @media (max-width: 1200px) {
-        .tv-main-grid {
+        .store-tv-main,
+        .store-tv-bottom {
             grid-template-columns: 1fr;
         }
 
-        .tv-side-stack {
+        .store-tv-side {
             grid-template-columns: 1fr 1fr;
         }
     }
 
     @media (max-width: 900px) {
-        .tv-heatmap-grid {
+        .store-tv-heat-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
-        .tv-side-stack {
+        .store-tv-side {
             grid-template-columns: 1fr;
         }
 
-        .tv-page-title {
+        .store-tv-title {
             font-size: 2rem;
         }
     }
 
     @media (max-width: 640px) {
-        .tv-heatmap-grid {
+        .store-tv-heat-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        .tv-page-title {
-            font-size: 1.8rem;
-        }
-
-        .tv-scroll-body {
-            height: 170px;
+        .store-tv-title {
+            font-size: 1.7rem;
         }
     }
 </style>
 
-<div class="tv-board">
-    <div class="tv-topbar">
-        <div class="tv-title-wrap">
-            <div class="tv-page-title">Store Dashboard</div>
-            <div class="tv-page-subtitle">
-                Store {{ selected_store.store_number }} · {{ today.strftime('%B %-d, %Y') if today else '' }}
-            </div>
+<div class="store-tv-wrap">
+    <div class="store-tv-topbar">
+        <div>
+            <h1 class="store-tv-title">Store Dashboard</h1>
+            <p class="store-tv-subtitle">
+                Store {{ selected_store.store_number }} · {{ today.strftime('%B %d, %Y') }}
+            </p>
         </div>
 
-        <div class="tv-top-actions">
-            <div class="tv-chip">Company Heat Map: {{ heat_map|length }} Stores</div>
+        <div class="store-tv-top-actions">
+            <div class="store-tv-chip">Company Heat Map: {{ heat_map|length }} Stores</div>
+            <a href="{{ url_for('dashboard.home') }}" class="store-tv-button">Exit TV Mode</a>
         </div>
     </div>
 
-    <div class="tv-summary-card">
-        <div class="tv-summary-title">
-            Store {{ selected_store.store_number }}{% if selected_store.store_name %} · {{ selected_store.store_name }}{% endif %}
-        </div>
-        <div class="tv-summary-subtitle">
-            Store {{ selected_store.store_number }} · {{ today.strftime('%B %-d, %Y') if today else '' }}
-        </div>
+    <div class="store-tv-summary">
+        <h2 class="store-tv-summary-title">
+            Store {{ selected_store.store_number }}
+        </h2>
+        <p class="store-tv-summary-subtitle">
+            Store {{ selected_store.store_number }} · {{ today.strftime('%B %d, %Y') }}
+        </p>
 
-        <div class="tv-pill-row">
-            <div class="tv-pill">Overall Completion: {{ overall_completion }}%</div>
-            <div class="tv-pill">Checklist Status: {{ checklist_status_label }}</div>
-            <div class="tv-pill">Manager: {{ manager_name }}</div>
+        <div class="store-tv-pill-row">
+            <div class="store-tv-pill">Overall Completion: {{ overall_completion }}%</div>
+            <div class="store-tv-pill">Checklist Status: {{ checklist_status_label }}</div>
+            <div class="store-tv-pill">Manager: {{ manager_name }}</div>
         </div>
 
         {% if not is_manager %}
-        <div class="tv-store-switcher">
+        <div class="store-tv-switcher">
             {% for store in visible_stores %}
             <a href="{{ url_for('store_dashboard.detail', store_number=store.store_number) }}"
-               class="tv-store-link {% if store.store_number == selected_store.store_number %}active{% endif %}">
+               class="{% if store.store_number == selected_store.store_number %}active{% endif %}">
                 {{ store.store_number }}
             </a>
             {% endfor %}
@@ -407,110 +396,110 @@
         {% endif %}
     </div>
 
-    <div class="tv-main-grid">
-        <div class="tv-panel">
-            <div class="tv-panel-header">
-                <h3 class="tv-panel-title">Company Heat Map</h3>
+    <div class="store-tv-main">
+        <div class="store-tv-panel">
+            <div class="store-tv-panel-header">
+                <h3 class="store-tv-panel-title">Company Heat Map</h3>
             </div>
-            <div class="tv-panel-body">
-                <div class="tv-heatmap-grid">
+            <div class="store-tv-panel-body">
+                <div class="store-tv-heat-grid">
                     {% for tile in heat_map %}
                     <a href="{{ url_for('store_dashboard.detail', store_number=tile.store_number) }}"
-                       class="tv-tile {{ tile.tile_class }} {% if tile.store_number == selected_store.store_number %}active-tile{% endif %}">
-                        <div class="tv-tile-store">{{ tile.store_number }}</div>
-                        <div class="tv-tile-percent">{{ tile.percent }}%</div>
-                        <div class="tv-tile-status">{{ tile.status_label }}</div>
+                       class="store-tv-tile {{ tile.tile_class }} {% if tile.store_number == selected_store.store_number %}active{% endif %}">
+                        <div class="store-tv-tile-store">{{ tile.store_number }}</div>
+                        <div class="store-tv-tile-percent">{{ tile.percent }}%</div>
+                        <div class="store-tv-tile-status">{{ tile.status_label }}</div>
                     </a>
                     {% endfor %}
                 </div>
             </div>
         </div>
 
-        <div class="tv-side-stack">
-            <div class="tv-panel tv-scroll-panel">
-                <div class="tv-panel-header">
-                    <h3 class="tv-panel-title">Cleaning List</h3>
+        <div class="store-tv-side">
+            <div class="store-tv-panel">
+                <div class="store-tv-panel-header">
+                    <h3 class="store-tv-panel-title">Cleaning List</h3>
                 </div>
-                <div class="tv-scroll-body">
+                <div class="store-tv-scroll-box">
                     {% if cleaning_items %}
-                    <div class="tv-list">
-                        {% for item in cleaning_items[:5] %}
-                        <div class="tv-list-item">{{ item.item_text }}</div>
+                    <div class="store-tv-list">
+                        {% for item in cleaning_items %}
+                        <div class="store-tv-list-item">{{ item.item_text }}</div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="tv-empty">No cleaning list items found for this store yet.</div>
+                    <div class="store-tv-empty">No cleaning list items found for this store yet.</div>
                     {% endif %}
                 </div>
             </div>
 
-            <div class="tv-panel tv-scroll-panel">
-                <div class="tv-panel-header">
-                    <h3 class="tv-panel-title">Goals</h3>
+            <div class="store-tv-panel">
+                <div class="store-tv-panel-header">
+                    <h3 class="store-tv-panel-title">Goals</h3>
                 </div>
-                <div class="tv-scroll-body">
+                <div class="store-tv-scroll-box">
                     {% if goal_items %}
-                    <div class="tv-list">
-                        {% for item in goal_items[:5] %}
-                        <div class="tv-list-item">{{ item.item_text }}</div>
+                    <div class="store-tv-list">
+                        {% for item in goal_items %}
+                        <div class="store-tv-list-item">{{ item.item_text }}</div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="tv-empty">No goals found for this store yet.</div>
+                    <div class="store-tv-empty">No goals found for this store yet.</div>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="tv-bottom-grid">
-        <div class="tv-panel">
-            <div class="tv-panel-header">
-                <h3 class="tv-panel-title">Checklist Progress</h3>
+    <div class="store-tv-bottom">
+        <div class="store-tv-panel">
+            <div class="store-tv-panel-header">
+                <h3 class="store-tv-panel-title">Checklist Progress</h3>
             </div>
-            <div class="tv-panel-body">
-                <div class="tv-progress-stack">
-                    <div class="tv-progress-card">
-                        <div class="tv-progress-top">
-                            <div class="tv-progress-title">Before Open / Before 10:30</div>
-                            <div class="tv-progress-metric">
-                                {{ before_open_stats.completed }}/{{ before_open_stats.total }} · {{ before_open_stats.percent }}%
-                            </div>
+            <div class="store-tv-progress-stack">
+                <div class="store-tv-progress-card">
+                    <div class="store-tv-progress-top">
+                        <div class="store-tv-progress-title">Before Open / Before 10:30</div>
+                        <div class="store-tv-progress-metric">
+                            {{ before_open_stats.completed }}/{{ before_open_stats.total }} · {{ before_open_stats.percent }}%
                         </div>
-                        <div class="tv-progress-bar">
-                            <div class="tv-progress-fill" style="width: {{ before_open_stats.percent }}%;"></div>
-                        </div>
-                        <div class="tv-progress-status">{{ before_open_stats.status_text }}</div>
                     </div>
+                    <div class="store-tv-progress-bar">
+                        <div class="store-tv-progress-fill" style="width: {{ before_open_stats.percent }}%;"></div>
+                    </div>
+                    <div class="store-tv-progress-status">{{ before_open_stats.status_text }}</div>
+                </div>
 
-                    <div class="tv-progress-card">
-                        <div class="tv-progress-top">
-                            <div class="tv-progress-title">3-O'Clock Restock</div>
-                            <div class="tv-progress-metric">
-                                {{ restock_stats.completed }}/{{ restock_stats.total }} · {{ restock_stats.percent }}%
-                            </div>
+                <div class="store-tv-progress-card">
+                    <div class="store-tv-progress-top">
+                        <div class="store-tv-progress-title">3-O'Clock Restock</div>
+                        <div class="store-tv-progress-metric">
+                            {{ restock_stats.completed }}/{{ restock_stats.total }} · {{ restock_stats.percent }}%
                         </div>
-                        <div class="tv-progress-bar">
-                            <div class="tv-progress-fill" style="width: {{ restock_stats.percent }}%;"></div>
-                        </div>
-                        <div class="tv-progress-status">{{ restock_stats.status_text }}</div>
                     </div>
+                    <div class="store-tv-progress-bar">
+                        <div class="store-tv-progress-fill" style="width: {{ restock_stats.percent }}%;"></div>
+                    </div>
+                    <div class="store-tv-progress-status">{{ restock_stats.status_text }}</div>
+                </div>
 
-                    <div class="tv-progress-card">
-                        <div class="tv-progress-top">
-                            <div class="tv-progress-title">Manager's Walk</div>
-                            <div class="tv-progress-metric">
-                                {{ manager_walk_stats.completed }}/{{ manager_walk_stats.total }} · {{ manager_walk_stats.percent }}%
-                            </div>
+                <div class="store-tv-progress-card">
+                    <div class="store-tv-progress-top">
+                        <div class="store-tv-progress-title">Manager's Walk</div>
+                        <div class="store-tv-progress-metric">
+                            {{ manager_walk_stats.completed }}/{{ manager_walk_stats.total }} · {{ manager_walk_stats.percent }}%
                         </div>
-                        <div class="tv-progress-bar">
-                            <div class="tv-progress-fill" style="width: {{ manager_walk_stats.percent }}%;"></div>
-                        </div>
-                        <div class="tv-progress-status">{{ manager_walk_stats.status_text }}</div>
                     </div>
+                    <div class="store-tv-progress-bar">
+                        <div class="store-tv-progress-fill" style="width: {{ manager_walk_stats.percent }}%;"></div>
+                    </div>
+                    <div class="store-tv-progress-status">{{ manager_walk_stats.status_text }}</div>
                 </div>
             </div>
         </div>
+
+        <div></div>
     </div>
 </div>
 {% endblock %}

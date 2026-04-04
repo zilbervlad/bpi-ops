@@ -4,10 +4,11 @@
 {% block header %}Create SVR Report{% endblock %}
 
 {% block content %}
-<form method="POST" class="panel premium-panel">
+<form method="POST" class="panel premium-panel" id="svr-form">
     <div class="panel-head">
         <h3>Supervisor Visit Report</h3>
         <span class="summary-pill">Supervisor Only</span>
+        <span id="save-status" style="margin-left:10px;font-size:12px;color:#94a3b8;">Not saved</span>
     </div>
 
     <div class="content-grid">
@@ -49,4 +50,67 @@
 
     <button type="submit" class="btn-primary">Save SVR</button>
 </form>
+
+<script>
+const STORAGE_KEY = "svr_draft_v1";
+const form = document.getElementById("svr-form");
+const statusEl = document.getElementById("save-status");
+
+// 🔁 Load saved draft
+function loadDraft() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+
+    const data = JSON.parse(saved);
+
+    Object.keys(data).forEach(key => {
+        const field = form.querySelector(`[name="${key}"]`);
+        if (field) {
+            field.value = data[key];
+        }
+    });
+
+    statusEl.textContent = "Draft restored";
+}
+
+// 💾 Save draft
+function saveDraft() {
+    const formData = new FormData(form);
+    const data = {};
+
+    formData.forEach((value, key) => {
+        data[key] = value;
+    });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+    statusEl.textContent = "Saved";
+    statusEl.style.color = "#22c55e";
+}
+
+// ⏱ Debounce
+let timeout;
+function triggerSave() {
+    statusEl.textContent = "Saving...";
+    statusEl.style.color = "#f59e0b";
+
+    clearTimeout(timeout);
+    timeout = setTimeout(saveDraft, 500);
+}
+
+// 👂 Listen for changes
+form.querySelectorAll("input, textarea, select").forEach(el => {
+    el.addEventListener("input", triggerSave);
+    el.addEventListener("change", triggerSave);
+});
+
+// 🧹 Clear on submit (VERY IMPORTANT)
+form.addEventListener("submit", () => {
+    localStorage.removeItem(STORAGE_KEY);
+});
+
+// 🚀 Init
+loadDraft();
+</script>
+
 {% endblock %}

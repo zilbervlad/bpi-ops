@@ -5,31 +5,134 @@
 
 {% block content %}
 
+<style>
+    .verification-top-panel {
+        margin-bottom: 24px;
+    }
+
+    .verification-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+
+    .verification-toolbar-left,
+    .verification-toolbar-right {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .verification-week-nav {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .verification-week-pill {
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 800;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.04);
+    }
+
+    .verification-table-wrap {
+        overflow-x: auto;
+        margin-top: 18px;
+    }
+
+    .verification-muted {
+        opacity: 0.72;
+    }
+
+    .verification-good {
+        color: #86efac;
+    }
+
+    .verification-row-good {
+        background: rgba(34, 197, 94, 0.05);
+    }
+
+    .verification-row-warn {
+        background: rgba(245, 158, 11, 0.05);
+    }
+
+    .verification-row-bad {
+        background: rgba(239, 68, 68, 0.05);
+    }
+
+    .verification-small-list {
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .verification-report-btn {
+        white-space: nowrap;
+    }
+</style>
+
+<div class="panel premium-panel verification-top-panel">
+    <div class="panel-head">
+        <div>
+            <h3>Verification Command Center</h3>
+            <div class="area-subtitle">Weekly compliance snapshot and submitted report history.</div>
+        </div>
+        <span class="summary-pill">Admin View</span>
+    </div>
+
+    <div class="verification-toolbar">
+        <div class="verification-toolbar-left">
+            <div class="verification-week-nav">
+                <a href="{{ url_for('verification.dashboard', week_offset=week_offset - 1) }}" class="btn-secondary">← Previous Week</a>
+                <span class="verification-week-pill">{{ week_range_label }}</span>
+                {% if week_offset != 0 %}
+                <a href="{{ url_for('verification.dashboard', week_offset=0) }}" class="btn-secondary">Current Week</a>
+                {% endif %}
+                <a href="{{ url_for('verification.dashboard', week_offset=week_offset + 1) }}" class="btn-secondary">Next Week →</a>
+            </div>
+        </div>
+
+        <div class="verification-toolbar-right">
+            <a href="{{ url_for('verification.export_weekly_file', week_offset=week_offset) }}" class="btn-secondary">
+                Download Weekly Excel
+            </a>
+            <a href="{{ url_for('verification.new_report') }}" class="btn-primary">
+                + New Verification
+            </a>
+        </div>
+    </div>
+</div>
+
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-title">Verifications Submitted This Week</div>
+        <div class="stat-title">Submitted</div>
         <div class="stat-value">{{ submitted_count }}</div>
-        <div class="stat-subtext">
-            Unique stores with at least one verification from {{ week_start_label }} to {{ week_end_label }}
-        </div>
+        <div class="stat-subtext">Stores with a verification for {{ week_range_label }}</div>
     </div>
 
     <div class="stat-card danger">
-        <div class="stat-title">Stores Missing This Week</div>
+        <div class="stat-title">Missing</div>
         <div class="stat-value">{{ missing_count }}</div>
-        <div class="stat-subtext">Visible stores still missing a verification this week</div>
+        <div class="stat-subtext">Visible stores still missing for this selected week</div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-title">Areas Fully Complete</div>
+        <div class="stat-title">Areas Complete</div>
         <div class="stat-value">{{ areas_fully_complete }}</div>
         <div class="stat-subtext">Areas with zero missed stores this week</div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-title">Overall Weekly Compliance</div>
+        <div class="stat-title">Compliance</div>
         <div class="stat-value">{{ overall_compliance }}%</div>
-        <div class="stat-subtext">Stores verified this week vs visible store count</div>
+        <div class="stat-subtext">Submitted stores vs visible store count</div>
     </div>
 </div>
 
@@ -38,22 +141,12 @@
         <div>
             <h3>Area Verification Summary</h3>
             <div class="area-subtitle">
-                Weekly verification compliance by area for {{ week_start_label }} – {{ week_end_label }}.
+                Compliance by area for {{ week_range_label }}.
             </div>
-        </div>
-
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-            <a href="{{ url_for('verification.export_weekly_file') }}" class="btn-secondary">
-                Download Weekly Excel
-            </a>
-
-            <a href="{{ url_for('verification.new_report') }}" class="btn-primary">
-                + New Verification
-            </a>
         </div>
     </div>
 
-    <div style="overflow-x: auto; margin-top: 18px;">
+    <div class="verification-table-wrap">
         <table class="data-table">
             <thead>
                 <tr>
@@ -67,11 +160,25 @@
             </thead>
             <tbody>
                 {% for row in area_summary_rows %}
-                <tr>
-                    <td>{{ row.area_name }}</td>
+                <tr class="
+                    {% if row.compliance == 100 %}
+                        verification-row-good
+                    {% elif row.compliance > 0 %}
+                        verification-row-warn
+                    {% else %}
+                        verification-row-bad
+                    {% endif %}
+                ">
+                    <td><strong>{{ row.area_name }}</strong></td>
                     <td>{{ row.store_count }}</td>
                     <td>{{ row.submitted_count }}</td>
-                    <td>{{ row.missing_count }}</td>
+                    <td>
+                        {% if row.missing_count > 0 %}
+                            <span style="color: #fca5a5; font-weight: 800;">{{ row.missing_count }}</span>
+                        {% else %}
+                            <span class="verification-good" style="font-weight: 800;">0</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <span class="summary-pill"
                               style="
@@ -92,11 +199,13 @@
                             {{ row.compliance }}%
                         </span>
                     </td>
-                    <td>
+                    <td class="verification-small-list">
                         {% if row.missing_store_numbers %}
                             {{ row.missing_store_numbers | join(", ") }}
                         {% else %}
-                            <span style="color: #86efac;">All complete</span>
+                            <span class="summary-pill" style="background: rgba(34, 197, 94, 0.16); color: #86efac; border-color: rgba(34, 197, 94, 0.35);">
+                                All complete
+                            </span>
                         {% endif %}
                     </td>
                 </tr>
@@ -109,14 +218,14 @@
 <div class="panel premium-panel" style="margin-top: 24px;">
     <div class="panel-head">
         <div>
-            <h3>Weekly Reports</h3>
+            <h3>Reports for Selected Week</h3>
             <div class="area-subtitle">
-                Open any report to see exactly what was submitted.
+                Open any report to see exactly what was submitted for {{ week_range_label }}.
             </div>
         </div>
     </div>
 
-    <div style="overflow-x: auto; margin-top: 18px;">
+    <div class="verification-table-wrap">
         <table class="data-table">
             <thead>
                 <tr>
@@ -130,19 +239,21 @@
             <tbody>
                 {% for report in weekly_reports %}
                 <tr>
-                    <td>{{ report.store_number }}</td>
+                    <td><strong>{{ report.store_number }}</strong></td>
                     <td>{{ report.report_date.strftime("%m/%d/%Y") if report.report_date else "" }}</td>
                     <td>{{ report.supervisor_name or "Unknown" }}</td>
                     <td>{{ report.created_at.strftime("%m/%d/%Y %I:%M %p") if report.created_at else "" }}</td>
                     <td>
-                        <a href="{{ url_for('verification.view_report', report_id=report.id) }}" class="btn-secondary">
+                        <a href="{{ url_for('verification.view_report', report_id=report.id) }}" class="btn-secondary verification-report-btn">
                             View Report
                         </a>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" style="text-align:center; opacity:0.8;">No reports submitted this week.</td>
+                    <td colspan="5" style="text-align:center;" class="verification-muted">
+                        No reports submitted for this selected week.
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

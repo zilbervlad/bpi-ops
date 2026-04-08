@@ -76,6 +76,35 @@ def ensure_default_template():
     db.session.commit()
 
 
+def get_dashboard_week_range():
+    """
+    Uses ?week_offset=0 for current week, -1 for last week, -2 for two weeks ago, etc.
+    Also supports ?week_start=YYYY-MM-DD for direct linking if needed.
+    """
+    today = today_et()
+
+    week_start_raw = (request.args.get("week_start") or "").strip()
+    week_offset_raw = (request.args.get("week_offset") or "0").strip()
+
+    if week_start_raw:
+        try:
+            selected_date = datetime.strptime(week_start_raw, "%Y-%m-%d").date()
+            week_start = selected_date - timedelta(days=selected_date.weekday())
+        except ValueError:
+            week_start = today - timedelta(days=today.weekday())
+    else:
+        try:
+            week_offset = int(week_offset_raw)
+        except ValueError:
+            week_offset = 0
+
+        current_week_start = today - timedelta(days=today.weekday())
+        week_start = current_week_start + timedelta(weeks=week_offset)
+
+    week_end = week_start + timedelta(days=6)
+    return week_start, week_end
+
+
 @verification_bp.route("/")
 @login_required
 @role_required("admin", "supervisor")
@@ -89,12 +118,13 @@ def index():
 @login_required
 @role_required("admin")
 def dashboard():
-    today = today_et()
-    week_start = today - timedelta(days=today.weekday())
-    week_end = week_start + timedelta(days=6)
+    week_start, week_end = get_dashboard_week_range()
+    current_week_start = today_et() - timedelta(days=today_et().weekday())
+    week_offset = (week_start - current_week_start).days // 7
 
     week_start_label = week_start.strftime("%m/%d")
     week_end_label = week_end.strftime("%m/%d")
+    week_range_label = f"{week_start.strftime('%m/%d/%Y')} – {week_end.strftime('%m/%d/%Y')}"
 
     stores = Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
 
@@ -154,6 +184,15 @@ def dashboard():
             "compliance": compliance,
         })
 
+    weekly_reports = sorted(
+        weekly_reports,
+        key=lambda report: (
+            report.report_date or datetime.min.date(),
+            report.created_at or datetime.min
+        ),
+        reverse=True
+    )
+
     return render_template(
         "verification_dashboard.html",
         stores=stores,
@@ -162,6 +201,8 @@ def dashboard():
         week_end=week_end,
         week_start_label=week_start_label,
         week_end_label=week_end_label,
+        week_range_label=week_range_label,
+        week_offset=week_offset,
         submitted_count=submitted_count,
         missing_count=missing_count,
         total_stores=total_stores,
@@ -176,9 +217,7 @@ def dashboard():
 @login_required
 @role_required("admin")
 def export_weekly_file():
-    today = today_et()
-    week_start = today - timedelta(days=today.weekday())
-    week_end = week_start + timedelta(days=6)
+    week_start, week_end = get_dashboard_week_range()
 
     stores = Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
 
@@ -492,23 +531,6 @@ def admin():
             )
             db.session.commit()
             flash("Verification field created.", "success")
-            return redirect(url_for("verification.admin"))
-
-        if action == "delete":
-            field_id = (request.form.get("field_id") or "").strip()
-            field = VerificationTemplateField.query.get(field_id)
-
-            if not field:
-                flash("Field not found.", "error")
-                return redirect(url_for("verification.admin"))
-
-            if field.field_key in CORE_VERIFICATION_KEYS:
-                flash("Core verification fields cannot be deleted. You can deactivate them instead.", "error")
-                return redirect(url_for("verification.admin"))
-
-            db.session.delete(field)
-            db.session.commit()
-            flash("Verification field deleted.", "success")
             return redirect(url_for("verification.admin"))
 
         if action == "update":

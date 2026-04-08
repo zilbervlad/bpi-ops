@@ -43,6 +43,13 @@
         background: rgba(255,255,255,0.04);
     }
 
+    .verification-summary-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+
     .verification-table-wrap {
         overflow-x: auto;
         margin-top: 18px;
@@ -108,31 +115,12 @@
             </a>
         </div>
     </div>
-</div>
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-title">Submitted</div>
-        <div class="stat-value">{{ submitted_count }}</div>
-        <div class="stat-subtext">Stores with a verification for {{ week_range_label }}</div>
-    </div>
-
-    <div class="stat-card danger">
-        <div class="stat-title">Missing</div>
-        <div class="stat-value">{{ missing_count }}</div>
-        <div class="stat-subtext">Visible stores still missing for this selected week</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-title">Areas Complete</div>
-        <div class="stat-value">{{ areas_fully_complete }}</div>
-        <div class="stat-subtext">Areas with zero missed stores this week</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-title">Compliance</div>
-        <div class="stat-value">{{ overall_compliance }}%</div>
-        <div class="stat-subtext">Submitted stores vs visible store count</div>
+    <div class="verification-summary-row">
+        <span class="summary-pill">Submitted: {{ submitted_count }}</span>
+        <span class="summary-pill">Missing: {{ missing_count }}</span>
+        <span class="summary-pill">Areas Complete: {{ areas_fully_complete }}</span>
+        <span class="summary-pill">Compliance: {{ overall_compliance }}%</span>
     </div>
 </div>
 

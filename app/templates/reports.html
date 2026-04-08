@@ -162,43 +162,19 @@
 </div>
 {% endif %}
 
-<div class="dashboard-grid dashboard-grid-premium" style="margin-bottom: 24px;">
-    <div class="metric-card premium-card">
-        <span class="metric-label">Avg Completion</span>
-        <h3>{{ summary.avg_completion }}%</h3>
-        <p class="metric-footnote">Average completion across filtered checklists</p>
+<div class="panel premium-panel" style="margin-bottom: 24px;">
+    <div class="panel-head">
+        <h3>Report Summary</h3>
+        <span class="summary-pill">Quick View</span>
     </div>
 
-    <div class="metric-card premium-card premium-card-blue">
-        <span class="metric-label">Avg Integrity</span>
-        <h3>{{ summary.avg_integrity }}%</h3>
-        <p class="metric-footnote">Average opening integrity score</p>
-    </div>
-
-    <div class="metric-card premium-card">
-        <span class="metric-label">Completed</span>
-        <h3>{{ summary.completed_count }}</h3>
-        <p class="metric-footnote">Completed checklist records in date range</p>
-    </div>
-
-    <div class="metric-card premium-card premium-card-alert">
-        <span class="metric-label">Not Started</span>
-        <h3>{{ summary.not_started_count }}</h3>
-        <p class="metric-footnote">Possible missed checklist days</p>
-    </div>
-</div>
-
-<div class="dashboard-grid dashboard-grid-premium" style="margin-bottom: 24px;">
-    <div class="metric-card premium-card">
-        <span class="metric-label">Stores With Nightly Numbers</span>
-        <h3>{{ summary.stores_with_nightly }}</h3>
-        <p class="metric-footnote">Stores with at least one nightly numbers report in range</p>
-    </div>
-
-    <div class="metric-card premium-card premium-card-alert">
-        <span class="metric-label">Missing Nightly Numbers</span>
-        <h3>{{ summary.stores_missing_nightly }}</h3>
-        <p class="metric-footnote">Stores missing nightly numbers in selected range</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 16px;">
+        <span class="summary-pill">Avg Completion: {{ summary.avg_completion }}%</span>
+        <span class="summary-pill">Avg Integrity: {{ summary.avg_integrity }}%</span>
+        <span class="summary-pill">Completed: {{ summary.completed_count }}</span>
+        <span class="summary-pill">Not Started: {{ summary.not_started_count }}</span>
+        <span class="summary-pill">Stores With Nightly #: {{ summary.stores_with_nightly }}</span>
+        <span class="summary-pill">Missing Nightly #: {{ summary.stores_missing_nightly }}</span>
     </div>
 </div>
 

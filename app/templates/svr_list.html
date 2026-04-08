@@ -5,41 +5,32 @@
 
 {% block content %}
 <div class="panel premium-panel" style="margin-bottom: 24px;">
-    <div class="panel-head">
-        <h3>Supervisor Visit Reports</h3>
-        {% if session.get('user_role') == 'supervisor' %}
-        <a href="{{ url_for('svr.new_report') }}" class="action-btn" style="max-width: 220px;">Create New SVR</a>
-        {% endif %}
+    <div class="panel-head" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div>
+            <h3>Supervisor Visit Reports</h3>
+            <div class="area-subtitle">Weekly SVR submission visibility, missed-store tracking, and store visit history.</div>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <a href="{{ url_for('svr.index', week_offset=week_offset - 1) }}" class="btn-secondary">← Previous Week</a>
+            <span class="summary-pill">{{ week_label }}</span>
+            {% if week_offset != 0 %}
+            <a href="{{ url_for('svr.index', week_offset=0) }}" class="btn-secondary">Current Week</a>
+            {% endif %}
+            <a href="{{ url_for('svr.index', week_offset=week_offset + 1) }}" class="btn-secondary">Next Week →</a>
+
+            {% if session.get('user_role') == 'supervisor' %}
+            <a href="{{ url_for('svr.new_report') }}" class="action-btn" style="max-width: 220px;">Create New SVR</a>
+            {% endif %}
+        </div>
     </div>
-    <p class="subtitle" style="margin: 0;">
-        Weekly SVR submission visibility, missed-store tracking, and store visit history.
-    </p>
 </div>
 
-<div class="dashboard-grid dashboard-grid-premium" style="margin-bottom: 24px;">
-    <div class="metric-card premium-card premium-card-blue">
-        <span class="metric-label">SVRs Submitted This Week</span>
-        <h3>{{ submitted_this_week }}</h3>
-        <p class="metric-footnote">Unique stores with an SVR this week</p>
-    </div>
-
-    <div class="metric-card premium-card premium-card-alert">
-        <span class="metric-label">Stores Missing SVR</span>
-        <h3>{{ missing_this_week }}</h3>
-        <p class="metric-footnote">Visible stores still missing this week</p>
-    </div>
-
-    <div class="metric-card premium-card">
-        <span class="metric-label">Areas Fully Complete</span>
-        <h3>{{ areas_fully_complete }}</h3>
-        <p class="metric-footnote">Areas with zero missed stores</p>
-    </div>
-
-    <div class="metric-card premium-card">
-        <span class="metric-label">Overall Compliance</span>
-        <h3>{{ overall_compliance }}%</h3>
-        <p class="metric-footnote">Submitted vs visible store count</p>
-    </div>
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 24px;">
+    <span class="summary-pill">Submitted: {{ submitted_this_week }}</span>
+    <span class="summary-pill">Missing: {{ missing_this_week }}</span>
+    <span class="summary-pill">Areas Complete: {{ areas_fully_complete }}</span>
+    <span class="summary-pill">Compliance: {{ overall_compliance }}%</span>
 </div>
 
 <div class="panel premium-panel" style="margin-bottom: 24px;">
@@ -68,7 +59,13 @@
                     </td>
                     <td>{{ row.store_count }}</td>
                     <td>{{ row.submitted_count }}</td>
-                    <td>{{ row.missing_count }}</td>
+                    <td>
+                        {% if row.missing_count > 0 %}
+                            <span style="color: #fca5a5; font-weight: 800;">{{ row.missing_count }}</span>
+                        {% else %}
+                            <span style="color: #86efac; font-weight: 800;">0</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <span class="table-badge {% if row.compliance >= 100 %}badge-success{% elif row.compliance >= 75 %}badge-warning{% else %}badge-danger{% endif %}">
                             {{ row.compliance }}%
@@ -95,7 +92,7 @@
 <div class="panel premium-panel">
     <div class="panel-head">
         <h3>SVR Reports</h3>
-        <span class="summary-pill">Store Visit History</span>
+        <span class="summary-pill">{{ reports|length }} reports</span>
     </div>
 
     <div class="table-wrap premium-table-wrap">
@@ -133,7 +130,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5">No SVR reports yet.</td>
+                    <td colspan="5">No SVR reports for this week.</td>
                 </tr>
                 {% endfor %}
             </tbody>

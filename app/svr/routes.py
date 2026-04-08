@@ -40,6 +40,22 @@ def today_et():
     return now_et().date()
 
 
+def get_svr_week_range():
+    today = today_et()
+    week_offset_raw = (request.args.get("week_offset") or "0").strip()
+
+    try:
+        week_offset = int(week_offset_raw)
+    except ValueError:
+        week_offset = 0
+
+    current_week_start = today - timedelta(days=today.weekday())
+    week_start = current_week_start + timedelta(weeks=week_offset)
+    week_end = week_start + timedelta(days=6)
+
+    return week_start, week_end, week_offset
+
+
 DEFAULT_SVR_TEMPLATE = [
     ("date", "Date", "text"),
     ("store_number", "Store #", "text"),
@@ -493,10 +509,13 @@ def index():
 
     reports = [r for r in reports if r.store_number in visible_store_numbers]
 
-    today = today_et()
-    week_start = today - timedelta(days=today.weekday())
+    week_start, week_end, week_offset = get_svr_week_range()
+    week_label = f"{week_start.strftime('%m/%d/%Y')} – {week_end.strftime('%m/%d/%Y')}"
 
-    weekly_reports = [r for r in reports if r.visit_date >= week_start]
+    weekly_reports = [
+        r for r in reports
+        if r.visit_date and week_start <= r.visit_date <= week_end
+    ]
     weekly_report_store_numbers = {r.store_number for r in weekly_reports}
 
     total_stores = len(stores)
@@ -534,13 +553,17 @@ def index():
 
     return render_template(
         "svr_list.html",
-        reports=reports,
+        reports=weekly_reports,
         stores=stores,
         submitted_this_week=submitted_this_week,
         missing_this_week=missing_this_week,
         areas_fully_complete=areas_fully_complete,
         overall_compliance=overall_compliance,
         area_summary_rows=area_summary_rows,
+        week_start=week_start,
+        week_end=week_end,
+        week_offset=week_offset,
+        week_label=week_label,
     )
 
 

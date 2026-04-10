@@ -13,6 +13,18 @@
     .svr-report-table td:nth-child(4) {
         display: none;
     }
+
+    .svr-action-wrap {
+        min-width: 90px !important;
+    }
+
+    .svr-action-wrap .summary-pill,
+    .svr-action-wrap .danger-pill {
+        display: block;
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box;
+    }
 }
 </style>
 
@@ -126,10 +138,10 @@
                     <td>{{ report.supervisor_name or '—' }}</td>
                     <td>{{ report.manager_on_duty or '—' }}</td>
                     <td>
-                        <div style="display:flex; flex-direction:column; gap:8px; min-width:90px;">
+                        <div class="svr-action-wrap" style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
                             <a href="{{ url_for('svr.view_report', report_id=report.id) }}"
                                class="summary-pill"
-                               style="text-align:center; text-decoration:none; display:inline-block;">
+                               style="text-align:center; text-decoration:none; display:inline-block; min-width:110px;">
                                 Open
                             </a>
 
@@ -139,7 +151,7 @@
                                   style="margin:0;">
                                 <button type="submit"
                                         class="summary-pill danger-pill"
-                                        style="width:100%;">
+                                        style="min-width:110px;">
                                     Delete
                                 </button>
                             </form>

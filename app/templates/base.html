@@ -7,7 +7,6 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <!-- Icons (safe add) -->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='bpi-logo.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='bpi-logo.png') }}">
 </head>
@@ -17,12 +16,16 @@
         <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay"></div>
 
         <aside class="sidebar" id="sidebar">
-            <div class="brand brand-mobile-row">
+            <div class="brand brand-mobile-row" style="display:flex; align-items:center; gap:12px;">
+                <img src="{{ url_for('static', filename='bpi-logo.png') }}"
+                     alt="BPI Ops logo"
+                     class="brand-logo"
+                     style="height:36px; width:36px; border-radius:8px; object-fit:cover;">
                 <div>
-                    <h1>BPI Ops</h1>
-                    <p>Operations Platform</p>
+                    <h1 style="margin:0; font-size:18px;">BPI Ops</h1>
+                    <p style="margin:0; font-size:12px; opacity:0.7;">Operations Platform</p>
                 </div>
-                <button class="mobile-nav-close" id="mobile-nav-close" type="button" aria-label="Close menu">
+                <button class="mobile-nav-close" id="mobile-nav-close" type="button" aria-label="Close menu" style="margin-left:auto;">
                     ✕
                 </button>
             </div>
@@ -157,7 +160,7 @@
                     <div>
                         <h2>{% block header %}Dashboard{% endblock %}</h2>
                         <p class="subtitle">
-                            Welcome, {{ session.get('user_name', 'User') }} ({{ session.get('user_role', 'role')|title }})
+                            Welcome, {{ session.get('user_name', 'User') }} · {{ session.get('user_role', 'role')|title }}
                         </p>
                     </div>
                 </div>

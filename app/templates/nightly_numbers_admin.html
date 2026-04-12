@@ -69,12 +69,6 @@
         white-space: nowrap;
     }
 
-    .nightly-admin-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-    }
-
     .nightly-admin-toolbar {
         position: sticky;
         top: 10px;
@@ -250,71 +244,6 @@
         color: #ff8d9a;
     }
 
-    .nightly-reports-list {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-
-    .nightly-report-card {
-        padding: 18px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        transition: border-color 0.18s ease, background 0.18s ease;
-    }
-
-    .nightly-report-card:hover {
-        border-color: rgba(255, 255, 255, 0.14);
-        background: rgba(255, 255, 255, 0.055);
-    }
-
-    .nightly-report-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-bottom: 14px;
-    }
-
-    .nightly-report-top-right {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        align-items: center;
-    }
-
-    .nightly-report-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-        margin-bottom: 12px;
-    }
-
-    .nightly-value-card {
-        padding: 12px 14px;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.045);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .nightly-value-label {
-        font-size: 0.74rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: rgba(255, 255, 255, 0.58);
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-
-    .nightly-value-text {
-        font-size: 0.95rem;
-        line-height: 1.45;
-        color: rgba(255, 255, 255, 0.92);
-        word-break: break-word;
-    }
-
     .nightly-empty-state {
         padding: 24px;
         border-radius: 16px;
@@ -336,7 +265,6 @@
     }
 
     @media (max-width: 980px) {
-        .nightly-admin-grid,
         .nightly-admin-toolbar-grid,
         .nightly-admin-command {
             grid-template-columns: 1fr;
@@ -349,14 +277,12 @@
     }
 
     @media (max-width: 700px) {
-        .nightly-setting-body,
-        .nightly-report-grid {
+        .nightly-setting-body {
             grid-template-columns: 1fr;
             gap: 8px;
         }
 
-        .nightly-setting-card,
-        .nightly-report-card {
+        .nightly-setting-card {
             padding: 12px;
         }
 
@@ -379,13 +305,12 @@
                 <div class="command-eyebrow">ADMIN</div>
                 <h2 class="command-title">Nightly Numbers Manager</h2>
                 <p class="command-subtitle">
-                    Control the nightly form and review submitted reports without page bounce.
+                    Control the nightly form only. Submitted reports are kept off this page so admin stays clean.
                 </p>
             </div>
 
             <div class="nightly-admin-chip-row">
                 <div class="nightly-admin-chip">{{ fields|length }} Fields</div>
-                <div class="nightly-admin-chip">{{ reports|length }} Reports</div>
             </div>
         </div>
 
@@ -545,210 +470,21 @@
                         </div>
                     </div>
 
-                    <div class="nightly-report-grid" style="margin-bottom: 0;">
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">Field Key</div>
-                            <div class="nightly-value-text">{{ field.field_key }}</div>
+                    <div class="nightly-setting-body" style="grid-template-columns: 1fr 1fr;">
+                        <div class="nightly-inline-field">
+                            <label>Field Key</label>
+                            <input type="text" value="{{ field.field_key }}" readonly>
                         </div>
 
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">Field Label</div>
-                            <div class="nightly-value-text">{{ field.field_label }}</div>
+                        <div class="nightly-inline-field">
+                            <label>Field Label</label>
+                            <input type="text" value="{{ field.field_label }}" readonly>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
             {% endif %}
-        </section>
-
-        <section class="panel premium-panel nightly-admin-panel">
-            <div class="panel-head">
-                <div>
-                    <h3>Filter Reports</h3>
-                    <div class="nightly-admin-muted">
-                        Narrow down nightly reports by store and report date.
-                    </div>
-                </div>
-                <span class="summary-pill">Filters</span>
-            </div>
-
-            <form method="GET" class="login-form">
-                <div class="nightly-admin-grid">
-                    <div class="form-group">
-                        <label for="store">Store</label>
-                        <select id="store" name="store">
-                            <option value="">All Visible Stores</option>
-                            {% for store in stores %}
-                            <option value="{{ store.store_number }}" {% if selected_store == store.store_number %}selected{% endif %}>
-                                {{ store.store_number }}{% if store.store_name %} - {{ store.store_name }}{% endif %}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="date">Report Date</label>
-                        <input type="date" id="date" name="date" value="{{ selected_date }}">
-                    </div>
-                </div>
-
-                <div class="nightly-admin-actions">
-                    <button type="submit" class="btn-primary">Apply Filters</button>
-                </div>
-            </form>
-        </section>
-
-        <section class="panel premium-panel nightly-admin-panel">
-            <div class="panel-head">
-                <div>
-                    <h3>Submitted Reports</h3>
-                    <div class="nightly-admin-muted">
-                        Review submitted nightly numbers reports below.
-                    </div>
-                </div>
-                <span class="summary-pill">{{ reports|length }} Reports</span>
-            </div>
-
-            <div class="nightly-reports-list">
-                {% for report in reports %}
-                <div class="nightly-report-card">
-                    <div class="nightly-report-top">
-                        <div class="nightly-report-top-right">
-                            <span class="summary-pill">Store {{ report.store_number }}</span>
-                            <span class="summary-pill">{{ report.report_date.strftime('%b %d, %Y') }}</span>
-
-                            {% if report.variable_labor is not none and report.labor_goal is not none %}
-                                {% if report.variable_labor > report.labor_goal %}
-                                <span class="table-badge badge-danger">Labor High</span>
-                                {% else %}
-                                <span class="table-badge badge-success">Labor OK</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="table-badge badge-neutral">Labor N/A</span>
-                            {% endif %}
-
-                            {% if report.adt is not none %}
-                                {% if report.adt > 25 %}
-                                <span class="table-badge badge-danger">ADT High</span>
-                                {% else %}
-                                <span class="table-badge badge-success">ADT OK</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="table-badge badge-neutral">ADT N/A</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="nightly-report-grid">
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">Manager</div>
-                            <div class="nightly-value-text">{{ report.manager_name or "Not provided" }}</div>
-                        </div>
-
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">Royalty Sales</div>
-                            <div class="nightly-value-text">
-                                {{ report.royalty_sales if report.royalty_sales is not none else "Not provided" }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="nightly-report-grid">
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">Variable Labor / Goal</div>
-                            <div class="nightly-value-text">
-                                {{ report.variable_labor if report.variable_labor is not none else "N/A" }}
-                                /
-                                {{ report.labor_goal if report.labor_goal is not none else "N/A" }}
-                            </div>
-                        </div>
-
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">Food Variance</div>
-                            <div class="nightly-value-text">
-                                {{ report.food_variance if report.food_variance is not none else "Not provided" }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="nightly-report-grid">
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">ADT</div>
-                            <div class="nightly-value-text">
-                                {{ report.adt if report.adt is not none else "Not provided" }}
-                            </div>
-                        </div>
-
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">Load Time</div>
-                            <div class="nightly-value-text">{{ report.load_time or "Not provided" }}</div>
-                        </div>
-                    </div>
-
-                    <div class="nightly-report-grid">
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">Cash +/-</div>
-                            <div class="nightly-value-text">
-                                {{ report.cash_diff if report.cash_diff is not none else "Not provided" }}
-                            </div>
-                        </div>
-
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">Invoices / Transfers Checked</div>
-                            <div class="nightly-value-text">{{ "Yes" if report.invoices_transfers_checked else "No" }}</div>
-                        </div>
-                    </div>
-
-                    <div class="nightly-report-grid">
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">Food Order Placed</div>
-                            <div class="nightly-value-text">{{ "Yes" if report.food_order_placed else "No" }}</div>
-                        </div>
-
-                        <div class="nightly-value-card">
-                            <div class="nightly-value-label">Created</div>
-                            <div class="nightly-value-text">
-                                {{ report.created_at.strftime('%b %d, %Y %I:%M %p') if report.created_at else "N/A" }}
-                            </div>
-                        </div>
-                    </div>
-
-                    {% if report.food_variance_details %}
-                    <div class="nightly-value-card" style="margin-bottom: 12px;">
-                        <div class="nightly-value-label">Food Variance Details</div>
-                        <div class="nightly-value-text">{{ report.food_variance_details }}</div>
-                    </div>
-                    {% endif %}
-
-                    {% if report.adt_reason %}
-                    <div class="nightly-value-card" style="margin-bottom: 12px;">
-                        <div class="nightly-value-label">ADT Reason</div>
-                        <div class="nightly-value-text">{{ report.adt_reason }}</div>
-                    </div>
-                    {% endif %}
-
-                    {% if report.bad_orders %}
-                    <div class="nightly-value-card">
-                        <div class="nightly-value-label">Bad Orders</div>
-                        <div class="nightly-value-text">{{ report.bad_orders }}</div>
-                    </div>
-                    {% endif %}
-
-                    {% if session.get("user_role") == "admin" %}
-                    <div class="nightly-admin-actions" style="margin-top: 10px;">
-                        <a href="{{ url_for('nightly_numbers.edit_report', report_id=report.id) }}" class="btn-primary">
-                            Edit Report
-                        </a>
-                    </div>
-                    {% endif %}
-                </div>
-                {% else %}
-                <div class="nightly-empty-state">
-                    No nightly numbers reports found for the selected filters.
-                </div>
-                {% endfor %}
-            </div>
         </section>
 
     </div>

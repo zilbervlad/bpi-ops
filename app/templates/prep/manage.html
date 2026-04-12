@@ -4,288 +4,646 @@
 {% block header %}Prep Admin{% endblock %}
 
 {% block content %}
-<div class="checklist-page mobile-checklist-page">
-    <div class="panel checklist-hero-panel mobile-checklist-hero">
-        <div class="checklist-topbar checklist-topbar-mobile">
-            <div class="checklist-hero-copy">
-                <div class="command-eyebrow">PREP TEMPLATE</div>
-                <h3 class="checklist-store-title">Store {{ store_number }}</h3>
-                <p class="subtitle checklist-date-label">Manage store-specific build-to items</p>
-            </div>
+<div class="prep-admin-shell">
+    <div class="prep-admin-hero">
+        <div>
+            <div class="prep-admin-eyebrow">PREP TEMPLATE</div>
+            <h2 class="prep-admin-title">Store {{ store_number }}</h2>
+            <p class="prep-admin-subtitle">Manage store-specific build-to items</p>
         </div>
-    </div>
 
-    <div class="content-grid checklist-layout-grid mobile-checklist-layout">
-        <div class="checklist-main-column">
-            <form method="GET" class="panel checklist-load-panel mobile-checklist-load-panel" style="margin-bottom: 20px;">
-                <div class="panel-head checklist-panel-head-mobile">
-                    <div>
-                        <h3>Load Store</h3>
-                        <div class="area-subtitle">Switch prep template by store</div>
-                    </div>
-                </div>
-
-                <div class="checklist-load-grid mobile-checklist-load-grid">
-                    <div class="form-group">
-                        <label for="store">Store Number</label>
-                        <select id="store" name="store" required>
-                            {% for store in stores %}
-                            <option value="{{ store.store_number }}" {% if store.store_number == store_number %}selected{% endif %}>
-                                {{ store.store_number }} - {{ store.area_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <input type="hidden" name="show_inactive" value="{{ 1 if show_inactive else 0 }}">
-                </div>
-
-                <button type="submit" class="btn-primary checklist-load-btn mobile-full-btn">Load Store</button>
-            </form>
-
-            <div class="panel checklist-info-panel mobile-checklist-info-panel" style="margin-bottom: 20px;">
-                <div class="panel-head checklist-info-head checklist-panel-head-mobile">
-                    <div>
-                        <h3>Inactive Items</h3>
-                        <div class="area-subtitle">
-                            {% if inactive_count > 0 %}
-                            {{ inactive_count }} inactive item{% if inactive_count != 1 %}s{% endif %} hidden by default
-                            {% else %}
-                            No inactive items for this store
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="checklist-save-wrap" style="margin: 0;">
-                        {% if show_inactive %}
-                        <a href="{{ url_for('prep.manage', store=store_number) }}" class="btn-secondary" style="text-decoration:none;">
-                            Hide Inactive
-                        </a>
-                        {% else %}
-                        <a href="{{ url_for('prep.manage', store=store_number, show_inactive=1) }}" class="btn-secondary" style="text-decoration:none;">
-                            Show Inactive
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <form method="POST" class="panel checklist-info-panel mobile-checklist-info-panel" style="margin-bottom: 20px;">
-                <input type="hidden" name="action" value="create">
-
-                <div class="panel-head checklist-info-head checklist-panel-head-mobile">
-                    <div>
-                        <h3>Add Prep Item</h3>
-                        <div class="area-subtitle">Create a new build-to item for this store</div>
-                    </div>
-                    <div id="prep-admin-status" class="autosave-status autosave-status-pill">Ready</div>
-                </div>
-
-                <div class="prep-admin-create-grid">
-                    <div class="form-group">
-                        <label for="section_name">Section</label>
-                        <select id="section_name" name="section_name" required>
-                            {% for section in section_options %}
-                            <option value="{{ section }}">{{ section }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="item_name">Item Name</label>
-                        <input type="text" id="item_name" name="item_name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="build_to">Build To</label>
-                        <input type="text" id="build_to" name="build_to" placeholder="Example: 16 or 1 case">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="sort_order">Sort</label>
-                        <input type="number" id="sort_order" name="sort_order" value="0">
-                    </div>
-                </div>
-
-                <div class="form-group" style="margin-top: 14px;">
-                    <label for="instructions">Instructions</label>
-                    <input type="text" id="instructions" name="instructions" placeholder="Optional prep instructions">
-                </div>
-
-                <div class="prep-admin-days-row" style="margin-top: 14px;">
-                    <label class="checklist-checkbox-row"><input type="checkbox" name="monday" checked> <span>Mon</span></label>
-                    <label class="checklist-checkbox-row"><input type="checkbox" name="tuesday" checked> <span>Tue</span></label>
-                    <label class="checklist-checkbox-row"><input type="checkbox" name="wednesday" checked> <span>Wed</span></label>
-                    <label class="checklist-checkbox-row"><input type="checkbox" name="thursday" checked> <span>Thu</span></label>
-                    <label class="checklist-checkbox-row"><input type="checkbox" name="friday" checked> <span>Fri</span></label>
-                    <label class="checklist-checkbox-row"><input type="checkbox" name="saturday" checked> <span>Sat</span></label>
-                    <label class="checklist-checkbox-row"><input type="checkbox" name="sunday" checked> <span>Sun</span></label>
-                    <label class="checklist-checkbox-row"><input type="checkbox" name="is_active" checked> <span>Active</span></label>
-                </div>
-
-                <div class="checklist-save-wrap" style="margin-top: 18px;">
-                    <button type="submit" class="btn-primary mobile-full-btn">Add Prep Item</button>
-                </div>
-            </form>
-
-            {% for section, items_in_section in grouped_items.items() %}
-                {% if items_in_section %}
-                <div class="panel" style="margin-bottom: 18px;">
-                    <div class="panel-head checklist-panel-head-mobile">
-                        <div>
-                            <h3>{{ section }}</h3>
-                            <div class="area-subtitle">{{ items_in_section|length }} item{% if items_in_section|length != 1 %}s{% endif %}</div>
-                        </div>
-                    </div>
-
-                    <div class="prep-admin-list">
-                        {% for item in items_in_section %}
-                        <div class="prep-admin-row" data-item-id="{{ item.id }}">
-                            <div class="prep-admin-row-grid">
-                                <div class="form-group">
-                                    <label>Section</label>
-                                    <select class="prep-admin-input" data-field="section_name">
-                                        {% for section_option in section_options %}
-                                        <option value="{{ section_option }}" {% if item.section_name == section_option %}selected{% endif %}>
-                                            {{ section_option }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Item Name</label>
-                                    <input type="text" class="prep-admin-input" data-field="item_name" value="{{ item.item_name }}">
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Build To</label>
-                                    <input type="text" class="prep-admin-input" data-field="build_to" value="{{ item.build_to or '' }}">
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Sort</label>
-                                    <input type="number" class="prep-admin-input" data-field="sort_order" value="{{ item.sort_order }}">
-                                </div>
-                            </div>
-
-                            <div class="form-group" style="margin-top: 12px;">
-                                <label>Instructions</label>
-                                <input type="text" class="prep-admin-input" data-field="instructions" value="{{ item.instructions or '' }}">
-                            </div>
-
-                            <div class="prep-admin-row-footer">
-                                <div class="prep-admin-days-row">
-                                    <label class="checklist-checkbox-row"><input type="checkbox" class="prep-admin-check" data-field="monday" {% if item.monday %}checked{% endif %}> <span>Mon</span></label>
-                                    <label class="checklist-checkbox-row"><input type="checkbox" class="prep-admin-check" data-field="tuesday" {% if item.tuesday %}checked{% endif %}> <span>Tue</span></label>
-                                    <label class="checklist-checkbox-row"><input type="checkbox" class="prep-admin-check" data-field="wednesday" {% if item.wednesday %}checked{% endif %}> <span>Wed</span></label>
-                                    <label class="checklist-checkbox-row"><input type="checkbox" class="prep-admin-check" data-field="thursday" {% if item.thursday %}checked{% endif %}> <span>Thu</span></label>
-                                    <label class="checklist-checkbox-row"><input type="checkbox" class="prep-admin-check" data-field="friday" {% if item.friday %}checked{% endif %}> <span>Fri</span></label>
-                                    <label class="checklist-checkbox-row"><input type="checkbox" class="prep-admin-check" data-field="saturday" {% if item.saturday %}checked{% endif %}> <span>Sat</span></label>
-                                    <label class="checklist-checkbox-row"><input type="checkbox" class="prep-admin-check" data-field="sunday" {% if item.sunday %}checked{% endif %}> <span>Sun</span></label>
-                                    <label class="checklist-checkbox-row"><input type="checkbox" class="prep-admin-check" data-field="is_active" {% if item.is_active %}checked{% endif %}> <span>Active</span></label>
-                                </div>
-
-                                <div class="prep-admin-actions">
-                                    <div class="prep-row-status autosave-status autosave-status-pill autosave-ready">Ready</div>
-
-                                    <form method="POST" onsubmit="return confirm('Remove this prep item?');" style="margin:0;">
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="item_id" value="{{ item.id }}">
-                                        <button type="submit" class="btn-secondary">
-                                            {% if item.is_active %}Remove{% else %}Delete / Archive{% endif %}
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
+        <div class="prep-admin-hero-actions">
+            <div class="prep-admin-status-pill">
+                {% if inactive_count > 0 %}
+                {{ inactive_count }} inactive hidden
+                {% else %}
+                No inactive items
                 {% endif %}
-            {% endfor %}
-
-            {% if not items %}
-            <div class="panel">
-                <div class="panel-head">
-                    <div>
-                        <h3>No Prep Items</h3>
-                        <div class="area-subtitle">
-                            {% if show_inactive and inactive_count > 0 %}
-                            No items match the current view.
-                            {% else %}
-                            No active prep items for this store yet.
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
             </div>
+
+            {% if show_inactive %}
+            <a href="{{ url_for('prep.manage', store=store_number) }}" class="prep-admin-ghost-btn">
+                Hide Inactive
+            </a>
+            {% else %}
+            <a href="{{ url_for('prep.manage', store=store_number, show_inactive=1) }}" class="prep-admin-ghost-btn">
+                Show Inactive
+            </a>
             {% endif %}
         </div>
     </div>
+
+    <div class="prep-admin-top-grid">
+        <form method="GET" class="prep-admin-card prep-admin-top-card">
+            <div class="prep-admin-card-head">
+                <div>
+                    <h3>Load Store</h3>
+                    <p>Switch prep template by store</p>
+                </div>
+            </div>
+
+            <div class="prep-admin-load-row">
+                <div class="prep-admin-field">
+                    <label for="store">Store</label>
+                    <select id="store" name="store" required>
+                        {% for store in stores %}
+                        <option value="{{ store.store_number }}" {% if store.store_number == store_number %}selected{% endif %}>
+                            {{ store.store_number }} - {{ store.area_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <input type="hidden" name="show_inactive" value="{{ 1 if show_inactive else 0 }}">
+
+                <button type="submit" class="prep-admin-primary-btn">Load</button>
+            </div>
+        </form>
+
+        <form method="POST" class="prep-admin-card prep-admin-top-card">
+            <input type="hidden" name="action" value="create">
+
+            <div class="prep-admin-card-head">
+                <div>
+                    <h3>Add Prep Item</h3>
+                    <p>Create a new build-to item for this store</p>
+                </div>
+                <div id="prep-admin-status" class="prep-admin-mini-status">Ready</div>
+            </div>
+
+            <div class="prep-admin-create-grid">
+                <div class="prep-admin-field">
+                    <label for="section_name">Section</label>
+                    <select id="section_name" name="section_name" required>
+                        {% for section in section_options %}
+                        <option value="{{ section }}">{{ section }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="prep-admin-field">
+                    <label for="item_name">Item Name</label>
+                    <input type="text" id="item_name" name="item_name" placeholder="Item name" required>
+                </div>
+
+                <div class="prep-admin-field">
+                    <label for="build_to">Build To</label>
+                    <input type="text" id="build_to" name="build_to" placeholder="16 / 1 case / 3 bins">
+                </div>
+
+                <div class="prep-admin-field">
+                    <label for="sort_order">Sort</label>
+                    <input type="number" id="sort_order" name="sort_order" value="0">
+                </div>
+            </div>
+
+            <div class="prep-admin-field prep-admin-instructions-field">
+                <label for="instructions">Instructions</label>
+                <input type="text" id="instructions" name="instructions" placeholder="Optional prep instructions">
+            </div>
+
+            <div class="prep-admin-days-wrap">
+                <label class="prep-admin-day-chip"><input type="checkbox" name="monday" checked><span>Mon</span></label>
+                <label class="prep-admin-day-chip"><input type="checkbox" name="tuesday" checked><span>Tue</span></label>
+                <label class="prep-admin-day-chip"><input type="checkbox" name="wednesday" checked><span>Wed</span></label>
+                <label class="prep-admin-day-chip"><input type="checkbox" name="thursday" checked><span>Thu</span></label>
+                <label class="prep-admin-day-chip"><input type="checkbox" name="friday" checked><span>Fri</span></label>
+                <label class="prep-admin-day-chip"><input type="checkbox" name="saturday" checked><span>Sat</span></label>
+                <label class="prep-admin-day-chip"><input type="checkbox" name="sunday" checked><span>Sun</span></label>
+                <label class="prep-admin-day-chip prep-admin-day-chip-active"><input type="checkbox" name="is_active" checked><span>Active</span></label>
+            </div>
+
+            <div class="prep-admin-create-actions">
+                <button type="submit" class="prep-admin-primary-btn">Add Item</button>
+            </div>
+        </form>
+    </div>
+
+    {% if items %}
+    <div class="prep-admin-board">
+        <div class="prep-admin-board-header prep-admin-board-grid">
+            <div>Section</div>
+            <div>Item</div>
+            <div>Build To</div>
+            <div>Days</div>
+            <div>Status</div>
+            <div>Actions</div>
+        </div>
+
+        {% for section, items_in_section in grouped_items.items() %}
+            {% if items_in_section %}
+            <div class="prep-admin-section-label">
+                <span>{{ section }}</span>
+                <small>{{ items_in_section|length }} item{% if items_in_section|length != 1 %}s{% endif %}</small>
+            </div>
+
+            {% for item in items_in_section %}
+            <div class="prep-admin-board-row prep-admin-board-grid" data-item-id="{{ item.id }}">
+                <div class="prep-admin-col prep-admin-col-section">
+                    <select class="prep-admin-input prep-admin-select" data-field="section_name">
+                        {% for section_option in section_options %}
+                        <option value="{{ section_option }}" {% if item.section_name == section_option %}selected{% endif %}>
+                            {{ section_option }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="prep-admin-id-line">ID {{ item.id }}</div>
+                </div>
+
+                <div class="prep-admin-col">
+                    <input type="text" class="prep-admin-input prep-admin-text" data-field="item_name" value="{{ item.item_name }}">
+                    <input type="text" class="prep-admin-input prep-admin-text prep-admin-text-secondary" data-field="instructions" value="{{ item.instructions or '' }}" placeholder="Instructions">
+                </div>
+
+                <div class="prep-admin-col">
+                    <input type="text" class="prep-admin-input prep-admin-text" data-field="build_to" value="{{ item.build_to or '' }}">
+                    <input type="number" class="prep-admin-input prep-admin-text prep-admin-sort-input" data-field="sort_order" value="{{ item.sort_order }}" placeholder="Sort">
+                </div>
+
+                <div class="prep-admin-col prep-admin-days-col">
+                    <div class="prep-admin-days-inline">
+                        <label class="prep-admin-inline-day"><input type="checkbox" class="prep-admin-check" data-field="monday" {% if item.monday %}checked{% endif %}><span>M</span></label>
+                        <label class="prep-admin-inline-day"><input type="checkbox" class="prep-admin-check" data-field="tuesday" {% if item.tuesday %}checked{% endif %}><span>T</span></label>
+                        <label class="prep-admin-inline-day"><input type="checkbox" class="prep-admin-check" data-field="wednesday" {% if item.wednesday %}checked{% endif %}><span>W</span></label>
+                        <label class="prep-admin-inline-day"><input type="checkbox" class="prep-admin-check" data-field="thursday" {% if item.thursday %}checked{% endif %}><span>Th</span></label>
+                        <label class="prep-admin-inline-day"><input type="checkbox" class="prep-admin-check" data-field="friday" {% if item.friday %}checked{% endif %}><span>F</span></label>
+                        <label class="prep-admin-inline-day"><input type="checkbox" class="prep-admin-check" data-field="saturday" {% if item.saturday %}checked{% endif %}><span>S</span></label>
+                        <label class="prep-admin-inline-day"><input type="checkbox" class="prep-admin-check" data-field="sunday" {% if item.sunday %}checked{% endif %}><span>Su</span></label>
+                    </div>
+                </div>
+
+                <div class="prep-admin-col prep-admin-status-col">
+                    <label class="prep-admin-toggle-pill {% if item.is_active %}is-on{% endif %}">
+                        <input type="checkbox" class="prep-admin-check" data-field="is_active" {% if item.is_active %}checked{% endif %}>
+                        <span>{% if item.is_active %}Active{% else %}Inactive{% endif %}</span>
+                    </label>
+                    <div class="prep-row-status prep-admin-mini-status">Ready</div>
+                </div>
+
+                <div class="prep-admin-col prep-admin-actions-col">
+                    <form method="POST" onsubmit="return confirm('Remove this prep item?');" style="margin:0;">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                        <button type="submit" class="prep-admin-danger-btn">
+                            {% if item.is_active %}Remove{% else %}Delete / Archive{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="prep-admin-card">
+        <div class="prep-admin-card-head">
+            <div>
+                <h3>No Prep Items</h3>
+                <p>
+                    {% if show_inactive and inactive_count > 0 %}
+                    No items match the current view.
+                    {% else %}
+                    No active prep items for this store yet.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <style>
-.prep-admin-create-grid,
-.prep-admin-row-grid {
-    display: grid;
-    grid-template-columns: 1.2fr 2.2fr 1.2fr 0.7fr;
-    gap: 14px;
-}
-
-.prep-admin-list {
+.prep-admin-shell {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 18px;
 }
 
-.prep-admin-row {
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    padding: 16px;
-    background: rgba(255,255,255,0.02);
-}
-
-.prep-admin-row-footer,
-.prep-admin-days-row,
-.prep-admin-actions {
+.prep-admin-hero {
     display: flex;
-    gap: 12px;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 22px 24px;
+    border-radius: 24px;
+    border: 1px solid rgba(88, 130, 255, 0.18);
+    background:
+        radial-gradient(circle at top left, rgba(33, 64, 136, 0.32), transparent 42%),
+        linear-gradient(135deg, rgba(10, 18, 38, 0.96), rgba(15, 30, 64, 0.94));
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+}
+
+.prep-admin-eyebrow {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    opacity: 0.68;
+    text-transform: uppercase;
+}
+
+.prep-admin-title {
+    margin: 6px 0 4px;
+    font-size: 30px;
+    line-height: 1.05;
+    color: #ffffff;
+}
+
+.prep-admin-subtitle {
+    margin: 0;
+    opacity: 0.8;
+    font-size: 14px;
+}
+
+.prep-admin-hero-actions {
+    display: flex;
     align-items: center;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
-.prep-admin-row-footer {
+.prep-admin-status-pill,
+.prep-admin-ghost-btn,
+.prep-admin-primary-btn,
+.prep-admin-danger-btn,
+.prep-admin-mini-status {
+    border-radius: 999px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.prep-admin-status-pill {
+    padding: 10px 14px;
+    font-size: 12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.06);
+}
+
+.prep-admin-ghost-btn {
+    padding: 11px 16px;
+    font-size: 13px;
+    color: #f4f7ff;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04);
+}
+
+.prep-admin-ghost-btn:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.prep-admin-primary-btn {
+    padding: 12px 18px;
+    font-size: 13px;
+    color: #ffffff;
+    border: 1px solid rgba(100, 140, 255, 0.35);
+    background: linear-gradient(135deg, #2452c7, #1a3b8f);
+    cursor: pointer;
+}
+
+.prep-admin-primary-btn:hover {
+    filter: brightness(1.06);
+}
+
+.prep-admin-danger-btn {
+    padding: 11px 16px;
+    font-size: 12px;
+    color: #ffd5d5;
+    border: 1px solid rgba(255, 110, 110, 0.18);
+    background: rgba(120, 20, 20, 0.18);
+    cursor: pointer;
+}
+
+.prep-admin-danger-btn:hover {
+    background: rgba(160, 24, 24, 0.24);
+}
+
+.prep-admin-mini-status {
+    min-width: 76px;
+    padding: 9px 12px;
+    text-align: center;
+    font-size: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
+}
+
+.prep-admin-top-grid {
+    display: grid;
+    grid-template-columns: 0.95fr 1.55fr;
+    gap: 16px;
+}
+
+.prep-admin-card {
+    border-radius: 22px;
+    border: 1px solid rgba(88, 130, 255, 0.14);
+    background:
+        radial-gradient(circle at top left, rgba(26, 55, 118, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(10, 18, 38, 0.95), rgba(13, 27, 56, 0.94));
+    box-shadow: 0 16px 36px rgba(0,0,0,0.2);
+    padding: 18px 18px 20px;
+}
+
+.prep-admin-card-head {
+    display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.prep-admin-card-head h3 {
+    margin: 0 0 4px 0;
+    color: #f4f7ff;
+    font-size: 18px;
+}
+
+.prep-admin-card-head p {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.72;
+}
+
+.prep-admin-load-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: end;
+}
+
+.prep-admin-create-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 2.2fr 1.1fr 0.7fr;
+    gap: 12px;
+}
+
+.prep-admin-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.prep-admin-field label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.65;
+}
+
+.prep-admin-field input,
+.prep-admin-field select {
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.04);
+    color: #f4f7ff;
+    padding: 0 14px;
+}
+
+.prep-admin-field input::placeholder {
+    color: rgba(244,247,255,0.42);
+}
+
+.prep-admin-instructions-field {
+    margin-top: 12px;
+}
+
+.prep-admin-days-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
     margin-top: 14px;
 }
 
-.prep-row-status {
-    min-width: 70px;
-    text-align: center;
+.prep-admin-day-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    font-size: 12px;
+    font-weight: 700;
 }
 
-@media (max-width: 980px) {
-    .prep-admin-create-grid,
-    .prep-admin-row-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+.prep-admin-day-chip-active {
+    background: rgba(36, 82, 199, 0.22);
+    border-color: rgba(88, 130, 255, 0.28);
 }
 
-@media (max-width: 640px) {
-    .prep-admin-create-grid,
-    .prep-admin-row-grid {
+.prep-admin-create-actions {
+    margin-top: 16px;
+}
+
+.prep-admin-board {
+    overflow: hidden;
+    border-radius: 24px;
+    border: 1px solid rgba(88, 130, 255, 0.16);
+    background:
+        radial-gradient(circle at top left, rgba(26, 55, 118, 0.14), transparent 30%),
+        linear-gradient(135deg, rgba(10, 18, 38, 0.98), rgba(13, 27, 56, 0.96));
+    box-shadow: 0 18px 40px rgba(0,0,0,0.24);
+}
+
+.prep-admin-board-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 2.2fr 1.1fr 1.15fr 0.95fr 0.8fr;
+    gap: 16px;
+    align-items: center;
+}
+
+.prep-admin-board-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(244,247,255,0.72);
+}
+
+.prep-admin-section-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px 10px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #f4f7ff;
+    background: rgba(255,255,255,0.02);
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.prep-admin-section-label small {
+    font-size: 11px;
+    opacity: 0.62;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.prep-admin-board-row {
+    padding: 14px 18px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.14s ease;
+}
+
+.prep-admin-board-row:hover {
+    background: rgba(255,255,255,0.03);
+}
+
+.prep-admin-col {
+    min-width: 0;
+}
+
+.prep-admin-input {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.04);
+    color: #f4f7ff;
+    outline: none;
+}
+
+.prep-admin-input:focus {
+    border-color: rgba(109, 149, 255, 0.55);
+    box-shadow: 0 0 0 3px rgba(88, 130, 255, 0.12);
+}
+
+.prep-admin-select,
+.prep-admin-text {
+    height: 42px;
+    padding: 0 12px;
+}
+
+.prep-admin-text-secondary {
+    margin-top: 8px;
+}
+
+.prep-admin-sort-input {
+    margin-top: 8px;
+}
+
+.prep-admin-id-line {
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.5;
+}
+
+.prep-admin-days-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.prep-admin-inline-day {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 34px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.prep-admin-status-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.prep-admin-toggle-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    font-size: 12px;
+    font-weight: 800;
+    width: fit-content;
+}
+
+.prep-admin-toggle-pill.is-on {
+    color: #dff7e8;
+    background: rgba(22, 104, 55, 0.24);
+    border-color: rgba(68, 191, 117, 0.22);
+}
+
+.prep-admin-actions-col {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.autosave-ready {
+    background: rgba(255,255,255,0.05);
+}
+
+.autosave-saving {
+    background: rgba(166, 129, 20, 0.22);
+    border-color: rgba(224, 180, 47, 0.20);
+}
+
+.autosave-saved {
+    background: rgba(22, 104, 55, 0.24);
+    border-color: rgba(68, 191, 117, 0.22);
+}
+
+.autosave-failed {
+    background: rgba(120, 20, 20, 0.22);
+    border-color: rgba(255, 110, 110, 0.18);
+}
+
+@media (max-width: 1180px) {
+    .prep-admin-top-grid {
         grid-template-columns: 1fr;
     }
 
-    .prep-admin-row-footer {
-        align-items: flex-start;
+    .prep-admin-board-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .prep-admin-board-header {
+        display: none;
+    }
+
+    .prep-admin-board-row {
+        padding: 16px;
+    }
+
+    .prep-admin-col-section,
+    .prep-admin-status-col,
+    .prep-admin-actions-col {
+        justify-content: flex-start;
+    }
+
+    .prep-admin-actions-col {
+        display: block;
+    }
+}
+
+@media (max-width: 860px) {
+    .prep-admin-create-grid,
+    .prep-admin-load-row {
+        grid-template-columns: 1fr;
+    }
+
+    .prep-admin-hero {
         flex-direction: column;
     }
 
-    .prep-admin-actions {
+    .prep-admin-hero-actions {
         width: 100%;
-        justify-content: space-between;
     }
 }
 </style>
@@ -293,7 +651,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const storeNumber = "{{ store_number }}";
-    const rows = Array.from(document.querySelectorAll(".prep-admin-row"));
+    const rows = Array.from(document.querySelectorAll(".prep-admin-board-row"));
 
     function setRowStatus(row, text, state) {
         const el = row.querySelector(".prep-row-status");
@@ -310,6 +668,21 @@ document.addEventListener("DOMContentLoaded", function () {
             el.classList.add("autosave-failed");
         } else {
             el.classList.add("autosave-ready");
+        }
+    }
+
+    function syncActivePill(row, isActive) {
+        const pill = row.querySelector(".prep-admin-toggle-pill");
+        if (!pill) return;
+
+        if (isActive) {
+            pill.classList.add("is-on");
+            const label = pill.querySelector("span");
+            if (label) label.textContent = "Active";
+        } else {
+            pill.classList.remove("is-on");
+            const label = pill.querySelector("span");
+            if (label) label.textContent = "Inactive";
         }
     }
 
@@ -354,6 +727,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
+            syncActivePill(row, !!row.querySelector('[data-field="is_active"]')?.checked);
             setRowStatus(row, "Saved", "saved");
         } catch (error) {
             setRowStatus(row, "Failed", "failed");
@@ -370,7 +744,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 setRowStatus(row, "Typing...", "ready");
                 const key = this.dataset.field || "field";
                 clearTimeout(timers[key]);
-                timers[key] = setTimeout(() => autosaveRow(row), 500);
+                timers[key] = setTimeout(() => autosaveRow(row), 450);
             });
 
             input.addEventListener("change", function () {
@@ -380,6 +754,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         checks.forEach((input) => {
             input.addEventListener("change", function () {
+                if (this.dataset.field === "is_active") {
+                    syncActivePill(row, this.checked);
+                }
                 autosaveRow(row);
             });
         });

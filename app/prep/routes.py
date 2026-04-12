@@ -276,6 +276,7 @@ def manage():
     allowed_store_numbers = {store.store_number for store in visible_stores}
 
     store_number = requested_store if requested_store in allowed_store_numbers else default_store
+    show_inactive = request.args.get("show_inactive", "").strip().lower() in {"1", "true", "yes", "on"}
 
     if request.method == "POST":
         action = request.form.get("action", "").strip()
@@ -289,13 +290,13 @@ def manage():
 
             if not section_name or not item_name:
                 flash("Section and item name are required.", "error")
-                return redirect(url_for("prep.manage", store=store_number))
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
             try:
                 sort_order = int(sort_order_raw or "0")
             except ValueError:
                 flash("Sort order must be a number.", "error")
-                return redirect(url_for("prep.manage", store=store_number))
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
             item = PrepTemplateItem(
                 store_number=store_number,
@@ -316,7 +317,7 @@ def manage():
             db.session.add(item)
             db.session.commit()
             flash("Prep item created.", "success")
-            return redirect(url_for("prep.manage", store=store_number))
+            return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
         if action == "update":
             item_id = request.form.get("item_id", "").strip()
@@ -324,7 +325,7 @@ def manage():
 
             if not item or item.store_number != store_number:
                 flash("Prep item not found.", "error")
-                return redirect(url_for("prep.manage", store=store_number))
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
             section_name = request.form.get("section_name", "").strip()
             item_name = request.form.get("item_name", "").strip()
@@ -334,13 +335,13 @@ def manage():
 
             if not section_name or not item_name:
                 flash("Section and item name are required.", "error")
-                return redirect(url_for("prep.manage", store=store_number))
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
             try:
                 sort_order = int(sort_order_raw or "0")
             except ValueError:
                 flash("Sort order must be a number.", "error")
-                return redirect(url_for("prep.manage", store=store_number))
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
             item.section_name = section_name
             item.item_name = item_name
@@ -358,7 +359,7 @@ def manage():
 
             db.session.commit()
             flash("Prep item updated.", "success")
-            return redirect(url_for("prep.manage", store=store_number))
+            return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
         if action == "delete":
             item_id = request.form.get("item_id", "").strip()
@@ -366,7 +367,7 @@ def manage():
 
             if not item or item.store_number != store_number:
                 flash("Prep item not found.", "error")
-                return redirect(url_for("prep.manage", store=store_number))
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
             usage_exists = DailyPrepItem.query.filter_by(template_item_id=item.id).first()
 
@@ -379,17 +380,23 @@ def manage():
                 db.session.commit()
                 flash("Prep item deleted.", "success")
 
-            return redirect(url_for("prep.manage", store=store_number))
+            return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
-    items = PrepTemplateItem.query.filter_by(
+    items_query = PrepTemplateItem.query.filter_by(
         store_number=store_number
-    ).order_by(
+    )
+
+    if not show_inactive:
+        items_query = items_query.filter_by(is_active=True)
+
+    items = items_query.order_by(
         PrepTemplateItem.section_name.asc(),
         PrepTemplateItem.sort_order.asc(),
         PrepTemplateItem.id.asc()
     ).all()
 
     grouped_items = build_grouped_items(items)
+    inactive_count = PrepTemplateItem.query.filter_by(store_number=store_number, is_active=False).count()
 
     return render_template(
         "prep/manage.html",
@@ -398,4 +405,6 @@ def manage():
         stores=visible_stores,
         store_number=store_number,
         section_options=SECTION_OPTIONS,
+        show_inactive=show_inactive,
+        inactive_count=inactive_count,
     )

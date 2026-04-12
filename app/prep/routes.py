@@ -257,6 +257,59 @@ def autosave_item():
     })
 
 
+@prep_bp.route("/manage-autosave", methods=["POST"])
+@login_required
+@role_required("admin", "supervisor")
+def manage_autosave():
+    data = request.get_json() or {}
+
+    item_id = data.get("item_id")
+    store_number = (data.get("store_number") or "").strip()
+
+    if not item_id or not store_number:
+        return jsonify({"success": False, "error": "Missing item/store."}), 400
+
+    allowed_store_numbers = get_allowed_store_numbers()
+    if store_number not in allowed_store_numbers:
+        return jsonify({"success": False, "error": "Unauthorized."}), 403
+
+    item = PrepTemplateItem.query.get(item_id)
+    if not item or item.store_number != store_number:
+        return jsonify({"success": False, "error": "Prep item not found."}), 404
+
+    section_name = (data.get("section_name") or "").strip()
+    item_name = (data.get("item_name") or "").strip()
+    build_to = (data.get("build_to") or "").strip()
+    instructions = (data.get("instructions") or "").strip()
+
+    if not section_name or not item_name:
+        return jsonify({"success": False, "error": "Section and item name are required."}), 400
+
+    try:
+        sort_order = int(str(data.get("sort_order", "0")).strip() or "0")
+    except ValueError:
+        return jsonify({"success": False, "error": "Sort order must be a number."}), 400
+
+    item.section_name = section_name
+    item.item_name = item_name
+    item.build_to = build_to or None
+    item.instructions = instructions or None
+    item.sort_order = sort_order
+
+    item.monday = bool(data.get("monday", False))
+    item.tuesday = bool(data.get("tuesday", False))
+    item.wednesday = bool(data.get("wednesday", False))
+    item.thursday = bool(data.get("thursday", False))
+    item.friday = bool(data.get("friday", False))
+    item.saturday = bool(data.get("saturday", False))
+    item.sunday = bool(data.get("sunday", False))
+    item.is_active = bool(data.get("is_active", False))
+
+    db.session.commit()
+
+    return jsonify({"success": True})
+
+
 @prep_bp.route("/manage", methods=["GET", "POST"])
 @login_required
 @role_required("admin", "supervisor")
@@ -317,48 +370,6 @@ def manage():
             db.session.add(item)
             db.session.commit()
             flash("Prep item created.", "success")
-            return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
-
-        if action == "update":
-            item_id = request.form.get("item_id", "").strip()
-            item = PrepTemplateItem.query.get(item_id)
-
-            if not item or item.store_number != store_number:
-                flash("Prep item not found.", "error")
-                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
-
-            section_name = request.form.get("section_name", "").strip()
-            item_name = request.form.get("item_name", "").strip()
-            build_to = request.form.get("build_to", "").strip()
-            instructions = request.form.get("instructions", "").strip()
-            sort_order_raw = request.form.get("sort_order", "0").strip()
-
-            if not section_name or not item_name:
-                flash("Section and item name are required.", "error")
-                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
-
-            try:
-                sort_order = int(sort_order_raw or "0")
-            except ValueError:
-                flash("Sort order must be a number.", "error")
-                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
-
-            item.section_name = section_name
-            item.item_name = item_name
-            item.build_to = build_to or None
-            item.instructions = instructions or None
-            item.monday = request.form.get("monday") == "on"
-            item.tuesday = request.form.get("tuesday") == "on"
-            item.wednesday = request.form.get("wednesday") == "on"
-            item.thursday = request.form.get("thursday") == "on"
-            item.friday = request.form.get("friday") == "on"
-            item.saturday = request.form.get("saturday") == "on"
-            item.sunday = request.form.get("sunday") == "on"
-            item.sort_order = sort_order
-            item.is_active = request.form.get("is_active") == "on"
-
-            db.session.commit()
-            flash("Prep item updated.", "success")
             return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
         if action == "delete":

@@ -132,6 +132,41 @@
         cursor: pointer;
     }
 
+    .action-sort-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+        flex-wrap: wrap;
+    }
+
+    .action-sort-select,
+    .action-sort-btn {
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        color: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        padding: 10px 14px;
+        outline: none;
+    }
+
+    .action-sort-select {
+        min-width: 150px;
+        cursor: pointer;
+    }
+
+    .action-sort-btn {
+        cursor: pointer;
+        transition: background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .action-sort-btn:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.16);
+    }
+
     .action-list-head {
         display: grid;
         grid-template-columns: 120px 1.1fr 140px 140px 140px 120px;
@@ -391,6 +426,11 @@
         .action-detail-grid {
             grid-template-columns: 1fr;
         }
+
+        .action-sort-group {
+            width: 100%;
+            margin-left: 0;
+        }
     }
 </style>
 
@@ -471,6 +511,19 @@
             <div class="action-toolbar">
                 <div class="summary-pill" id="visible-store-count">{{ store_tiles|length }} stores</div>
                 <div class="summary-pill">Open work stays front and center</div>
+
+                <div class="action-sort-group">
+                    <select id="action-sort-by" class="action-sort-select" aria-label="Sort stores by">
+                        <option value="store_number">Sort: Store #</option>
+                        <option value="open_total">Sort: Total Open</option>
+                        <option value="open_cleaning">Sort: Open Cleaning</option>
+                        <option value="open_goal">Sort: Open Goals</option>
+                        <option value="completed_total">Sort: Completed</option>
+                    </select>
+                    <button type="button" id="action-sort-direction" class="action-sort-btn" data-direction="asc">
+                        Asc ↑
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -485,152 +538,158 @@
                     <div style="text-align:right;">Details</div>
                 </div>
 
-                {% for tile in store_tiles %}
-                    {% set open_cleaning_count = tile.open_cleaning|length %}
-                    {% set open_goal_count = tile.open_goal|length %}
-                    {% set completed_count = (tile.completed_cleaning|length) + (tile.completed_goal|length) %}
-                    {% set total_open = open_cleaning_count + open_goal_count %}
-                    <div
-                        class="action-store-row"
-                        data-store-filter="{{ 'with_open' if total_open > 0 else 'done_only' }}"
-                    >
+                <div id="action-store-list">
+                    {% for tile in store_tiles %}
+                        {% set open_cleaning_count = tile.open_cleaning|length %}
+                        {% set open_goal_count = tile.open_goal|length %}
+                        {% set completed_count = (tile.completed_cleaning|length) + (tile.completed_goal|length) %}
+                        {% set total_open = open_cleaning_count + open_goal_count %}
                         <div
-                            class="action-store-summary"
-                            data-store-row-toggle
+                            class="action-store-row"
+                            data-store-filter="{{ 'with_open' if total_open > 0 else 'done_only' }}"
+                            data-store-number="{{ tile.store_number }}"
+                            data-open-cleaning="{{ open_cleaning_count }}"
+                            data-open-goal="{{ open_goal_count }}"
+                            data-open-total="{{ total_open }}"
+                            data-completed-total="{{ completed_count }}"
                         >
-                            <div>
-                                <div class="action-store-number">{{ tile.store_number }}</div>
-                                <div class="action-store-name">{{ tile.store_name }}</div>
-                            </div>
+                            <div
+                                class="action-store-summary"
+                                data-store-row-toggle
+                            >
+                                <div>
+                                    <div class="action-store-number">{{ tile.store_number }}</div>
+                                    <div class="action-store-name">{{ tile.store_name }}</div>
+                                </div>
 
-                            <div>
-                                {% set preview_open_items = [] %}
-                                <div class="action-preview-stack">
-                                    {% if tile.open_cleaning %}
-                                        <div class="action-preview-item cleaning">
-                                            {{ tile.open_cleaning[0].item_text }}
-                                        </div>
+                                <div>
+                                    <div class="action-preview-stack">
+                                        {% if tile.open_cleaning %}
+                                            <div class="action-preview-item cleaning">
+                                                {{ tile.open_cleaning[0].item_text }}
+                                            </div>
+                                        {% endif %}
+                                        {% if tile.open_goal %}
+                                            <div class="action-preview-item goal">
+                                                {{ tile.open_goal[0].item_text }}
+                                            </div>
+                                        {% endif %}
+                                        {% if not tile.open_cleaning and not tile.open_goal %}
+                                            <div class="action-preview-empty">No open items.</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="action-count-col">
+                                    <span class="action-count-pill cleaning">{{ open_cleaning_count }} cleaning</span>
+                                </div>
+
+                                <div class="action-count-col">
+                                    <span class="action-count-pill goal">{{ open_goal_count }} goals</span>
+                                </div>
+
+                                <div class="action-count-col">
+                                    {% if completed_count > 0 %}
+                                        <span class="action-count-pill completed">{{ completed_count }} done</span>
+                                    {% else %}
+                                        <span class="action-count-pill open">0 done</span>
                                     {% endif %}
-                                    {% if tile.open_goal %}
-                                        <div class="action-preview-item goal">
-                                            {{ tile.open_goal[0].item_text }}
-                                        </div>
-                                    {% endif %}
-                                    {% if not tile.open_cleaning and not tile.open_goal %}
-                                        <div class="action-preview-empty">No open items.</div>
-                                    {% endif %}
+                                </div>
+
+                                <div class="action-store-toggle-wrap">
+                                    <button type="button" class="action-toggle-btn" data-store-toggle-btn>Show ▼</button>
                                 </div>
                             </div>
 
-                            <div class="action-count-col">
-                                <span class="action-count-pill cleaning">{{ open_cleaning_count }} cleaning</span>
-                            </div>
+                            <div class="action-store-detail" data-store-detail>
+                                <div class="action-detail-grid">
+                                    <div class="action-detail-card">
+                                        <div class="action-detail-title">Open Cleaning</div>
+                                        {% if tile.open_cleaning %}
+                                            <div class="action-task-stack">
+                                                {% for item in tile.open_cleaning %}
+                                                    <div class="action-task-chip cleaning">
+                                                        {{ item.item_text }}
+                                                        <span class="action-task-meta">
+                                                            Open • {{ item.created_at.strftime('%b %d, %Y %I:%M %p') if item.created_at else 'No date' }}
+                                                        </span>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <div class="action-empty-state">No open cleaning items.</div>
+                                        {% endif %}
+                                    </div>
 
-                            <div class="action-count-col">
-                                <span class="action-count-pill goal">{{ open_goal_count }} goals</span>
-                            </div>
+                                    <div class="action-detail-card">
+                                        <div class="action-detail-title">Open Goals</div>
+                                        {% if tile.open_goal %}
+                                            <div class="action-task-stack">
+                                                {% for item in tile.open_goal %}
+                                                    <div class="action-task-chip goal">
+                                                        {{ item.item_text }}
+                                                        <span class="action-task-meta">
+                                                            Open • {{ item.created_at.strftime('%b %d, %Y %I:%M %p') if item.created_at else 'No date' }}
+                                                        </span>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <div class="action-empty-state">No open goals.</div>
+                                        {% endif %}
+                                    </div>
 
-                            <div class="action-count-col">
-                                {% if completed_count > 0 %}
-                                    <span class="action-count-pill completed">{{ completed_count }} done</span>
-                                {% else %}
-                                    <span class="action-count-pill open">0 done</span>
-                                {% endif %}
-                            </div>
+                                    <div class="action-detail-card full-width">
+                                        <div class="action-detail-title">Completed Items</div>
+                                        {% if tile.completed_cleaning or tile.completed_goal %}
+                                            <div class="action-task-stack">
+                                                {% for item in tile.completed_cleaning %}
+                                                    <div class="action-task-chip cleaning completed">
+                                                        <label class="action-completed-label">
+                                                            <input
+                                                                type="checkbox"
+                                                                name="item_ids"
+                                                                value="{{ item.id }}"
+                                                                class="completed-item-box"
+                                                            >
+                                                            <span style="display:block;">
+                                                                {{ item.item_text }}
+                                                                <span class="action-task-meta">
+                                                                    Cleaning • {{ item.completed_at.strftime('%b %d, %Y %I:%M %p') if item.completed_at else 'Completed' }}
+                                                                </span>
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
 
-                            <div class="action-store-toggle-wrap">
-                                <button type="button" class="action-toggle-btn" data-store-toggle-btn>Show ▼</button>
+                                                {% for item in tile.completed_goal %}
+                                                    <div class="action-task-chip goal completed">
+                                                        <label class="action-completed-label">
+                                                            <input
+                                                                type="checkbox"
+                                                                name="item_ids"
+                                                                value="{{ item.id }}"
+                                                                class="completed-item-box"
+                                                            >
+                                                            <span style="display:block;">
+                                                                {{ item.item_text }}
+                                                                <span class="action-task-meta">
+                                                                    Goal • {{ item.completed_at.strftime('%b %d, %Y %I:%M %p') if item.completed_at else 'Completed' }}
+                                                                </span>
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <div class="action-empty-state">No completed items to clear.</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="action-store-detail" data-store-detail>
-                            <div class="action-detail-grid">
-                                <div class="action-detail-card">
-                                    <div class="action-detail-title">Open Cleaning</div>
-                                    {% if tile.open_cleaning %}
-                                        <div class="action-task-stack">
-                                            {% for item in tile.open_cleaning %}
-                                                <div class="action-task-chip cleaning">
-                                                    {{ item.item_text }}
-                                                    <span class="action-task-meta">
-                                                        Open • {{ item.created_at.strftime('%b %d, %Y %I:%M %p') if item.created_at else 'No date' }}
-                                                    </span>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    {% else %}
-                                        <div class="action-empty-state">No open cleaning items.</div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="action-detail-card">
-                                    <div class="action-detail-title">Open Goals</div>
-                                    {% if tile.open_goal %}
-                                        <div class="action-task-stack">
-                                            {% for item in tile.open_goal %}
-                                                <div class="action-task-chip goal">
-                                                    {{ item.item_text }}
-                                                    <span class="action-task-meta">
-                                                        Open • {{ item.created_at.strftime('%b %d, %Y %I:%M %p') if item.created_at else 'No date' }}
-                                                    </span>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    {% else %}
-                                        <div class="action-empty-state">No open goals.</div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="action-detail-card full-width">
-                                    <div class="action-detail-title">Completed Items</div>
-                                    {% if tile.completed_cleaning or tile.completed_goal %}
-                                        <div class="action-task-stack">
-                                            {% for item in tile.completed_cleaning %}
-                                                <div class="action-task-chip cleaning completed">
-                                                    <label class="action-completed-label">
-                                                        <input
-                                                            type="checkbox"
-                                                            name="item_ids"
-                                                            value="{{ item.id }}"
-                                                            class="completed-item-box"
-                                                        >
-                                                        <span style="display:block;">
-                                                            {{ item.item_text }}
-                                                            <span class="action-task-meta">
-                                                                Cleaning • {{ item.completed_at.strftime('%b %d, %Y %I:%M %p') if item.completed_at else 'Completed' }}
-                                                            </span>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                            {% endfor %}
-
-                                            {% for item in tile.completed_goal %}
-                                                <div class="action-task-chip goal completed">
-                                                    <label class="action-completed-label">
-                                                        <input
-                                                            type="checkbox"
-                                                            name="item_ids"
-                                                            value="{{ item.id }}"
-                                                            class="completed-item-box"
-                                                        >
-                                                        <span style="display:block;">
-                                                            {{ item.item_text }}
-                                                            <span class="action-task-meta">
-                                                                Goal • {{ item.completed_at.strftime('%b %d, %Y %I:%M %p') if item.completed_at else 'Completed' }}
-                                                            </span>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    {% else %}
-                                        <div class="action-empty-state">No completed items to clear.</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             {% else %}
                 <div class="action-empty-state" style="margin: 18px;">No action items found.</div>
             {% endif %}
@@ -647,6 +706,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const filterButtons = Array.from(document.querySelectorAll("[data-view-filter]"));
     const storeRows = Array.from(document.querySelectorAll(".action-store-row"));
     const visibleStoreCount = document.getElementById("visible-store-count");
+    const actionStoreList = document.getElementById("action-store-list");
+    const sortBySelect = document.getElementById("action-sort-by");
+    const sortDirectionBtn = document.getElementById("action-sort-direction");
 
     function getDetail(row) {
         return row.querySelector("[data-store-detail]");
@@ -671,6 +733,45 @@ document.addEventListener("DOMContentLoaded", function () {
         if (visibleStoreCount) {
             visibleStoreCount.textContent = `${visible} stores`;
         }
+    }
+
+    function getSortValue(row, sortBy) {
+        if (sortBy === "store_number") {
+            return Number(row.dataset.storeNumber || 0);
+        }
+        if (sortBy === "open_cleaning") {
+            return Number(row.dataset.openCleaning || 0);
+        }
+        if (sortBy === "open_goal") {
+            return Number(row.dataset.openGoal || 0);
+        }
+        if (sortBy === "completed_total") {
+            return Number(row.dataset.completedTotal || 0);
+        }
+        return Number(row.dataset.openTotal || 0);
+    }
+
+    function sortRows() {
+        if (!actionStoreList || !sortBySelect || !sortDirectionBtn) return;
+
+        const sortBy = sortBySelect.value;
+        const direction = sortDirectionBtn.dataset.direction || "asc";
+        const rows = Array.from(actionStoreList.querySelectorAll(".action-store-row"));
+
+        rows.sort((a, b) => {
+            const aValue = getSortValue(a, sortBy);
+            const bValue = getSortValue(b, sortBy);
+
+            if (aValue === bValue) {
+                const aStore = Number(a.dataset.storeNumber || 0);
+                const bStore = Number(b.dataset.storeNumber || 0);
+                return direction === "asc" ? aStore - bStore : bStore - aStore;
+            }
+
+            return direction === "asc" ? aValue - bValue : bValue - aValue;
+        });
+
+        rows.forEach(row => actionStoreList.appendChild(row));
     }
 
     filterButtons.forEach(btn => {
@@ -751,6 +852,21 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    if (sortBySelect) {
+        sortBySelect.addEventListener("change", sortRows);
+    }
+
+    if (sortDirectionBtn) {
+        sortDirectionBtn.addEventListener("click", function () {
+            const current = this.dataset.direction || "asc";
+            const next = current === "asc" ? "desc" : "asc";
+            this.dataset.direction = next;
+            this.textContent = next === "asc" ? "Asc ↑" : "Desc ↓";
+            sortRows();
+        });
+    }
+
+    sortRows();
     updateVisibleCount();
 });
 </script>

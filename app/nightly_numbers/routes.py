@@ -1,4 +1,6 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 
 from app.auth.routes import login_required, role_required
@@ -7,6 +9,8 @@ from app.models import NightlyNumbersReport, NightlyNumbersFieldConfig, Store, U
 from app.services.email_service import send_email
 
 nightly_numbers_bp = Blueprint("nightly_numbers", __name__, url_prefix="/nightly-numbers")
+
+APP_TZ = ZoneInfo("America/New_York")
 
 DEFAULT_FIELD_CONFIG = [
     {
@@ -341,7 +345,7 @@ def index():
         return redirect(url_for("dashboard.home"))
 
     fields = get_field_config()
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_str = datetime.now(APP_TZ).strftime("%Y-%m-%d")
 
     if request.method == "POST":
         report_date_str = request.form.get("report_date", "").strip()

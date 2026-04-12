@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import date, timedelta, datetime
+from datetime import timedelta, datetime
 from io import BytesIO
 from zoneinfo import ZoneInfo
 
@@ -53,7 +53,7 @@ def get_visible_stores():
 
 
 def parse_report_dates():
-    today = date.today()
+    today = datetime.now(APP_TZ).date()
     default_start = today - timedelta(days=6)
     default_end = today
 

@@ -94,11 +94,18 @@ def build_dashboard_data():
 
     today = business_date_et()
 
+    daily_rows = DailyChecklist.query.filter(
+        DailyChecklist.checklist_date == today,
+        DailyChecklist.store_number.in_(visible_store_numbers)
+    ).all() if visible_store_numbers else []
+
+    daily_map = {
+        row.store_number: row
+        for row in daily_rows
+    }
+
     for store in stores:
-        daily = DailyChecklist.query.filter_by(
-            store_number=store.store_number,
-            checklist_date=today
-        ).first()
+        daily = daily_map.get(store.store_number)
 
         checklist_percent = daily.percent_complete if daily else 0.0
         integrity_score = daily.integrity_score if daily else 0.0

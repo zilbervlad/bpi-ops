@@ -158,22 +158,16 @@ def build_dashboard_data():
 
     opening_progress = sorted(
         opening_progress,
-        key=lambda x: (x["percent"], int(x["store_number"]))
+        key=lambda x: (x["percent"], x["store_number"])
     )
     restock_progress = sorted(
         restock_progress,
-        key=lambda x: (x["percent"], int(x["store_number"]))
+        key=lambda x: (x["percent"], x["store_number"])
     )
     manager_walk_progress = sorted(
         manager_walk_progress,
-        key=lambda x: (x["percent"], int(x["store_number"]))
+        key=lambda x: (x["percent"], x["store_number"])
     )
-
-    for area_name in area_groups:
-        area_groups[area_name] = sorted(
-            area_groups[area_name],
-            key=lambda x: int(x["store_number"])
-        )
 
     ordered_area_groups = dict(sorted(area_groups.items(), key=lambda x: x[0]))
 
@@ -219,7 +213,7 @@ def build_dashboard_data():
     }
 
     svr_completed_count = len(weekly_svr_store_numbers)
-    svr_missing_stores = sorted(list(visible_store_numbers - weekly_svr_store_numbers), key=lambda x: int(x))
+    svr_missing_stores = sorted(list(visible_store_numbers - weekly_svr_store_numbers))
     svr_compliance_percent = round((svr_completed_count / total_stores) * 100, 1) if total_stores else 0.0
 
     visible_tickets = MaintenanceTicket.query.filter(
@@ -457,11 +451,6 @@ def action_board():
             "completed_cleaning": groups["completed_cleaning"],
             "completed_goal": groups["completed_goal"],
         })
-
-    store_tiles = sorted(
-        store_tiles,
-        key=lambda x: int(x["store_number"])
-    )
 
     return render_template(
         "action_board.html",

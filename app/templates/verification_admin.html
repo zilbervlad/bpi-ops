@@ -4,117 +4,671 @@
 {% block header %}Verification Admin{% endblock %}
 
 {% block content %}
-<div class="panel premium-panel" style="margin-bottom: 24px;">
-    <div class="panel-head">
-        <div>
-            <h3>Verification Template Manager</h3>
-            <div class="area-subtitle">Edit the live verification questions supervisors see.</div>
+<style>
+    .verification-admin-page {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+    }
+
+    .verification-admin-shell {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .verification-admin-panel {
+        padding: 22px;
+    }
+
+    .verification-admin-panel .panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+
+    .verification-admin-panel h3 {
+        margin: 0 0 6px 0;
+    }
+
+    .verification-admin-muted {
+        color: rgba(255, 255, 255, 0.74);
+        font-size: 0.95rem;
+        line-height: 1.45;
+    }
+
+    .verification-admin-command {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: center;
+        padding: 22px;
+    }
+
+    .verification-admin-command h2 {
+        margin: 4px 0 6px 0;
+    }
+
+    .verification-admin-chip-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .verification-admin-chip {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.88rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .verification-admin-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .verification-admin-toolbar {
+        position: sticky;
+        top: 10px;
+        z-index: 5;
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(14, 18, 27, 0.92);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        margin-bottom: 18px;
+    }
+
+    .verification-admin-toolbar-grid {
+        display: grid;
+        grid-template-columns: 220px 220px auto;
+        gap: 12px;
+        align-items: end;
+    }
+
+    .verification-admin-toolbar-stats {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .verification-admin-stat {
+        padding: 9px 12px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.06);
+        font-size: 0.86rem;
+        font-weight: 700;
+    }
+
+    .verification-inline-note {
+        margin-top: 8px;
+        color: rgba(255, 255, 255, 0.66);
+        font-size: 0.84rem;
+    }
+
+    .verification-settings-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .verification-setting-card {
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .verification-setting-card:hover {
+        border-color: rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.055);
+    }
+
+    .verification-setting-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+
+    .verification-setting-title {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(255, 255, 255, 0.58);
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .verification-setting-subtitle {
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.92);
+        line-height: 1.35;
+    }
+
+    .verification-setting-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .verification-setting-body {
+        display: grid;
+        grid-template-columns: 1.2fr 2.6fr 0.9fr 0.8fr auto auto;
+        gap: 10px;
+        align-items: end;
+    }
+
+    .verification-inline-field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+    }
+
+    .verification-inline-field label {
+        font-size: 0.72rem;
+        color: rgba(255, 255, 255, 0.58);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .verification-inline-field input,
+    .verification-inline-field select {
+        height: 42px;
+        border-radius: 12px;
+        padding: 0 12px;
+        font-size: 0.9rem;
+    }
+
+    .verification-setting-flags {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 42px;
+        padding-top: 18px;
+    }
+
+    .verification-setting-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        min-height: 42px;
+        padding-top: 18px;
+    }
+
+    .verification-setting-status {
+        min-width: 78px;
+        text-align: center;
+        padding: 8px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .verification-setting-status.typing {
+        background: rgba(255, 255, 255, 0.10);
+        color: rgba(255, 255, 255, 0.96);
+    }
+
+    .verification-setting-status.saving {
+        background: rgba(255, 193, 7, 0.16);
+        border-color: rgba(255, 193, 7, 0.28);
+        color: #ffd86a;
+    }
+
+    .verification-setting-status.saved {
+        background: rgba(40, 167, 69, 0.16);
+        border-color: rgba(40, 167, 69, 0.28);
+        color: #7ee2a0;
+    }
+
+    .verification-setting-status.failed {
+        background: rgba(220, 53, 69, 0.16);
+        border-color: rgba(220, 53, 69, 0.28);
+        color: #ff8d9a;
+    }
+
+    .verification-core-badge {
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.78rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .verification-empty-state {
+        padding: 24px;
+        border-radius: 16px;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.72);
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+
+    @media (max-width: 1180px) {
+        .verification-setting-body {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .verification-setting-flags,
+        .verification-setting-actions {
+            padding-top: 0;
+        }
+    }
+
+    @media (max-width: 980px) {
+        .verification-admin-grid,
+        .verification-admin-toolbar-grid,
+        .verification-admin-command {
+            grid-template-columns: 1fr;
+        }
+
+        .verification-admin-chip-row,
+        .verification-admin-toolbar-stats {
+            justify-content: flex-start;
+        }
+    }
+
+    @media (max-width: 700px) {
+        .verification-setting-body {
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .verification-setting-card {
+            padding: 12px;
+        }
+
+        .verification-setting-flags,
+        .verification-setting-actions {
+            min-height: auto;
+        }
+
+        .verification-setting-actions {
+            justify-content: flex-start;
+        }
+    }
+</style>
+
+<div class="verification-admin-page">
+    <div class="verification-admin-shell">
+
+        <div class="command-bar panel verification-admin-command">
+            <div>
+                <div class="command-eyebrow">ADMIN</div>
+                <h2 class="command-title">Verification Template Manager</h2>
+                <p class="command-subtitle">
+                    Edit the live verification questions supervisors see without page bounce.
+                </p>
+            </div>
+
+            <div class="verification-admin-chip-row">
+                <div class="verification-admin-chip">{{ fields|length }} Fields</div>
+                <div class="verification-admin-chip">Admin Only</div>
+            </div>
         </div>
-        <span class="summary-pill">Admin Only</span>
+
+        <section class="panel premium-panel verification-admin-panel">
+            <div class="panel-head">
+                <div>
+                    <h3>Create Field</h3>
+                    <div class="verification-admin-muted">
+                        Add a new verification field and place it in the correct order.
+                    </div>
+                </div>
+                <span class="summary-pill">New</span>
+            </div>
+
+            <form method="POST" class="login-form">
+                <input type="hidden" name="action" value="create">
+
+                <div class="verification-admin-grid">
+                    <div class="form-group">
+                        <label for="field_key">Field Key</label>
+                        <input type="text" id="field_key" name="field_key" placeholder="example_bad_orders" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="field_label">Field Label</label>
+                        <input type="text" id="field_label" name="field_label" placeholder="Question shown to supervisors" required>
+                    </div>
+                </div>
+
+                <div class="verification-admin-grid">
+                    <div class="form-group">
+                        <label for="field_type">Field Type</label>
+                        <select id="field_type" name="field_type">
+                            <option value="textarea">Textarea</option>
+                            <option value="text">Text</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sort_order">Sort Order</label>
+                        <input type="number" id="sort_order" name="sort_order" value="999" required>
+                    </div>
+                </div>
+
+                <div class="verification-admin-actions">
+                    <button type="submit" class="btn-primary">Create Field</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel premium-panel verification-admin-panel">
+            <div class="panel-head">
+                <div>
+                    <h3>Current Fields</h3>
+                    <div class="verification-admin-muted">
+                        Edit fields inline. Changes save automatically.
+                    </div>
+                </div>
+                <span class="summary-pill">{{ fields|length }} total</span>
+            </div>
+
+            <div class="verification-admin-toolbar">
+                <div class="verification-admin-toolbar-grid">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="verification_search">Search Fields</label>
+                        <input
+                            type="text"
+                            id="verification_search"
+                            placeholder="Search by key or label..."
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="verification_status_filter">Filter by Status</label>
+                        <select id="verification_status_filter">
+                            <option value="all">All Fields</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="core">Core Only</option>
+                            <option value="custom">Custom Only</option>
+                        </select>
+                    </div>
+
+                    <div class="verification-admin-toolbar-stats">
+                        <div class="verification-admin-stat"><span id="visible_verification_count">{{ fields|length }}</span> Showing</div>
+                        <div class="verification-admin-stat">{{ fields|length }} Total</div>
+                    </div>
+                </div>
+
+                <div class="verification-inline-note">
+                    Edit field settings inline below. Changes save automatically.
+                </div>
+            </div>
+
+            <div class="verification-settings-list" id="verification-settings-list">
+                {% for field in fields %}
+                <form
+                    method="POST"
+                    class="verification-setting-card js-verification-setting-form"
+                    data-key="{{ field.field_key|lower }}"
+                    data-label="{{ field.field_label|lower }}"
+                    data-active="{{ 'true' if field.is_active else 'false' }}"
+                    data-core="{{ 'true' if field.field_key in core_field_keys else 'false' }}"
+                    data-field-id="{{ field.id }}"
+                >
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="field_id" value="{{ field.id }}">
+
+                    <div class="verification-setting-head">
+                        <div>
+                            <div class="verification-setting-title">Verification Field</div>
+                            <div class="verification-setting-subtitle">
+                                {{ field.field_key }}
+                            </div>
+                        </div>
+
+                        <div class="verification-setting-meta">
+                            <span class="table-badge {% if field.is_active %}badge-success{% else %}badge-neutral{% endif %} js-active-badge">
+                                {% if field.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+
+                            <span class="table-badge badge-neutral js-type-badge">{{ field.field_type|title }}</span>
+
+                            {% if field.field_key in core_field_keys %}
+                            <span class="verification-core-badge">Core Field</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="verification-setting-body">
+                        <div class="verification-inline-field">
+                            <label>Field Key</label>
+                            <input type="text" name="field_key" value="{{ field.field_key }}" class="js-verification-autosave-field js-key-field">
+                        </div>
+
+                        <div class="verification-inline-field">
+                            <label>Field Label</label>
+                            <input type="text" name="field_label" value="{{ field.field_label }}" class="js-verification-autosave-field js-label-field">
+                        </div>
+
+                        <div class="verification-inline-field">
+                            <label>Field Type</label>
+                            <select name="field_type" class="js-verification-autosave-field js-type-field">
+                                <option value="textarea" {% if field.field_type == 'textarea' %}selected{% endif %}>Textarea</option>
+                                <option value="text" {% if field.field_type == 'text' %}selected{% endif %}>Text</option>
+                            </select>
+                        </div>
+
+                        <div class="verification-inline-field">
+                            <label>Sort Order</label>
+                            <input type="number" name="sort_order" value="{{ field.sort_order }}" class="js-verification-autosave-field">
+                        </div>
+
+                        <div class="verification-setting-flags">
+                            <label class="checkbox-inline">
+                                <input
+                                    type="checkbox"
+                                    name="is_active"
+                                    {% if field.is_active %}checked{% endif %}
+                                    class="js-verification-autosave-field js-active-field"
+                                >
+                                Active
+                            </label>
+                        </div>
+
+                        <div class="verification-setting-actions">
+                            <div class="verification-setting-status js-verification-status">Ready</div>
+
+                            {% if field.field_key not in core_field_keys %}
+                            <button
+                                type="submit"
+                                name="action"
+                                value="delete"
+                                class="btn-danger"
+                                formnovalidate
+                                onclick="return confirm('Delete this verification field?')"
+                            >
+                                Delete
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+                {% else %}
+                <div class="verification-empty-state">
+                    No verification fields yet.
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
     </div>
 </div>
 
-<div class="content-grid" style="grid-template-columns: 1.05fr 1.4fr; gap: 20px;">
-    <section class="panel premium-panel">
-        <div class="panel-head">
-            <h3>Create Field</h3>
-            <span class="summary-pill">New</span>
-        </div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const statusFilter = document.getElementById("verification_status_filter");
+    const searchField = document.getElementById("verification_search");
+    const visibleCount = document.getElementById("visible_verification_count");
+    const settingCards = document.querySelectorAll(".js-verification-setting-form");
 
-        <form method="POST" class="login-form" style="margin-top: 16px;">
-            <input type="hidden" name="action" value="create">
+    function applyVerificationFilters() {
+        if (!settingCards.length) return;
 
-            <div class="form-group">
-                <label for="field_key">Field Key</label>
-                <input type="text" id="field_key" name="field_key" placeholder="example: bad_orders" required>
-            </div>
+        const statusValue = statusFilter ? statusFilter.value : "all";
+        const searchValue = searchField ? searchField.value.trim().toLowerCase() : "";
+        let count = 0;
 
-            <div class="form-group">
-                <label for="field_label">Field Label</label>
-                <input type="text" id="field_label" name="field_label" placeholder="Question shown to supervisors" required>
-            </div>
+        settingCards.forEach((card) => {
+            const key = card.getAttribute("data-key") || "";
+            const label = card.getAttribute("data-label") || "";
+            const active = card.getAttribute("data-active") === "true";
+            const core = card.getAttribute("data-core") === "true";
 
-            <div class="form-group">
-                <label for="field_type">Field Type</label>
-                <select id="field_type" name="field_type">
-                    <option value="textarea">Textarea</option>
-                    <option value="text">Text</option>
-                </select>
-            </div>
+            const matchesSearch = !searchValue || key.includes(searchValue) || label.includes(searchValue);
 
-            <div class="form-group">
-                <label for="sort_order">Sort Order</label>
-                <input type="number" id="sort_order" name="sort_order" value="999" required>
-            </div>
+            let matchesStatus = true;
+            if (statusValue === "active") matchesStatus = active;
+            if (statusValue === "inactive") matchesStatus = !active;
+            if (statusValue === "core") matchesStatus = core;
+            if (statusValue === "custom") matchesStatus = !core;
 
-            <button type="submit" class="btn-primary" style="width: 100%;">Create Field</button>
-        </form>
-    </section>
+            const shouldShow = matchesSearch && matchesStatus;
+            card.style.display = shouldShow ? "" : "none";
 
-    <section class="panel premium-panel">
-        <div class="panel-head">
-            <h3>Current Fields</h3>
-            <span class="summary-pill">{{ fields|length }} total</span>
-        </div>
+            if (shouldShow) count += 1;
+        });
 
-        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 16px;">
-            {% for field in fields %}
-            <form method="POST" class="panel" style="padding: 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
-                <input type="hidden" name="action" value="update">
-                <input type="hidden" name="field_id" value="{{ field.id }}">
+        if (visibleCount) {
+            visibleCount.textContent = count;
+        }
+    }
 
-                <div class="form-group">
-                    <label>Field Key</label>
-                    <input type="text" name="field_key" value="{{ field.field_key }}" required>
-                </div>
+    function setStatus(form, text, state) {
+        const statusEl = form.querySelector(".js-verification-status");
+        if (!statusEl) return;
 
-                <div class="form-group">
-                    <label>Field Label</label>
-                    <input type="text" name="field_label" value="{{ field.field_label }}" required>
-                </div>
+        statusEl.textContent = text;
+        statusEl.classList.remove("typing", "saving", "saved", "failed");
 
-                <div class="form-group">
-                    <label>Field Type</label>
-                    <select name="field_type">
-                        <option value="textarea" {% if field.field_type == 'textarea' %}selected{% endif %}>Textarea</option>
-                        <option value="text" {% if field.field_type == 'text' %}selected{% endif %}>Text</option>
-                    </select>
-                </div>
+        if (state) {
+            statusEl.classList.add(state);
+        }
+    }
 
-                <div class="form-group">
-                    <label>Sort Order</label>
-                    <input type="number" name="sort_order" value="{{ field.sort_order }}" required>
-                </div>
+    function syncVerificationBadges(form) {
+        const activeField = form.querySelector(".js-active-field");
+        const typeField = form.querySelector(".js-type-field");
+        const keyField = form.querySelector(".js-key-field");
+        const labelField = form.querySelector(".js-label-field");
 
-                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="is_active_{{ field.id }}" name="is_active" {% if field.is_active %}checked{% endif %}>
-                    <label for="is_active_{{ field.id }}" style="margin: 0;">Active</label>
-                </div>
+        const activeBadge = form.querySelector(".js-active-badge");
+        const typeBadge = form.querySelector(".js-type-badge");
+        const subtitle = form.querySelector(".verification-setting-subtitle");
 
-                <button type="submit" class="btn-primary" style="width: 100%;">Save Field</button>
+        if (activeBadge && activeField) {
+            activeBadge.textContent = activeField.checked ? "Active" : "Inactive";
+            activeBadge.classList.toggle("badge-success", activeField.checked);
+            activeBadge.classList.toggle("badge-neutral", !activeField.checked);
+        }
 
-                {% if field.field_key not in core_field_keys %}
-                <button
-                    type="submit"
-                    name="action"
-                    value="delete"
-                    class="btn-danger"
-                    style="width: 100%; margin-top: 10px;"
-                    formnovalidate
-                    onclick="return confirm('Delete this verification field?')"
-                >
-                    Delete Field
-                </button>
-                {% else %}
-                <div class="summary-pill" style="margin-top: 10px; width: 100%; text-align: center;">
-                    Core Field
-                </div>
-                {% endif %}
-            </form>
-            {% else %}
-            <div class="summary-pill">No verification fields yet.</div>
-            {% endfor %}
-        </div>
-    </section>
-</div>
+        if (typeBadge && typeField) {
+            const typeText = typeField.value === "textarea" ? "Textarea" : "Text";
+            typeBadge.textContent = typeText;
+        }
+
+        if (subtitle && keyField) {
+            subtitle.textContent = keyField.value;
+        }
+
+        form.setAttribute("data-key", (keyField?.value || "").toLowerCase());
+        form.setAttribute("data-label", (labelField?.value || "").toLowerCase());
+        form.setAttribute("data-active", activeField?.checked ? "true" : "false");
+
+        applyVerificationFilters();
+    }
+
+    async function autosaveVerification(form) {
+        setStatus(form, "Saving...", "saving");
+
+        try {
+            const formData = new FormData(form);
+            formData.set("action", "update");
+
+            const response = await fetch(window.location.pathname + window.location.search, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error("Autosave failed");
+            }
+
+            syncVerificationBadges(form);
+            setStatus(form, "Saved", "saved");
+        } catch (error) {
+            setStatus(form, "Failed", "failed");
+        }
+    }
+
+    settingCards.forEach((form) => {
+        const fields = form.querySelectorAll(".js-verification-autosave-field");
+        let timer = null;
+
+        fields.forEach((field) => {
+            const isTextLike = field.tagName === "INPUT" && field.type !== "checkbox";
+
+            if (isTextLike) {
+                field.addEventListener("input", function () {
+                    syncVerificationBadges(form);
+                    setStatus(form, "Typing...", "typing");
+                    clearTimeout(timer);
+                    timer = setTimeout(function () {
+                        autosaveVerification(form);
+                    }, 500);
+                });
+            }
+
+            field.addEventListener("change", function () {
+                syncVerificationBadges(form);
+                setStatus(form, "Saving...", "saving");
+                clearTimeout(timer);
+                autosaveVerification(form);
+            });
+        });
+    });
+
+    if (statusFilter) {
+        statusFilter.addEventListener("change", applyVerificationFilters);
+    }
+
+    if (searchField) {
+        searchField.addEventListener("input", applyVerificationFilters);
+    }
+
+    applyVerificationFilters();
+});
+</script>
 {% endblock %}

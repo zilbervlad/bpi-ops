@@ -32,7 +32,7 @@
 
     <div class="content-grid checklist-layout-grid mobile-checklist-layout">
         <div class="checklist-main-column">
-            <form method="GET" class="panel checklist-load-panel mobile-checklist-load-panel" style="margin-bottom: 24px;">
+            <form method="GET" class="panel checklist-load-panel mobile-checklist-load-panel" style="margin-bottom: 20px;">
                 <div class="panel-head checklist-panel-head-mobile">
                     <div>
                         <h3>Load Prep Sheet</h3>
@@ -61,7 +61,7 @@
                 <button type="submit" class="btn-primary checklist-load-btn mobile-full-btn">Load Prep</button>
             </form>
 
-            <div class="panel checklist-info-panel mobile-checklist-info-panel" style="margin-bottom: 24px;">
+            <div class="panel checklist-info-panel mobile-checklist-info-panel" style="margin-bottom: 20px;">
                 <div class="panel-head checklist-info-head checklist-panel-head-mobile">
                     <div>
                         <h3>Prep Status</h3>
@@ -80,8 +80,8 @@
                 {% set total_count = items | length %}
                 {% set section_percent = ((completed_count / total_count) * 100) if total_count > 0 else 0 %}
 
-                <details class="accordion-section panel mobile-accordion-section checklist-section-card" {% if loop.first %}open{% endif %}>
-                    <summary class="accordion-summary mobile-accordion-summary checklist-section-summary">
+                <details class="accordion-section panel mobile-accordion-section checklist-section-card prep-section-card" {% if loop.first %}open{% endif %}>
+                    <summary class="accordion-summary mobile-accordion-summary checklist-section-summary prep-section-summary">
                         <div class="accordion-title-wrap checklist-section-title-wrap">
                             <h3 class="accordion-title checklist-section-title">{{ section }}</h3>
                         </div>
@@ -92,35 +92,34 @@
                         </div>
                     </summary>
 
-                    <div class="accordion-body mobile-accordion-body">
-                        <div class="checklist-items mobile-checklist-items">
+                    <div class="accordion-body mobile-accordion-body prep-section-body">
+                        <div class="prep-list">
                             {% for item in items %}
-                            <div class="checklist-item-card mobile-checklist-item-card mobile-checklist-card">
-                                <div class="checklist-item-main mobile-checklist-item-main">
-                                    <label class="checklist-checkbox-row mobile-checklist-checkbox-row">
-                                        <input
-                                            type="checkbox"
-                                            class="live-prep-box"
-                                            data-item-id="{{ item.id }}"
-                                            data-section-index="{{ section_index }}"
-                                            {% if item.is_completed %}checked{% endif %}
-                                            {% if is_read_only %}disabled{% endif %}
-                                        >
-                                        <span class="checklist-task-text">{{ item.item_name }}</span>
-                                    </label>
+                            <div class="prep-row">
+                                <label class="prep-row-inner">
+                                    <input
+                                        type="checkbox"
+                                        class="live-prep-box"
+                                        data-item-id="{{ item.id }}"
+                                        data-section-index="{{ section_index }}"
+                                        {% if item.is_completed %}checked{% endif %}
+                                        {% if is_read_only %}disabled{% endif %}
+                                    >
 
-                                    {% if item.build_to %}
-                                    <div class="task-meta">
-                                        Build To: {{ item.build_to }}
-                                    </div>
-                                    {% endif %}
+                                    <div class="prep-main">
+                                        <div class="prep-title">{{ item.item_name }}</div>
 
-                                    {% if item.instructions %}
-                                    <div class="task-meta" style="margin-top: 6px;">
-                                        {{ item.instructions }}
+                                        <div class="prep-meta-line">
+                                            {% if item.build_to %}
+                                            <span class="prep-build-pill">Build To: {{ item.build_to }}</span>
+                                            {% endif %}
+
+                                            {% if item.instructions %}
+                                            <span class="prep-instructions">{{ item.instructions }}</span>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                    {% endif %}
-                                </div>
+                                </label>
                             </div>
                             {% endfor %}
                         </div>
@@ -172,6 +171,121 @@
         </div>
     </div>
 </div>
+
+<style>
+.prep-section-card {
+    margin-bottom: 16px;
+}
+
+.prep-section-summary {
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.prep-section-body {
+    padding-top: 4px;
+}
+
+.prep-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.prep-row {
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.02);
+    transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.prep-row:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.prep-row-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    width: 100%;
+    padding: 14px 16px;
+    cursor: pointer;
+}
+
+.prep-row-inner input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    margin-top: 2px;
+    flex: 0 0 auto;
+    cursor: pointer;
+}
+
+.prep-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.prep-title {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #ffffff;
+    margin-bottom: 7px;
+}
+
+.prep-meta-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.prep-build-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.prep-instructions {
+    font-size: 12px;
+    line-height: 1.35;
+    opacity: 0.78;
+}
+
+@media (max-width: 640px) {
+    .prep-row-inner {
+        padding: 13px 14px;
+        gap: 12px;
+    }
+
+    .prep-row-inner input[type="checkbox"] {
+        width: 24px;
+        height: 24px;
+        margin-top: 1px;
+    }
+
+    .prep-title {
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+
+    .prep-build-pill {
+        font-size: 11px;
+        padding: 4px 9px;
+    }
+
+    .prep-instructions {
+        font-size: 11px;
+    }
+}
+</style>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

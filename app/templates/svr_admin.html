@@ -6,12 +6,13 @@
 {% block content %}
 <div class="admin-page">
 
-    <div class="command-bar panel" style="margin-bottom: 24px;">
+    <!-- HEADER -->
+    <div class="command-bar panel" style="margin-bottom: 20px;">
         <div class="command-bar-left">
             <div class="command-eyebrow">ADMIN</div>
             <h2 class="command-title">SVR Template Manager</h2>
             <p class="command-subtitle">
-                Add new SVR fields, update existing ones, and keep the supervisor report template clean and structured.
+                Manage SVR fields inline. All changes auto-save.
             </p>
         </div>
         <div class="command-bar-right">
@@ -19,132 +20,124 @@
         </div>
     </div>
 
-    <!-- ADD NEW FIELD -->
-    <section class="panel premium-panel" style="margin-bottom: 24px;">
-        <div class="panel-head">
-            <div>
-                <h3>Add SVR Field</h3>
-                <div class="area-subtitle">
-                    Create a new field for the SVR form and choose how it should behave.
-                </div>
-            </div>
-            <span class="summary-pill">New</span>
-        </div>
-
-        <form method="POST" class="login-form">
+    <!-- ADD FIELD (KEEP SIMPLE) -->
+    <section class="panel premium-panel" style="margin-bottom: 20px;">
+        <form method="POST" class="admin-task-row" style="padding: 16px;">
             <input type="hidden" name="action" value="create">
 
-            <div class="admin-task-grid">
-                <div class="form-group">
-                    <label for="field_key">Field Key</label>
-                    <input type="text" id="field_key" name="field_key" placeholder="example_field_key" required>
-                </div>
+            <input type="text" name="field_key" placeholder="field_key" required>
+            <input type="text" name="field_label" placeholder="Field label" required>
 
-                <div class="form-group">
-                    <label for="field_label">Field Label</label>
-                    <input type="text" id="field_label" name="field_label" required>
-                </div>
-            </div>
+            <select name="field_type">
+                <option value="text">Text</option>
+                <option value="textarea" selected>Textarea</option>
+                <option value="yesno">Yes/No</option>
+            </select>
 
-            <div class="admin-task-grid">
-                <div class="form-group">
-                    <label for="field_type">Field Type</label>
-                    <select id="field_type" name="field_type" required>
-                        <option value="text">Text</option>
-                        <option value="textarea" selected>Textarea</option>
-                        <option value="yesno">Yes / No</option>
-                    </select>
-                </div>
+            <input type="number" name="sort_order" value="999">
 
-                <div class="form-group">
-                    <label for="sort_order">Sort Order</label>
-                    <input type="number" id="sort_order" name="sort_order" value="999" required>
-                </div>
-            </div>
-
-            <div class="admin-check-row" style="margin-top: 10px;">
-                <button type="submit" class="btn-primary">Add Field</button>
-            </div>
+            <button class="btn-primary">+ Add</button>
         </form>
     </section>
 
-    <!-- EXISTING FIELDS -->
+    <!-- INLINE LIST -->
     <section class="panel premium-panel">
-        <div class="panel-head">
-            <div>
-                <h3>SVR Template Fields</h3>
-                <div class="area-subtitle">
-                    Edit template fields below. Each card saves independently.
-                </div>
-            </div>
-            <span class="summary-pill">{{ fields|length }} Items</span>
+
+        <div class="admin-inline-header">
+            <span>Key</span>
+            <span>Label</span>
+            <span>Type</span>
+            <span>Sort</span>
+            <span>Active</span>
         </div>
 
-        <div class="admin-task-list">
-            {% for field in fields %}
-            <form method="POST" class="admin-task-card">
-                <input type="hidden" name="action" value="update">
-                <input type="hidden" name="field_id" value="{{ field.id }}">
+        {% for field in fields %}
+        <form method="POST" class="admin-task-row auto-save">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="field_id" value="{{ field.id }}">
 
-                <!-- TOP ROW -->
-                <div class="admin-task-top">
-                    <span class="summary-pill">ID {{ field.id }}</span>
-                    <span class="summary-pill">{{ field.field_type|title }}</span>
+            <input type="text" name="field_key" value="{{ field.field_key }}">
+            <input type="text" name="field_label" value="{{ field.field_label }}">
 
-                    {% if field.is_active %}
-                    <span class="table-badge badge-success">Active</span>
-                    {% else %}
-                    <span class="table-badge badge-neutral">Inactive</span>
-                    {% endif %}
-                </div>
+            <select name="field_type">
+                <option value="text" {% if field.field_type == 'text' %}selected{% endif %}>Text</option>
+                <option value="textarea" {% if field.field_type == 'textarea' %}selected{% endif %}>Textarea</option>
+                <option value="yesno" {% if field.field_type == 'yesno' %}selected{% endif %}>Yes/No</option>
+            </select>
 
-                <!-- MAIN FIELDS -->
-                <div class="admin-task-grid">
-                    <div class="form-group">
-                        <label>Field Key</label>
-                        <input type="text" name="field_key" value="{{ field.field_key }}" required>
-                    </div>
+            <input type="number" name="sort_order" value="{{ field.sort_order }}">
 
-                    <div class="form-group">
-                        <label>Field Label</label>
-                        <input type="text" name="field_label" value="{{ field.field_label }}" required>
-                    </div>
-                </div>
+            <input type="checkbox" name="is_active" {% if field.is_active %}checked{% endif %}>
+        </form>
+        {% endfor %}
 
-                <!-- TYPE + ORDER -->
-                <div class="admin-task-grid">
-                    <div class="form-group">
-                        <label>Field Type</label>
-                        <select name="field_type" required>
-                            <option value="text" {% if field.field_type == 'text' %}selected{% endif %}>Text</option>
-                            <option value="textarea" {% if field.field_type == 'textarea' %}selected{% endif %}>Textarea</option>
-                            <option value="yesno" {% if field.field_type == 'yesno' %}selected{% endif %}>Yes / No</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Sort Order</label>
-                        <input type="number" name="sort_order" value="{{ field.sort_order }}" required>
-                    </div>
-                </div>
-
-                <!-- ACTIONS -->
-                <div class="admin-check-row compact-actions">
-                    <label class="checkbox-inline">
-                        <input type="checkbox" name="is_active" {% if field.is_active %}checked{% endif %}>
-                        Active
-                    </label>
-
-                    <button type="submit" class="btn-primary">Save Field</button>
-                </div>
-            </form>
-            {% else %}
-            <div class="admin-task-card">
-                No SVR template fields found.
-            </div>
-            {% endfor %}
-        </div>
     </section>
 
 </div>
+
+<!-- AUTOSAVE SCRIPT -->
+<script>
+document.querySelectorAll(".auto-save input, .auto-save select").forEach(el => {
+    el.addEventListener("change", function () {
+        const form = this.closest("form");
+
+        const formData = new FormData(form);
+
+        fetch("", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => {
+            if (!res.ok) throw new Error();
+            form.classList.add("saved");
+            setTimeout(() => form.classList.remove("saved"), 600);
+        })
+        .catch(() => {
+            form.classList.add("error");
+            setTimeout(() => form.classList.remove("error"), 1000);
+        });
+    });
+});
+</script>
+
+<!-- STYLES -->
+<style>
+.admin-task-row {
+    display: grid;
+    grid-template-columns: 1.2fr 2fr 1fr 0.7fr 0.5fr;
+    gap: 10px;
+    padding: 10px 14px;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.admin-task-row input,
+.admin-task-row select {
+    background: #0b1220;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 8px;
+    color: white;
+    font-size: 13px;
+}
+
+.admin-inline-header {
+    display: grid;
+    grid-template-columns: 1.2fr 2fr 1fr 0.7fr 0.5fr;
+    padding: 8px 14px;
+    font-size: 12px;
+    opacity: 0.6;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.admin-task-row.saved {
+    background: rgba(34,197,94,0.15);
+    transition: 0.2s;
+}
+
+.admin-task-row.error {
+    background: rgba(239,68,68,0.2);
+}
+</style>
+
 {% endblock %}

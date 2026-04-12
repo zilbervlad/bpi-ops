@@ -49,26 +49,11 @@ def get_allowed_store_numbers():
     return {store.store_number for store in get_visible_stores()}
 
 
-def get_or_create_daily_prep(store_number, prep_date):
-    daily = DailyPrep.query.filter_by(
-        store_number=store_number,
-        prep_date=prep_date
-    ).first()
-
-    if daily:
-        return daily
-
-    daily = DailyPrep(
-        store_number=store_number,
-        prep_date=prep_date,
-    )
-    db.session.add(daily)
-    db.session.flush()
-
-    weekday_name = weekday_field_name(prep_date)
+def sync_missing_daily_prep_items(daily):
+    weekday_name = weekday_field_name(daily.prep_date)
 
     template_items = PrepTemplateItem.query.filter_by(
-        store_number=store_number,
+        store_number=daily.store_number,
         is_active=True
     ).order_by(
         PrepTemplateItem.section_name.asc(),
@@ -76,8 +61,19 @@ def get_or_create_daily_prep(store_number, prep_date):
         PrepTemplateItem.id.asc()
     ).all()
 
+    existing_template_ids = {
+        item.template_item_id
+        for item in daily.items
+        if item.template_item_id is not None
+    }
+
+    added_any = False
+
     for template in template_items:
         if not getattr(template, weekday_name, False):
+            continue
+
+        if template.id in existing_template_ids:
             continue
 
         db.session.add(
@@ -92,8 +88,60 @@ def get_or_create_daily_prep(store_number, prep_date):
                 completed_at=None,
             )
         )
+        added_any = True
 
-    db.session.commit()
+    if added_any:
+        db.session.commit()
+
+    return added_any
+
+
+def get_or_create_daily_prep(store_number, prep_date):
+    daily = DailyPrep.query.filter_by(
+        store_number=store_number,
+        prep_date=prep_date
+    ).first()
+
+    if not daily:
+        daily = DailyPrep(
+            store_number=store_number,
+            prep_date=prep_date,
+        )
+        db.session.add(daily)
+        db.session.flush()
+
+        weekday_name = weekday_field_name(prep_date)
+
+        template_items = PrepTemplateItem.query.filter_by(
+            store_number=store_number,
+            is_active=True
+        ).order_by(
+            PrepTemplateItem.section_name.asc(),
+            PrepTemplateItem.sort_order.asc(),
+            PrepTemplateItem.id.asc()
+        ).all()
+
+        for template in template_items:
+            if not getattr(template, weekday_name, False):
+                continue
+
+            db.session.add(
+                DailyPrepItem(
+                    daily_prep_id=daily.id,
+                    template_item_id=template.id,
+                    section_name=template.section_name,
+                    item_name=template.item_name,
+                    build_to=template.build_to,
+                    instructions=template.instructions,
+                    is_completed=False,
+                    completed_at=None,
+                )
+            )
+
+        db.session.commit()
+        return daily
+
+    sync_missing_daily_prep_items(daily)
     return daily
 
 
@@ -320,9 +368,17 @@ def manage():
                 flash("Prep item not found.", "error")
                 return redirect(url_for("prep.manage", store=store_number))
 
-            db.session.delete(item)
-            db.session.commit()
-            flash("Prep item deleted.", "success")
+            usage_exists = DailyPrepItem.query.filter_by(template_item_id=item.id).first()
+
+            if usage_exists:
+                item.is_active = False
+                db.session.commit()
+                flash("Prep item archived because it already exists in prep history.", "success")
+            else:
+                db.session.delete(item)
+                db.session.commit()
+                flash("Prep item deleted.", "success")
+
             return redirect(url_for("prep.manage", store=store_number))
 
     items = PrepTemplateItem.query.filter_by(

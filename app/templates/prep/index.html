@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Prep | BPI Ops{% endblock %}
+{% block header %}Prep{% endblock %}
+
+{% block content %}
+<div class="checklist-page mobile-checklist-page">
+    <div class="panel checklist-hero-panel mobile-checklist-hero">
+        <div class="checklist-topbar checklist-topbar-mobile">
+            <div class="checklist-hero-copy">
+                <div class="command-eyebrow">DAILY PREP</div>
+                <h3 class="checklist-store-title">Store {{ store_number }}</h3>
+                <p class="subtitle checklist-date-label">{{ today_label }}</p>
+                {% if is_read_only %}
+                <div class="readonly-badge">Read Only - Past Day</div>
+                {% endif %}
+            </div>
+
+            <div class="checklist-score-grid checklist-score-grid-mobile">
+                <div class="checklist-progress-box mobile-score-box">
+                    <span class="metric-label">Completed</span>
+                    <h3 id="prep-completion">{{ completed_items }}/{{ total_items }}</h3>
+                </div>
+
+                <div class="checklist-progress-box mobile-score-box">
+                    <span class="metric-label">Remaining</span>
+                    <h3 id="prep-remaining">{{ total_items - completed_items }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-grid checklist-layout-grid mobile-checklist-layout">
+        <div class="checklist-main-column">
+            <form method="GET" class="panel checklist-load-panel mobile-checklist-load-panel" style="margin-bottom: 24px;">
+                <div class="panel-head checklist-panel-head-mobile">
+                    <div>
+                        <h3>Load Prep Sheet</h3>
+                        <div class="area-subtitle">Switch store or date</div>
+                    </div>
+                </div>
+
+                <div class="checklist-load-grid mobile-checklist-load-grid">
+                    <div class="form-group">
+                        <label for="store">Store Number</label>
+                        <select id="store" name="store" required>
+                            {% for store in stores %}
+                            <option value="{{ store.store_number }}" {% if store.store_number == store_number %}selected{% endif %}>
+                                {{ store.store_number }} - {{ store.area_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date">Prep Date</label>
+                        <input type="date" id="date" name="date" value="{{ selected_date }}" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary checklist-load-btn mobile-full-btn">Load Prep</button>
+            </form>
+
+            <div class="panel checklist-info-panel mobile-checklist-info-panel" style="margin-bottom: 24px;">
+                <div class="panel-head checklist-info-head checklist-panel-head-mobile">
+                    <div>
+                        <h3>Prep Status</h3>
+                        <div class="area-subtitle">Tap an item to mark complete</div>
+                    </div>
+                    {% if not is_read_only %}
+                    <div id="autosave-status" class="autosave-status autosave-status-pill">Ready</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% for section, items in grouped_items.items() %}
+                {% if items %}
+                {% set section_index = loop.index0 %}
+                {% set completed_count = items | selectattr('is_completed') | list | length %}
+                {% set total_count = items | length %}
+                {% set section_percent = ((completed_count / total_count) * 100) if total_count > 0 else 0 %}
+
+                <details class="accordion-section panel mobile-accordion-section checklist-section-card" {% if loop.first %}open{% endif %}>
+                    <summary class="accordion-summary mobile-accordion-summary checklist-section-summary">
+                        <div class="accordion-title-wrap checklist-section-title-wrap">
+                            <h3 class="accordion-title checklist-section-title">{{ section }}</h3>
+                        </div>
+
+                        <div class="accordion-meta checklist-section-meta">
+                            <span class="accordion-count" id="count-{{ section_index }}">{{ completed_count }}/{{ total_count }}</span>
+                            <span class="accordion-percent" id="percent-{{ section_index }}">{{ section_percent|round(0)|int }}%</span>
+                        </div>
+                    </summary>
+
+                    <div class="accordion-body mobile-accordion-body">
+                        <div class="checklist-items mobile-checklist-items">
+                            {% for item in items %}
+                            <div class="checklist-item-card mobile-checklist-item-card mobile-checklist-card">
+                                <div class="checklist-item-main mobile-checklist-item-main">
+                                    <label class="checklist-checkbox-row mobile-checklist-checkbox-row">
+                                        <input
+                                            type="checkbox"
+                                            class="live-prep-box"
+                                            data-item-id="{{ item.id }}"
+                                            data-section-index="{{ section_index }}"
+                                            {% if item.is_completed %}checked{% endif %}
+                                            {% if is_read_only %}disabled{% endif %}
+                                        >
+                                        <span class="checklist-task-text">{{ item.item_name }}</span>
+                                    </label>
+
+                                    {% if item.build_to %}
+                                    <div class="task-meta">
+                                        Build To: {{ item.build_to }}
+                                    </div>
+                                    {% endif %}
+
+                                    {% if item.instructions %}
+                                    <div class="task-meta" style="margin-top: 6px;">
+                                        {{ item.instructions }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </details>
+                {% endif %}
+            {% endfor %}
+
+            {% if total_items == 0 %}
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h3>No Prep Items</h3>
+                        <div class="area-subtitle">No active prep items are scheduled for this store on this day.</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="checklist-side-column">
+            <div class="panel checklist-history-panel mobile-history-panel">
+                <div class="panel-head checklist-panel-head-mobile">
+                    <div>
+                        <h3>Recent History</h3>
+                        <div class="area-subtitle">Last 14 prep sheets for this store</div>
+                    </div>
+                </div>
+
+                <div class="history-list mobile-history-list">
+                    {% for entry in history %}
+                    {% set entry_total = entry.items | length %}
+                    {% set entry_completed = entry.items | selectattr('is_completed') | list | length %}
+                    <a
+                        class="history-item mobile-history-item"
+                        href="{{ url_for('prep.index', store=store_number, date=entry.prep_date.strftime('%Y-%m-%d')) }}"
+                    >
+                        <div>
+                            <div class="history-date">{{ entry.prep_date.strftime('%b %d, %Y') }}</div>
+                            <div class="history-sub">{{ entry_completed }}/{{ entry_total }} completed</div>
+                        </div>
+                        <div class="history-metrics">
+                            <span>{{ entry_total - entry_completed }} left</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const checkboxes = Array.from(document.querySelectorAll(".live-prep-box"));
+    const autosaveStatusEl = document.getElementById("autosave-status");
+    const completionEl = document.getElementById("prep-completion");
+    const remainingEl = document.getElementById("prep-remaining");
+
+    function setAutosaveStatus(text) {
+        if (!autosaveStatusEl) return;
+        autosaveStatusEl.textContent = text;
+
+        autosaveStatusEl.classList.remove("autosave-ready", "autosave-saving", "autosave-saved", "autosave-failed");
+
+        if (text === "Ready") {
+            autosaveStatusEl.classList.add("autosave-ready");
+        } else if (text === "Saving...") {
+            autosaveStatusEl.classList.add("autosave-saving");
+        } else if (text === "Saved") {
+            autosaveStatusEl.classList.add("autosave-saved");
+        } else {
+            autosaveStatusEl.classList.add("autosave-failed");
+        }
+    }
+
+    function updateSection(sectionIndex) {
+        const sectionBoxes = Array.from(document.querySelectorAll(`.live-prep-box[data-section-index="${sectionIndex}"]`));
+        const completed = sectionBoxes.filter(box => box.checked).length;
+        const total = sectionBoxes.length;
+        const percent = total ? Math.round((completed / total) * 100) : 0;
+
+        const countEl = document.getElementById(`count-${sectionIndex}`);
+        const percentEl = document.getElementById(`percent-${sectionIndex}`);
+
+        if (countEl) countEl.textContent = `${completed}/${total}`;
+        if (percentEl) percentEl.textContent = `${percent}%`;
+    }
+
+    function updateOverall(completedItems, totalItems) {
+        if (completionEl) {
+            completionEl.textContent = `${completedItems}/${totalItems}`;
+        }
+        if (remainingEl) {
+            remainingEl.textContent = `${Math.max(totalItems - completedItems, 0)}`;
+        }
+    }
+
+    async function autosaveItem(box) {
+        setAutosaveStatus("Saving...");
+
+        try {
+            const response = await fetch("/prep/autosave-item", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    item_id: Number(box.dataset.itemId),
+                    is_completed: box.checked,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                setAutosaveStatus("Save failed");
+                box.checked = !box.checked;
+                updateSection(box.dataset.sectionIndex);
+                return;
+            }
+
+            updateSection(box.dataset.sectionIndex);
+            updateOverall(data.completed_items, data.total_items);
+            setAutosaveStatus("Saved");
+        } catch (error) {
+            box.checked = !box.checked;
+            updateSection(box.dataset.sectionIndex);
+            setAutosaveStatus("Save failed");
+        }
+    }
+
+    checkboxes.forEach(box => {
+        box.addEventListener("change", function () {
+            autosaveItem(this);
+        });
+    });
+
+    setAutosaveStatus("Ready");
+});
+</script>
+{% endblock %}

@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Prep Admin | BPI Ops{% endblock %}
+{% block header %}Prep Admin{% endblock %}
+
+{% block content %}
+<div class="checklist-page mobile-checklist-page">
+    <div class="panel checklist-hero-panel mobile-checklist-hero">
+        <div class="checklist-topbar checklist-topbar-mobile">
+            <div class="checklist-hero-copy">
+                <div class="command-eyebrow">PREP TEMPLATE</div>
+                <h3 class="checklist-store-title">Store {{ store_number }}</h3>
+                <p class="subtitle checklist-date-label">Manage store-specific build-to items</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-grid checklist-layout-grid mobile-checklist-layout">
+        <div class="checklist-main-column">
+            <form method="GET" class="panel checklist-load-panel mobile-checklist-load-panel" style="margin-bottom: 24px;">
+                <div class="panel-head checklist-panel-head-mobile">
+                    <div>
+                        <h3>Load Store</h3>
+                        <div class="area-subtitle">Switch prep template by store</div>
+                    </div>
+                </div>
+
+                <div class="checklist-load-grid mobile-checklist-load-grid">
+                    <div class="form-group">
+                        <label for="store">Store Number</label>
+                        <select id="store" name="store" required>
+                            {% for store in stores %}
+                            <option value="{{ store.store_number }}" {% if store.store_number == store_number %}selected{% endif %}>
+                                {{ store.store_number }} - {{ store.area_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary checklist-load-btn mobile-full-btn">Load Store</button>
+            </form>
+
+            <form method="POST" class="panel checklist-info-panel mobile-checklist-info-panel" style="margin-bottom: 24px;">
+                <input type="hidden" name="action" value="create">
+
+                <div class="panel-head checklist-info-head checklist-panel-head-mobile">
+                    <div>
+                        <h3>Add Prep Item</h3>
+                        <div class="area-subtitle">Create a new build-to item for this store</div>
+                    </div>
+                </div>
+
+                <div class="checklist-load-grid mobile-checklist-load-grid">
+                    <div class="form-group">
+                        <label for="section_name">Section</label>
+                        <select id="section_name" name="section_name" required>
+                            {% for section in section_options %}
+                            <option value="{{ section }}">{{ section }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="item_name">Item Name</label>
+                        <input type="text" id="item_name" name="item_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="build_to">Build To</label>
+                        <input type="text" id="build_to" name="build_to" placeholder="Example: 16 or 1 case">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sort_order">Sort Order</label>
+                        <input type="number" id="sort_order" name="sort_order" value="0">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 16px;">
+                    <label for="instructions">Instructions</label>
+                    <textarea id="instructions" name="instructions" rows="3" placeholder="Optional prep instructions"></textarea>
+                </div>
+
+                <div class="panel-head checklist-panel-head-mobile" style="padding-left: 0; padding-right: 0; padding-top: 20px;">
+                    <div>
+                        <h3 style="font-size: 16px;">Days</h3>
+                    </div>
+                </div>
+
+                <div class="checklist-load-grid mobile-checklist-load-grid">
+                    <label class="checklist-checkbox-row"><input type="checkbox" name="monday" checked> <span>Monday</span></label>
+                    <label class="checklist-checkbox-row"><input type="checkbox" name="tuesday" checked> <span>Tuesday</span></label>
+                    <label class="checklist-checkbox-row"><input type="checkbox" name="wednesday" checked> <span>Wednesday</span></label>
+                    <label class="checklist-checkbox-row"><input type="checkbox" name="thursday" checked> <span>Thursday</span></label>
+                    <label class="checklist-checkbox-row"><input type="checkbox" name="friday" checked> <span>Friday</span></label>
+                    <label class="checklist-checkbox-row"><input type="checkbox" name="saturday" checked> <span>Saturday</span></label>
+                    <label class="checklist-checkbox-row"><input type="checkbox" name="sunday" checked> <span>Sunday</span></label>
+                    <label class="checklist-checkbox-row"><input type="checkbox" name="is_active" checked> <span>Active</span></label>
+                </div>
+
+                <div class="checklist-save-wrap" style="margin-top: 20px;">
+                    <button type="submit" class="btn-primary mobile-full-btn">Add Prep Item</button>
+                </div>
+            </form>
+
+            {% for section, items_in_section in grouped_items.items() %}
+                {% if items_in_section %}
+                <details class="accordion-section panel mobile-accordion-section checklist-section-card" {% if loop.first %}open{% endif %}>
+                    <summary class="accordion-summary mobile-accordion-summary checklist-section-summary">
+                        <div class="accordion-title-wrap checklist-section-title-wrap">
+                            <h3 class="accordion-title checklist-section-title">{{ section }}</h3>
+                        </div>
+
+                        <div class="accordion-meta checklist-section-meta">
+                            <span class="accordion-count">{{ items_in_section|length }} item{% if items_in_section|length != 1 %}s{% endif %}</span>
+                        </div>
+                    </summary>
+
+                    <div class="accordion-body mobile-accordion-body">
+                        {% for item in items_in_section %}
+                        <form method="POST" class="panel" style="margin-bottom: 16px;">
+                            <input type="hidden" name="action" value="update">
+                            <input type="hidden" name="item_id" value="{{ item.id }}">
+
+                            <div class="panel-head checklist-panel-head-mobile">
+                                <div>
+                                    <h3 style="font-size: 16px;">Edit Item</h3>
+                                    <div class="area-subtitle">{{ item.item_name }}</div>
+                                </div>
+                            </div>
+
+                            <div class="checklist-load-grid mobile-checklist-load-grid">
+                                <div class="form-group">
+                                    <label>Section</label>
+                                    <select name="section_name" required>
+                                        {% for section_option in section_options %}
+                                        <option value="{{ section_option }}" {% if item.section_name == section_option %}selected{% endif %}>
+                                            {{ section_option }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Item Name</label>
+                                    <input type="text" name="item_name" value="{{ item.item_name }}" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Build To</label>
+                                    <input type="text" name="build_to" value="{{ item.build_to or '' }}">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Sort Order</label>
+                                    <input type="number" name="sort_order" value="{{ item.sort_order }}">
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label>Instructions</label>
+                                <textarea name="instructions" rows="3">{{ item.instructions or '' }}</textarea>
+                            </div>
+
+                            <div class="checklist-load-grid mobile-checklist-load-grid" style="margin-top: 16px;">
+                                <label class="checklist-checkbox-row"><input type="checkbox" name="monday" {% if item.monday %}checked{% endif %}> <span>Monday</span></label>
+                                <label class="checklist-checkbox-row"><input type="checkbox" name="tuesday" {% if item.tuesday %}checked{% endif %}> <span>Tuesday</span></label>
+                                <label class="checklist-checkbox-row"><input type="checkbox" name="wednesday" {% if item.wednesday %}checked{% endif %}> <span>Wednesday</span></label>
+                                <label class="checklist-checkbox-row"><input type="checkbox" name="thursday" {% if item.thursday %}checked{% endif %}> <span>Thursday</span></label>
+                                <label class="checklist-checkbox-row"><input type="checkbox" name="friday" {% if item.friday %}checked{% endif %}> <span>Friday</span></label>
+                                <label class="checklist-checkbox-row"><input type="checkbox" name="saturday" {% if item.saturday %}checked{% endif %}> <span>Saturday</span></label>
+                                <label class="checklist-checkbox-row"><input type="checkbox" name="sunday" {% if item.sunday %}checked{% endif %}> <span>Sunday</span></label>
+                                <label class="checklist-checkbox-row"><input type="checkbox" name="is_active" {% if item.is_active %}checked{% endif %}> <span>Active</span></label>
+                            </div>
+
+                            <div class="checklist-save-wrap" style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
+                                <button type="submit" class="btn-primary">Save Item</button>
+                        </form>
+
+                        <form method="POST" onsubmit="return confirm('Delete this prep item?');">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="item_id" value="{{ item.id }}">
+                            <button type="submit" class="btn-secondary">Delete</button>
+                        </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </details>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

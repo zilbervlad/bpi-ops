@@ -388,4 +388,77 @@ class VerificationReportValue(db.Model):
     value_text = db.Column(db.Text, nullable=True)
 
     template_field = db.relationship("VerificationTemplateField")   
-   
+ # =========================
+# PREP MODULE
+# =========================
+
+class PrepTemplateItem(db.Model):
+    __tablename__ = "prep_template_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    store_number = db.Column(db.String(10), nullable=False)
+
+    section_name = db.Column(db.String(120), nullable=False)
+    item_name = db.Column(db.String(255), nullable=False)
+
+    build_to = db.Column(db.String(255), nullable=True)
+    instructions = db.Column(db.Text, nullable=True)
+
+    monday = db.Column(db.Boolean, default=True)
+    tuesday = db.Column(db.Boolean, default=True)
+    wednesday = db.Column(db.Boolean, default=True)
+    thursday = db.Column(db.Boolean, default=True)
+    friday = db.Column(db.Boolean, default=True)
+    saturday = db.Column(db.Boolean, default=True)
+    sunday = db.Column(db.Boolean, default=True)
+
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+
+
+class DailyPrep(db.Model):
+    __tablename__ = "daily_preps"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    store_number = db.Column(db.String(10), nullable=False)
+    prep_date = db.Column(db.Date, nullable=False, default=today_et)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    items = db.relationship(
+        "DailyPrepItem",
+        backref="daily_prep",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+
+
+class DailyPrepItem(db.Model):
+    __tablename__ = "daily_prep_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    daily_prep_id = db.Column(
+        db.Integer,
+        db.ForeignKey("daily_preps.id"),
+        nullable=False
+    )
+
+    template_item_id = db.Column(
+        db.Integer,
+        db.ForeignKey("prep_template_items.id"),
+        nullable=False
+    )
+
+    section_name = db.Column(db.String(120), nullable=False)
+    item_name = db.Column(db.String(255), nullable=False)
+
+    build_to = db.Column(db.String(255), nullable=True)
+    instructions = db.Column(db.Text, nullable=True)
+
+    is_completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    template_item = db.relationship("PrepTemplateItem") 

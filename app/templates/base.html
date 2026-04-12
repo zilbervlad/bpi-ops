@@ -57,6 +57,13 @@
                     </a>
                     {% endif %}
 
+                    {% if session.get('user_role') in ['admin', 'supervisor', 'manager'] %}
+                    <a href="{{ url_for('prep.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('prep') %}active{% endif %}">
+                        Prep
+                    </a>
+                    {% endif %}
+
                     {% if session.get('user_role') == 'manager' %}
                     <a href="{{ url_for('nightly_numbers.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('nightly_numbers') and request.endpoint != 'nightly_numbers.admin' %}active{% endif %}">
@@ -107,6 +114,17 @@
                     </a>
                     {% endif %}
                 </div>
+
+                {% if session.get('user_role') in ['admin', 'supervisor'] %}
+                <div class="nav-section">
+                    <div class="nav-section-label">Prep</div>
+
+                    <a href="{{ url_for('prep.manage') }}"
+                       class="{% if request.endpoint == 'prep.manage' %}active{% endif %}">
+                        Prep Admin
+                    </a>
+                </div>
+                {% endif %}
 
                 {% if session.get('user_role') == 'admin' %}
                 <div class="nav-section">

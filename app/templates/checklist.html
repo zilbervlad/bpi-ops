@@ -142,39 +142,59 @@
                                 data-section-name="{{ section }}"
                             >
                                 {% for item in items %}
-                                <div class="checklist-item-card mobile-checklist-item-card mobile-checklist-card">
+                                <div class="checklist-item-card mobile-checklist-item-card mobile-checklist-card {% if item.is_completed %}is-completed{% endif %}" data-item-card-id="{{ item.id }}">
                                     <div class="checklist-item-main mobile-checklist-item-main">
-                                        <label class="checklist-checkbox-row mobile-checklist-checkbox-row">
-                                            <input
-                                                type="checkbox"
-                                                name="item_{{ item.id }}"
-                                                class="live-checklist-box"
-                                                data-item-id="{{ item.id }}"
-                                                data-section-index="{{ section_index }}"
-                                                data-section-name="{{ section }}"
-                                                {% if item.is_completed %}checked{% endif %}
-                                                {% if is_read_only %}disabled{% endif %}
-                                            >
-                                            <span class="checklist-task-text">{{ item.task_text }}</span>
-                                        </label>
+                                        <div class="checklist-row-top">
+                                            <label class="checklist-checkbox-row mobile-checklist-checkbox-row">
+                                                <input
+                                                    type="checkbox"
+                                                    name="item_{{ item.id }}"
+                                                    class="live-checklist-box"
+                                                    data-item-id="{{ item.id }}"
+                                                    data-section-index="{{ section_index }}"
+                                                    data-section-name="{{ section }}"
+                                                    {% if item.is_completed %}checked{% endif %}
+                                                    {% if is_read_only %}disabled{% endif %}
+                                                >
+                                                <span class="checklist-task-text">{{ item.task_text }}</span>
+                                            </label>
 
-                                        <div class="task-meta">
-                                            Expected time: {{ item.expected_minutes }} min
+                                            <span class="task-time-pill">{{ item.expected_minutes }} min</span>
+                                        </div>
+
+                                        <div class="task-row-footer">
+                                            <button
+                                                type="button"
+                                                class="note-toggle-btn {% if item.notes %}has-note{% endif %}"
+                                                data-note-target="note-wrap-{{ item.id }}"
+                                                aria-expanded="{% if item.notes %}true{% else %}false{% endif %}"
+                                            >
+                                                {% if item.notes %}
+                                                Notes added
+                                                {% else %}
+                                                Add note
+                                                {% endif %}
+                                            </button>
                                         </div>
                                     </div>
 
-                                    <div class="form-group checklist-note-group mobile-note-group">
-                                        <label for="notes_{{ item.id }}">Notes</label>
-                                        <input
-                                            type="text"
-                                            id="notes_{{ item.id }}"
-                                            name="notes_{{ item.id }}"
-                                            class="autosave-note"
-                                            data-item-id="{{ item.id }}"
-                                            value="{{ item.notes or '' }}"
-                                            placeholder="Optional notes"
-                                            {% if is_read_only %}disabled{% endif %}
-                                        >
+                                    <div
+                                        id="note-wrap-{{ item.id }}"
+                                        class="checklist-note-wrap {% if item.notes %}is-open{% endif %}"
+                                    >
+                                        <div class="form-group checklist-note-group mobile-note-group compact-note-group">
+                                            <label for="notes_{{ item.id }}">Notes</label>
+                                            <input
+                                                type="text"
+                                                id="notes_{{ item.id }}"
+                                                name="notes_{{ item.id }}"
+                                                class="autosave-note"
+                                                data-item-id="{{ item.id }}"
+                                                value="{{ item.notes or '' }}"
+                                                placeholder="Optional notes"
+                                                {% if is_read_only %}disabled{% endif %}
+                                            >
+                                        </div>
                                     </div>
                                 </div>
                                 {% endfor %}
@@ -226,6 +246,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const checkboxes = Array.from(document.querySelectorAll(".live-checklist-box"));
     const noteInputs = Array.from(document.querySelectorAll(".autosave-note"));
+    const noteToggleButtons = Array.from(document.querySelectorAll(".note-toggle-btn"));
     const overallCompletionEl = document.getElementById("overall-completion");
     const integrityScoreEl = document.getElementById("integrity-score");
     const managerWalkIntegrityEl = document.getElementById("manager-walk-integrity");
@@ -285,6 +306,27 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function refreshCardState(itemId) {
+        const checkbox = document.querySelector(`.live-checklist-box[data-item-id="${itemId}"]`);
+        const noteInput = document.querySelector(`.autosave-note[data-item-id="${itemId}"]`);
+        const card = document.querySelector(`[data-item-card-id="${itemId}"]`);
+        const noteButton = noteInput ? document.querySelector(`[data-note-target="note-wrap-${itemId}"]`) : null;
+
+        if (card && checkbox) {
+            if (checkbox.checked) {
+                card.classList.add("is-completed");
+            } else {
+                card.classList.remove("is-completed");
+            }
+        }
+
+        if (noteButton && noteInput) {
+            const hasNote = noteInput.value.trim().length > 0;
+            noteButton.classList.toggle("has-note", hasNote);
+            noteButton.textContent = hasNote ? "Notes added" : "Add note";
+        }
+    }
+
     async function autosaveItem(itemId) {
         const checkbox = document.querySelector(`.live-checklist-box[data-item-id="${itemId}"]`);
         const noteInput = document.querySelector(`.autosave-note[data-item-id="${itemId}"]`);
@@ -313,6 +355,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
+            refreshCardState(itemId);
             updateStatsFromServer(data);
             setAutosaveStatus("Saved");
         } catch (error) {
@@ -352,8 +395,31 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    noteToggleButtons.forEach(button => {
+        button.addEventListener("click", function () {
+            const targetId = this.dataset.noteTarget;
+            const noteWrap = document.getElementById(targetId);
+
+            if (!noteWrap) return;
+
+            const isOpen = noteWrap.classList.contains("is-open");
+            noteWrap.classList.toggle("is-open", !isOpen);
+            this.setAttribute("aria-expanded", (!isOpen).toString());
+
+            if (!isOpen) {
+                const input = noteWrap.querySelector("input");
+                if (input) {
+                    setTimeout(() => input.focus(), 120);
+                }
+            }
+        });
+    });
+
     checkboxes.forEach(box => {
+        refreshCardState(box.dataset.itemId);
+
         box.addEventListener("change", function () {
+            refreshCardState(this.dataset.itemId);
             autosaveItem(this.dataset.itemId);
         });
     });
@@ -361,8 +427,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const noteTimers = {};
 
     noteInputs.forEach(input => {
+        refreshCardState(input.dataset.itemId);
+
         input.addEventListener("input", function () {
             const itemId = this.dataset.itemId;
+            refreshCardState(itemId);
             setAutosaveStatus("Typing...");
 
             clearTimeout(noteTimers[itemId]);

@@ -318,7 +318,8 @@ h1, h2, h3 {
 
 .form-group {
     display: grid;
-    gap: 6px;
+    gap: 4px;
+    margin-bottom: 8px;
 }
 
 .form-group label {
@@ -330,7 +331,7 @@ h1, h2, h3 {
 .form-group input,
 select {
     width: 100%;
-    padding: 12px 13px;
+    padding: 10px 11px;
     border-radius: 12px;
     border: 1px solid rgba(120, 146, 190, 0.18);
     background: rgba(7, 14, 28, 0.94);
@@ -848,7 +849,8 @@ select:focus {
 .admin-task-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 10px;
+    margin-bottom: 8px;
 }
 
 .admin-check-row {
@@ -974,7 +976,7 @@ select:focus {
     justify-content: space-between;
     align-items: center;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .summary-pills-large {
@@ -1164,7 +1166,7 @@ select:focus {
 
 textarea {
     width: 100%;
-    padding: 12px 13px;
+    padding: 11px 12px;
     border-radius: 12px;
     border: 1px solid rgba(120, 146, 190, 0.18);
     background: rgba(7, 14, 28, 0.94);
@@ -1273,25 +1275,9 @@ textarea:focus {
 }
 
 .compact-actions {
+    display: flex;
+    justify-content: flex-end;
     gap: 10px;
-}
-
-.admin-task-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 8px;
-}
-
-.form-group {
-    display: grid;
-    gap: 4px;
-    margin-bottom: 8px;
-}
-
-.form-group input,
-.form-group select {
-    padding: 10px 11px;
 }
 
 /* ------------------------------
@@ -1540,26 +1526,6 @@ textarea:focus {
     padding: 18px;
 }
 
-.admin-task-grid {
-    gap: 14px;
-    margin-bottom: 10px;
-}
-
-.form-group input,
-.form-group select,
-textarea {
-    padding: 11px 12px;
-}
-
-.compact-actions {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.panel-head {
-    margin-bottom: 14px;
-}
-
 /* =========================================================
    Manager Checklist Mobile Cleanup
 ========================================================= */
@@ -1604,26 +1570,41 @@ textarea {
 }
 
 .mobile-checklist-items {
-    gap: 12px;
+    gap: 10px;
 }
 
 .mobile-checklist-card {
     border-radius: 16px;
-    padding: 14px;
+    padding: 12px 14px;
     background: rgba(8, 16, 31, 0.9);
     border: 1px solid rgba(120, 146, 190, 0.14);
+    transition: border-color 0.16s ease, background 0.16s ease, opacity 0.16s ease;
+}
+
+.mobile-checklist-card.is-completed {
+    background: rgba(8, 16, 31, 0.76);
+    border-color: rgba(34, 197, 94, 0.18);
 }
 
 .mobile-checklist-item-main {
     display: grid;
-    gap: 7px;
+    gap: 8px;
+}
+
+.checklist-row-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
 }
 
 .mobile-checklist-checkbox-row {
     align-items: flex-start;
     gap: 12px;
     font-size: 15px;
-    line-height: 1.35;
+    line-height: 1.3;
+    flex: 1;
+    min-width: 0;
 }
 
 .mobile-checklist-checkbox-row input[type="checkbox"] {
@@ -1639,8 +1620,73 @@ textarea {
     word-break: break-word;
 }
 
+.task-time-pill {
+    flex-shrink: 0;
+    white-space: nowrap;
+    background: rgba(8, 16, 31, 0.82);
+    border: 1px solid rgba(120, 146, 190, 0.14);
+    color: var(--text-soft);
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.task-row-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.note-toggle-btn {
+    border: 1px solid rgba(120, 146, 190, 0.16);
+    background: rgba(8, 16, 31, 0.84);
+    color: var(--text-muted);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.16s ease;
+}
+
+.note-toggle-btn:hover {
+    border-color: rgba(56, 189, 248, 0.22);
+    color: #ffffff;
+}
+
+.note-toggle-btn.has-note {
+    color: #bfeaff;
+    border-color: rgba(56, 189, 248, 0.22);
+    background: rgba(56, 189, 248, 0.08);
+}
+
+.checklist-note-wrap {
+    display: none;
+    margin-top: 10px;
+}
+
+.checklist-note-wrap.is-open {
+    display: block;
+}
+
+.compact-note-group {
+    gap: 5px;
+    margin-bottom: 0;
+}
+
+.compact-note-group label {
+    font-size: 12px;
+}
+
+.compact-note-group input {
+    min-height: 40px;
+    padding: 10px 12px;
+}
+
 .mobile-note-group input {
-    min-height: 44px;
+    min-height: 40px;
 }
 
 .mobile-history-panel {
@@ -1745,7 +1791,7 @@ textarea {
     }
 
     .mobile-accordion-section {
-        margin-bottom: 16px;
+        margin-bottom: 14px;
     }
 
     .mobile-accordion-summary {
@@ -1765,19 +1811,35 @@ textarea {
     }
 
     .mobile-accordion-body {
-        padding: 0 14px 14px 14px;
+        padding: 0 12px 12px 12px;
     }
 
     .mobile-checklist-card {
-        padding: 13px;
+        padding: 11px 12px;
+    }
+
+    .checklist-row-top {
+        gap: 8px;
     }
 
     .mobile-checklist-checkbox-row {
-        font-size: 15px;
+        font-size: 14px;
+        gap: 10px;
     }
 
-    .mobile-note-group label {
-        font-size: 12px;
+    .mobile-checklist-checkbox-row input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+
+    .task-time-pill {
+        font-size: 10px;
+        padding: 5px 8px;
+    }
+
+    .note-toggle-btn {
+        font-size: 10px;
+        padding: 6px 9px;
     }
 
     .mobile-history-item {

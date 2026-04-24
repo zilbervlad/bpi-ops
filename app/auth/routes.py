@@ -42,11 +42,14 @@ def login():
         user = User.query.filter_by(username=username, is_active=True).first()
 
         if user and user.check_password(password):
+            session.permanent = True
+
             session["user_id"] = user.id
             session["user_name"] = user.name
             session["user_role"] = user.role
             session["user_area"] = user.area_name
             session["user_store"] = user.store_number
+
             return redirect(url_for("dashboard.home"))
 
         flash("Invalid username or password.", "error")

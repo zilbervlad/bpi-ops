@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from app.config import Config
 from app.extensions import db, migrate
 
@@ -7,6 +9,13 @@ def create_app():
 
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # -------------------------
+    # SESSION SETTINGS
+    # Keep users logged in longer for BPI Ops / notifications
+    # -------------------------
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+    app.config["SESSION_PERMANENT"] = True
 
     # Initialize extensions
     db.init_app(app)

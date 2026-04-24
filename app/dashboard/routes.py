@@ -308,6 +308,8 @@ def home():
 
     quick_actions = [
         {"label": "Open Checklist", "url": "/checklist/"},
+        {"label": "Cash Control", "url": "/cash/"},
+        {"label": "Nightly Numbers", "url": "/nightly-numbers/"},
         {"label": "Open Maintenance", "url": "/maintenance/"},
     ]
 

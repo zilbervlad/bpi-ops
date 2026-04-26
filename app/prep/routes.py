@@ -49,6 +49,10 @@ def get_allowed_store_numbers():
     return {store.store_number for store in get_visible_stores()}
 
 
+def normalize_item_key(value):
+    return (value or "").strip().lower()
+
+
 def sync_missing_daily_prep_items(daily):
     weekday_name = weekday_field_name(daily.prep_date)
 
@@ -371,6 +375,112 @@ def manage():
             db.session.commit()
             flash("Prep item created.", "success")
             return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
+
+        if action == "copy_store":
+            source_store = request.form.get("source_store", "").strip()
+            destination_store = request.form.get("destination_store", "").strip()
+            copy_mode = request.form.get("copy_mode", "missing_only").strip()
+
+            allowed_copy_stores = allowed_store_numbers
+
+            if not source_store or not destination_store:
+                flash("Choose both a source store and destination store.", "error")
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
+
+            if source_store == destination_store:
+                flash("Source and destination stores must be different.", "error")
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
+
+            if source_store not in allowed_copy_stores or destination_store not in allowed_copy_stores:
+                flash("You do not have access to one of the selected stores.", "error")
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
+
+            if copy_mode not in {"missing_only", "overwrite_matching"}:
+                copy_mode = "missing_only"
+
+            source_items = PrepTemplateItem.query.filter_by(
+                store_number=source_store
+            ).order_by(
+                PrepTemplateItem.section_name.asc(),
+                PrepTemplateItem.sort_order.asc(),
+                PrepTemplateItem.id.asc()
+            ).all()
+
+            if not source_items:
+                flash(f"No prep items found in source store {source_store}.", "error")
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
+
+            destination_items = PrepTemplateItem.query.filter_by(
+                store_number=destination_store
+            ).all()
+
+            destination_lookup = {
+                normalize_item_key(item.item_name): item
+                for item in destination_items
+            }
+
+            created_count = 0
+            updated_count = 0
+            skipped_count = 0
+
+            for source_item in source_items:
+                item_key = normalize_item_key(source_item.item_name)
+                existing_item = destination_lookup.get(item_key)
+
+                if existing_item:
+                    if copy_mode == "overwrite_matching":
+                        existing_item.section_name = source_item.section_name
+                        existing_item.build_to = source_item.build_to
+                        existing_item.instructions = source_item.instructions
+                        existing_item.monday = source_item.monday
+                        existing_item.tuesday = source_item.tuesday
+                        existing_item.wednesday = source_item.wednesday
+                        existing_item.thursday = source_item.thursday
+                        existing_item.friday = source_item.friday
+                        existing_item.saturday = source_item.saturday
+                        existing_item.sunday = source_item.sunday
+                        existing_item.sort_order = source_item.sort_order
+                        existing_item.is_active = source_item.is_active
+                        updated_count += 1
+                    else:
+                        skipped_count += 1
+                    continue
+
+                copied_item = PrepTemplateItem(
+                    store_number=destination_store,
+                    section_name=source_item.section_name,
+                    item_name=source_item.item_name,
+                    build_to=source_item.build_to,
+                    instructions=source_item.instructions,
+                    monday=source_item.monday,
+                    tuesday=source_item.tuesday,
+                    wednesday=source_item.wednesday,
+                    thursday=source_item.thursday,
+                    friday=source_item.friday,
+                    saturday=source_item.saturday,
+                    sunday=source_item.sunday,
+                    sort_order=source_item.sort_order,
+                    is_active=source_item.is_active,
+                )
+                db.session.add(copied_item)
+                created_count += 1
+
+            db.session.commit()
+
+            if copy_mode == "overwrite_matching":
+                flash(
+                    f"Copied prep setup from {source_store} to {destination_store}. "
+                    f"Created {created_count}, updated {updated_count}, skipped {skipped_count}.",
+                    "success"
+                )
+            else:
+                flash(
+                    f"Copied missing prep items from {source_store} to {destination_store}. "
+                    f"Created {created_count}, skipped {skipped_count} existing.",
+                    "success"
+                )
+
+            return redirect(url_for("prep.manage", store=destination_store, show_inactive=int(show_inactive)))
 
         if action == "delete":
             item_id = request.form.get("item_id", "").strip()

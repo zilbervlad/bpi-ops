@@ -61,6 +61,64 @@
         </form>
 
         <form method="POST" class="prep-admin-card prep-admin-top-card">
+            <input type="hidden" name="action" value="copy_store">
+
+            <div class="prep-admin-card-head">
+                <div>
+                    <h3>Copy Prep Setup</h3>
+                    <p>Copy editable prep items from one store to another</p>
+                </div>
+            </div>
+
+            <div class="prep-admin-copy-grid">
+                <div class="prep-admin-field">
+                    <label for="source_store">Copy From</label>
+                    <select id="source_store" name="source_store" required>
+                        <option value="">Choose source</option>
+                        {% for store in stores %}
+                        <option value="{{ store.store_number }}">
+                            {{ store.store_number }} - {{ store.area_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="prep-admin-field">
+                    <label for="destination_store">Copy To</label>
+                    <select id="destination_store" name="destination_store" required>
+                        {% for store in stores %}
+                        <option value="{{ store.store_number }}" {% if store.store_number == store_number %}selected{% endif %}>
+                            {{ store.store_number }} - {{ store.area_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="prep-admin-field">
+                    <label for="copy_mode">Copy Mode</label>
+                    <select id="copy_mode" name="copy_mode" required>
+                        <option value="missing_only" selected>Only add missing items</option>
+                        <option value="overwrite_matching">Overwrite matching item names</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="prep-admin-copy-note">
+                Safe default: only missing items are added. Existing destination items are skipped unless you choose overwrite.
+            </div>
+
+            <div class="prep-admin-create-actions">
+                <button
+                    type="submit"
+                    class="prep-admin-primary-btn"
+                    onclick="return confirmCopyPrepSetup();"
+                >
+                    Copy Setup
+                </button>
+            </div>
+        </form>
+
+        <form method="POST" class="prep-admin-card prep-admin-top-card">
             <input type="hidden" name="action" value="create">
 
             <div class="prep-admin-card-head">
@@ -328,7 +386,7 @@
 
 .prep-admin-top-grid {
     display: grid;
-    grid-template-columns: 0.95fr 1.55fr;
+    grid-template-columns: 0.95fr 1.15fr 1.55fr;
     gap: 16px;
 }
 
@@ -373,6 +431,27 @@
     display: grid;
     grid-template-columns: 1.15fr 2.2fr 1.1fr 0.7fr;
     gap: 12px;
+}
+
+.prep-admin-copy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.prep-admin-copy-grid .prep-admin-field:last-child {
+    grid-column: 1 / -1;
+}
+
+.prep-admin-copy-note {
+    margin-top: 12px;
+    padding: 11px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.035);
+    font-size: 12px;
+    line-height: 1.35;
+    opacity: 0.76;
 }
 
 .prep-admin-field {
@@ -603,11 +682,13 @@
     border-color: rgba(255, 110, 110, 0.18);
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1320px) {
     .prep-admin-top-grid {
         grid-template-columns: 1fr;
     }
+}
 
+@media (max-width: 1180px) {
     .prep-admin-board-grid {
         grid-template-columns: 1fr;
         gap: 12px;
@@ -634,8 +715,13 @@
 
 @media (max-width: 860px) {
     .prep-admin-create-grid,
-    .prep-admin-load-row {
+    .prep-admin-load-row,
+    .prep-admin-copy-grid {
         grid-template-columns: 1fr;
+    }
+
+    .prep-admin-copy-grid .prep-admin-field:last-child {
+        grid-column: auto;
     }
 
     .prep-admin-hero {
@@ -649,6 +735,28 @@
 </style>
 
 <script>
+function confirmCopyPrepSetup() {
+    const source = document.getElementById("source_store")?.value || "";
+    const destination = document.getElementById("destination_store")?.value || "";
+    const mode = document.getElementById("copy_mode")?.value || "missing_only";
+
+    if (!source || !destination) {
+        alert("Choose both a source store and destination store.");
+        return false;
+    }
+
+    if (source === destination) {
+        alert("Source and destination stores must be different.");
+        return false;
+    }
+
+    if (mode === "overwrite_matching") {
+        return confirm(`Copy prep setup from ${source} to ${destination} and overwrite matching item names?`);
+    }
+
+    return confirm(`Copy missing prep items from ${source} to ${destination}? Existing items will be skipped.`);
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const storeNumber = "{{ store_number }}";
     const rows = Array.from(document.querySelectorAll(".prep-admin-board-row"));

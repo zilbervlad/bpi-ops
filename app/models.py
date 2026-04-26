@@ -339,7 +339,8 @@ class CashLog(db.Model):
     manager_name = db.Column(db.String(120), nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
+
 class VerificationTemplateField(db.Model):
     __tablename__ = "verification_template_fields"
 
@@ -387,8 +388,10 @@ class VerificationReportValue(db.Model):
 
     value_text = db.Column(db.Text, nullable=True)
 
-    template_field = db.relationship("VerificationTemplateField")   
- # =========================
+    template_field = db.relationship("VerificationTemplateField")
+
+
+# =========================
 # PREP MODULE
 # =========================
 
@@ -404,6 +407,16 @@ class PrepTemplateItem(db.Model):
 
     build_to = db.Column(db.String(255), nullable=True)
     instructions = db.Column(db.Text, nullable=True)
+
+    # Optional editable prep import/rule fields.
+    # These support future ideal-usage uploads and item-specific prep conversions.
+    # They are intentionally nullable so existing live prep items keep working.
+    report_item_name = db.Column(db.String(255), nullable=True)
+    prep_unit = db.Column(db.String(80), nullable=True)
+    rounding_increment = db.Column(db.String(80), nullable=True)
+    minimum_build = db.Column(db.String(80), nullable=True)
+    buffer_percent = db.Column(db.String(80), nullable=True)
+    conversion_notes = db.Column(db.Text, nullable=True)
 
     monday = db.Column(db.Boolean, default=True)
     tuesday = db.Column(db.Boolean, default=True)
@@ -461,4 +474,4 @@ class DailyPrepItem(db.Model):
     is_completed = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime, nullable=True)
 
-    template_item = db.relationship("PrepTemplateItem") 
+    template_item = db.relationship("PrepTemplateItem")

@@ -9,7 +9,7 @@
         <div>
             <div class="prep-admin-eyebrow">PREP TEMPLATE</div>
             <h2 class="prep-admin-title">Store {{ store_number }}</h2>
-            <p class="prep-admin-subtitle">Manage store-specific build-to items, editable prep rules, and ideal usage previews</p>
+            <p class="prep-admin-subtitle">Manage store-specific build-to items, editable prep rules, and ideal usage imports</p>
         </div>
 
         <div class="prep-admin-hero-actions">
@@ -66,7 +66,7 @@
             <div class="prep-admin-card-head">
                 <div>
                     <h3>Preview Ideal Usage</h3>
-                    <p>Upload Excel report and preview matches before importing</p>
+                    <p>Upload Excel report and select rows before importing</p>
                 </div>
             </div>
 
@@ -76,7 +76,7 @@
             </div>
 
             <div class="prep-admin-copy-note">
-                Preview only. This will not create, update, or delete prep items.
+                Preview first. Nothing is imported until you select rows and confirm import.
             </div>
 
             <div class="prep-admin-create-actions">
@@ -238,7 +238,10 @@
     </div>
 
     {% if upload_preview %}
-    <div class="prep-admin-preview-panel">
+    <form method="POST" class="prep-admin-preview-panel" onsubmit="return confirmSelectedIdealUsageImport();">
+        <input type="hidden" name="action" value="import_ideal_usage_selected">
+        <input type="hidden" name="preview_token" value="{{ upload_preview.token }}">
+
         <div class="prep-admin-preview-head">
             <div>
                 <div class="prep-admin-eyebrow">UPLOAD PREVIEW</div>
@@ -251,15 +254,39 @@
                     {{ upload_preview.skipped_count }} skipped
                 </p>
             </div>
-            <div class="prep-admin-status-pill">
-                Preview Only
+
+            <div class="prep-admin-preview-actions">
+                <div class="prep-admin-field prep-admin-preview-mode">
+                    <label for="import_mode">Import Mode</label>
+                    <select id="import_mode" name="import_mode">
+                        <option value="create_missing" selected>Create missing only</option>
+                        <option value="update_matched">Update matched only</option>
+                        <option value="create_and_update">Create missing + update matched</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="prep-admin-primary-btn">Import Selected</button>
             </div>
+        </div>
+
+        <div class="prep-admin-import-note">
+            Default is safest: <strong>Create missing only</strong>. It will create selected new items in the correct store from the report. Nothing is deleted.
+        </div>
+
+        <div class="prep-admin-preview-toolbar">
+            <label class="prep-admin-select-all">
+                <input type="checkbox" id="select_all_preview_rows">
+                <span>Select visible rows</span>
+            </label>
+
+            <span id="selected-preview-count">0 selected</span>
         </div>
 
         <div class="prep-admin-preview-table-wrap">
             <table class="prep-admin-preview-table">
                 <thead>
                     <tr>
+                        <th>Select</th>
                         <th>Store</th>
                         <th>Report Item</th>
                         <th>Status</th>
@@ -273,6 +300,14 @@
                 <tbody>
                     {% for row in upload_preview.rows[:300] %}
                     <tr>
+                        <td>
+                            <input
+                                type="checkbox"
+                                class="preview-row-checkbox"
+                                name="selected_rows"
+                                value="{{ loop.index0 }}"
+                            >
+                        </td>
                         <td>{{ row.store_number }}</td>
                         <td>{{ row.report_item_name }}</td>
                         <td>
@@ -301,10 +336,10 @@
 
         {% if upload_preview.row_count > 300 %}
         <div class="prep-admin-copy-note">
-            Showing first 300 rows only. Full file parsed successfully.
+            Showing first 300 rows only. To import rows beyond the first 300, we’ll add filters/search next before opening this up company-wide.
         </div>
         {% endif %}
-    </div>
+    </form>
     {% endif %}
 
     {% if items %}
@@ -487,7 +522,8 @@
     font-size: 14px;
 }
 
-.prep-admin-hero-actions {
+.prep-admin-hero-actions,
+.prep-admin-preview-actions {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -621,7 +657,8 @@
     grid-column: 1 / -1;
 }
 
-.prep-admin-copy-note {
+.prep-admin-copy-note,
+.prep-admin-import-note {
     margin-top: 12px;
     padding: 11px 12px;
     border-radius: 14px;
@@ -630,6 +667,10 @@
     font-size: 12px;
     line-height: 1.35;
     opacity: 0.76;
+}
+
+.prep-admin-import-note {
+    margin-bottom: 12px;
 }
 
 .prep-admin-field {
@@ -749,6 +790,33 @@
     font-size: 13px;
 }
 
+.prep-admin-preview-mode {
+    min-width: 230px;
+}
+
+.prep-admin-preview-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0;
+    flex-wrap: wrap;
+}
+
+.prep-admin-select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+#selected-preview-count {
+    font-size: 12px;
+    opacity: 0.72;
+    font-weight: 800;
+}
+
 .prep-admin-preview-table-wrap {
     overflow-x: auto;
     border-radius: 16px;
@@ -758,7 +826,7 @@
 .prep-admin-preview-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 980px;
+    min-width: 1080px;
     font-size: 12px;
 }
 
@@ -776,6 +844,12 @@
     text-transform: uppercase;
     color: rgba(244,247,255,0.68);
     background: rgba(255,255,255,0.035);
+}
+
+.preview-row-checkbox,
+#select_all_preview_rows {
+    width: 18px;
+    height: 18px;
 }
 
 .prep-admin-preview-status {
@@ -1056,11 +1130,14 @@
     }
 
     .prep-admin-hero,
-    .prep-admin-preview-head {
+    .prep-admin-preview-head,
+    .prep-admin-preview-actions {
         flex-direction: column;
     }
 
-    .prep-admin-hero-actions {
+    .prep-admin-hero-actions,
+    .prep-admin-preview-actions,
+    .prep-admin-preview-mode {
         width: 100%;
     }
 }
@@ -1089,9 +1166,54 @@ function confirmCopyPrepSetup() {
     return confirm(`Copy missing prep items from ${source} to ${destination}? Existing items will be skipped.`);
 }
 
+function updateSelectedPreviewCount() {
+    const checked = document.querySelectorAll(".preview-row-checkbox:checked").length;
+    const label = document.getElementById("selected-preview-count");
+    if (label) {
+        label.textContent = `${checked} selected`;
+    }
+}
+
+function confirmSelectedIdealUsageImport() {
+    const checked = document.querySelectorAll(".preview-row-checkbox:checked").length;
+    const mode = document.getElementById("import_mode")?.value || "create_missing";
+
+    if (checked <= 0) {
+        alert("Choose at least one row to import.");
+        return false;
+    }
+
+    if (mode === "update_matched") {
+        return confirm(`Update matched prep items for ${checked} selected row(s)?`);
+    }
+
+    if (mode === "create_and_update") {
+        return confirm(`Create missing and update matched prep items for ${checked} selected row(s)?`);
+    }
+
+    return confirm(`Create missing prep items for ${checked} selected row(s)? Existing matched items will be skipped.`);
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const storeNumber = "{{ store_number }}";
     const rows = Array.from(document.querySelectorAll(".prep-admin-board-row"));
+    const selectAllPreviewRows = document.getElementById("select_all_preview_rows");
+    const previewBoxes = Array.from(document.querySelectorAll(".preview-row-checkbox"));
+
+    if (selectAllPreviewRows) {
+        selectAllPreviewRows.addEventListener("change", function () {
+            previewBoxes.forEach(box => {
+                box.checked = this.checked;
+            });
+            updateSelectedPreviewCount();
+        });
+    }
+
+    previewBoxes.forEach(box => {
+        box.addEventListener("change", updateSelectedPreviewCount);
+    });
+
+    updateSelectedPreviewCount();
 
     function setRowStatus(row, text, state) {
         const el = row.querySelector(".prep-row-status");

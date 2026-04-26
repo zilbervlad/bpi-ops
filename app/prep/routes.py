@@ -1,8 +1,11 @@
 from collections import defaultdict
 from datetime import datetime
+import json
+import os
 import re
+from uuid import uuid4
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, session, jsonify
 from openpyxl import load_workbook
 
 from app.auth.routes import login_required, role_required
@@ -18,6 +21,9 @@ SECTION_OPTIONS = [
     "Chicken / Wings / Boneless",
     "Veggie / Specialty / Other",
 ]
+
+
+DEFAULT_IMPORT_SECTION = "Veggie / Specialty / Other"
 
 
 def weekday_field_name(prep_date):
@@ -85,6 +91,27 @@ def safe_float(value):
         return float(cleaned)
     except ValueError:
         return None
+
+
+def format_usage_value(value, unit=None):
+    if value is None:
+        return ""
+
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+
+    if number.is_integer():
+        formatted = str(int(number))
+    else:
+        formatted = f"{number:.2f}".rstrip("0").rstrip(".")
+
+    unit_text = (unit or "").strip()
+    if unit_text:
+        return f"{formatted} {unit_text}"
+
+    return formatted
 
 
 def split_store_item(raw_item, raw_store=None):
@@ -194,6 +221,52 @@ def find_header_indexes(header_values):
     }
 
 
+def build_template_lookup(allowed_store_numbers):
+    existing_template_items = PrepTemplateItem.query.filter(
+        PrepTemplateItem.store_number.in_(allowed_store_numbers)
+    ).all()
+
+    template_lookup = {}
+
+    for template in existing_template_items:
+        keys = {
+            normalize_item_key(template.item_name),
+            normalize_item_key(template.report_item_name),
+        }
+
+        for key in keys:
+            if key:
+                template_lookup[(template.store_number, key)] = template
+
+    return template_lookup
+
+
+def refresh_preview_match_status(rows, allowed_store_numbers):
+    template_lookup = build_template_lookup(allowed_store_numbers)
+    matched_count = 0
+    refreshed_rows = []
+
+    for row in rows:
+        store_number = row.get("store_number")
+        report_item_name = row.get("report_item_name", "")
+        item_key = normalize_item_key(report_item_name)
+
+        matched_template = template_lookup.get((store_number, item_key))
+        status = "New"
+
+        if matched_template:
+            matched_count += 1
+            status = "Matched"
+
+        refreshed = dict(row)
+        refreshed["matched_item_name"] = matched_template.item_name if matched_template else ""
+        refreshed["section_name"] = matched_template.section_name if matched_template else ""
+        refreshed["status"] = status
+        refreshed_rows.append(refreshed)
+
+    return refreshed_rows, matched_count
+
+
 def parse_ideal_usage_workbook(file_storage, allowed_store_numbers):
     workbook = load_workbook(file_storage, data_only=True, read_only=True)
     sheet = workbook.active
@@ -224,21 +297,9 @@ def parse_ideal_usage_workbook(file_storage, allowed_store_numbers):
 
     preview_rows = []
     skipped_rows = 0
+
+    template_lookup = build_template_lookup(allowed_store_numbers)
     matched_template_count = 0
-
-    existing_template_items = PrepTemplateItem.query.filter(
-        PrepTemplateItem.store_number.in_(allowed_store_numbers)
-    ).all()
-
-    template_lookup = {}
-    for template in existing_template_items:
-        keys = {
-            normalize_item_key(template.item_name),
-            normalize_item_key(template.report_item_name),
-        }
-        for key in keys:
-            if key:
-                template_lookup[(template.store_number, key)] = template
 
     for row in sheet.iter_rows(min_row=header_row_number + 1, values_only=True):
         row_values = list(row)
@@ -295,6 +356,154 @@ def parse_ideal_usage_workbook(file_storage, allowed_store_numbers):
         "matched_count": matched_template_count,
         "new_count": max(len(preview_rows) - matched_template_count, 0),
         "sheet_name": sheet.title,
+    }
+
+
+def get_preview_storage_dir():
+    storage_dir = os.path.join(current_app.instance_path, "prep_import_previews")
+    os.makedirs(storage_dir, exist_ok=True)
+    return storage_dir
+
+
+def save_upload_preview(upload_preview):
+    token = uuid4().hex
+    storage_path = os.path.join(get_preview_storage_dir(), f"{token}.json")
+
+    payload = {
+        "created_at": datetime.utcnow().isoformat(),
+        "sheet_name": upload_preview.get("sheet_name"),
+        "rows": upload_preview.get("rows", []),
+        "skipped_count": upload_preview.get("skipped_count", 0),
+    }
+
+    with open(storage_path, "w", encoding="utf-8") as file:
+        json.dump(payload, file)
+
+    return token
+
+
+def load_upload_preview(token):
+    if not token or not re.fullmatch(r"[a-f0-9]{32}", token):
+        return None
+
+    storage_path = os.path.join(get_preview_storage_dir(), f"{token}.json")
+
+    if not os.path.exists(storage_path):
+        return None
+
+    with open(storage_path, "r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+def build_upload_preview_from_saved(saved_preview, allowed_store_numbers, token=None):
+    rows = saved_preview.get("rows", [])
+    refreshed_rows, matched_count = refresh_preview_match_status(rows, allowed_store_numbers)
+
+    return {
+        "token": token,
+        "rows": refreshed_rows,
+        "row_count": len(refreshed_rows),
+        "skipped_count": saved_preview.get("skipped_count", 0),
+        "matched_count": matched_count,
+        "new_count": max(len(refreshed_rows) - matched_count, 0),
+        "sheet_name": saved_preview.get("sheet_name", "Uploaded File"),
+    }
+
+
+def import_selected_preview_rows(saved_preview, selected_indexes, import_mode, allowed_store_numbers):
+    rows = saved_preview.get("rows", [])
+
+    if import_mode not in {"create_missing", "update_matched", "create_and_update"}:
+        import_mode = "create_missing"
+
+    selected_index_set = set()
+
+    for raw_index in selected_indexes:
+        try:
+            selected_index_set.add(int(raw_index))
+        except (TypeError, ValueError):
+            continue
+
+    if not selected_index_set:
+        return {
+            "created_count": 0,
+            "updated_count": 0,
+            "skipped_count": 0,
+            "selected_count": 0,
+        }
+
+    template_lookup = build_template_lookup(allowed_store_numbers)
+
+    created_count = 0
+    updated_count = 0
+    skipped_count = 0
+    selected_count = 0
+
+    for row_index, row in enumerate(rows):
+        if row_index not in selected_index_set:
+            continue
+
+        selected_count += 1
+
+        store_number = row.get("store_number")
+        report_item_name = (row.get("report_item_name") or "").strip()
+        unit = (row.get("unit") or "").strip()
+        ideal_usage = row.get("ideal_usage")
+
+        if not store_number or store_number not in allowed_store_numbers or not report_item_name:
+            skipped_count += 1
+            continue
+
+        item_key = normalize_item_key(report_item_name)
+        existing_item = template_lookup.get((store_number, item_key))
+
+        build_to_value = format_usage_value(ideal_usage, unit)
+
+        if existing_item:
+            if import_mode in {"update_matched", "create_and_update"}:
+                existing_item.report_item_name = report_item_name
+                existing_item.prep_unit = unit or existing_item.prep_unit
+                existing_item.build_to = build_to_value or existing_item.build_to
+                updated_count += 1
+            else:
+                skipped_count += 1
+            continue
+
+        if import_mode in {"create_missing", "create_and_update"}:
+            new_item = PrepTemplateItem(
+                store_number=store_number,
+                section_name=DEFAULT_IMPORT_SECTION,
+                item_name=report_item_name,
+                build_to=build_to_value or None,
+                instructions=None,
+                report_item_name=report_item_name,
+                prep_unit=unit or None,
+                rounding_increment=None,
+                minimum_build=None,
+                buffer_percent=None,
+                conversion_notes=None,
+                monday=True,
+                tuesday=True,
+                wednesday=True,
+                thursday=True,
+                friday=True,
+                saturday=True,
+                sunday=True,
+                sort_order=999,
+                is_active=True,
+            )
+            db.session.add(new_item)
+            created_count += 1
+        else:
+            skipped_count += 1
+
+    db.session.commit()
+
+    return {
+        "created_count": created_count,
+        "updated_count": updated_count,
+        "skipped_count": skipped_count,
+        "selected_count": selected_count,
     }
 
 
@@ -606,6 +815,9 @@ def manage():
 
             try:
                 upload_preview = parse_ideal_usage_workbook(upload_file, allowed_store_numbers)
+                preview_token = save_upload_preview(upload_preview)
+                upload_preview["token"] = preview_token
+
                 flash(
                     f"Preview loaded: {upload_preview['row_count']} rows found, "
                     f"{upload_preview['matched_count']} matched to existing prep items.",
@@ -614,6 +826,36 @@ def manage():
             except Exception as error:
                 flash(f"Could not preview ideal usage file: {error}", "error")
                 upload_preview = None
+
+        elif action == "import_ideal_usage_selected":
+            preview_token = request.form.get("preview_token", "").strip()
+            import_mode = request.form.get("import_mode", "create_missing").strip()
+            selected_rows = request.form.getlist("selected_rows")
+
+            saved_preview = load_upload_preview(preview_token)
+
+            if not saved_preview:
+                flash("Upload preview expired or could not be found. Please upload the file again.", "error")
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
+
+            if not selected_rows:
+                upload_preview = build_upload_preview_from_saved(saved_preview, allowed_store_numbers, preview_token)
+                flash("Choose at least one row to import.", "error")
+            else:
+                result = import_selected_preview_rows(
+                    saved_preview=saved_preview,
+                    selected_indexes=selected_rows,
+                    import_mode=import_mode,
+                    allowed_store_numbers=allowed_store_numbers,
+                )
+
+                flash(
+                    f"Import complete: {result['created_count']} created, "
+                    f"{result['updated_count']} updated, {result['skipped_count']} skipped.",
+                    "success"
+                )
+
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
         elif action == "create":
             section_name = request.form.get("section_name", "").strip()

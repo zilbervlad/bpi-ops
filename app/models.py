@@ -408,6 +408,16 @@ class PrepTemplateItem(db.Model):
     build_to = db.Column(db.String(255), nullable=True)
     instructions = db.Column(db.Text, nullable=True)
 
+    # Optional day-specific build-to values.
+    # If blank, the app falls back to build_to.
+    monday_build_to = db.Column(db.String(255), nullable=True)
+    tuesday_build_to = db.Column(db.String(255), nullable=True)
+    wednesday_build_to = db.Column(db.String(255), nullable=True)
+    thursday_build_to = db.Column(db.String(255), nullable=True)
+    friday_build_to = db.Column(db.String(255), nullable=True)
+    saturday_build_to = db.Column(db.String(255), nullable=True)
+    sunday_build_to = db.Column(db.String(255), nullable=True)
+
     # Optional editable prep import/rule fields.
     # These support future ideal-usage uploads and item-specific prep conversions.
     # They are intentionally nullable so existing live prep items keep working.

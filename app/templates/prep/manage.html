@@ -9,7 +9,7 @@
         <div>
             <div class="prep-admin-eyebrow">PREP TEMPLATE</div>
             <h2 class="prep-admin-title">Store {{ store_number }}</h2>
-            <p class="prep-admin-subtitle">Manage store-specific build-to items</p>
+            <p class="prep-admin-subtitle">Manage store-specific build-to items and editable prep rules</p>
         </div>
 
         <div class="prep-admin-hero-actions">
@@ -66,7 +66,7 @@
             <div class="prep-admin-card-head">
                 <div>
                     <h3>Copy Prep Setup</h3>
-                    <p>Copy editable prep items from one store to another</p>
+                    <p>Copy editable prep items and prep rules from one store to another</p>
                 </div>
             </div>
 
@@ -160,6 +160,42 @@
                 <input type="text" id="instructions" name="instructions" placeholder="Optional prep instructions">
             </div>
 
+            <details class="prep-admin-rule-details">
+                <summary>Optional Import / Prep Rule Fields</summary>
+
+                <div class="prep-admin-rule-grid">
+                    <div class="prep-admin-field">
+                        <label for="report_item_name">Report Item Name</label>
+                        <input type="text" id="report_item_name" name="report_item_name" placeholder="Name from ideal usage report">
+                    </div>
+
+                    <div class="prep-admin-field">
+                        <label for="prep_unit">Prep Unit</label>
+                        <input type="text" id="prep_unit" name="prep_unit" placeholder="bags / bottles / bins / pounds">
+                    </div>
+
+                    <div class="prep-admin-field">
+                        <label for="rounding_increment">Rounding</label>
+                        <input type="text" id="rounding_increment" name="rounding_increment" placeholder="nearest 1 bag / 0.5 lb / 1 bin">
+                    </div>
+
+                    <div class="prep-admin-field">
+                        <label for="minimum_build">Minimum Build</label>
+                        <input type="text" id="minimum_build" name="minimum_build" placeholder="ex: 1 bag / 2 bottles">
+                    </div>
+
+                    <div class="prep-admin-field">
+                        <label for="buffer_percent">Buffer %</label>
+                        <input type="text" id="buffer_percent" name="buffer_percent" placeholder="ex: 10">
+                    </div>
+
+                    <div class="prep-admin-field prep-admin-rule-wide">
+                        <label for="conversion_notes">Conversion Notes</label>
+                        <textarea id="conversion_notes" name="conversion_notes" placeholder="Example: 1 bag = 2 bottles, 3 bags per bucket, 1 bin = 3.33 lb"></textarea>
+                    </div>
+                </div>
+            </details>
+
             <div class="prep-admin-days-wrap">
                 <label class="prep-admin-day-chip"><input type="checkbox" name="monday" checked><span>Mon</span></label>
                 <label class="prep-admin-day-chip"><input type="checkbox" name="tuesday" checked><span>Tue</span></label>
@@ -246,6 +282,51 @@
                             {% if item.is_active %}Remove{% else %}Delete / Archive{% endif %}
                         </button>
                     </form>
+                </div>
+
+                <div class="prep-admin-rules-panel">
+                    <details class="prep-admin-row-rule-details">
+                        <summary>
+                            Import / Prep Rules
+                            {% if item.report_item_name or item.prep_unit or item.rounding_increment or item.minimum_build or item.buffer_percent or item.conversion_notes %}
+                            <span class="prep-admin-rule-indicator">Configured</span>
+                            {% else %}
+                            <span class="prep-admin-rule-indicator muted">Optional</span>
+                            {% endif %}
+                        </summary>
+
+                        <div class="prep-admin-row-rule-grid">
+                            <div class="prep-admin-field">
+                                <label>Report Item Name</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="report_item_name" value="{{ item.report_item_name or '' }}" placeholder="Name from report">
+                            </div>
+
+                            <div class="prep-admin-field">
+                                <label>Prep Unit</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="prep_unit" value="{{ item.prep_unit or '' }}" placeholder="bags / bottles / bins">
+                            </div>
+
+                            <div class="prep-admin-field">
+                                <label>Rounding</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="rounding_increment" value="{{ item.rounding_increment or '' }}" placeholder="nearest 1 bag">
+                            </div>
+
+                            <div class="prep-admin-field">
+                                <label>Minimum Build</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="minimum_build" value="{{ item.minimum_build or '' }}" placeholder="1 bag">
+                            </div>
+
+                            <div class="prep-admin-field">
+                                <label>Buffer %</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="buffer_percent" value="{{ item.buffer_percent or '' }}" placeholder="10">
+                            </div>
+
+                            <div class="prep-admin-field prep-admin-rule-wide">
+                                <label>Conversion Notes</label>
+                                <textarea class="prep-admin-input prep-admin-textarea" data-field="conversion_notes" placeholder="1 bag = 2 bottles / 3 bags per bucket">{{ item.conversion_notes or '' }}</textarea>
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </div>
             {% endfor %}
@@ -433,13 +514,16 @@
     gap: 12px;
 }
 
-.prep-admin-copy-grid {
+.prep-admin-copy-grid,
+.prep-admin-rule-grid,
+.prep-admin-row-rule-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
 
-.prep-admin-copy-grid .prep-admin-field:last-child {
+.prep-admin-copy-grid .prep-admin-field:last-child,
+.prep-admin-rule-wide {
     grid-column: 1 / -1;
 }
 
@@ -469,8 +553,8 @@
 }
 
 .prep-admin-field input,
-.prep-admin-field select {
-    height: 44px;
+.prep-admin-field select,
+.prep-admin-field textarea {
     border-radius: 14px;
     border: 1px solid rgba(255,255,255,0.10);
     background: rgba(255,255,255,0.04);
@@ -478,12 +562,67 @@
     padding: 0 14px;
 }
 
-.prep-admin-field input::placeholder {
+.prep-admin-field input,
+.prep-admin-field select {
+    height: 44px;
+}
+
+.prep-admin-field textarea {
+    min-height: 82px;
+    padding: 12px 14px;
+    resize: vertical;
+}
+
+.prep-admin-field input::placeholder,
+.prep-admin-field textarea::placeholder {
     color: rgba(244,247,255,0.42);
 }
 
 .prep-admin-instructions-field {
     margin-top: 12px;
+}
+
+.prep-admin-rule-details,
+.prep-admin-row-rule-details {
+    margin-top: 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    overflow: hidden;
+}
+
+.prep-admin-rule-details summary,
+.prep-admin-row-rule-details summary {
+    cursor: pointer;
+    padding: 12px 14px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(244,247,255,0.78);
+}
+
+.prep-admin-rule-grid,
+.prep-admin-row-rule-grid {
+    padding: 0 14px 14px;
+}
+
+.prep-admin-rule-indicator {
+    display: inline-flex;
+    margin-left: 8px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    color: #dff7e8;
+    background: rgba(22, 104, 55, 0.24);
+    border: 1px solid rgba(68, 191, 117, 0.22);
+}
+
+.prep-admin-rule-indicator.muted {
+    color: rgba(244,247,255,0.62);
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
 }
 
 .prep-admin-days-wrap {
@@ -595,6 +734,12 @@
     padding: 0 12px;
 }
 
+.prep-admin-textarea {
+    min-height: 82px;
+    padding: 12px;
+    resize: vertical;
+}
+
 .prep-admin-text-secondary {
     margin-top: 8px;
 }
@@ -663,6 +808,10 @@
     justify-content: flex-end;
 }
 
+.prep-admin-rules-panel {
+    grid-column: 1 / -1;
+}
+
 .autosave-ready {
     background: rgba(255,255,255,0.05);
 }
@@ -716,11 +865,14 @@
 @media (max-width: 860px) {
     .prep-admin-create-grid,
     .prep-admin-load-row,
-    .prep-admin-copy-grid {
+    .prep-admin-copy-grid,
+    .prep-admin-rule-grid,
+    .prep-admin-row-rule-grid {
         grid-template-columns: 1fr;
     }
 
-    .prep-admin-copy-grid .prep-admin-field:last-child {
+    .prep-admin-copy-grid .prep-admin-field:last-child,
+    .prep-admin-rule-wide {
         grid-column: auto;
     }
 
@@ -805,6 +957,14 @@ document.addEventListener("DOMContentLoaded", function () {
             build_to: getInput("build_to")?.value || "",
             sort_order: getInput("sort_order")?.value || "0",
             instructions: getInput("instructions")?.value || "",
+
+            report_item_name: getInput("report_item_name")?.value || "",
+            prep_unit: getInput("prep_unit")?.value || "",
+            rounding_increment: getInput("rounding_increment")?.value || "",
+            minimum_build: getInput("minimum_build")?.value || "",
+            buffer_percent: getInput("buffer_percent")?.value || "",
+            conversion_notes: getInput("conversion_notes")?.value || "",
+
             monday: !!getInput("monday")?.checked,
             tuesday: !!getInput("tuesday")?.checked,
             wednesday: !!getInput("wednesday")?.checked,

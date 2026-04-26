@@ -53,6 +53,11 @@ def normalize_item_key(value):
     return (value or "").strip().lower()
 
 
+def clean_optional_text(value):
+    cleaned = (value or "").strip()
+    return cleaned or None
+
+
 def sync_missing_daily_prep_items(daily):
     weekday_name = weekday_field_name(daily.prep_date)
 
@@ -300,6 +305,13 @@ def manage_autosave():
     item.instructions = instructions or None
     item.sort_order = sort_order
 
+    item.report_item_name = clean_optional_text(data.get("report_item_name"))
+    item.prep_unit = clean_optional_text(data.get("prep_unit"))
+    item.rounding_increment = clean_optional_text(data.get("rounding_increment"))
+    item.minimum_build = clean_optional_text(data.get("minimum_build"))
+    item.buffer_percent = clean_optional_text(data.get("buffer_percent"))
+    item.conversion_notes = clean_optional_text(data.get("conversion_notes"))
+
     item.monday = bool(data.get("monday", False))
     item.tuesday = bool(data.get("tuesday", False))
     item.wednesday = bool(data.get("wednesday", False))
@@ -361,6 +373,12 @@ def manage():
                 item_name=item_name,
                 build_to=build_to or None,
                 instructions=instructions or None,
+                report_item_name=clean_optional_text(request.form.get("report_item_name")),
+                prep_unit=clean_optional_text(request.form.get("prep_unit")),
+                rounding_increment=clean_optional_text(request.form.get("rounding_increment")),
+                minimum_build=clean_optional_text(request.form.get("minimum_build")),
+                buffer_percent=clean_optional_text(request.form.get("buffer_percent")),
+                conversion_notes=clean_optional_text(request.form.get("conversion_notes")),
                 monday=request.form.get("monday") == "on",
                 tuesday=request.form.get("tuesday") == "on",
                 wednesday=request.form.get("wednesday") == "on",
@@ -432,6 +450,14 @@ def manage():
                         existing_item.section_name = source_item.section_name
                         existing_item.build_to = source_item.build_to
                         existing_item.instructions = source_item.instructions
+
+                        existing_item.report_item_name = source_item.report_item_name
+                        existing_item.prep_unit = source_item.prep_unit
+                        existing_item.rounding_increment = source_item.rounding_increment
+                        existing_item.minimum_build = source_item.minimum_build
+                        existing_item.buffer_percent = source_item.buffer_percent
+                        existing_item.conversion_notes = source_item.conversion_notes
+
                         existing_item.monday = source_item.monday
                         existing_item.tuesday = source_item.tuesday
                         existing_item.wednesday = source_item.wednesday
@@ -452,6 +478,12 @@ def manage():
                     item_name=source_item.item_name,
                     build_to=source_item.build_to,
                     instructions=source_item.instructions,
+                    report_item_name=source_item.report_item_name,
+                    prep_unit=source_item.prep_unit,
+                    rounding_increment=source_item.rounding_increment,
+                    minimum_build=source_item.minimum_build,
+                    buffer_percent=source_item.buffer_percent,
+                    conversion_notes=source_item.conversion_notes,
                     monday=source_item.monday,
                     tuesday=source_item.tuesday,
                     wednesday=source_item.wednesday,

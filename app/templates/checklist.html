@@ -242,6 +242,91 @@
     </div>
 </div>
 
+
+<div id="burst-warning-modal" class="burst-warning-modal" aria-hidden="true">
+    <div class="burst-warning-backdrop"></div>
+
+    <div class="burst-warning-card" role="dialog" aria-modal="true" aria-labelledby="burst-warning-title">
+        <div class="burst-warning-icon">⚠️</div>
+
+        <h3 id="burst-warning-title">Burst Detected</h3>
+
+        <p id="burst-warning-message">
+            Checklist items are being completed too quickly. Please only mark tasks complete after the work is actually finished.
+        </p>
+
+        <button type="button" id="burst-warning-continue" class="btn-primary burst-warning-button">
+            Continue
+        </button>
+    </div>
+</div>
+
+<style>
+.burst-warning-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.burst-warning-modal.is-open {
+    display: flex;
+}
+
+.burst-warning-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.72);
+    backdrop-filter: blur(4px);
+}
+
+.burst-warning-card {
+    position: relative;
+    width: min(440px, 100%);
+    background: #ffffff;
+    border-radius: 22px;
+    padding: 26px 22px 22px;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.35);
+    text-align: center;
+    color: #0f172a;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.burst-warning-icon {
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 12px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    font-size: 28px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+}
+
+.burst-warning-card h3 {
+    margin: 0 0 10px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.burst-warning-card p {
+    margin: 0 0 20px;
+    font-size: 15px;
+    line-height: 1.45;
+    color: #475569;
+}
+
+.burst-warning-button {
+    width: 100%;
+    justify-content: center;
+}
+</style>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const checkboxes = Array.from(document.querySelectorAll(".live-checklist-box"));
@@ -253,6 +338,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const autosaveStatusEl = document.getElementById("autosave-status");
     const openingManagerInput = document.getElementById("opening_manager");
     const closingManagerInput = document.getElementById("closing_manager");
+    const burstWarningModal = document.getElementById("burst-warning-modal");
+    const burstWarningMessage = document.getElementById("burst-warning-message");
+    const burstWarningContinue = document.getElementById("burst-warning-continue");
 
     const storeNumber = "{{ store_number }}";
     const selectedDate = "{{ selected_date }}";
@@ -273,6 +361,38 @@ document.addEventListener("DOMContentLoaded", function () {
             autosaveStatusEl.classList.add("autosave-failed");
         }
     }
+
+    function showBurstWarning(message) {
+        if (!burstWarningModal) return;
+
+        if (burstWarningMessage && message) {
+            burstWarningMessage.textContent = message;
+        }
+
+        burstWarningModal.classList.add("is-open");
+        burstWarningModal.setAttribute("aria-hidden", "false");
+
+        if (burstWarningContinue) {
+            burstWarningContinue.focus();
+        }
+    }
+
+    function closeBurstWarning() {
+        if (!burstWarningModal) return;
+
+        burstWarningModal.classList.remove("is-open");
+        burstWarningModal.setAttribute("aria-hidden", "true");
+    }
+
+    if (burstWarningContinue) {
+        burstWarningContinue.addEventListener("click", closeBurstWarning);
+    }
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            closeBurstWarning();
+        }
+    });
 
     function updateStatsFromServer(data) {
         if (!data) return;
@@ -357,6 +477,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
             refreshCardState(itemId);
             updateStatsFromServer(data);
+
+            if (data.burst_detected) {
+                showBurstWarning(data.burst_message);
+            }
+
             setAutosaveStatus("Saved");
         } catch (error) {
             setAutosaveStatus("Save failed");

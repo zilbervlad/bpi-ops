@@ -1080,6 +1080,66 @@ def run_closeout():
     return redirect(url_for("dashboard.home"))
 
 
+
+
+def detect_burst_warning(daily: DailyChecklist, changed_item: DailyChecklistItem, is_completed: bool):
+    if not is_completed or not changed_item.completed_at:
+        return False
+
+    settings = IntegritySettings.query.first()
+
+    burst_threshold = (
+        settings.burst_threshold
+        if settings and settings.burst_threshold is not None
+        else 4
+    )
+
+    burst_window_seconds = (
+        settings.burst_window_seconds
+        if settings and settings.burst_window_seconds is not None
+        else 60
+    )
+
+    if burst_threshold < 2:
+        burst_threshold = 2
+
+    if burst_window_seconds < 1:
+        burst_window_seconds = 60
+
+    completed_times = []
+
+    for item in daily.items:
+        if not item.is_completed or not item.completed_at:
+            continue
+
+        if item.section_name != changed_item.section_name:
+            continue
+
+        completed_et = utc_naive_to_et(item.completed_at)
+        if completed_et and completed_et.date() == daily.checklist_date:
+            completed_times.append(item.completed_at)
+
+    completed_times = sorted(completed_times)
+
+    if len(completed_times) < burst_threshold:
+        return False
+
+    changed_time = changed_item.completed_at
+
+    for i in range(len(completed_times) - burst_threshold + 1):
+        window = completed_times[i:i + burst_threshold]
+
+        if changed_time not in window:
+            continue
+
+        start = window[0]
+        end = window[-1]
+
+        if (end - start).total_seconds() <= burst_window_seconds:
+            return True
+
+    return False
+
 @checklist_bp.route("/autosave-item", methods=["POST"])
 @login_required
 @role_required("admin", "supervisor", "manager")
@@ -1102,11 +1162,20 @@ def autosave_item():
     if daily.store_number not in visible_store_numbers:
         return jsonify({"success": False, "error": "Unauthorized"}), 403
 
+    was_completed = item.is_completed
+
     item.is_completed = is_completed
     item.notes = notes
-    item.completed_at = datetime.utcnow() if is_completed else None
+
+    if is_completed and not was_completed:
+        item.completed_at = datetime.utcnow()
+    elif not is_completed:
+        item.completed_at = None
 
     db.session.commit()
+
+    burst_detected = detect_burst_warning(daily, item, is_completed)
+
     update_checklist_progress(daily)
     manager_walk_integrity = calculate_manager_walk_integrity(daily)
 
@@ -1117,6 +1186,11 @@ def autosave_item():
         "manager_walk_integrity": manager_walk_integrity,
         "status": daily.status,
         "sections": build_section_stats(daily),
+        "burst_detected": burst_detected,
+        "burst_message": (
+            "Burst detected. Checklist items are being completed too quickly. "
+            "Please only mark tasks complete after the work is actually finished."
+        ) if burst_detected else "",
     })
 
 

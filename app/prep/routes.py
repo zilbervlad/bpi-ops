@@ -1,7 +1,9 @@
 from collections import defaultdict
 from datetime import datetime
+import re
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from openpyxl import load_workbook
 
 from app.auth.routes import login_required, role_required
 from app.extensions import db
@@ -53,9 +55,247 @@ def normalize_item_key(value):
     return (value or "").strip().lower()
 
 
+def normalize_header(value):
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
+
+
 def clean_optional_text(value):
     cleaned = (value or "").strip()
     return cleaned or None
+
+
+def safe_float(value):
+    if value is None:
+        return None
+
+    if isinstance(value, (int, float)):
+        return float(value)
+
+    cleaned = str(value).strip()
+    if not cleaned:
+        return None
+
+    cleaned = cleaned.replace(",", "").replace("$", "")
+    cleaned = re.sub(r"[^0-9.\-]", "", cleaned)
+
+    if cleaned in {"", "-", ".", "-."}:
+        return None
+
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def split_store_item(raw_item, raw_store=None):
+    item_text = str(raw_item or "").strip()
+    store_text = str(raw_store or "").strip()
+
+    if store_text:
+        store_match = re.search(r"\d{4}", store_text)
+        if store_match:
+            return store_match.group(0), item_text
+
+    combined_match = re.match(r"^\s*(\d{4})\s*[-–—]\s*(.+?)\s*$", item_text)
+    if combined_match:
+        return combined_match.group(1), combined_match.group(2).strip()
+
+    return None, item_text
+
+
+def find_header_indexes(header_values):
+    normalized = [normalize_header(value) for value in header_values]
+
+    ideal_index = None
+    item_index = None
+    store_index = None
+    unit_index = None
+    actual_index = None
+
+    for index, header in enumerate(normalized):
+        if not header:
+            continue
+
+        if ideal_index is None and header in {"idealusage", "idealqty", "idealquantity"}:
+            ideal_index = index
+
+        if item_index is None and header in {
+            "item",
+            "itemname",
+            "inventoryitem",
+            "inventoryitemname",
+            "description",
+            "product",
+            "productname",
+        }:
+            item_index = index
+
+        if store_index is None and header in {
+            "store",
+            "storenumber",
+            "store#",
+            "location",
+            "locationnumber",
+        }:
+            store_index = index
+
+        if unit_index is None and header in {
+            "unit",
+            "units",
+            "uom",
+            "usageunit",
+        }:
+            unit_index = index
+
+        if actual_index is None and header in {
+            "actualusage",
+            "actualqty",
+            "actualquantity",
+            "usage",
+        }:
+            actual_index = index
+
+    if ideal_index is None:
+        for index, header in enumerate(normalized):
+            if "ideal" in header and "usage" in header:
+                ideal_index = index
+                break
+
+    if item_index is None:
+        for index, header in enumerate(normalized):
+            if "item" in header or "description" in header or "product" in header:
+                item_index = index
+                break
+
+    if store_index is None:
+        for index, header in enumerate(normalized):
+            if "store" in header or "location" in header:
+                store_index = index
+                break
+
+    if unit_index is None:
+        for index, header in enumerate(normalized):
+            if "unit" in header or "uom" in header:
+                unit_index = index
+                break
+
+    if actual_index is None:
+        for index, header in enumerate(normalized):
+            if "actual" in header and "usage" in header:
+                actual_index = index
+                break
+
+    return {
+        "ideal_index": ideal_index,
+        "item_index": item_index,
+        "store_index": store_index,
+        "unit_index": unit_index,
+        "actual_index": actual_index,
+    }
+
+
+def parse_ideal_usage_workbook(file_storage, allowed_store_numbers):
+    workbook = load_workbook(file_storage, data_only=True, read_only=True)
+    sheet = workbook.active
+
+    header_row_number = None
+    indexes = None
+
+    for row_number, row in enumerate(sheet.iter_rows(min_row=1, max_row=30, values_only=True), start=1):
+        row_values = list(row)
+        possible_indexes = find_header_indexes(row_values)
+
+        if possible_indexes["ideal_index"] is not None:
+            header_row_number = row_number
+            indexes = possible_indexes
+            break
+
+    if header_row_number is None or indexes is None:
+        raise ValueError("Could not find an Ideal Usage column in the uploaded file.")
+
+    ideal_index = indexes["ideal_index"]
+    item_index = indexes["item_index"]
+    store_index = indexes["store_index"]
+    unit_index = indexes["unit_index"]
+    actual_index = indexes["actual_index"]
+
+    if item_index is None:
+        item_index = 0
+
+    preview_rows = []
+    skipped_rows = 0
+    matched_template_count = 0
+
+    existing_template_items = PrepTemplateItem.query.filter(
+        PrepTemplateItem.store_number.in_(allowed_store_numbers)
+    ).all()
+
+    template_lookup = {}
+    for template in existing_template_items:
+        keys = {
+            normalize_item_key(template.item_name),
+            normalize_item_key(template.report_item_name),
+        }
+        for key in keys:
+            if key:
+                template_lookup[(template.store_number, key)] = template
+
+    for row in sheet.iter_rows(min_row=header_row_number + 1, values_only=True):
+        row_values = list(row)
+
+        raw_item = row_values[item_index] if item_index is not None and item_index < len(row_values) else None
+        raw_store = row_values[store_index] if store_index is not None and store_index < len(row_values) else None
+        raw_ideal = row_values[ideal_index] if ideal_index is not None and ideal_index < len(row_values) else None
+        raw_unit = row_values[unit_index] if unit_index is not None and unit_index < len(row_values) else None
+        raw_actual = row_values[actual_index] if actual_index is not None and actual_index < len(row_values) else None
+
+        if raw_item is None and raw_ideal is None:
+            continue
+
+        ideal_usage = safe_float(raw_ideal)
+        if ideal_usage is None:
+            skipped_rows += 1
+            continue
+
+        store_number, item_name = split_store_item(raw_item, raw_store)
+
+        if not store_number or not item_name:
+            skipped_rows += 1
+            continue
+
+        if store_number not in allowed_store_numbers:
+            skipped_rows += 1
+            continue
+
+        item_key = normalize_item_key(item_name)
+        matched_template = template_lookup.get((store_number, item_key))
+        matched_status = "New"
+
+        if matched_template:
+            matched_template_count += 1
+            matched_status = "Matched"
+
+        preview_rows.append({
+            "store_number": store_number,
+            "report_item_name": item_name,
+            "matched_item_name": matched_template.item_name if matched_template else "",
+            "section_name": matched_template.section_name if matched_template else "",
+            "unit": str(raw_unit or "").strip(),
+            "actual_usage": safe_float(raw_actual),
+            "ideal_usage": ideal_usage,
+            "status": matched_status,
+        })
+
+    preview_rows.sort(key=lambda row: (row["store_number"], row["report_item_name"].lower()))
+
+    return {
+        "rows": preview_rows,
+        "row_count": len(preview_rows),
+        "skipped_count": skipped_rows,
+        "matched_count": matched_template_count,
+        "new_count": max(len(preview_rows) - matched_template_count, 0),
+        "sheet_name": sheet.title,
+    }
 
 
 def sync_missing_daily_prep_items(daily):
@@ -347,10 +587,35 @@ def manage():
     store_number = requested_store if requested_store in allowed_store_numbers else default_store
     show_inactive = request.args.get("show_inactive", "").strip().lower() in {"1", "true", "yes", "on"}
 
+    upload_preview = None
+
     if request.method == "POST":
         action = request.form.get("action", "").strip()
 
-        if action == "create":
+        if action == "preview_ideal_usage":
+            upload_file = request.files.get("ideal_usage_file")
+
+            if not upload_file or not upload_file.filename:
+                flash("Choose an Excel file to preview.", "error")
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
+
+            filename = upload_file.filename.lower()
+            if not filename.endswith((".xlsx", ".xlsm")):
+                flash("Upload an .xlsx or .xlsm Excel file.", "error")
+                return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
+
+            try:
+                upload_preview = parse_ideal_usage_workbook(upload_file, allowed_store_numbers)
+                flash(
+                    f"Preview loaded: {upload_preview['row_count']} rows found, "
+                    f"{upload_preview['matched_count']} matched to existing prep items.",
+                    "success"
+                )
+            except Exception as error:
+                flash(f"Could not preview ideal usage file: {error}", "error")
+                upload_preview = None
+
+        elif action == "create":
             section_name = request.form.get("section_name", "").strip()
             item_name = request.form.get("item_name", "").strip()
             build_to = request.form.get("build_to", "").strip()
@@ -394,7 +659,7 @@ def manage():
             flash("Prep item created.", "success")
             return redirect(url_for("prep.manage", store=store_number, show_inactive=int(show_inactive)))
 
-        if action == "copy_store":
+        elif action == "copy_store":
             source_store = request.form.get("source_store", "").strip()
             destination_store = request.form.get("destination_store", "").strip()
             copy_mode = request.form.get("copy_mode", "missing_only").strip()
@@ -514,7 +779,7 @@ def manage():
 
             return redirect(url_for("prep.manage", store=destination_store, show_inactive=int(show_inactive)))
 
-        if action == "delete":
+        elif action == "delete":
             item_id = request.form.get("item_id", "").strip()
             item = PrepTemplateItem.query.get(item_id)
 
@@ -560,4 +825,5 @@ def manage():
         section_options=SECTION_OPTIONS,
         show_inactive=show_inactive,
         inactive_count=inactive_count,
+        upload_preview=upload_preview,
     )

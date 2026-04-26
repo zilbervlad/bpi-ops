@@ -9,7 +9,7 @@
         <div>
             <div class="prep-admin-eyebrow">PREP TEMPLATE</div>
             <h2 class="prep-admin-title">Store {{ store_number }}</h2>
-            <p class="prep-admin-subtitle">Manage store-specific build-to items and editable prep rules</p>
+            <p class="prep-admin-subtitle">Manage store-specific build-to items, editable prep rules, and ideal usage previews</p>
         </div>
 
         <div class="prep-admin-hero-actions">
@@ -57,6 +57,30 @@
                 <input type="hidden" name="show_inactive" value="{{ 1 if show_inactive else 0 }}">
 
                 <button type="submit" class="prep-admin-primary-btn">Load</button>
+            </div>
+        </form>
+
+        <form method="POST" enctype="multipart/form-data" class="prep-admin-card prep-admin-top-card">
+            <input type="hidden" name="action" value="preview_ideal_usage">
+
+            <div class="prep-admin-card-head">
+                <div>
+                    <h3>Preview Ideal Usage</h3>
+                    <p>Upload Excel report and preview matches before importing</p>
+                </div>
+            </div>
+
+            <div class="prep-admin-field">
+                <label for="ideal_usage_file">Excel File</label>
+                <input type="file" id="ideal_usage_file" name="ideal_usage_file" accept=".xlsx,.xlsm" required>
+            </div>
+
+            <div class="prep-admin-copy-note">
+                Preview only. This will not create, update, or delete prep items.
+            </div>
+
+            <div class="prep-admin-create-actions">
+                <button type="submit" class="prep-admin-primary-btn">Preview Upload</button>
             </div>
         </form>
 
@@ -212,6 +236,76 @@
             </div>
         </form>
     </div>
+
+    {% if upload_preview %}
+    <div class="prep-admin-preview-panel">
+        <div class="prep-admin-preview-head">
+            <div>
+                <div class="prep-admin-eyebrow">UPLOAD PREVIEW</div>
+                <h3>Ideal Usage Preview</h3>
+                <p>
+                    Sheet: {{ upload_preview.sheet_name }} ·
+                    {{ upload_preview.row_count }} rows ·
+                    {{ upload_preview.matched_count }} matched ·
+                    {{ upload_preview.new_count }} new ·
+                    {{ upload_preview.skipped_count }} skipped
+                </p>
+            </div>
+            <div class="prep-admin-status-pill">
+                Preview Only
+            </div>
+        </div>
+
+        <div class="prep-admin-preview-table-wrap">
+            <table class="prep-admin-preview-table">
+                <thead>
+                    <tr>
+                        <th>Store</th>
+                        <th>Report Item</th>
+                        <th>Status</th>
+                        <th>Matched Prep Item</th>
+                        <th>Section</th>
+                        <th>Unit</th>
+                        <th>Actual Usage</th>
+                        <th>Ideal Usage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in upload_preview.rows[:300] %}
+                    <tr>
+                        <td>{{ row.store_number }}</td>
+                        <td>{{ row.report_item_name }}</td>
+                        <td>
+                            {% if row.status == "Matched" %}
+                            <span class="prep-admin-preview-status matched">Matched</span>
+                            {% else %}
+                            <span class="prep-admin-preview-status new">New</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ row.matched_item_name or "-" }}</td>
+                        <td>{{ row.section_name or "-" }}</td>
+                        <td>{{ row.unit or "-" }}</td>
+                        <td>
+                            {% if row.actual_usage is not none %}
+                            {{ "%.2f"|format(row.actual_usage) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>{{ "%.2f"|format(row.ideal_usage) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if upload_preview.row_count > 300 %}
+        <div class="prep-admin-copy-note">
+            Showing first 300 rows only. Full file parsed successfully.
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
 
     {% if items %}
     <div class="prep-admin-board">
@@ -467,7 +561,7 @@
 
 .prep-admin-top-grid {
     display: grid;
-    grid-template-columns: 0.95fr 1.15fr 1.55fr;
+    grid-template-columns: 0.95fr 1.05fr 1.15fr 1.55fr;
     gap: 16px;
 }
 
@@ -623,6 +717,87 @@
     color: rgba(244,247,255,0.62);
     background: rgba(255,255,255,0.04);
     border-color: rgba(255,255,255,0.08);
+}
+
+.prep-admin-preview-panel {
+    border-radius: 24px;
+    border: 1px solid rgba(88, 130, 255, 0.16);
+    background:
+        radial-gradient(circle at top left, rgba(26, 55, 118, 0.14), transparent 30%),
+        linear-gradient(135deg, rgba(10, 18, 38, 0.98), rgba(13, 27, 56, 0.96));
+    box-shadow: 0 18px 40px rgba(0,0,0,0.24);
+    padding: 18px;
+}
+
+.prep-admin-preview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.prep-admin-preview-head h3 {
+    margin: 4px 0;
+    color: #f4f7ff;
+    font-size: 20px;
+}
+
+.prep-admin-preview-head p {
+    margin: 0;
+    opacity: 0.72;
+    font-size: 13px;
+}
+
+.prep-admin-preview-table-wrap {
+    overflow-x: auto;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.prep-admin-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 980px;
+    font-size: 12px;
+}
+
+.prep-admin-preview-table th,
+.prep-admin-preview-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    text-align: left;
+    vertical-align: top;
+}
+
+.prep-admin-preview-table th {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(244,247,255,0.68);
+    background: rgba(255,255,255,0.035);
+}
+
+.prep-admin-preview-status {
+    display: inline-flex;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.prep-admin-preview-status.matched {
+    color: #dff7e8;
+    background: rgba(22, 104, 55, 0.24);
+    border: 1px solid rgba(68, 191, 117, 0.22);
+}
+
+.prep-admin-preview-status.new {
+    color: #ffe8bd;
+    background: rgba(166, 129, 20, 0.22);
+    border: 1px solid rgba(224, 180, 47, 0.20);
 }
 
 .prep-admin-days-wrap {
@@ -831,13 +1006,17 @@
     border-color: rgba(255, 110, 110, 0.18);
 }
 
-@media (max-width: 1320px) {
+@media (max-width: 1480px) {
     .prep-admin-top-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
     }
 }
 
 @media (max-width: 1180px) {
+    .prep-admin-top-grid {
+        grid-template-columns: 1fr;
+    }
+
     .prep-admin-board-grid {
         grid-template-columns: 1fr;
         gap: 12px;
@@ -876,7 +1055,8 @@
         grid-column: auto;
     }
 
-    .prep-admin-hero {
+    .prep-admin-hero,
+    .prep-admin-preview-head {
         flex-direction: column;
     }
 

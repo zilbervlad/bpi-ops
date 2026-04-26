@@ -9,7 +9,7 @@
         <div>
             <div class="prep-admin-eyebrow">PREP TEMPLATE</div>
             <h2 class="prep-admin-title">Store {{ store_number }}</h2>
-            <p class="prep-admin-subtitle">Manage store-specific build-to items, weekday targets, editable prep rules, and ideal usage imports</p>
+            <p class="prep-admin-subtitle">Manage store-specific build-to items, weekday targets, prep coverage rules, and ideal usage imports</p>
         </div>
 
         <div class="prep-admin-hero-actions">
@@ -90,7 +90,7 @@
             <div class="prep-admin-card-head">
                 <div>
                     <h3>Copy Prep Setup</h3>
-                    <p>Copy editable prep items, weekday targets, and prep rules from one store to another</p>
+                    <p>Copy editable prep items, weekday targets, coverage rules, and prep rules from one store to another</p>
                 </div>
             </div>
 
@@ -254,9 +254,14 @@
                         <input type="text" id="buffer_percent" name="buffer_percent" placeholder="ex: 10">
                     </div>
 
+                    <div class="prep-admin-field">
+                        <label for="prep_coverage_days">Prep Coverage Days</label>
+                        <input type="number" id="prep_coverage_days" name="prep_coverage_days" placeholder="Blank = 1" min="1" step="1">
+                    </div>
+
                     <div class="prep-admin-field prep-admin-rule-wide">
                         <label for="conversion_notes">Conversion Notes</label>
-                        <textarea id="conversion_notes" name="conversion_notes" placeholder="Example: 1 bag = 2 bottles, 3 bags per bucket, 1 bin = 3.33 lb"></textarea>
+                        <textarea id="conversion_notes" name="conversion_notes" placeholder="Example: 1 bag = 2 bottles, 3 bags per bucket, shelf-life notes, prep notes"></textarea>
                     </div>
                 </div>
             </details>
@@ -506,7 +511,7 @@
                     <details class="prep-admin-row-rule-details">
                         <summary>
                             Import / Prep Rules
-                            {% if item.report_item_name or item.prep_unit or item.rounding_increment or item.minimum_build or item.buffer_percent or item.conversion_notes %}
+                            {% if item.report_item_name or item.prep_unit or item.rounding_increment or item.minimum_build or item.buffer_percent or item.prep_coverage_days or item.conversion_notes %}
                             <span class="prep-admin-rule-indicator">Configured</span>
                             {% else %}
                             <span class="prep-admin-rule-indicator muted">Optional</span>
@@ -537,6 +542,11 @@
                             <div class="prep-admin-field">
                                 <label>Buffer %</label>
                                 <input type="text" class="prep-admin-input prep-admin-text" data-field="buffer_percent" value="{{ item.buffer_percent or '' }}" placeholder="10">
+                            </div>
+
+                            <div class="prep-admin-field">
+                                <label>Prep Coverage Days</label>
+                                <input type="number" class="prep-admin-input prep-admin-text" data-field="prep_coverage_days" value="{{ item.prep_coverage_days or '' }}" placeholder="Blank = 1" min="1" step="1">
                             </div>
 
                             <div class="prep-admin-field prep-admin-rule-wide">
@@ -1373,6 +1383,7 @@ document.addEventListener("DOMContentLoaded", function () {
             rounding_increment: getInput("rounding_increment")?.value || "",
             minimum_build: getInput("minimum_build")?.value || "",
             buffer_percent: getInput("buffer_percent")?.value || "",
+            prep_coverage_days: getInput("prep_coverage_days")?.value || "",
             conversion_notes: getInput("conversion_notes")?.value || "",
 
             monday: !!getInput("monday")?.checked,

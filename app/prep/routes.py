@@ -92,6 +92,23 @@ def clean_optional_text(value):
     return cleaned or None
 
 
+def clean_optional_positive_int(value):
+    cleaned = (value or "").strip()
+
+    if not cleaned:
+        return None
+
+    try:
+        parsed = int(cleaned)
+    except ValueError:
+        return None
+
+    if parsed <= 0:
+        return None
+
+    return parsed
+
+
 def safe_float(value):
     if value is None:
         return None
@@ -510,6 +527,7 @@ def import_selected_preview_rows(saved_preview, selected_indexes, import_mode, a
                 rounding_increment=None,
                 minimum_build=None,
                 buffer_percent=None,
+                prep_coverage_days=None,
                 conversion_notes=None,
                 monday=True,
                 tuesday=True,
@@ -796,6 +814,7 @@ def manage_autosave():
     item.rounding_increment = clean_optional_text(data.get("rounding_increment"))
     item.minimum_build = clean_optional_text(data.get("minimum_build"))
     item.buffer_percent = clean_optional_text(data.get("buffer_percent"))
+    item.prep_coverage_days = clean_optional_positive_int(data.get("prep_coverage_days"))
     item.conversion_notes = clean_optional_text(data.get("conversion_notes"))
 
     item.monday = bool(data.get("monday", False))
@@ -929,6 +948,7 @@ def manage():
                 rounding_increment=clean_optional_text(request.form.get("rounding_increment")),
                 minimum_build=clean_optional_text(request.form.get("minimum_build")),
                 buffer_percent=clean_optional_text(request.form.get("buffer_percent")),
+                prep_coverage_days=clean_optional_positive_int(request.form.get("prep_coverage_days")),
                 conversion_notes=clean_optional_text(request.form.get("conversion_notes")),
                 monday=request.form.get("monday") == "on",
                 tuesday=request.form.get("tuesday") == "on",
@@ -1015,6 +1035,7 @@ def manage():
                         existing_item.rounding_increment = source_item.rounding_increment
                         existing_item.minimum_build = source_item.minimum_build
                         existing_item.buffer_percent = source_item.buffer_percent
+                        existing_item.prep_coverage_days = source_item.prep_coverage_days
                         existing_item.conversion_notes = source_item.conversion_notes
 
                         existing_item.monday = source_item.monday
@@ -1049,6 +1070,7 @@ def manage():
                     rounding_increment=source_item.rounding_increment,
                     minimum_build=source_item.minimum_build,
                     buffer_percent=source_item.buffer_percent,
+                    prep_coverage_days=source_item.prep_coverage_days,
                     conversion_notes=source_item.conversion_notes,
                     monday=source_item.monday,
                     tuesday=source_item.tuesday,

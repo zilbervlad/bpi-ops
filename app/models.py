@@ -426,6 +426,7 @@ class PrepTemplateItem(db.Model):
     rounding_increment = db.Column(db.String(80), nullable=True)
     minimum_build = db.Column(db.String(80), nullable=True)
     buffer_percent = db.Column(db.String(80), nullable=True)
+    prep_coverage_days = db.Column(db.Integer, nullable=True)
     conversion_notes = db.Column(db.Text, nullable=True)
 
     monday = db.Column(db.Boolean, default=True)

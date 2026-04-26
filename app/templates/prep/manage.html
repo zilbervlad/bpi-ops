@@ -9,7 +9,7 @@
         <div>
             <div class="prep-admin-eyebrow">PREP TEMPLATE</div>
             <h2 class="prep-admin-title">Store {{ store_number }}</h2>
-            <p class="prep-admin-subtitle">Manage store-specific build-to items, editable prep rules, and ideal usage imports</p>
+            <p class="prep-admin-subtitle">Manage store-specific build-to items, weekday targets, editable prep rules, and ideal usage imports</p>
         </div>
 
         <div class="prep-admin-hero-actions">
@@ -90,7 +90,7 @@
             <div class="prep-admin-card-head">
                 <div>
                     <h3>Copy Prep Setup</h3>
-                    <p>Copy editable prep items and prep rules from one store to another</p>
+                    <p>Copy editable prep items, weekday targets, and prep rules from one store to another</p>
                 </div>
             </div>
 
@@ -169,8 +169,8 @@
                 </div>
 
                 <div class="prep-admin-field">
-                    <label for="build_to">Build To</label>
-                    <input type="text" id="build_to" name="build_to" placeholder="16 / 1 case / 3 bins">
+                    <label for="build_to">Default Build To</label>
+                    <input type="text" id="build_to" name="build_to" placeholder="Fallback if weekday target is blank">
                 </div>
 
                 <div class="prep-admin-field">
@@ -183,6 +183,47 @@
                 <label for="instructions">Instructions</label>
                 <input type="text" id="instructions" name="instructions" placeholder="Optional prep instructions">
             </div>
+
+            <details class="prep-admin-rule-details">
+                <summary>Weekday Build-To Targets</summary>
+
+                <div class="prep-admin-weekday-grid">
+                    <div class="prep-admin-field">
+                        <label for="monday_build_to">Monday</label>
+                        <input type="text" id="monday_build_to" name="monday_build_to" placeholder="Optional">
+                    </div>
+
+                    <div class="prep-admin-field">
+                        <label for="tuesday_build_to">Tuesday</label>
+                        <input type="text" id="tuesday_build_to" name="tuesday_build_to" placeholder="Optional">
+                    </div>
+
+                    <div class="prep-admin-field">
+                        <label for="wednesday_build_to">Wednesday</label>
+                        <input type="text" id="wednesday_build_to" name="wednesday_build_to" placeholder="Optional">
+                    </div>
+
+                    <div class="prep-admin-field">
+                        <label for="thursday_build_to">Thursday</label>
+                        <input type="text" id="thursday_build_to" name="thursday_build_to" placeholder="Optional">
+                    </div>
+
+                    <div class="prep-admin-field">
+                        <label for="friday_build_to">Friday</label>
+                        <input type="text" id="friday_build_to" name="friday_build_to" placeholder="Optional">
+                    </div>
+
+                    <div class="prep-admin-field">
+                        <label for="saturday_build_to">Saturday</label>
+                        <input type="text" id="saturday_build_to" name="saturday_build_to" placeholder="Optional">
+                    </div>
+
+                    <div class="prep-admin-field">
+                        <label for="sunday_build_to">Sunday</label>
+                        <input type="text" id="sunday_build_to" name="sunday_build_to" placeholder="Optional">
+                    </div>
+                </div>
+            </details>
 
             <details class="prep-admin-rule-details">
                 <summary>Optional Import / Prep Rule Fields</summary>
@@ -379,7 +420,7 @@
                 </div>
 
                 <div class="prep-admin-col">
-                    <input type="text" class="prep-admin-input prep-admin-text" data-field="build_to" value="{{ item.build_to or '' }}">
+                    <input type="text" class="prep-admin-input prep-admin-text" data-field="build_to" value="{{ item.build_to or '' }}" placeholder="Default fallback">
                     <input type="number" class="prep-admin-input prep-admin-text prep-admin-sort-input" data-field="sort_order" value="{{ item.sort_order }}" placeholder="Sort">
                 </div>
 
@@ -414,6 +455,54 @@
                 </div>
 
                 <div class="prep-admin-rules-panel">
+                    <details class="prep-admin-row-rule-details">
+                        <summary>
+                            Weekday Build-To Targets
+                            {% if item.monday_build_to or item.tuesday_build_to or item.wednesday_build_to or item.thursday_build_to or item.friday_build_to or item.saturday_build_to or item.sunday_build_to %}
+                            <span class="prep-admin-rule-indicator">Configured</span>
+                            {% else %}
+                            <span class="prep-admin-rule-indicator muted">Optional</span>
+                            {% endif %}
+                        </summary>
+
+                        <div class="prep-admin-weekday-grid">
+                            <div class="prep-admin-field">
+                                <label>Monday</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="monday_build_to" value="{{ item.monday_build_to or '' }}" placeholder="Fallback if blank">
+                            </div>
+
+                            <div class="prep-admin-field">
+                                <label>Tuesday</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="tuesday_build_to" value="{{ item.tuesday_build_to or '' }}" placeholder="Fallback if blank">
+                            </div>
+
+                            <div class="prep-admin-field">
+                                <label>Wednesday</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="wednesday_build_to" value="{{ item.wednesday_build_to or '' }}" placeholder="Fallback if blank">
+                            </div>
+
+                            <div class="prep-admin-field">
+                                <label>Thursday</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="thursday_build_to" value="{{ item.thursday_build_to or '' }}" placeholder="Fallback if blank">
+                            </div>
+
+                            <div class="prep-admin-field">
+                                <label>Friday</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="friday_build_to" value="{{ item.friday_build_to or '' }}" placeholder="Fallback if blank">
+                            </div>
+
+                            <div class="prep-admin-field">
+                                <label>Saturday</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="saturday_build_to" value="{{ item.saturday_build_to or '' }}" placeholder="Fallback if blank">
+                            </div>
+
+                            <div class="prep-admin-field">
+                                <label>Sunday</label>
+                                <input type="text" class="prep-admin-input prep-admin-text" data-field="sunday_build_to" value="{{ item.sunday_build_to or '' }}" placeholder="Fallback if blank">
+                            </div>
+                        </div>
+                    </details>
+
                     <details class="prep-admin-row-rule-details">
                         <summary>
                             Import / Prep Rules
@@ -646,10 +735,16 @@
 
 .prep-admin-copy-grid,
 .prep-admin-rule-grid,
-.prep-admin-row-rule-grid {
+.prep-admin-row-rule-grid,
+.prep-admin-weekday-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+}
+
+.prep-admin-weekday-grid {
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    padding: 0 14px 14px;
 }
 
 .prep-admin-copy-grid .prep-admin-field:last-child,
@@ -1113,6 +1208,10 @@
     .prep-admin-actions-col {
         display: block;
     }
+
+    .prep-admin-weekday-grid {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 @media (max-width: 860px) {
@@ -1120,7 +1219,8 @@
     .prep-admin-load-row,
     .prep-admin-copy-grid,
     .prep-admin-rule-grid,
-    .prep-admin-row-rule-grid {
+    .prep-admin-row-rule-grid,
+    .prep-admin-weekday-grid {
         grid-template-columns: 1fr;
     }
 
@@ -1259,6 +1359,14 @@ document.addEventListener("DOMContentLoaded", function () {
             build_to: getInput("build_to")?.value || "",
             sort_order: getInput("sort_order")?.value || "0",
             instructions: getInput("instructions")?.value || "",
+
+            monday_build_to: getInput("monday_build_to")?.value || "",
+            tuesday_build_to: getInput("tuesday_build_to")?.value || "",
+            wednesday_build_to: getInput("wednesday_build_to")?.value || "",
+            thursday_build_to: getInput("thursday_build_to")?.value || "",
+            friday_build_to: getInput("friday_build_to")?.value || "",
+            saturday_build_to: getInput("saturday_build_to")?.value || "",
+            sunday_build_to: getInput("sunday_build_to")?.value || "",
 
             report_item_name: getInput("report_item_name")?.value || "",
             prep_unit: getInput("prep_unit")?.value || "",

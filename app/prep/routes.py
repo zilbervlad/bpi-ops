@@ -25,9 +25,31 @@ SECTION_OPTIONS = [
 
 DEFAULT_IMPORT_SECTION = "Veggie / Specialty / Other"
 
+WEEKDAY_BUILD_TO_FIELDS = {
+    "monday": "monday_build_to",
+    "tuesday": "tuesday_build_to",
+    "wednesday": "wednesday_build_to",
+    "thursday": "thursday_build_to",
+    "friday": "friday_build_to",
+    "saturday": "saturday_build_to",
+    "sunday": "sunday_build_to",
+}
+
 
 def weekday_field_name(prep_date):
     return prep_date.strftime("%A").lower()
+
+
+def get_template_build_to_for_date(template, prep_date):
+    weekday_name = weekday_field_name(prep_date)
+    weekday_build_field = WEEKDAY_BUILD_TO_FIELDS.get(weekday_name)
+
+    if weekday_build_field:
+        weekday_value = getattr(template, weekday_build_field, None)
+        if weekday_value:
+            return weekday_value
+
+    return template.build_to
 
 
 def get_visible_stores():
@@ -476,6 +498,13 @@ def import_selected_preview_rows(saved_preview, selected_indexes, import_mode, a
                 item_name=report_item_name,
                 build_to=build_to_value or None,
                 instructions=None,
+                monday_build_to=None,
+                tuesday_build_to=None,
+                wednesday_build_to=None,
+                thursday_build_to=None,
+                friday_build_to=None,
+                saturday_build_to=None,
+                sunday_build_to=None,
                 report_item_name=report_item_name,
                 prep_unit=unit or None,
                 rounding_increment=None,
@@ -540,7 +569,7 @@ def sync_missing_daily_prep_items(daily):
                 template_item_id=template.id,
                 section_name=template.section_name,
                 item_name=template.item_name,
-                build_to=template.build_to,
+                build_to=get_template_build_to_for_date(template, daily.prep_date),
                 instructions=template.instructions,
                 is_completed=False,
                 completed_at=None,
@@ -589,7 +618,7 @@ def get_or_create_daily_prep(store_number, prep_date):
                     template_item_id=template.id,
                     section_name=template.section_name,
                     item_name=template.item_name,
-                    build_to=template.build_to,
+                    build_to=get_template_build_to_for_date(template, prep_date),
                     instructions=template.instructions,
                     is_completed=False,
                     completed_at=None,
@@ -754,6 +783,14 @@ def manage_autosave():
     item.instructions = instructions or None
     item.sort_order = sort_order
 
+    item.monday_build_to = clean_optional_text(data.get("monday_build_to"))
+    item.tuesday_build_to = clean_optional_text(data.get("tuesday_build_to"))
+    item.wednesday_build_to = clean_optional_text(data.get("wednesday_build_to"))
+    item.thursday_build_to = clean_optional_text(data.get("thursday_build_to"))
+    item.friday_build_to = clean_optional_text(data.get("friday_build_to"))
+    item.saturday_build_to = clean_optional_text(data.get("saturday_build_to"))
+    item.sunday_build_to = clean_optional_text(data.get("sunday_build_to"))
+
     item.report_item_name = clean_optional_text(data.get("report_item_name"))
     item.prep_unit = clean_optional_text(data.get("prep_unit"))
     item.rounding_increment = clean_optional_text(data.get("rounding_increment"))
@@ -880,6 +917,13 @@ def manage():
                 item_name=item_name,
                 build_to=build_to or None,
                 instructions=instructions or None,
+                monday_build_to=clean_optional_text(request.form.get("monday_build_to")),
+                tuesday_build_to=clean_optional_text(request.form.get("tuesday_build_to")),
+                wednesday_build_to=clean_optional_text(request.form.get("wednesday_build_to")),
+                thursday_build_to=clean_optional_text(request.form.get("thursday_build_to")),
+                friday_build_to=clean_optional_text(request.form.get("friday_build_to")),
+                saturday_build_to=clean_optional_text(request.form.get("saturday_build_to")),
+                sunday_build_to=clean_optional_text(request.form.get("sunday_build_to")),
                 report_item_name=clean_optional_text(request.form.get("report_item_name")),
                 prep_unit=clean_optional_text(request.form.get("prep_unit")),
                 rounding_increment=clean_optional_text(request.form.get("rounding_increment")),
@@ -958,6 +1002,14 @@ def manage():
                         existing_item.build_to = source_item.build_to
                         existing_item.instructions = source_item.instructions
 
+                        existing_item.monday_build_to = source_item.monday_build_to
+                        existing_item.tuesday_build_to = source_item.tuesday_build_to
+                        existing_item.wednesday_build_to = source_item.wednesday_build_to
+                        existing_item.thursday_build_to = source_item.thursday_build_to
+                        existing_item.friday_build_to = source_item.friday_build_to
+                        existing_item.saturday_build_to = source_item.saturday_build_to
+                        existing_item.sunday_build_to = source_item.sunday_build_to
+
                         existing_item.report_item_name = source_item.report_item_name
                         existing_item.prep_unit = source_item.prep_unit
                         existing_item.rounding_increment = source_item.rounding_increment
@@ -985,6 +1037,13 @@ def manage():
                     item_name=source_item.item_name,
                     build_to=source_item.build_to,
                     instructions=source_item.instructions,
+                    monday_build_to=source_item.monday_build_to,
+                    tuesday_build_to=source_item.tuesday_build_to,
+                    wednesday_build_to=source_item.wednesday_build_to,
+                    thursday_build_to=source_item.thursday_build_to,
+                    friday_build_to=source_item.friday_build_to,
+                    saturday_build_to=source_item.saturday_build_to,
+                    sunday_build_to=source_item.sunday_build_to,
                     report_item_name=source_item.report_item_name,
                     prep_unit=source_item.prep_unit,
                     rounding_increment=source_item.rounding_increment,

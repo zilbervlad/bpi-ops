@@ -65,6 +65,78 @@
     .manager-weekly-focus-card.is-completed .checklist-checkbox-row {
         cursor: default;
     }
+
+    .manager-cash-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+
+    .manager-cash-card {
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 18px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.035);
+    }
+
+    .manager-cash-label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        opacity: 0.72;
+        margin-bottom: 8px;
+    }
+
+    .manager-cash-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 8px;
+    }
+
+    .manager-cash-message {
+        font-size: 0.94rem;
+        opacity: 0.86;
+        margin-bottom: 12px;
+    }
+
+    .manager-cash-details {
+        display: grid;
+        gap: 6px;
+        font-size: 0.86rem;
+        opacity: 0.82;
+    }
+
+    .manager-cash-detail-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 6px;
+    }
+
+    .cash-good {
+        color: #7ee0a0;
+    }
+
+    .cash-warning {
+        color: #f6c85f;
+    }
+
+    .cash-danger {
+        color: #ff7b7b;
+    }
+
+    .cash-neutral {
+        color: inherit;
+    }
+
+    @media (max-width: 760px) {
+        .manager-cash-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
 <div class="command-bar panel" style="margin-bottom: 24px;">
@@ -91,7 +163,7 @@
 
         <p class="command-subtitle">
             {% if is_manager %}
-                Today's checklist progress, weekly focus, and store task visibility.
+                Today's checklist progress, weekly focus, cash control snapshot, and store task visibility.
             {% elif is_maintenance %}
                 Open maintenance workload, task visibility, and fast access to repair tracking.
             {% else %}
@@ -114,6 +186,104 @@
         <div class="command-chip">{{ user_role|title }}</div>
     </div>
 </div>
+
+{% if is_manager and manager_cash_summary %}
+<div class="panel premium-panel" style="margin-bottom: 24px;">
+    <div class="panel-head">
+        <div>
+            <h3>Cash Control Snapshot</h3>
+            <div class="area-subtitle">Today’s cash handoff and dayshift accountability.</div>
+        </div>
+        <a href="{{ url_for('cash.index') }}" class="action-btn" style="padding: 8px 12px;">Open Cash Control</a>
+    </div>
+
+    <div class="manager-cash-grid">
+        {% set co = manager_cash_summary.closing_opening %}
+        <div class="manager-cash-card">
+            <div class="manager-cash-label">Closing → Opening</div>
+
+            {% if co.difference is not none %}
+                <div class="manager-cash-value {% if co.difference == 0 %}cash-good{% elif co.difference > 0 %}cash-warning{% else %}cash-danger{% endif %}">
+                    ${{ "%.2f"|format(co.difference) }}
+                </div>
+            {% else %}
+                <div class="manager-cash-value {% if co.status == 'missing_closing' or co.status == 'missing_opening' %}cash-warning{% else %}cash-neutral{% endif %}">
+                    —
+                </div>
+            {% endif %}
+
+            <div class="manager-cash-message">
+                {{ co.message }}
+            </div>
+
+            <div class="manager-cash-details">
+                <div class="manager-cash-detail-row">
+                    <span>Closing Total</span>
+                    <strong>
+                        {% if co.closing_total is not none %}
+                            ${{ "%.2f"|format(co.closing_total) }}
+                        {% else %}
+                            Not submitted
+                        {% endif %}
+                    </strong>
+                </div>
+                <div class="manager-cash-detail-row">
+                    <span>Opening Total</span>
+                    <strong>
+                        {% if co.opening_total is not none %}
+                            ${{ "%.2f"|format(co.opening_total) }}
+                        {% else %}
+                            Not submitted
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+        </div>
+
+        {% set ds = manager_cash_summary.dayshift %}
+        <div class="manager-cash-card">
+            <div class="manager-cash-label">Dayshift Difference</div>
+
+            {% if ds.difference is not none %}
+                <div class="manager-cash-value {% if ds.difference == 0 %}cash-good{% elif ds.difference > 0 %}cash-warning{% else %}cash-danger{% endif %}">
+                    ${{ "%.2f"|format(ds.difference) }}
+                </div>
+            {% else %}
+                <div class="manager-cash-value cash-warning">
+                    —
+                </div>
+            {% endif %}
+
+            <div class="manager-cash-message">
+                {{ ds.message }}
+            </div>
+
+            <div class="manager-cash-details">
+                <div class="manager-cash-detail-row">
+                    <span>Total Cash</span>
+                    <strong>
+                        {% if ds.total_cash is not none %}
+                            ${{ "%.2f"|format(ds.total_cash) }}
+                        {% else %}
+                            Not submitted
+                        {% endif %}
+                    </strong>
+                </div>
+                <div class="manager-cash-detail-row">
+                    <span>Amount to Account For</span>
+                    <strong>
+                        {% if ds.amount_to_account_for is not none %}
+                            ${{ "%.2f"|format(ds.amount_to_account_for) }}
+                        {% else %}
+                            Not submitted
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {% if is_ops_view %}
 <div class="panel premium-panel" style="margin-bottom: 24px;">
@@ -394,6 +564,7 @@
         <ul class="clean-list">
             <li>Complete opening section early.</li>
             <li>Keep integrity above threshold.</li>
+            <li>Review Cash Control before and after shift changes.</li>
             <li>Work through weekly focus from the latest SVR.</li>
             <li>Review open maintenance items for your store.</li>
         </ul>

@@ -12,6 +12,7 @@ from app.models import (
     MaintenanceTicket,
     WeeklyFocusItem,
     ChecklistException,
+    CashLog,
 )
 
 dashboard_bp = Blueprint("dashboard", __name__)
@@ -32,6 +33,114 @@ def business_date_et():
     if now.hour < 5:
         return (now - timedelta(days=1)).date()
     return now.date()
+
+
+def money_value(value):
+    if value is None:
+        return None
+    return round(float(value), 2)
+
+
+def build_manager_cash_summary(store_number, business_date):
+    summary = {
+        "business_date": business_date.strftime("%Y-%m-%d"),
+        "closing_opening": {
+            "status": "not_started",
+            "message": "Cash not started today",
+            "difference": None,
+            "opening_total": None,
+            "closing_total": None,
+            "opening_date": None,
+            "closing_date": None,
+        },
+        "dayshift": {
+            "status": "missing_midshift",
+            "message": "Dayshift cash not submitted",
+            "difference": None,
+            "total_cash": None,
+            "amount_to_account_for": None,
+            "log_date": business_date.strftime("%Y-%m-%d"),
+        },
+    }
+
+    today_opening = (
+        CashLog.query.filter_by(
+            store_number=store_number,
+            log_date=business_date,
+            shift_type="opening",
+        )
+        .order_by(CashLog.created_at.desc(), CashLog.id.desc())
+        .first()
+    )
+
+    previous_closing = (
+        CashLog.query.filter(
+            CashLog.store_number == store_number,
+            CashLog.shift_type == "closing",
+            CashLog.log_date < business_date,
+        )
+        .order_by(CashLog.log_date.desc(), CashLog.created_at.desc(), CashLog.id.desc())
+        .first()
+    )
+
+    today_midshift = (
+        CashLog.query.filter_by(
+            store_number=store_number,
+            log_date=business_date,
+            shift_type="midshift",
+        )
+        .order_by(CashLog.created_at.desc(), CashLog.id.desc())
+        .first()
+    )
+
+    if today_opening and previous_closing:
+        opening_total = money_value(today_opening.total_cash)
+        closing_total = money_value(previous_closing.total_cash)
+        difference = money_value(opening_total - closing_total)
+
+        summary["closing_opening"] = {
+            "status": "balanced" if difference == 0 else "variance",
+            "message": "Opening compared to prior closing",
+            "difference": difference,
+            "opening_total": opening_total,
+            "closing_total": closing_total,
+            "opening_date": today_opening.log_date.strftime("%Y-%m-%d"),
+            "closing_date": previous_closing.log_date.strftime("%Y-%m-%d"),
+        }
+    elif today_opening and not previous_closing:
+        summary["closing_opening"] = {
+            "status": "missing_closing",
+            "message": "Closing cash not submitted",
+            "difference": None,
+            "opening_total": money_value(today_opening.total_cash),
+            "closing_total": None,
+            "opening_date": today_opening.log_date.strftime("%Y-%m-%d"),
+            "closing_date": None,
+        }
+    elif not today_opening and previous_closing:
+        summary["closing_opening"] = {
+            "status": "missing_opening",
+            "message": "Opening cash not submitted",
+            "difference": None,
+            "opening_total": None,
+            "closing_total": money_value(previous_closing.total_cash),
+            "opening_date": None,
+            "closing_date": previous_closing.log_date.strftime("%Y-%m-%d"),
+        }
+
+    if today_midshift:
+        difference = money_value(today_midshift.cash_over_short)
+
+        summary["dayshift"] = {
+            "status": "balanced" if difference == 0 else "variance",
+            "message": "Dayshift cash submitted",
+            "difference": difference,
+            "total_cash": money_value(today_midshift.total_cash),
+            "amount_to_account_for": money_value(today_midshift.amount_to_account_for),
+            "log_date": today_midshift.log_date.strftime("%Y-%m-%d"),
+        }
+
+    return summary
 
 
 def get_visible_stores():
@@ -78,6 +187,7 @@ def build_dashboard_data():
     stores = get_visible_stores()
     visible_store_numbers = {store.store_number for store in stores}
     user_role = session.get("user_role")
+    user_store = session.get("user_store")
 
     total_stores = len(stores)
     completed_today = 0
@@ -93,6 +203,10 @@ def build_dashboard_data():
     area_groups = defaultdict(list)
 
     today = business_date_et()
+
+    manager_cash_summary = None
+    if user_role == "manager" and user_store:
+        manager_cash_summary = build_manager_cash_summary(user_store, today)
 
     daily_rows = DailyChecklist.query.filter(
         DailyChecklist.checklist_date == today,
@@ -296,6 +410,7 @@ def build_dashboard_data():
         "opening_progress": opening_progress,
         "restock_progress": restock_progress,
         "manager_walk_progress": manager_walk_progress,
+        "manager_cash_summary": manager_cash_summary,
     }
 
 
@@ -344,6 +459,7 @@ def home():
         opening_progress=data["opening_progress"],
         restock_progress=data["restock_progress"],
         manager_walk_progress=data["manager_walk_progress"],
+        manager_cash_summary=data["manager_cash_summary"],
     )
 
 

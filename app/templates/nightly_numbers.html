@@ -11,7 +11,7 @@
             Store {{ store_number }} nightly report. This will email the manager, supervisor, and admin group after save.
         </p>
 
-        <form method="POST" class="login-form">
+        <form method="POST" class="login-form" id="nightlyNumbersForm">
             <div class="form-group">
                 <label for="report_date">Report Date</label>
                 <input
@@ -70,7 +70,17 @@
                 {% endif %}
             {% endfor %}
 
-            <button type="submit" class="btn-primary">Save & Email Nightly Numbers</button>
+            <button type="submit" class="btn-primary" id="nightlyNumbersSubmitBtn">
+                Save & Email Nightly Numbers
+            </button>
+
+            <p
+                id="nightlyNumbersSendingMessage"
+                class="subtitle"
+                style="display: none; margin-top: 12px;"
+            >
+                Sending nightly numbers... please do not refresh or tap submit again.
+            </p>
         </form>
     </section>
 
@@ -100,4 +110,78 @@
         </div>
     </section>
 </div>
+
+<div
+    id="nightlyNumbersOverlay"
+    style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+    "
+>
+    <div
+        style="
+            background: #ffffff;
+            color: #111827;
+            border-radius: 18px;
+            padding: 28px 24px;
+            max-width: 360px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+        "
+    >
+        <div style="font-size: 32px; margin-bottom: 10px;">📨</div>
+        <h3 style="margin: 0 0 8px; color: #111827;">Sending Nightly Numbers</h3>
+        <p style="margin: 0; color: #6b7280;">
+            Please wait. Do not refresh or tap submit again.
+        </p>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("nightlyNumbersForm");
+    const submitBtn = document.getElementById("nightlyNumbersSubmitBtn");
+    const sendingMessage = document.getElementById("nightlyNumbersSendingMessage");
+    const overlay = document.getElementById("nightlyNumbersOverlay");
+
+    let isSubmitting = false;
+
+    if (!form || !submitBtn) {
+        return;
+    }
+
+    form.addEventListener("submit", function (event) {
+        if (!form.checkValidity()) {
+            return;
+        }
+
+        if (isSubmitting) {
+            event.preventDefault();
+            return;
+        }
+
+        isSubmitting = true;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Sending nightly numbers...";
+        submitBtn.style.opacity = "0.7";
+        submitBtn.style.cursor = "not-allowed";
+
+        if (sendingMessage) {
+            sendingMessage.style.display = "block";
+        }
+
+        if (overlay) {
+            overlay.style.display = "flex";
+        }
+    });
+});
+</script>
 {% endblock %}

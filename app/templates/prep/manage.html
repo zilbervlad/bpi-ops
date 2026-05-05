@@ -9,7 +9,7 @@
         <div>
             <div class="prep-admin-eyebrow">PREP TEMPLATE</div>
             <h2 class="prep-admin-title">Store {{ store_number }}</h2>
-            <p class="prep-admin-subtitle">Manage store-specific build-to items, weekday targets, editable prep rules, and ideal usage imports</p>
+            <p class="prep-admin-subtitle">Manage simple store prep items, build-to amounts, active days, and copy setup between stores.</p>
         </div>
 
         <div class="prep-admin-hero-actions">
@@ -60,37 +60,13 @@
             </div>
         </form>
 
-        <form method="POST" enctype="multipart/form-data" class="prep-admin-card prep-admin-top-card">
-            <input type="hidden" name="action" value="preview_ideal_usage">
-
-            <div class="prep-admin-card-head">
-                <div>
-                    <h3>Preview Ideal Usage</h3>
-                    <p>Upload Excel report and select rows before importing</p>
-                </div>
-            </div>
-
-            <div class="prep-admin-field">
-                <label for="ideal_usage_file">Excel File</label>
-                <input type="file" id="ideal_usage_file" name="ideal_usage_file" accept=".xlsx,.xlsm" required>
-            </div>
-
-            <div class="prep-admin-copy-note">
-                Preview first. Nothing is imported until you select rows and confirm import.
-            </div>
-
-            <div class="prep-admin-create-actions">
-                <button type="submit" class="prep-admin-primary-btn">Preview Upload</button>
-            </div>
-        </form>
-
         <form method="POST" class="prep-admin-card prep-admin-top-card">
             <input type="hidden" name="action" value="copy_store">
 
             <div class="prep-admin-card-head">
                 <div>
                     <h3>Copy Prep Setup</h3>
-                    <p>Copy editable prep items, weekday targets, and prep rules from one store to another</p>
+                    <p>Copy prep items from one store to another</p>
                 </div>
             </div>
 
@@ -148,14 +124,14 @@
             <div class="prep-admin-card-head">
                 <div>
                     <h3>Add Prep Item</h3>
-                    <p>Create a new build-to item for this store</p>
+                    <p>Create a new item for this store</p>
                 </div>
                 <div id="prep-admin-status" class="prep-admin-mini-status">Ready</div>
             </div>
 
             <div class="prep-admin-create-grid">
                 <div class="prep-admin-field">
-                    <label for="section_name">Section</label>
+                    <label for="section_name">Category</label>
                     <select id="section_name" name="section_name" required>
                         {% for section in section_options %}
                         <option value="{{ section }}">{{ section }}</option>
@@ -169,8 +145,8 @@
                 </div>
 
                 <div class="prep-admin-field">
-                    <label for="build_to">Default Build To</label>
-                    <input type="text" id="build_to" name="build_to" placeholder="Fallback if weekday target is blank">
+                    <label for="build_to">Build To</label>
+                    <input type="text" id="build_to" name="build_to" placeholder="ex: 2 bags / 4 bottles / 1 bin">
                 </div>
 
                 <div class="prep-admin-field">
@@ -183,83 +159,6 @@
                 <label for="instructions">Instructions</label>
                 <input type="text" id="instructions" name="instructions" placeholder="Optional prep instructions">
             </div>
-
-            <details class="prep-admin-rule-details">
-                <summary>Weekday Build-To Targets</summary>
-
-                <div class="prep-admin-weekday-grid">
-                    <div class="prep-admin-field">
-                        <label for="monday_build_to">Monday</label>
-                        <input type="text" id="monday_build_to" name="monday_build_to" placeholder="Optional">
-                    </div>
-
-                    <div class="prep-admin-field">
-                        <label for="tuesday_build_to">Tuesday</label>
-                        <input type="text" id="tuesday_build_to" name="tuesday_build_to" placeholder="Optional">
-                    </div>
-
-                    <div class="prep-admin-field">
-                        <label for="wednesday_build_to">Wednesday</label>
-                        <input type="text" id="wednesday_build_to" name="wednesday_build_to" placeholder="Optional">
-                    </div>
-
-                    <div class="prep-admin-field">
-                        <label for="thursday_build_to">Thursday</label>
-                        <input type="text" id="thursday_build_to" name="thursday_build_to" placeholder="Optional">
-                    </div>
-
-                    <div class="prep-admin-field">
-                        <label for="friday_build_to">Friday</label>
-                        <input type="text" id="friday_build_to" name="friday_build_to" placeholder="Optional">
-                    </div>
-
-                    <div class="prep-admin-field">
-                        <label for="saturday_build_to">Saturday</label>
-                        <input type="text" id="saturday_build_to" name="saturday_build_to" placeholder="Optional">
-                    </div>
-
-                    <div class="prep-admin-field">
-                        <label for="sunday_build_to">Sunday</label>
-                        <input type="text" id="sunday_build_to" name="sunday_build_to" placeholder="Optional">
-                    </div>
-                </div>
-            </details>
-
-            <details class="prep-admin-rule-details">
-                <summary>Optional Import / Prep Rule Fields</summary>
-
-                <div class="prep-admin-rule-grid">
-                    <div class="prep-admin-field">
-                        <label for="report_item_name">Report Item Name</label>
-                        <input type="text" id="report_item_name" name="report_item_name" placeholder="Name from ideal usage report">
-                    </div>
-
-                    <div class="prep-admin-field">
-                        <label for="prep_unit">Prep Unit</label>
-                        <input type="text" id="prep_unit" name="prep_unit" placeholder="bags / bottles / bins / pounds">
-                    </div>
-
-                    <div class="prep-admin-field">
-                        <label for="rounding_increment">Rounding</label>
-                        <input type="text" id="rounding_increment" name="rounding_increment" placeholder="nearest 1 bag / 0.5 lb / 1 bin">
-                    </div>
-
-                    <div class="prep-admin-field">
-                        <label for="minimum_build">Minimum Build</label>
-                        <input type="text" id="minimum_build" name="minimum_build" placeholder="ex: 1 bag / 2 bottles">
-                    </div>
-
-                    <div class="prep-admin-field">
-                        <label for="buffer_percent">Buffer %</label>
-                        <input type="text" id="buffer_percent" name="buffer_percent" placeholder="ex: 10">
-                    </div>
-
-                    <div class="prep-admin-field prep-admin-rule-wide">
-                        <label for="conversion_notes">Conversion Notes</label>
-                        <textarea id="conversion_notes" name="conversion_notes" placeholder="Example: 1 bag = 2 bottles, 3 bags per bucket, 1 bin = 3.33 lb"></textarea>
-                    </div>
-                </div>
-            </details>
 
             <div class="prep-admin-days-wrap">
                 <label class="prep-admin-day-chip"><input type="checkbox" name="monday" checked><span>Mon</span></label>
@@ -278,115 +177,10 @@
         </form>
     </div>
 
-    {% if upload_preview %}
-    <form method="POST" class="prep-admin-preview-panel" onsubmit="return confirmSelectedIdealUsageImport();">
-        <input type="hidden" name="action" value="import_ideal_usage_selected">
-        <input type="hidden" name="preview_token" value="{{ upload_preview.token }}">
-
-        <div class="prep-admin-preview-head">
-            <div>
-                <div class="prep-admin-eyebrow">UPLOAD PREVIEW</div>
-                <h3>Ideal Usage Preview</h3>
-                <p>
-                    Sheet: {{ upload_preview.sheet_name }} ·
-                    {{ upload_preview.row_count }} rows ·
-                    {{ upload_preview.matched_count }} matched ·
-                    {{ upload_preview.new_count }} new ·
-                    {{ upload_preview.skipped_count }} skipped
-                </p>
-            </div>
-
-            <div class="prep-admin-preview-actions">
-                <div class="prep-admin-field prep-admin-preview-mode">
-                    <label for="import_mode">Import Mode</label>
-                    <select id="import_mode" name="import_mode">
-                        <option value="create_missing" selected>Create missing only</option>
-                        <option value="update_matched">Update matched only</option>
-                        <option value="create_and_update">Create missing + update matched</option>
-                    </select>
-                </div>
-
-                <button type="submit" class="prep-admin-primary-btn">Import Selected</button>
-            </div>
-        </div>
-
-        <div class="prep-admin-import-note">
-            Default is safest: <strong>Create missing only</strong>. It will create selected new items in the correct store from the report. Nothing is deleted.
-        </div>
-
-        <div class="prep-admin-preview-toolbar">
-            <label class="prep-admin-select-all">
-                <input type="checkbox" id="select_all_preview_rows">
-                <span>Select visible rows</span>
-            </label>
-
-            <span id="selected-preview-count">0 selected</span>
-        </div>
-
-        <div class="prep-admin-preview-table-wrap">
-            <table class="prep-admin-preview-table">
-                <thead>
-                    <tr>
-                        <th>Select</th>
-                        <th>Store</th>
-                        <th>Report Item</th>
-                        <th>Status</th>
-                        <th>Matched Prep Item</th>
-                        <th>Section</th>
-                        <th>Unit</th>
-                        <th>Actual Usage</th>
-                        <th>Ideal Usage</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in upload_preview.rows[:300] %}
-                    <tr>
-                        <td>
-                            <input
-                                type="checkbox"
-                                class="preview-row-checkbox"
-                                name="selected_rows"
-                                value="{{ loop.index0 }}"
-                            >
-                        </td>
-                        <td>{{ row.store_number }}</td>
-                        <td>{{ row.report_item_name }}</td>
-                        <td>
-                            {% if row.status == "Matched" %}
-                            <span class="prep-admin-preview-status matched">Matched</span>
-                            {% else %}
-                            <span class="prep-admin-preview-status new">New</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ row.matched_item_name or "-" }}</td>
-                        <td>{{ row.section_name or "-" }}</td>
-                        <td>{{ row.unit or "-" }}</td>
-                        <td>
-                            {% if row.actual_usage is not none %}
-                            {{ "%.2f"|format(row.actual_usage) }}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td>{{ "%.2f"|format(row.ideal_usage) }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        {% if upload_preview.row_count > 300 %}
-        <div class="prep-admin-copy-note">
-            Showing first 300 rows only. To import rows beyond the first 300, we’ll add filters/search next before opening this up company-wide.
-        </div>
-        {% endif %}
-    </form>
-    {% endif %}
-
     {% if items %}
     <div class="prep-admin-board">
         <div class="prep-admin-board-header prep-admin-board-grid">
-            <div>Section</div>
+            <div>Category</div>
             <div>Item</div>
             <div>Build To</div>
             <div>Days</div>
@@ -420,7 +214,7 @@
                 </div>
 
                 <div class="prep-admin-col">
-                    <input type="text" class="prep-admin-input prep-admin-text" data-field="build_to" value="{{ item.build_to or '' }}" placeholder="Default fallback">
+                    <input type="text" class="prep-admin-input prep-admin-text" data-field="build_to" value="{{ item.build_to or '' }}" placeholder="Build to">
                     <input type="number" class="prep-admin-input prep-admin-text prep-admin-sort-input" data-field="sort_order" value="{{ item.sort_order }}" placeholder="Sort">
                 </div>
 
@@ -452,99 +246,6 @@
                             {% if item.is_active %}Remove{% else %}Delete / Archive{% endif %}
                         </button>
                     </form>
-                </div>
-
-                <div class="prep-admin-rules-panel">
-                    <details class="prep-admin-row-rule-details">
-                        <summary>
-                            Weekday Build-To Targets
-                            {% if item.monday_build_to or item.tuesday_build_to or item.wednesday_build_to or item.thursday_build_to or item.friday_build_to or item.saturday_build_to or item.sunday_build_to %}
-                            <span class="prep-admin-rule-indicator">Configured</span>
-                            {% else %}
-                            <span class="prep-admin-rule-indicator muted">Optional</span>
-                            {% endif %}
-                        </summary>
-
-                        <div class="prep-admin-weekday-grid">
-                            <div class="prep-admin-field">
-                                <label>Monday</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="monday_build_to" value="{{ item.monday_build_to or '' }}" placeholder="Fallback if blank">
-                            </div>
-
-                            <div class="prep-admin-field">
-                                <label>Tuesday</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="tuesday_build_to" value="{{ item.tuesday_build_to or '' }}" placeholder="Fallback if blank">
-                            </div>
-
-                            <div class="prep-admin-field">
-                                <label>Wednesday</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="wednesday_build_to" value="{{ item.wednesday_build_to or '' }}" placeholder="Fallback if blank">
-                            </div>
-
-                            <div class="prep-admin-field">
-                                <label>Thursday</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="thursday_build_to" value="{{ item.thursday_build_to or '' }}" placeholder="Fallback if blank">
-                            </div>
-
-                            <div class="prep-admin-field">
-                                <label>Friday</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="friday_build_to" value="{{ item.friday_build_to or '' }}" placeholder="Fallback if blank">
-                            </div>
-
-                            <div class="prep-admin-field">
-                                <label>Saturday</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="saturday_build_to" value="{{ item.saturday_build_to or '' }}" placeholder="Fallback if blank">
-                            </div>
-
-                            <div class="prep-admin-field">
-                                <label>Sunday</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="sunday_build_to" value="{{ item.sunday_build_to or '' }}" placeholder="Fallback if blank">
-                            </div>
-                        </div>
-                    </details>
-
-                    <details class="prep-admin-row-rule-details">
-                        <summary>
-                            Import / Prep Rules
-                            {% if item.report_item_name or item.prep_unit or item.rounding_increment or item.minimum_build or item.buffer_percent or item.conversion_notes %}
-                            <span class="prep-admin-rule-indicator">Configured</span>
-                            {% else %}
-                            <span class="prep-admin-rule-indicator muted">Optional</span>
-                            {% endif %}
-                        </summary>
-
-                        <div class="prep-admin-row-rule-grid">
-                            <div class="prep-admin-field">
-                                <label>Report Item Name</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="report_item_name" value="{{ item.report_item_name or '' }}" placeholder="Name from report">
-                            </div>
-
-                            <div class="prep-admin-field">
-                                <label>Prep Unit</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="prep_unit" value="{{ item.prep_unit or '' }}" placeholder="bags / bottles / bins">
-                            </div>
-
-                            <div class="prep-admin-field">
-                                <label>Rounding</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="rounding_increment" value="{{ item.rounding_increment or '' }}" placeholder="nearest 1 bag">
-                            </div>
-
-                            <div class="prep-admin-field">
-                                <label>Minimum Build</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="minimum_build" value="{{ item.minimum_build or '' }}" placeholder="1 bag">
-                            </div>
-
-                            <div class="prep-admin-field">
-                                <label>Buffer %</label>
-                                <input type="text" class="prep-admin-input prep-admin-text" data-field="buffer_percent" value="{{ item.buffer_percent or '' }}" placeholder="10">
-                            </div>
-
-                            <div class="prep-admin-field prep-admin-rule-wide">
-                                <label>Conversion Notes</label>
-                                <textarea class="prep-admin-input prep-admin-textarea" data-field="conversion_notes" placeholder="1 bag = 2 bottles / 3 bags per bucket">{{ item.conversion_notes or '' }}</textarea>
-                            </div>
-                        </div>
-                    </details>
                 </div>
             </div>
             {% endfor %}
@@ -611,8 +312,7 @@
     font-size: 14px;
 }
 
-.prep-admin-hero-actions,
-.prep-admin-preview-actions {
+.prep-admin-hero-actions {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -686,7 +386,7 @@
 
 .prep-admin-top-grid {
     display: grid;
-    grid-template-columns: 0.95fr 1.05fr 1.15fr 1.55fr;
+    grid-template-columns: 0.85fr 1.25fr 1.6fr;
     gap: 16px;
 }
 
@@ -733,27 +433,17 @@
     gap: 12px;
 }
 
-.prep-admin-copy-grid,
-.prep-admin-rule-grid,
-.prep-admin-row-rule-grid,
-.prep-admin-weekday-grid {
+.prep-admin-copy-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
 
-.prep-admin-weekday-grid {
-    grid-template-columns: repeat(4, minmax(120px, 1fr));
-    padding: 0 14px 14px;
-}
-
-.prep-admin-copy-grid .prep-admin-field:last-child,
-.prep-admin-rule-wide {
+.prep-admin-copy-grid .prep-admin-field:last-child {
     grid-column: 1 / -1;
 }
 
-.prep-admin-copy-note,
-.prep-admin-import-note {
+.prep-admin-copy-note {
     margin-top: 12px;
     padding: 11px 12px;
     border-radius: 14px;
@@ -762,10 +452,6 @@
     font-size: 12px;
     line-height: 1.35;
     opacity: 0.76;
-}
-
-.prep-admin-import-note {
-    margin-bottom: 12px;
 }
 
 .prep-admin-field {
@@ -783,8 +469,8 @@
 }
 
 .prep-admin-field input,
-.prep-admin-field select,
-.prep-admin-field textarea {
+.prep-admin-field select {
+    height: 44px;
     border-radius: 14px;
     border: 1px solid rgba(255,255,255,0.10);
     background: rgba(255,255,255,0.04);
@@ -792,181 +478,12 @@
     padding: 0 14px;
 }
 
-.prep-admin-field input,
-.prep-admin-field select {
-    height: 44px;
-}
-
-.prep-admin-field textarea {
-    min-height: 82px;
-    padding: 12px 14px;
-    resize: vertical;
-}
-
-.prep-admin-field input::placeholder,
-.prep-admin-field textarea::placeholder {
+.prep-admin-field input::placeholder {
     color: rgba(244,247,255,0.42);
 }
 
 .prep-admin-instructions-field {
     margin-top: 12px;
-}
-
-.prep-admin-rule-details,
-.prep-admin-row-rule-details {
-    margin-top: 14px;
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.03);
-    overflow: hidden;
-}
-
-.prep-admin-rule-details summary,
-.prep-admin-row-rule-details summary {
-    cursor: pointer;
-    padding: 12px 14px;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(244,247,255,0.78);
-}
-
-.prep-admin-rule-grid,
-.prep-admin-row-rule-grid {
-    padding: 0 14px 14px;
-}
-
-.prep-admin-rule-indicator {
-    display: inline-flex;
-    margin-left: 8px;
-    padding: 4px 8px;
-    border-radius: 999px;
-    font-size: 10px;
-    letter-spacing: 0.04em;
-    color: #dff7e8;
-    background: rgba(22, 104, 55, 0.24);
-    border: 1px solid rgba(68, 191, 117, 0.22);
-}
-
-.prep-admin-rule-indicator.muted {
-    color: rgba(244,247,255,0.62);
-    background: rgba(255,255,255,0.04);
-    border-color: rgba(255,255,255,0.08);
-}
-
-.prep-admin-preview-panel {
-    border-radius: 24px;
-    border: 1px solid rgba(88, 130, 255, 0.16);
-    background:
-        radial-gradient(circle at top left, rgba(26, 55, 118, 0.14), transparent 30%),
-        linear-gradient(135deg, rgba(10, 18, 38, 0.98), rgba(13, 27, 56, 0.96));
-    box-shadow: 0 18px 40px rgba(0,0,0,0.24);
-    padding: 18px;
-}
-
-.prep-admin-preview-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 14px;
-}
-
-.prep-admin-preview-head h3 {
-    margin: 4px 0;
-    color: #f4f7ff;
-    font-size: 20px;
-}
-
-.prep-admin-preview-head p {
-    margin: 0;
-    opacity: 0.72;
-    font-size: 13px;
-}
-
-.prep-admin-preview-mode {
-    min-width: 230px;
-}
-
-.prep-admin-preview-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin: 12px 0;
-    flex-wrap: wrap;
-}
-
-.prep-admin-select-all {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 800;
-}
-
-#selected-preview-count {
-    font-size: 12px;
-    opacity: 0.72;
-    font-weight: 800;
-}
-
-.prep-admin-preview-table-wrap {
-    overflow-x: auto;
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.08);
-}
-
-.prep-admin-preview-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 1080px;
-    font-size: 12px;
-}
-
-.prep-admin-preview-table th,
-.prep-admin-preview-table td {
-    padding: 11px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    text-align: left;
-    vertical-align: top;
-}
-
-.prep-admin-preview-table th {
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(244,247,255,0.68);
-    background: rgba(255,255,255,0.035);
-}
-
-.preview-row-checkbox,
-#select_all_preview_rows {
-    width: 18px;
-    height: 18px;
-}
-
-.prep-admin-preview-status {
-    display: inline-flex;
-    padding: 4px 8px;
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.prep-admin-preview-status.matched {
-    color: #dff7e8;
-    background: rgba(22, 104, 55, 0.24);
-    border: 1px solid rgba(68, 191, 117, 0.22);
-}
-
-.prep-admin-preview-status.new {
-    color: #ffe8bd;
-    background: rgba(166, 129, 20, 0.22);
-    border: 1px solid rgba(224, 180, 47, 0.20);
 }
 
 .prep-admin-days-wrap {
@@ -1078,12 +595,6 @@
     padding: 0 12px;
 }
 
-.prep-admin-textarea {
-    min-height: 82px;
-    padding: 12px;
-    resize: vertical;
-}
-
 .prep-admin-text-secondary {
     margin-top: 8px;
 }
@@ -1152,10 +663,6 @@
     justify-content: flex-end;
 }
 
-.prep-admin-rules-panel {
-    grid-column: 1 / -1;
-}
-
 .autosave-ready {
     background: rgba(255,255,255,0.05);
 }
@@ -1177,15 +684,11 @@
 
 @media (max-width: 1480px) {
     .prep-admin-top-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
     }
 }
 
 @media (max-width: 1180px) {
-    .prep-admin-top-grid {
-        grid-template-columns: 1fr;
-    }
-
     .prep-admin-board-grid {
         grid-template-columns: 1fr;
         gap: 12px;
@@ -1208,36 +711,24 @@
     .prep-admin-actions-col {
         display: block;
     }
-
-    .prep-admin-weekday-grid {
-        grid-template-columns: 1fr 1fr;
-    }
 }
 
 @media (max-width: 860px) {
     .prep-admin-create-grid,
     .prep-admin-load-row,
-    .prep-admin-copy-grid,
-    .prep-admin-rule-grid,
-    .prep-admin-row-rule-grid,
-    .prep-admin-weekday-grid {
+    .prep-admin-copy-grid {
         grid-template-columns: 1fr;
     }
 
-    .prep-admin-copy-grid .prep-admin-field:last-child,
-    .prep-admin-rule-wide {
+    .prep-admin-copy-grid .prep-admin-field:last-child {
         grid-column: auto;
     }
 
-    .prep-admin-hero,
-    .prep-admin-preview-head,
-    .prep-admin-preview-actions {
+    .prep-admin-hero {
         flex-direction: column;
     }
 
-    .prep-admin-hero-actions,
-    .prep-admin-preview-actions,
-    .prep-admin-preview-mode {
+    .prep-admin-hero-actions {
         width: 100%;
     }
 }
@@ -1266,54 +757,9 @@ function confirmCopyPrepSetup() {
     return confirm(`Copy missing prep items from ${source} to ${destination}? Existing items will be skipped.`);
 }
 
-function updateSelectedPreviewCount() {
-    const checked = document.querySelectorAll(".preview-row-checkbox:checked").length;
-    const label = document.getElementById("selected-preview-count");
-    if (label) {
-        label.textContent = `${checked} selected`;
-    }
-}
-
-function confirmSelectedIdealUsageImport() {
-    const checked = document.querySelectorAll(".preview-row-checkbox:checked").length;
-    const mode = document.getElementById("import_mode")?.value || "create_missing";
-
-    if (checked <= 0) {
-        alert("Choose at least one row to import.");
-        return false;
-    }
-
-    if (mode === "update_matched") {
-        return confirm(`Update matched prep items for ${checked} selected row(s)?`);
-    }
-
-    if (mode === "create_and_update") {
-        return confirm(`Create missing and update matched prep items for ${checked} selected row(s)?`);
-    }
-
-    return confirm(`Create missing prep items for ${checked} selected row(s)? Existing matched items will be skipped.`);
-}
-
 document.addEventListener("DOMContentLoaded", function () {
     const storeNumber = "{{ store_number }}";
     const rows = Array.from(document.querySelectorAll(".prep-admin-board-row"));
-    const selectAllPreviewRows = document.getElementById("select_all_preview_rows");
-    const previewBoxes = Array.from(document.querySelectorAll(".preview-row-checkbox"));
-
-    if (selectAllPreviewRows) {
-        selectAllPreviewRows.addEventListener("change", function () {
-            previewBoxes.forEach(box => {
-                box.checked = this.checked;
-            });
-            updateSelectedPreviewCount();
-        });
-    }
-
-    previewBoxes.forEach(box => {
-        box.addEventListener("change", updateSelectedPreviewCount);
-    });
-
-    updateSelectedPreviewCount();
 
     function setRowStatus(row, text, state) {
         const el = row.querySelector(".prep-row-status");
@@ -1360,20 +806,20 @@ document.addEventListener("DOMContentLoaded", function () {
             sort_order: getInput("sort_order")?.value || "0",
             instructions: getInput("instructions")?.value || "",
 
-            monday_build_to: getInput("monday_build_to")?.value || "",
-            tuesday_build_to: getInput("tuesday_build_to")?.value || "",
-            wednesday_build_to: getInput("wednesday_build_to")?.value || "",
-            thursday_build_to: getInput("thursday_build_to")?.value || "",
-            friday_build_to: getInput("friday_build_to")?.value || "",
-            saturday_build_to: getInput("saturday_build_to")?.value || "",
-            sunday_build_to: getInput("sunday_build_to")?.value || "",
+            monday_build_to: "",
+            tuesday_build_to: "",
+            wednesday_build_to: "",
+            thursday_build_to: "",
+            friday_build_to: "",
+            saturday_build_to: "",
+            sunday_build_to: "",
 
-            report_item_name: getInput("report_item_name")?.value || "",
-            prep_unit: getInput("prep_unit")?.value || "",
-            rounding_increment: getInput("rounding_increment")?.value || "",
-            minimum_build: getInput("minimum_build")?.value || "",
-            buffer_percent: getInput("buffer_percent")?.value || "",
-            conversion_notes: getInput("conversion_notes")?.value || "",
+            report_item_name: "",
+            prep_unit: "",
+            rounding_increment: "",
+            minimum_build: "",
+            buffer_percent: "",
+            conversion_notes: "",
 
             monday: !!getInput("monday")?.checked,
             tuesday: !!getInput("tuesday")?.checked,
@@ -1386,7 +832,9 @@ document.addEventListener("DOMContentLoaded", function () {
         };
     }
 
-    async function autosaveRow(row) {
+    async function autosaveRow(row, options = {}) {
+        const reloadAfterSave = !!options.reloadAfterSave;
+
         setRowStatus(row, "Saving...", "saving");
 
         try {
@@ -1407,6 +855,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
             syncActivePill(row, !!row.querySelector('[data-field="is_active"]')?.checked);
             setRowStatus(row, "Saved", "saved");
+
+            if (reloadAfterSave) {
+                window.location.reload();
+            }
         } catch (error) {
             setRowStatus(row, "Failed", "failed");
         }
@@ -1420,13 +872,21 @@ document.addEventListener("DOMContentLoaded", function () {
         textInputs.forEach((input) => {
             input.addEventListener("input", function () {
                 setRowStatus(row, "Typing...", "ready");
+
                 const key = this.dataset.field || "field";
                 clearTimeout(timers[key]);
-                timers[key] = setTimeout(() => autosaveRow(row), 450);
+
+                timers[key] = setTimeout(() => {
+                    autosaveRow(row, {
+                        reloadAfterSave: this.dataset.field === "section_name"
+                    });
+                }, 450);
             });
 
             input.addEventListener("change", function () {
-                autosaveRow(row);
+                autosaveRow(row, {
+                    reloadAfterSave: this.dataset.field === "section_name"
+                });
             });
         });
 
@@ -1435,6 +895,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (this.dataset.field === "is_active") {
                     syncActivePill(row, this.checked);
                 }
+
                 autosaveRow(row);
             });
         });

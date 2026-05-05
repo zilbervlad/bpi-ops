@@ -537,6 +537,18 @@ def import_selected_preview_rows(saved_preview, selected_indexes, import_mode, a
 
 
 def sync_missing_daily_prep_items(daily):
+    """
+    Keep today's/future daily prep sheet aligned with the active template.
+
+    DailyPrepItem rows are snapshots so managers can work from a daily sheet.
+    But when admin edits a template item today — category, name, build-to, or
+    instructions — the current/future daily sheet should reflect that update.
+
+    Past prep sheets stay untouched so history does not get rewritten.
+    """
+    if daily.prep_date < today_et():
+        return False
+
     weekday_name = weekday_field_name(daily.prep_date)
 
     template_items = PrepTemplateItem.query.filter_by(
@@ -548,19 +560,43 @@ def sync_missing_daily_prep_items(daily):
         PrepTemplateItem.id.asc()
     ).all()
 
-    existing_template_ids = {
-        item.template_item_id
-        for item in daily.items
+    existing_daily_items = DailyPrepItem.query.filter_by(
+        daily_prep_id=daily.id
+    ).all()
+
+    existing_by_template_id = {
+        item.template_item_id: item
+        for item in existing_daily_items
         if item.template_item_id is not None
     }
 
-    added_any = False
+    changed_any = False
 
     for template in template_items:
         if not getattr(template, weekday_name, False):
             continue
 
-        if template.id in existing_template_ids:
+        existing_item = existing_by_template_id.get(template.id)
+
+        if existing_item:
+            new_build_to = get_template_build_to_for_date(template, daily.prep_date)
+
+            if existing_item.section_name != template.section_name:
+                existing_item.section_name = template.section_name
+                changed_any = True
+
+            if existing_item.item_name != template.item_name:
+                existing_item.item_name = template.item_name
+                changed_any = True
+
+            if existing_item.build_to != new_build_to:
+                existing_item.build_to = new_build_to
+                changed_any = True
+
+            if existing_item.instructions != template.instructions:
+                existing_item.instructions = template.instructions
+                changed_any = True
+
             continue
 
         db.session.add(
@@ -575,12 +611,13 @@ def sync_missing_daily_prep_items(daily):
                 completed_at=None,
             )
         )
-        added_any = True
+        changed_any = True
 
-    if added_any:
+    if changed_any:
         db.session.commit()
+        db.session.expire(daily, ["items"])
 
-    return added_any
+    return changed_any
 
 
 def get_or_create_daily_prep(store_number, prep_date):

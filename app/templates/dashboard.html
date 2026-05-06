@@ -132,6 +132,72 @@
         color: inherit;
     }
 
+    .manager-checklist-progress-card {
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 18px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.035);
+        display: grid;
+        gap: 14px;
+    }
+
+    .manager-checklist-progress-row {
+        display: grid;
+        gap: 8px;
+    }
+
+    .manager-checklist-progress-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .manager-checklist-progress-label {
+        font-weight: 800;
+        font-size: 0.96rem;
+    }
+
+    .manager-checklist-progress-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+    }
+
+    .manager-checklist-progress-percent {
+        font-weight: 900;
+        font-size: 1rem;
+    }
+
+    .manager-checklist-progress-track {
+        width: 100%;
+        height: 10px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.10);
+    }
+
+    .manager-checklist-progress-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        transition: width 0.25s ease;
+    }
+
+    .manager-checklist-progress-fill.progress-complete {
+        background: #7ee0a0;
+    }
+
+    .manager-checklist-progress-fill.progress-active {
+        background: #f6c85f;
+    }
+
+    .manager-checklist-progress-fill.progress-empty {
+        background: rgba(255, 255, 255, 0.28);
+    }
+
+
     @media (max-width: 760px) {
         .manager-cash-grid {
             grid-template-columns: 1fr;
@@ -186,6 +252,103 @@
         <div class="command-chip">{{ user_role|title }}</div>
     </div>
 </div>
+
+{% if is_manager %}
+{% set manager_store = namespace(data=None) %}
+{% for area_name, stores in area_groups.items() %}
+    {% for store in stores %}
+        {% if manager_store.data is none %}
+            {% set manager_store.data = store %}
+        {% endif %}
+    {% endfor %}
+{% endfor %}
+
+<section class="panel premium-panel" style="margin-bottom: 24px;">
+    <div class="panel-head">
+        <div>
+            <h3>Checklist Book Progress</h3>
+            <div class="area-subtitle">Today’s key checklist sections.</div>
+        </div>
+        <span class="summary-pill">Today</span>
+    </div>
+
+    {% if manager_store.data %}
+    {% set opening_class = 'progress-complete' if manager_store.data.opening_percent >= 100 else ('progress-active' if manager_store.data.opening_percent > 0 else 'progress-empty') %}
+    {% set restock_class = 'progress-complete' if manager_store.data.restock_percent >= 100 else ('progress-active' if manager_store.data.restock_percent > 0 else 'progress-empty') %}
+    {% set walk_class = 'progress-complete' if manager_store.data.manager_walk_percent >= 100 else ('progress-active' if manager_store.data.manager_walk_percent > 0 else 'progress-empty') %}
+
+    <div class="manager-checklist-progress-card">
+        <div class="manager-checklist-progress-row">
+            <div class="manager-checklist-progress-top">
+                <div class="manager-checklist-progress-label">Opening</div>
+                <div class="manager-checklist-progress-meta">
+                    <span
+                        class="summary-pill {% if manager_store.data.opening_percent >= 100 %}success-pill{% elif manager_store.data.opening_percent > 0 %}warning-pill{% else %}neutral-pill{% endif %}"
+                        id="manager-opening-status"
+                    >
+                        {% if manager_store.data.opening_percent >= 100 %}Complete{% elif manager_store.data.opening_percent > 0 %}In Progress{% else %}Not Started{% endif %}
+                    </span>
+                    <span class="manager-checklist-progress-percent" id="manager-opening-percent">{{ manager_store.data.opening_percent }}%</span>
+                </div>
+            </div>
+            <div class="manager-checklist-progress-track">
+                <div
+                    class="manager-checklist-progress-fill {{ opening_class }}"
+                    id="manager-opening-bar"
+                    style="width: {{ manager_store.data.opening_percent }}%;"
+                ></div>
+            </div>
+        </div>
+
+        <div class="manager-checklist-progress-row">
+            <div class="manager-checklist-progress-top">
+                <div class="manager-checklist-progress-label">3-O’Clock Restock</div>
+                <div class="manager-checklist-progress-meta">
+                    <span
+                        class="summary-pill {% if manager_store.data.restock_percent >= 100 %}success-pill{% elif manager_store.data.restock_percent > 0 %}warning-pill{% else %}neutral-pill{% endif %}"
+                        id="manager-restock-status"
+                    >
+                        {% if manager_store.data.restock_percent >= 100 %}Complete{% elif manager_store.data.restock_percent > 0 %}In Progress{% else %}Not Started{% endif %}
+                    </span>
+                    <span class="manager-checklist-progress-percent" id="manager-restock-percent">{{ manager_store.data.restock_percent }}%</span>
+                </div>
+            </div>
+            <div class="manager-checklist-progress-track">
+                <div
+                    class="manager-checklist-progress-fill {{ restock_class }}"
+                    id="manager-restock-bar"
+                    style="width: {{ manager_store.data.restock_percent }}%;"
+                ></div>
+            </div>
+        </div>
+
+        <div class="manager-checklist-progress-row">
+            <div class="manager-checklist-progress-top">
+                <div class="manager-checklist-progress-label">Manager’s Walk</div>
+                <div class="manager-checklist-progress-meta">
+                    <span
+                        class="summary-pill {% if manager_store.data.manager_walk_percent >= 100 %}success-pill{% elif manager_store.data.manager_walk_percent > 0 %}warning-pill{% else %}neutral-pill{% endif %}"
+                        id="manager-walk-status"
+                    >
+                        {% if manager_store.data.manager_walk_percent >= 100 %}Complete{% elif manager_store.data.manager_walk_percent > 0 %}In Progress{% else %}Not Started{% endif %}
+                    </span>
+                    <span class="manager-checklist-progress-percent" id="manager-walk-percent">{{ manager_store.data.manager_walk_percent }}%</span>
+                </div>
+            </div>
+            <div class="manager-checklist-progress-track">
+                <div
+                    class="manager-checklist-progress-fill {{ walk_class }}"
+                    id="manager-walk-bar"
+                    style="width: {{ manager_store.data.manager_walk_percent }}%;"
+                ></div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+        <div class="summary-pill neutral-pill">No checklist found today.</div>
+    {% endif %}
+</section>
+{% endif %}
 
 {% if is_manager and manager_cash_summary %}
 <div class="panel premium-panel" style="margin-bottom: 24px;">
@@ -491,6 +654,9 @@
         {% endif %}
     </section>
 
+
+
+
     {% if is_manager %}
     <section class="panel premium-panel">
         <div class="panel-head">
@@ -739,6 +905,76 @@ document.addEventListener("DOMContentLoaded", function () {
         chip.textContent = text;
     }
 
+    function getFirstManagerStore(data) {
+        if (!data || !data.area_groups) return null;
+
+        const areaNames = Object.keys(data.area_groups);
+        for (const areaName of areaNames) {
+            const stores = data.area_groups[areaName] || [];
+            if (stores.length > 0) {
+                return stores[0];
+            }
+        }
+
+        return null;
+    }
+
+    function getProgressDisplay(percent) {
+        const value = Number(percent) || 0;
+
+        if (value >= 100) {
+            return {
+                text: "Complete",
+                pillClass: "success-pill",
+                barClass: "progress-complete",
+            };
+        }
+
+        if (value > 0) {
+            return {
+                text: "In Progress",
+                pillClass: "warning-pill",
+                barClass: "progress-active",
+            };
+        }
+
+        return {
+            text: "Not Started",
+            pillClass: "neutral-pill",
+            barClass: "progress-empty",
+        };
+    }
+
+    function updateManagerChecklistProgressItem(prefix, percent) {
+        const percentEl = document.getElementById(`${prefix}-percent`);
+        const statusEl = document.getElementById(`${prefix}-status`);
+        const barEl = document.getElementById(`${prefix}-bar`);
+
+        if (!percentEl || !statusEl || !barEl) return;
+
+        const value = Number(percent) || 0;
+        const safeValue = Math.max(0, Math.min(100, value));
+        const display = getProgressDisplay(safeValue);
+
+        percentEl.textContent = `${safeValue}%`;
+        statusEl.textContent = display.text;
+        statusEl.className = `summary-pill ${display.pillClass}`;
+        barEl.style.width = `${safeValue}%`;
+        barEl.className = `manager-checklist-progress-fill ${display.barClass}`;
+    }
+
+    function updateManagerChecklistProgress(data) {
+        if (!isManager) return;
+
+        const store = getFirstManagerStore(data);
+        if (!store) return;
+
+        updateManagerChecklistProgressItem("manager-opening", store.opening_percent);
+        updateManagerChecklistProgressItem("manager-restock", store.restock_percent);
+        updateManagerChecklistProgressItem("manager-walk", store.manager_walk_percent);
+    }
+
+
     function bindWeeklyFocusCheckboxes() {
         document.querySelectorAll(".manager-weekly-focus-box").forEach(box => {
             box.addEventListener("change", async function () {
@@ -815,6 +1051,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const data = await response.json();
+
+            updateManagerChecklistProgress(data);
 
             if (isOpsView) {
                 const openingCount = document.getElementById("opening-progress-count");

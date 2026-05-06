@@ -1882,3 +1882,351 @@ textarea:focus {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(143, 164, 199, 0.28);
 }
+
+/* =========================================================
+   Compact Checklist Row Layout
+   Keeps the same autosave/checklist behavior, but removes the
+   oversized task-card feel so managers can see more tasks at once.
+========================================================= */
+
+.checklist-layout-grid {
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 16px;
+}
+
+.checklist-main-column {
+    min-width: 0;
+}
+
+.checklist-section-card {
+    border: 1px solid rgba(120, 146, 190, 0.12);
+    background: linear-gradient(180deg, rgba(13, 22, 40, 0.88) 0%, rgba(8, 16, 31, 0.94) 100%);
+}
+
+.checklist-section-summary {
+    min-height: 58px;
+    padding: 14px 18px;
+    border-radius: 18px 18px 0 0;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+    background: rgba(9, 18, 34, 0.96);
+}
+
+.checklist-section-title {
+    font-size: 17px;
+    line-height: 1.15;
+}
+
+.checklist-section-meta {
+    gap: 10px;
+}
+
+.accordion-body {
+    padding: 10px 14px 14px;
+}
+
+.accordion-body .checklist-items,
+.mobile-checklist-items {
+    margin-top: 0;
+    gap: 6px;
+}
+
+.compact-checklist-row-card,
+.mobile-checklist-card.compact-checklist-row-card {
+    padding: 9px 12px;
+    border-radius: 12px;
+    min-height: 48px;
+    background: rgba(8, 16, 31, 0.72);
+    border-color: rgba(120, 146, 190, 0.12);
+    box-shadow: none;
+}
+
+.compact-checklist-row-card:hover {
+    border-color: rgba(56, 189, 248, 0.18);
+    background: rgba(10, 20, 38, 0.82);
+}
+
+.compact-checklist-row-card.is-completed,
+.mobile-checklist-card.compact-checklist-row-card.is-completed {
+    background: rgba(8, 24, 24, 0.58);
+    border-color: rgba(34, 197, 94, 0.18);
+}
+
+.compact-checklist-item-main,
+.mobile-checklist-item-main.compact-checklist-item-main {
+    display: block;
+}
+
+.checklist-compact-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.compact-checklist-checkbox-row,
+.mobile-checklist-checkbox-row.compact-checklist-checkbox-row {
+    align-items: center;
+    min-width: 0;
+    gap: 10px;
+    font-size: 14px;
+    line-height: 1.25;
+}
+
+.compact-checklist-checkbox-row input[type="checkbox"],
+.mobile-checklist-checkbox-row.compact-checklist-checkbox-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 0;
+}
+
+.compact-checklist-row-card.is-completed .checklist-task-text {
+    color: rgba(245, 247, 251, 0.92);
+}
+
+.compact-task-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.compact-task-actions .task-time-pill {
+    padding: 5px 8px;
+    font-size: 10px;
+    min-width: 44px;
+    text-align: center;
+}
+
+.compact-note-toggle,
+.note-toggle-btn.compact-note-toggle {
+    padding: 5px 9px;
+    font-size: 10px;
+    min-width: 48px;
+    text-align: center;
+}
+
+.compact-note-group {
+    margin-top: 8px;
+    padding-left: 28px;
+}
+
+.compact-note-group input {
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.checklist-note-wrap.is-open {
+    margin-top: 6px;
+}
+
+.checklist-score-grid-mobile {
+    gap: 8px;
+}
+
+.mobile-score-box {
+    min-width: 120px;
+    padding: 12px;
+}
+
+.mobile-score-box h3 {
+    margin-bottom: 0;
+}
+
+@media (max-width: 1100px) {
+    .checklist-layout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 800px) {
+    .checklist-section-summary {
+        border-radius: 16px 16px 0 0;
+    }
+
+    .accordion-body,
+    .mobile-accordion-body {
+        padding: 8px 10px 10px;
+    }
+
+    .checklist-compact-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+    }
+
+    .compact-task-actions {
+        justify-content: flex-start;
+        padding-left: 30px;
+    }
+
+    .compact-checklist-checkbox-row,
+    .mobile-checklist-checkbox-row.compact-checklist-checkbox-row {
+        font-size: 14px;
+    }
+
+    .compact-note-group {
+        padding-left: 0;
+    }
+}
+
+/* =========================================================
+   Checklist Compact Row Override - existing template classes
+   This targets the real classes currently in checklist.html.
+========================================================= */
+
+.checklist-section-card .accordion-body,
+.checklist-section-card .mobile-accordion-body {
+    padding: 8px 12px 12px !important;
+}
+
+.checklist-section-card .accordion-body .checklist-items,
+.checklist-section-card .mobile-checklist-items {
+    margin-top: 0 !important;
+    gap: 6px !important;
+}
+
+.checklist-section-card .checklist-item-card,
+.checklist-section-card .mobile-checklist-card,
+.checklist-section-card .mobile-checklist-item-card {
+    position: relative !important;
+    padding: 9px 12px !important;
+    border-radius: 12px !important;
+    min-height: 52px !important;
+    background: rgba(8, 16, 31, 0.72) !important;
+    border: 1px solid rgba(120, 146, 190, 0.12) !important;
+    box-shadow: none !important;
+}
+
+.checklist-section-card .checklist-item-card.is-completed,
+.checklist-section-card .mobile-checklist-card.is-completed,
+.checklist-section-card .mobile-checklist-item-card.is-completed {
+    background: rgba(7, 22, 25, 0.62) !important;
+    border-color: rgba(34, 197, 94, 0.20) !important;
+}
+
+.checklist-section-card .checklist-item-main,
+.checklist-section-card .mobile-checklist-item-main {
+    display: block !important;
+    min-width: 0 !important;
+}
+
+.checklist-section-card .checklist-row-top {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    padding-right: 138px !important;
+    min-height: 32px !important;
+}
+
+.checklist-section-card .checklist-checkbox-row,
+.checklist-section-card .mobile-checklist-checkbox-row {
+    align-items: center !important;
+    gap: 10px !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    min-width: 0 !important;
+}
+
+.checklist-section-card .checklist-checkbox-row input[type="checkbox"],
+.checklist-section-card .mobile-checklist-checkbox-row input[type="checkbox"] {
+    width: 19px !important;
+    height: 19px !important;
+    margin-top: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+.checklist-section-card .checklist-task-text {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.checklist-section-card .task-time-pill {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    padding: 5px 9px !important;
+    font-size: 10px !important;
+    min-width: 48px !important;
+    text-align: center !important;
+}
+
+.checklist-section-card .task-row-footer {
+    position: absolute !important;
+    right: 72px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+}
+
+.checklist-section-card .note-toggle-btn {
+    padding: 5px 9px !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    min-height: 24px !important;
+}
+
+.checklist-section-card .checklist-note-wrap {
+    margin-top: 8px !important;
+    padding-right: 0 !important;
+}
+
+.checklist-section-card .compact-note-group input,
+.checklist-section-card .mobile-note-group input {
+    min-height: 36px !important;
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+}
+
+.checklist-section-summary,
+.mobile-accordion-summary.checklist-section-summary {
+    padding: 12px 16px !important;
+    min-height: 52px !important;
+}
+
+.checklist-section-title {
+    font-size: 17px !important;
+}
+
+@media (max-width: 800px) {
+    .checklist-section-card .checklist-item-card,
+    .checklist-section-card .mobile-checklist-card,
+    .checklist-section-card .mobile-checklist-item-card {
+        min-height: 70px !important;
+        padding: 10px 12px !important;
+    }
+
+    .checklist-section-card .checklist-row-top {
+        padding-right: 58px !important;
+        align-items: flex-start !important;
+    }
+
+    .checklist-section-card .checklist-task-text {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+
+    .checklist-section-card .task-time-pill {
+        top: 14px !important;
+        transform: none !important;
+    }
+
+    .checklist-section-card .task-row-footer {
+        position: static !important;
+        transform: none !important;
+        justify-content: flex-start !important;
+        margin-top: 6px !important;
+        padding-left: 30px !important;
+    }
+}

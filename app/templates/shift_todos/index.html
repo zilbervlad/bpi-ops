@@ -10,18 +10,78 @@
 
 {% block content %}
 <style>
-    .todo-assignee-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    .todo-assignee-card { border: 1px solid rgba(120, 146, 190, 0.16); background: rgba(8, 16, 31, 0.72); border-radius: 12px; padding: 10px 12px; }
+    .todo-assignee-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 8px;
+    }
+
+    .todo-assignee-card {
+        border: 1px solid rgba(120, 146, 190, 0.16);
+        background: rgba(8, 16, 31, 0.72);
+        border-radius: 12px;
+        padding: 10px 12px;
+    }
+
+    .todo-assignee-card.is-selected {
+        border-color: rgba(56, 189, 248, 0.38);
+        background: rgba(56, 189, 248, 0.10);
+    }
+
     .todo-list { display: grid; gap: 12px; }
-    .todo-card { border: 1px solid rgba(120, 146, 190, 0.12); background: rgba(8, 16, 31, 0.82); border-radius: 16px; padding: 16px; }
-    .todo-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+
+    .todo-card {
+        border: 1px solid rgba(120, 146, 190, 0.12);
+        background: rgba(8, 16, 31, 0.82);
+        border-radius: 16px;
+        padding: 16px;
+    }
+
+    .todo-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
     .todo-title { margin: 0; color: #fff; font-size: 16px; font-weight: 800; }
     .todo-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-    .todo-description { color: var(--text-soft); font-size: 13px; line-height: 1.45; margin-top: 10px; white-space: pre-wrap; }
+
+    .todo-description {
+        color: var(--text-soft);
+        font-size: 13px;
+        line-height: 1.45;
+        margin-top: 10px;
+        white-space: pre-wrap;
+    }
+
     .todo-assignment-list { display: grid; gap: 8px; margin-top: 12px; }
-    .todo-assignment-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; border-top: 1px solid rgba(120, 146, 190, 0.10); color: var(--text-soft); font-size: 13px; }
+
+    .todo-assignment-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(120, 146, 190, 0.10);
+        color: var(--text-soft);
+        font-size: 13px;
+    }
+
     .todo-complete-form { display: grid; gap: 10px; margin-top: 12px; }
-    @media (max-width: 800px) { .todo-assignee-grid { grid-template-columns: 1fr; } .todo-card-head { flex-direction: column; } }
+
+    .todo-create-helper {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-top: 8px;
+    }
+
+    @media (max-width: 800px) {
+        .todo-card-head { flex-direction: column; }
+    }
 </style>
 
 {% if mode == "gm" %}
@@ -29,7 +89,9 @@
     <div class="command-bar-left">
         <div class="command-eyebrow">SHIFT EXECUTION</div>
         <h2 class="command-title">Shift To-Dos</h2>
-        <p class="command-subtitle">Create quick shift tasks for store {{ store_number }} and assign them to 1 or 2 TMs.</p>
+        <p class="command-subtitle">
+            Create one or more shift tasks for store {{ store_number }} and assign them to any number of TMs.
+        </p>
     </div>
     <div class="command-bar-right">
         <div class="command-chip">Store {{ store_number }}</div>
@@ -41,20 +103,25 @@
 <section class="panel premium-panel" style="margin-bottom: 24px;">
     <button type="button" id="create-todo-toggle" class="panel-head" style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;" aria-expanded="false">
         <div>
-            <h3 style="margin: 0;">Create Shift To-Do</h3>
-            <div class="area-subtitle">Assign a task to one or two TMs for today’s shift.</div>
+            <h3 style="margin: 0;">Create Shift To-Dos</h3>
+            <div class="area-subtitle">Enter one task per line and assign to as many TMs as needed.</div>
         </div>
         <span id="create-todo-chevron" class="summary-pill">Show ▼</span>
     </button>
 
     <div id="create-todo-body" style="display: none; margin-top: 16px;">
         {% if tms %}
-        <form method="POST" action="{{ url_for('shift_todos.create') }}" class="login-form">
-            <div class="admin-task-grid">
-                <div class="form-group">
-                    <label for="title">To-Do Title</label>
-                    <input type="text" id="title" name="title" placeholder="Example: Clean walk-in shelves" required>
+        <form method="POST" action="{{ url_for('shift_todos.create') }}" class="login-form" id="todo-create-form">
+            <div class="form-group">
+                <label for="task_titles">To-Do Items</label>
+                <textarea id="task_titles" name="task_titles" rows="6" placeholder="One task per line. Example:&#10;Clean walk-in shelves&#10;Restock coke cooler&#10;Sweep outside" required></textarea>
+                <div class="todo-create-helper">
+                    <span class="summary-pill" id="task-count-pill">0 tasks</span>
+                    <span class="area-subtitle">Maximum 25 at a time.</span>
                 </div>
+            </div>
+
+            <div class="admin-task-grid">
                 <div class="form-group">
                     <label for="shift_type">Shift</label>
                     <select id="shift_type" name="shift_type">
@@ -62,6 +129,14 @@
                         <option value="rush">Rush</option>
                         <option value="closing">Closing</option>
                         <option value="general">General</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="priority">Priority</label>
+                    <select id="priority" name="priority">
+                        <option value="normal">Normal</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
                     </select>
                 </div>
             </div>
@@ -78,20 +153,17 @@
             </div>
 
             <div class="form-group">
-                <label for="priority">Priority</label>
-                <select id="priority" name="priority">
-                    <option value="normal">Normal</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="description">Notes</label>
-                <textarea id="description" name="description" rows="3" placeholder="Optional details or instructions"></textarea>
+                <label for="description">Notes / Instructions</label>
+                <textarea id="description" name="description" rows="3" placeholder="Optional details that apply to these tasks"></textarea>
             </div>
 
             <div class="user-section-label">Assign To</div>
+            <div class="todo-create-helper" style="margin-bottom: 10px;">
+                <button type="button" class="btn-primary" id="select-all-tms" style="padding: 8px 12px;">Select All</button>
+                <button type="button" class="btn-danger" id="clear-all-tms" style="padding: 8px 12px;">Clear</button>
+                <span class="summary-pill" id="assignee-count-pill">0 selected</span>
+            </div>
+
             <div class="todo-assignee-grid">
                 {% for tm in tms %}
                 <label class="todo-assignee-card checkbox-inline">
@@ -101,8 +173,7 @@
                 {% endfor %}
             </div>
 
-            <div class="area-subtitle" style="margin-top: 10px;">Select up to 2 TMs.</div>
-            <button type="submit" class="btn-primary" style="margin-top: 12px;">Create To-Do</button>
+            <button type="submit" class="btn-primary" style="margin-top: 12px;">Create To-Dos</button>
         </form>
         {% else %}
         <div class="summary-pill neutral-pill">No active TM accounts found for store {{ store_number }} yet.</div>
@@ -116,6 +187,7 @@
             <div><h3>Open Shift To-Dos</h3><div class="area-subtitle">Tasks still waiting on at least one assigned TM.</div></div>
             <span class="summary-pill">{{ open_todos|length }} open</span>
         </div>
+
         <div class="todo-list">
             {% for todo in open_todos %}
             <div class="todo-card">
@@ -126,18 +198,25 @@
                             <span class="summary-pill">{{ todo.shift_type|replace('_', ' ')|title }}</span>
                             <span class="summary-pill">{{ todo.priority|title }}</span>
                             <span class="summary-pill">Due {{ todo.due_date.strftime('%m/%d') }}{% if todo.due_time %} at {{ todo.due_time }}{% endif %}</span>
+                            <span class="summary-pill">{{ todo.assignments|length }} assigned</span>
                         </div>
                     </div>
                     <form method="POST" action="{{ url_for('shift_todos.cancel', todo_id=todo.id) }}">
                         <button type="submit" class="btn-danger" onclick="return confirm('Cancel this Shift To-Do?');">Cancel</button>
                     </form>
                 </div>
+
                 {% if todo.description %}<div class="todo-description">{{ todo.description }}</div>{% endif %}
+
                 <div class="todo-assignment-list">
                     {% for assignment in todo.assignments %}
                     <div class="todo-assignment-row">
                         <span>{{ assignment.assigned_user.name }}</span>
-                        {% if assignment.is_completed %}<span class="summary-pill success-pill">Completed</span>{% else %}<span class="summary-pill warning-pill">Open</span>{% endif %}
+                        {% if assignment.is_completed %}
+                            <span class="summary-pill success-pill">Completed{% if assignment.completed_at %} {{ assignment.completed_at.strftime('%m/%d %I:%M %p') }}{% endif %}</span>
+                        {% else %}
+                            <span class="summary-pill warning-pill">Open</span>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
@@ -153,14 +232,24 @@
             <div><h3>Completed</h3><div class="area-subtitle">Tasks fully completed by assigned TMs.</div></div>
             <span class="summary-pill">{{ completed_todos|length }} done</span>
         </div>
+
         <div class="todo-list">
             {% for todo in completed_todos[:10] %}
             <div class="todo-card">
                 <div class="todo-card-head">
                     <div>
                         <h4 class="todo-title">{{ todo.title }}</h4>
-                        <div class="todo-meta"><span class="summary-pill success-pill">Complete</span><span class="summary-pill">{{ todo.shift_type|replace('_', ' ')|title }}</span></div>
+                        <div class="todo-meta">
+                            <span class="summary-pill success-pill">Complete</span>
+                            <span class="summary-pill">{{ todo.shift_type|replace('_', ' ')|title }}</span>
+                            <span class="summary-pill">{{ todo.assignments|length }} assigned</span>
+                        </div>
                     </div>
+                </div>
+                <div class="todo-assignment-list">
+                    {% for assignment in todo.assignments %}
+                    <div class="todo-assignment-row"><span>{{ assignment.assigned_user.name }}</span><span class="summary-pill success-pill">Done</span></div>
+                    {% endfor %}
                 </div>
             </div>
             {% else %}
@@ -183,15 +272,62 @@ document.addEventListener("DOMContentLoaded", function () {
             chevron.textContent = isHidden ? "Hide ▲" : "Show ▼";
         });
     }
-    document.querySelectorAll(".assignee-checkbox").forEach(box => {
-        box.addEventListener("change", function () {
-            const checked = document.querySelectorAll(".assignee-checkbox:checked");
-            if (checked.length > 2) {
-                this.checked = false;
-                alert("You can assign a Shift To-Do to a maximum of 2 TMs.");
-            }
+
+    const taskTextarea = document.getElementById("task_titles");
+    const taskCountPill = document.getElementById("task-count-pill");
+    const assigneeCountPill = document.getElementById("assignee-count-pill");
+    const selectAllBtn = document.getElementById("select-all-tms");
+    const clearAllBtn = document.getElementById("clear-all-tms");
+    const form = document.getElementById("todo-create-form");
+
+    function updateTaskCount() {
+        if (!taskTextarea || !taskCountPill) return;
+        const count = taskTextarea.value.split("\n").map(line => line.trim()).filter(Boolean).length;
+        taskCountPill.textContent = `${count} task${count === 1 ? "" : "s"}`;
+    }
+
+    function updateAssigneeCount() {
+        const checked = document.querySelectorAll(".assignee-checkbox:checked");
+        if (assigneeCountPill) assigneeCountPill.textContent = `${checked.length} selected`;
+        document.querySelectorAll(".todo-assignee-card").forEach(card => {
+            const input = card.querySelector(".assignee-checkbox");
+            if (input && input.checked) card.classList.add("is-selected");
+            else card.classList.remove("is-selected");
         });
-    });
+    }
+
+    if (taskTextarea) {
+        taskTextarea.addEventListener("input", updateTaskCount);
+        updateTaskCount();
+    }
+
+    document.querySelectorAll(".assignee-checkbox").forEach(box => box.addEventListener("change", updateAssigneeCount));
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener("click", function () {
+            document.querySelectorAll(".assignee-checkbox").forEach(box => box.checked = true);
+            updateAssigneeCount();
+        });
+    }
+
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener("click", function () {
+            document.querySelectorAll(".assignee-checkbox").forEach(box => box.checked = false);
+            updateAssigneeCount();
+        });
+    }
+
+    if (form) {
+        form.addEventListener("submit", function (event) {
+            const checked = document.querySelectorAll(".assignee-checkbox:checked");
+            const taskCount = taskTextarea ? taskTextarea.value.split("\n").map(line => line.trim()).filter(Boolean).length : 0;
+            if (taskCount < 1) { event.preventDefault(); alert("Please enter at least one task."); return; }
+            if (taskCount > 25) { event.preventDefault(); alert("Please create no more than 25 tasks at one time."); return; }
+            if (checked.length < 1) { event.preventDefault(); alert("Please select at least one TM."); }
+        });
+    }
+
+    updateAssigneeCount();
 });
 </script>
 {% endif %}
@@ -211,30 +347,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <div class="content-grid">
     <section class="panel premium-panel">
-        <div class="panel-head">
-            <div><h3>Open To-Dos</h3><div class="area-subtitle">Mark complete when finished.</div></div>
-            <span class="summary-pill">{{ open_assignments|length }} open</span>
-        </div>
+        <div class="panel-head"><div><h3>Open To-Dos</h3><div class="area-subtitle">Mark complete when finished.</div></div><span class="summary-pill">{{ open_assignments|length }} open</span></div>
         <div class="todo-list">
             {% for assignment in open_assignments %}
             {% set todo = assignment.todo %}
             <div class="todo-card">
-                <div class="todo-card-head">
-                    <div>
-                        <h4 class="todo-title">{{ todo.title }}</h4>
-                        <div class="todo-meta">
-                            <span class="summary-pill">{{ todo.shift_type|replace('_', ' ')|title }}</span>
-                            <span class="summary-pill">{{ todo.priority|title }}</span>
-                            <span class="summary-pill">Due {{ todo.due_date.strftime('%m/%d') }}{% if todo.due_time %} at {{ todo.due_time }}{% endif %}</span>
-                        </div>
-                    </div>
-                </div>
+                <div class="todo-card-head"><div><h4 class="todo-title">{{ todo.title }}</h4><div class="todo-meta"><span class="summary-pill">{{ todo.shift_type|replace('_', ' ')|title }}</span><span class="summary-pill">{{ todo.priority|title }}</span><span class="summary-pill">Due {{ todo.due_date.strftime('%m/%d') }}{% if todo.due_time %} at {{ todo.due_time }}{% endif %}</span></div></div></div>
                 {% if todo.description %}<div class="todo-description">{{ todo.description }}</div>{% endif %}
                 <form method="POST" action="{{ url_for('shift_todos.complete_assignment', assignment_id=assignment.id) }}" class="todo-complete-form">
-                    <div class="form-group">
-                        <label>Completion Notes</label>
-                        <textarea name="completion_notes" rows="2" placeholder="Optional note"></textarea>
-                    </div>
+                    <div class="form-group"><label>Completion Notes</label><textarea name="completion_notes" rows="2" placeholder="Optional note"></textarea></div>
                     <button type="submit" class="btn-primary">Mark Complete</button>
                 </form>
             </div>
@@ -245,25 +366,11 @@ document.addEventListener("DOMContentLoaded", function () {
     </section>
 
     <section class="panel premium-panel">
-        <div class="panel-head">
-            <div><h3>Completed</h3><div class="area-subtitle">Recently completed tasks.</div></div>
-            <span class="summary-pill">{{ completed_assignments|length }} done</span>
-        </div>
+        <div class="panel-head"><div><h3>Completed</h3><div class="area-subtitle">Recently completed tasks.</div></div><span class="summary-pill">{{ completed_assignments|length }} done</span></div>
         <div class="todo-list">
             {% for assignment in completed_assignments[:10] %}
             {% set todo = assignment.todo %}
-            <div class="todo-card">
-                <div class="todo-card-head">
-                    <div>
-                        <h4 class="todo-title">{{ todo.title }}</h4>
-                        <div class="todo-meta">
-                            <span class="summary-pill success-pill">Complete</span>
-                            {% if assignment.completed_at %}<span class="summary-pill">{{ assignment.completed_at.strftime('%m/%d %I:%M %p') }}</span>{% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% if assignment.completion_notes %}<div class="todo-description">{{ assignment.completion_notes }}</div>{% endif %}
-            </div>
+            <div class="todo-card"><div class="todo-card-head"><div><h4 class="todo-title">{{ todo.title }}</h4><div class="todo-meta"><span class="summary-pill success-pill">Complete</span>{% if assignment.completed_at %}<span class="summary-pill">{{ assignment.completed_at.strftime('%m/%d %I:%M %p') }}</span>{% endif %}</div></div></div>{% if assignment.completion_notes %}<div class="todo-description">{{ assignment.completion_notes }}</div>{% endif %}</div>
             {% else %}
             <div class="summary-pill neutral-pill">Nothing completed yet.</div>
             {% endfor %}
@@ -271,4 +378,5 @@ document.addEventListener("DOMContentLoaded", function () {
     </section>
 </div>
 {% endif %}
+
 {% endblock %}

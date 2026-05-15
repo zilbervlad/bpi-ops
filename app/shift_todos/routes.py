@@ -85,6 +85,29 @@ def get_tm_todos(user_id):
     return open_assignments, completed_assignments
 
 
+def parse_task_titles():
+    """
+    Supports batch creation using one task per line.
+    Keeps old single-title fallback so any old form still works.
+    """
+    raw_batch = request.form.get("task_titles", "").strip()
+    if raw_batch:
+        titles = [line.strip() for line in raw_batch.splitlines() if line.strip()]
+    else:
+        single_title = request.form.get("title", "").strip()
+        titles = [single_title] if single_title else []
+
+    deduped = []
+    seen = set()
+    for title in titles:
+        normalized = title.lower()
+        if normalized not in seen:
+            deduped.append(title)
+            seen.add(normalized)
+
+    return deduped
+
+
 @shift_todos_bp.route("/", methods=["GET"])
 @login_required
 @role_required("general_manager", "tm")
@@ -137,7 +160,7 @@ def create():
         flash("Your General Manager account does not have a store assigned.", "error")
         return redirect(url_for("shift_todos.index"))
 
-    title = request.form.get("title", "").strip()
+    task_titles = parse_task_titles()
     description = request.form.get("description", "").strip() or None
     shift_type = request.form.get("shift_type", "general").strip() or "general"
     due_date_raw = request.form.get("due_date", "").strip()
@@ -145,16 +168,16 @@ def create():
     priority = request.form.get("priority", "normal").strip() or "normal"
     assignee_ids = list(dict.fromkeys(request.form.getlist("assignee_ids")))
 
-    if not title:
-        flash("Please enter a to-do title.", "error")
+    if not task_titles:
+        flash("Please enter at least one to-do item.", "error")
+        return redirect(url_for("shift_todos.index"))
+
+    if len(task_titles) > 25:
+        flash("Please create no more than 25 to-dos at one time.", "error")
         return redirect(url_for("shift_todos.index"))
 
     if not assignee_ids:
         flash("Please assign this to at least one TM.", "error")
-        return redirect(url_for("shift_todos.index"))
-
-    if len(assignee_ids) > 2:
-        flash("Shift To-Dos can be assigned to a maximum of 2 TMs.", "error")
         return redirect(url_for("shift_todos.index"))
 
     try:
@@ -168,39 +191,48 @@ def create():
         User.role == "tm",
         User.store_number == store_number,
         User.is_active == True,
-    ).all()
+    ).order_by(User.name.asc()).all()
 
     if len(assignees) != len(assignee_ids):
         flash("One or more selected TMs are not valid for your store.", "error")
         return redirect(url_for("shift_todos.index"))
 
-    todo = ShiftTodo(
-        store_number=store_number,
-        title=title,
-        description=description,
-        shift_type=shift_type,
-        due_date=due_date,
-        due_time=due_time,
-        priority=priority,
-        status="open",
-        created_by_user_id=current_user_id(),
-    )
+    created_count = 0
 
-    db.session.add(todo)
-    db.session.flush()
-
-    for user in assignees:
-        db.session.add(
-            ShiftTodoAssignment(
-                shift_todo_id=todo.id,
-                user_id=user.id,
-                is_completed=False,
-            )
+    for title in task_titles:
+        todo = ShiftTodo(
+            store_number=store_number,
+            title=title,
+            description=description,
+            shift_type=shift_type,
+            due_date=due_date,
+            due_time=due_time,
+            priority=priority,
+            status="open",
+            created_by_user_id=current_user_id(),
         )
+
+        db.session.add(todo)
+        db.session.flush()
+
+        for user in assignees:
+            db.session.add(
+                ShiftTodoAssignment(
+                    shift_todo_id=todo.id,
+                    user_id=user.id,
+                    is_completed=False,
+                )
+            )
+
+        created_count += 1
 
     db.session.commit()
 
-    flash("Shift To-Do created successfully.", "success")
+    if created_count == 1:
+        flash(f"Shift To-Do created and assigned to {len(assignees)} TM(s).", "success")
+    else:
+        flash(f"{created_count} Shift To-Dos created and assigned to {len(assignees)} TM(s).", "success")
+
     return redirect(url_for("shift_todos.index"))
 
 

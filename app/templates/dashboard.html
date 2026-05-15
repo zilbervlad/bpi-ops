@@ -2,9 +2,13 @@
 
 {% block title %}Dashboard | BPI Ops{% endblock %}
 {% block header %}
-    {% if session.get('user_role') == 'manager' %}
-        Store Dashboard
-    {% elif session.get('user_role') == 'maintenance' %}
+    {% set access_role = session.get('user_role') %}
+    {% set account_role = session.get('account_role', access_role) %}
+    {% if access_role == 'manager' %}
+        {% if account_role == 'general_manager' %}General Manager Dashboard{% else %}Manager Dashboard{% endif %}
+    {% elif access_role == 'tm' %}
+        TM Home
+    {% elif access_role == 'maintenance' %}
         Maintenance Dashboard
     {% else %}
         Director Command Center
@@ -13,9 +17,13 @@
 
 {% block content %}
 {% set user_role = session.get('user_role') %}
+{% set account_role = session.get('account_role', user_role) %}
+{% set role_label = session.get('role_label', account_role|replace('_', ' ')|title) %}
+{% set is_general_manager = account_role == 'general_manager' %}
 {% set is_manager = user_role == 'manager' %}
+{% set is_tm = user_role == 'tm' %}
 {% set is_maintenance = user_role == 'maintenance' %}
-{% set is_ops_view = not is_manager and not is_maintenance %}
+{% set is_ops_view = user_role in ['admin', 'supervisor'] %}
 
 <style>
     .manager-weekly-focus-card {
@@ -209,7 +217,9 @@
     <div class="command-bar-left">
         <div class="command-eyebrow">
             {% if is_manager %}
-                STORE VIEW
+                {% if is_general_manager %}GENERAL MANAGER VIEW{% else %}MANAGER VIEW{% endif %}
+            {% elif is_tm %}
+                TM VIEW
             {% elif is_maintenance %}
                 MAINTENANCE VIEW
             {% else %}
@@ -219,7 +229,9 @@
 
         <h2 class="command-title">
             {% if is_manager %}
-                BPI Ops Store Dashboard
+                {% if is_general_manager %}BPI Ops General Manager Dashboard{% else %}BPI Ops Manager Dashboard{% endif %}
+            {% elif is_tm %}
+                BPI Ops TM Home
             {% elif is_maintenance %}
                 BPI Ops Maintenance Dashboard
             {% else %}
@@ -230,6 +242,8 @@
         <p class="command-subtitle">
             {% if is_manager %}
                 Today's checklist progress, weekly focus, cash control snapshot, and store task visibility.
+            {% elif is_tm %}
+                Training, standards, announcements, and store information for frontline team members.
             {% elif is_maintenance %}
                 Open maintenance workload, task visibility, and fast access to repair tracking.
             {% else %}
@@ -241,7 +255,7 @@
     <div class="command-bar-right">
         <div class="command-chip">
             {% if is_manager %}
-                Store Dashboard
+                {% if is_general_manager %}General Manager Dashboard{% else %}Manager Dashboard{% endif %}
             {% elif is_maintenance %}
                 Maintenance Dashboard
             {% else %}
@@ -249,9 +263,60 @@
             {% endif %}
         </div>
         <div class="command-chip" id="last-refresh-chip">Refreshing...</div>
-        <div class="command-chip">{{ user_role|title }}</div>
+        <div class="command-chip">{{ role_label }}</div>
     </div>
 </div>
+
+{% if is_tm %}
+<section class="panel premium-panel" style="margin-bottom: 24px;" id="tm-home">
+    <div class="panel-head">
+        <div>
+            <h3>TM Account</h3>
+            <div class="area-subtitle">Frontline home for Drivers and CSRs.</div>
+        </div>
+        <span class="summary-pill">Store {{ session.get('user_store') or 'Not Assigned' }}</span>
+    </div>
+
+    <div class="dashboard-grid dashboard-grid-premium">
+        <div class="metric-card premium-card premium-card-blue" id="tm-training">
+            <span class="metric-label">Training</span>
+            <h3>Standards</h3>
+            <div class="metric-footnote">Training modules will live here.</div>
+        </div>
+
+        <div class="metric-card premium-card" id="tm-image">
+            <span class="metric-label">Image</span>
+            <h3>Uniform Ready</h3>
+            <div class="metric-footnote">Image and appearance standards will live here.</div>
+        </div>
+
+        <div class="metric-card premium-card" id="tm-announcements">
+            <span class="metric-label">Announcements</span>
+            <h3>Store Updates</h3>
+            <div class="metric-footnote">Manager announcements will live here.</div>
+        </div>
+
+        <div class="metric-card premium-card" id="tm-acknowledgements">
+            <span class="metric-label">Acknowledgements</span>
+            <h3>Coming Soon</h3>
+            <div class="metric-footnote">Policy and task sign-offs will live here.</div>
+        </div>
+    </div>
+
+    <div class="panel premium-panel" style="margin-top: 14px;">
+        <div class="panel-head">
+            <h3>Today</h3>
+            <span class="summary-pill">TM View</span>
+        </div>
+        <ul class="clean-list">
+            <li>Be in full image and ready for your shift.</li>
+            <li>Check with the manager on duty for today’s priorities.</li>
+            <li>Review announcements and standards when modules are added.</li>
+            <li>Use this account for future training, acknowledgements, and team communication.</li>
+        </ul>
+    </div>
+</section>
+{% endif %}
 
 {% if is_manager %}
 {% set manager_store = namespace(data=None) %}
@@ -725,7 +790,7 @@
     <section class="panel premium-panel">
         <div class="panel-head">
             <h3>Today's Focus</h3>
-            <span class="summary-pill">Manager View</span>
+            <span class="summary-pill">Store Leadership View</span>
         </div>
         <ul class="clean-list">
             <li>Complete opening section early.</li>
@@ -865,7 +930,8 @@
 document.addEventListener("DOMContentLoaded", function () {
     const isManager = {{ 'true' if session.get('user_role') == 'manager' else 'false' }};
     const isMaintenance = {{ 'true' if session.get('user_role') == 'maintenance' else 'false' }};
-    const isOpsView = !isManager && !isMaintenance;
+    const isTm = {{ 'true' if session.get('user_role') == 'tm' else 'false' }};
+    const isOpsView = {{ 'true' if session.get('user_role') in ['admin', 'supervisor'] else 'false' }};
 
     let refreshInFlight = false;
 

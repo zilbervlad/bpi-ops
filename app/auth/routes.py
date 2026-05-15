@@ -7,6 +7,48 @@ from app.services.email_service import send_email
 auth_bp = Blueprint("auth", __name__)
 
 
+VALID_ROLES = {
+    "admin",
+    "supervisor",
+    "general_manager",
+    "manager",
+    "tm",
+    "maintenance",
+}
+
+STORE_REQUIRED_ROLES = {
+    "general_manager",
+    "manager",
+    "tm",
+}
+
+AREA_REQUIRED_ROLES = {
+    "supervisor",
+}
+
+ROLE_LABELS = {
+    "admin": "Admin",
+    "supervisor": "Supervisor",
+    "general_manager": "General Manager",
+    "manager": "Manager",
+    "tm": "TM",
+    "maintenance": "Maintenance",
+}
+
+
+def get_access_role(user):
+    """
+    Compatibility layer for the live app.
+
+    General Managers are a separate database role, but for now they inherit
+    the existing manager access path so current manager tools keep working.
+    Existing routes throughout the app already check session["user_role"] == "manager".
+    """
+    if user.role == "general_manager":
+        return "manager"
+    return user.role
+
+
 def login_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
@@ -24,13 +66,53 @@ def role_required(*allowed_roles):
                 return redirect(url_for("auth.login"))
 
             user_role = session.get("user_role")
-            if user_role not in allowed_roles:
+            account_role = session.get("account_role", user_role)
+
+            # General Manager currently inherits Manager permissions.
+            effective_allowed_roles = set(allowed_roles)
+            if "manager" in effective_allowed_roles:
+                effective_allowed_roles.add("general_manager")
+
+            if user_role not in effective_allowed_roles and account_role not in effective_allowed_roles:
                 flash("You do not have permission to view that page.", "error")
                 return redirect(url_for("dashboard.home"))
 
             return view(*args, **kwargs)
         return wrapped_view
     return decorator
+
+
+def clean_access_fields(role, area_name, store_number):
+    """
+    Normalizes area/store assignment by role.
+
+    Admin/Maintenance: no area or store
+    Supervisor: area only
+    General Manager/Manager/TM: store only
+    """
+    if role in {"admin", "maintenance"}:
+        return None, None
+
+    if role == "supervisor":
+        return area_name, None
+
+    if role in STORE_REQUIRED_ROLES:
+        return None, store_number
+
+    return area_name, store_number
+
+
+def validate_user_access(role, area_name, store_number):
+    if role not in VALID_ROLES:
+        return False, "Please select a valid role."
+
+    if role in AREA_REQUIRED_ROLES and not area_name:
+        return False, "Supervisors must have an area assigned."
+
+    if role in STORE_REQUIRED_ROLES and not store_number:
+        return False, "General Managers, Managers, and TM accounts must have a store assigned."
+
+    return True, None
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
@@ -44,9 +126,13 @@ def login():
         if user and user.check_password(password):
             session.permanent = True
 
+            access_role = get_access_role(user)
+
             session["user_id"] = user.id
             session["user_name"] = user.name
-            session["user_role"] = user.role
+            session["user_role"] = access_role
+            session["account_role"] = user.role
+            session["role_label"] = ROLE_LABELS.get(user.role, user.role.title())
             session["user_area"] = user.area_name
             session["user_store"] = user.store_number
 
@@ -84,10 +170,9 @@ def manage_users():
             notification_email = request.form.get("notification_email", "").strip() or None
             email_enabled = request.form.get("email_enabled") == "on"
 
-            valid_roles = {"admin", "supervisor", "manager", "maintenance"}
-
-            if not name or not username or not password or role not in valid_roles:
-                flash("Please complete all required fields correctly.", "error")
+            is_valid, error_message = validate_user_access(role, area_name, store_number)
+            if not name or not username or not password or not is_valid:
+                flash(error_message or "Please complete all required fields correctly.", "error")
                 return redirect(url_for("auth.manage_users"))
 
             existing_user = User.query.filter_by(username=username).first()
@@ -95,23 +180,7 @@ def manage_users():
                 flash("That username already exists.", "error")
                 return redirect(url_for("auth.manage_users"))
 
-            if role == "supervisor" and not area_name:
-                flash("Supervisors must have an area assigned.", "error")
-                return redirect(url_for("auth.manage_users"))
-
-            if role == "manager" and not store_number:
-                flash("Managers must have a store assigned.", "error")
-                return redirect(url_for("auth.manage_users"))
-
-            if role in {"admin", "maintenance"}:
-                area_name = None
-                store_number = None
-
-            if role == "supervisor":
-                store_number = None
-
-            if role == "manager":
-                area_name = None
+            area_name, store_number = clean_access_fields(role, area_name, store_number)
 
             user = User(
                 name=name,
@@ -153,8 +222,6 @@ def manage_users():
             email_enabled = request.form.get("email_enabled") == "on"
             new_password = request.form.get("password", "").strip()
 
-            valid_roles = {"admin", "supervisor", "manager", "maintenance"}
-
             # -------------------------
             # PROTECTED ADMIN LOGIC
             # -------------------------
@@ -173,8 +240,9 @@ def manage_users():
 
                 return redirect(url_for("auth.manage_users"))
 
-            if not name or not username or role not in valid_roles:
-                flash("Please complete all required fields correctly.", "error")
+            is_valid, error_message = validate_user_access(role, area_name, store_number)
+            if not name or not username or not is_valid:
+                flash(error_message or "Please complete all required fields correctly.", "error")
                 return redirect(url_for("auth.manage_users"))
 
             existing_user = User.query.filter(
@@ -185,23 +253,7 @@ def manage_users():
                 flash("That username already exists.", "error")
                 return redirect(url_for("auth.manage_users"))
 
-            if role == "supervisor" and not area_name:
-                flash("Supervisors must have an area assigned.", "error")
-                return redirect(url_for("auth.manage_users"))
-
-            if role == "manager" and not store_number:
-                flash("Managers must have a store assigned.", "error")
-                return redirect(url_for("auth.manage_users"))
-
-            if role in {"admin", "maintenance"}:
-                area_name = None
-                store_number = None
-
-            if role == "supervisor":
-                store_number = None
-
-            if role == "manager":
-                area_name = None
+            area_name, store_number = clean_access_fields(role, area_name, store_number)
 
             user.name = name
             user.username = username
@@ -258,7 +310,7 @@ def manage_users():
             return redirect(url_for("auth.manage_users"))
 
     users = User.query.order_by(User.name.asc()).all()
-    return render_template("users.html", users=users)
+    return render_template("users.html", users=users, role_labels=ROLE_LABELS)
 
 
 @auth_bp.route("/users/<int:user_id>/send-test-email", methods=["POST"])

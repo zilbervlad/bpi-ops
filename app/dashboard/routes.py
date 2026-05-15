@@ -421,22 +421,39 @@ def home():
 
     data = build_dashboard_data()
 
-    quick_actions = [
-        {"label": "Open Checklist", "url": "/checklist/"},
-        {"label": "Cash Control", "url": "/cash/"},
-        {"label": "Nightly Numbers", "url": "/nightly-numbers/"},
-        {"label": "Open Maintenance", "url": "/maintenance/"},
-    ]
+    if user_role == "tm":
+        quick_actions = [
+            {"label": "Training & Standards", "url": "#tm-training"},
+            {"label": "Image Standards", "url": "#tm-image"},
+            {"label": "Announcements", "url": "#tm-announcements"},
+            {"label": "Acknowledgements", "url": "#tm-acknowledgements"},
+        ]
+    elif user_role == "maintenance":
+        quick_actions = [
+            {"label": "Open Maintenance", "url": "/maintenance/"},
+        ]
+    elif user_role == "manager":
+        quick_actions = [
+            {"label": "Open Checklist", "url": "/checklist/"},
+            {"label": "Prep", "url": "/prep/"},
+            {"label": "Cash Control", "url": "/cash/"},
+            {"label": "Nightly Numbers", "url": "/nightly-numbers/"},
+        ]
+    else:
+        quick_actions = [
+            {"label": "Open Checklist", "url": "/checklist/"},
+            {"label": "Cash Review", "url": "/cash-review/"},
+            {"label": "Reports", "url": "/reports/"},
+            {"label": "Open Maintenance", "url": "/maintenance/"},
+            {"label": "Action Board", "url": "/action-board"},
+            {"label": "Open SVR", "url": "/svr/"},
+            {"label": "Verification", "url": "/verification/new"},
+        ]
 
-    if user_role in ["admin", "supervisor"]:
-        quick_actions.append({"label": "Action Board", "url": "/action-board"})
-        quick_actions.append({"label": "Open SVR", "url": "/svr/"})
-        quick_actions.append({"label": "Verification", "url": "/verification/new"})
-
-    if user_role == "admin":
-        quick_actions.append({"label": "Manage Users", "url": "/users"})
-        quick_actions.append({"label": "Manage Stores", "url": "/store-admin/"})
-        quick_actions.append({"label": "SVR Admin", "url": "/svr/admin"})
+        if user_role == "admin":
+            quick_actions.append({"label": "Manage Users", "url": "/users"})
+            quick_actions.append({"label": "Manage Stores", "url": "/store-admin/"})
+            quick_actions.append({"label": "SVR Admin", "url": "/svr/admin"})
 
     return render_template(
         "dashboard.html",
@@ -445,6 +462,8 @@ def home():
         quick_actions=quick_actions,
         user_name=session.get("user_name"),
         user_role=user_role,
+        account_role=session.get("account_role", user_role),
+        role_label=session.get("role_label", user_role.title()),
         area_groups=data["area_groups"],
         area_summaries=data["area_summaries"],
         total_stores=data["total_stores"],

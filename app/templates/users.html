@@ -3,6 +3,13 @@
 {% block title %}Users | BPI Ops{% endblock %}
 {% block header %}User Management{% endblock %}
 
+{% macro account_role_label(role) -%}
+    {%- if role == 'general_manager' -%}General Manager
+    {%- elif role == 'tm' -%}TM
+    {%- else -%}{{ role|replace('_', ' ')|title }}
+    {%- endif -%}
+{%- endmacro %}
+
 {% block content %}
 <div class="command-bar panel" style="margin-bottom: 24px;">
     <div class="command-bar-left">
@@ -29,7 +36,7 @@
         >
             <div>
                 <h3 style="margin: 0;">Create User</h3>
-                <div class="area-subtitle">Add a new manager, supervisor, maintenance user, or admin</div>
+                <div class="area-subtitle">Add a new General Manager, Manager, TM, Supervisor, Maintenance user, or Admin</div>
             </div>
             <span id="create-user-chevron" class="summary-pill">Show ▼</span>
         </button>
@@ -59,7 +66,9 @@
                     <div class="form-group">
                         <label for="create_role">Role</label>
                         <select id="create_role" name="role" required onchange="toggleCreateFields()">
+                            <option value="general_manager">General Manager</option>
                             <option value="manager">Manager</option>
+                            <option value="tm">TM</option>
                             <option value="supervisor">Supervisor</option>
                             <option value="maintenance">Maintenance</option>
                             <option value="admin">Admin</option>
@@ -231,7 +240,7 @@
                         {{ "Active" if user.is_active else "Inactive" }}
                     </span>
 
-                    <span class="summary-pill">{{ user.role|title }}</span>
+                    <span class="summary-pill">{{ account_role_label(user.role) }}</span>
 
                     {% if user.role == 'admin' %}
                     <span class="summary-pill protected-pill">Protected</span>
@@ -294,7 +303,9 @@
                                     onchange="toggleEditFields({{ user.id }})"
                                     {% if user.role == 'admin' %}disabled{% endif %}
                                     required>
+                                <option value="general_manager" {% if user.role == 'general_manager' %}selected{% endif %}>General Manager</option>
                                 <option value="manager" {% if user.role == 'manager' %}selected{% endif %}>Manager</option>
+                                <option value="tm" {% if user.role == 'tm' %}selected{% endif %}>TM</option>
                                 <option value="supervisor" {% if user.role == 'supervisor' %}selected{% endif %}>Supervisor</option>
                                 <option value="maintenance" {% if user.role == 'maintenance' %}selected{% endif %}>Maintenance</option>
                                 <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
@@ -425,7 +436,7 @@ function toggleCreateFields() {
         areaInput.required = true;
         storeInput.required = false;
         storeInput.value = "";
-    } else if (role === "manager") {
+    } else if (["general_manager", "manager", "tm"].includes(role)) {
         areaField.style.display = "none";
         storeField.style.display = "grid";
         areaInput.required = false;
@@ -460,7 +471,7 @@ function toggleEditFields(userId) {
             storeInput.required = false;
             storeInput.value = "";
         }
-    } else if (role === "manager") {
+    } else if (["general_manager", "manager", "tm"].includes(role)) {
         if (areaField) areaField.style.display = "none";
         if (storeField) storeField.style.display = "grid";
         if (areaInput) {

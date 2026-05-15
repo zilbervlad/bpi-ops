@@ -11,6 +11,9 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='bpi-logo.png') }}">
 </head>
 <body>
+    {% set access_role = session.get('user_role') %}
+    {% set account_role = session.get('account_role', access_role) %}
+    {% set role_label = session.get('role_label', account_role|replace('_', ' ')|title) %}
     {% if session.get('user_id') %}
     <div class="layout">
         <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay"></div>
@@ -40,45 +43,47 @@
                         Dashboard
                     </a>
 
+                    {% if access_role in ['admin', 'supervisor', 'manager'] %}
                     <a href="{{ url_for('store_dashboard.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('store_dashboard') %}active{% endif %}">
                         Store Dashboard
                     </a>
+                    {% endif %}
 
-                    {% if session.get('user_role') in ['admin', 'supervisor'] %}
+                    {% if access_role in ['admin', 'supervisor'] %}
                     <a href="{{ url_for('checklist.overview') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
                         Checklist
                     </a>
-                    {% elif session.get('user_role') == 'manager' %}
+                    {% elif access_role == 'manager' %}
                     <a href="{{ url_for('checklist.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
                         Checklist
                     </a>
                     {% endif %}
 
-                    {% if session.get('user_role') in ['admin', 'supervisor', 'manager'] %}
+                    {% if access_role in ['admin', 'supervisor', 'manager'] %}
                     <a href="{{ url_for('prep.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('prep') %}active{% endif %}">
                         Prep
                     </a>
                     {% endif %}
 
-                    {% if session.get('user_role') == 'manager' %}
+                    {% if access_role == 'manager' %}
                     <a href="{{ url_for('nightly_numbers.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('nightly_numbers') and request.endpoint != 'nightly_numbers.admin' %}active{% endif %}">
                         Nightly Numbers
                     </a>
                     {% endif %}
 
-                    {% if session.get('user_role') == 'manager' %}
+                    {% if access_role == 'manager' %}
                     <a href="{{ url_for('cash.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('cash') and not request.endpoint.startswith('cash_review') %}active{% endif %}">
                         Cash Control
                     </a>
                     {% endif %}
 
-                    {% if session.get('user_role') in ['admin', 'supervisor'] %}
+                    {% if access_role in ['admin', 'supervisor'] %}
                     <a href="{{ url_for('cash_review.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('cash_review') %}active{% endif %}">
                         Cash Review
@@ -94,7 +99,7 @@
                         SVR
                     </a>
 
-                    {% if session.get('user_role') == 'admin' %}
+                    {% if access_role == 'admin' %}
                     <a href="{{ url_for('verification.dashboard') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('verification') and request.endpoint != 'verification.admin' %}active{% endif %}">
                         Verification
@@ -107,7 +112,7 @@
                     {% endif %}
                     {% endif %}
 
-                    {% if session.get('user_role') in ['admin', 'supervisor', 'maintenance'] %}
+                    {% if access_role in ['admin', 'supervisor', 'maintenance'] %}
                     <a href="{{ url_for('maintenance.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
                         Maintenance
@@ -115,7 +120,7 @@
                     {% endif %}
                 </div>
 
-                {% if session.get('user_role') in ['admin', 'supervisor'] %}
+                {% if access_role in ['admin', 'supervisor'] %}
                 <div class="nav-section">
                     <div class="nav-section-label">Prep</div>
 
@@ -126,7 +131,7 @@
                 </div>
                 {% endif %}
 
-                {% if session.get('user_role') == 'admin' %}
+                {% if access_role == 'admin' %}
                 <div class="nav-section">
                     <div class="nav-section-label">Admin</div>
 

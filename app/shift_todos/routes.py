@@ -12,6 +12,9 @@ from app.shift_todos.models import ShiftTodo, ShiftTodoAssignment
 APP_TZ = ZoneInfo("America/New_York")
 
 
+SHIFT_TODO_CREATOR_ROLES = {"general_manager", "manager"}
+
+
 def now_et():
     return datetime.now(APP_TZ)
 
@@ -35,6 +38,10 @@ def current_user_id():
     return session.get("user_id")
 
 
+def can_create_shift_todos():
+    return current_account_role() in SHIFT_TODO_CREATOR_ROLES
+
+
 def get_store_tms(store_number):
     if not store_number:
         return []
@@ -46,7 +53,7 @@ def get_store_tms(store_number):
     ).order_by(User.name.asc()).all()
 
 
-def get_gm_store_todos(store_number):
+def get_store_todos(store_number):
     todos = ShiftTodo.query.filter_by(
         store_number=store_number,
     ).filter(
@@ -87,8 +94,10 @@ def get_tm_todos(user_id):
 
 def parse_task_titles():
     """
-    Supports batch creation using one task per line.
-    Keeps old single-title fallback so any old form still works.
+    Supports batch create:
+      task_titles = one task per line
+    Also supports old fallback:
+      title = one task
     """
     raw_batch = request.form.get("task_titles", "").strip()
     if raw_batch:
@@ -99,6 +108,7 @@ def parse_task_titles():
 
     deduped = []
     seen = set()
+
     for title in titles:
         normalized = title.lower()
         if normalized not in seen:
@@ -110,17 +120,17 @@ def parse_task_titles():
 
 @shift_todos_bp.route("/", methods=["GET"])
 @login_required
-@role_required("general_manager", "tm")
+@role_required("general_manager", "manager", "tm")
 def index():
     account_role = current_account_role()
     store_number = current_store()
 
-    if account_role == "general_manager":
+    if account_role in SHIFT_TODO_CREATOR_ROLES:
         if not store_number:
-            flash("Your General Manager account does not have a store assigned.", "error")
+            flash("Your account does not have a store assigned.", "error")
             return redirect(url_for("dashboard.home"))
 
-        today, open_todos, completed_todos = get_gm_store_todos(store_number)
+        today, open_todos, completed_todos = get_store_todos(store_number)
         tms = get_store_tms(store_number)
 
         return render_template(
@@ -150,14 +160,14 @@ def index():
 
 @shift_todos_bp.route("/create", methods=["POST"])
 @login_required
-@role_required("general_manager")
+@role_required("general_manager", "manager")
 def create():
-    if current_account_role() != "general_manager":
+    if not can_create_shift_todos():
         abort(403)
 
     store_number = current_store()
     if not store_number:
-        flash("Your General Manager account does not have a store assigned.", "error")
+        flash("Your account does not have a store assigned.", "error")
         return redirect(url_for("shift_todos.index"))
 
     task_titles = parse_task_titles()
@@ -238,9 +248,9 @@ def create():
 
 @shift_todos_bp.route("/<int:todo_id>/cancel", methods=["POST"])
 @login_required
-@role_required("general_manager")
+@role_required("general_manager", "manager")
 def cancel(todo_id):
-    if current_account_role() != "general_manager":
+    if not can_create_shift_todos():
         abort(403)
 
     todo = ShiftTodo.query.get_or_404(todo_id)

@@ -51,6 +51,13 @@
                     </a>
                     {% endif %}
 
+                    {% if account_role == 'manager' %}
+                    <a href="{{ url_for('shift_todos.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
+                        Shift To-Dos
+                    </a>
+                    {% endif %}
+
                     {% if access_role in ['admin', 'supervisor', 'manager'] %}
                     <a href="{{ url_for('store_dashboard.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('store_dashboard') %}active{% endif %}">

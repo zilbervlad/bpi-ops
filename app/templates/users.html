@@ -1,7 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Users | BPI Ops{% endblock %}
-{% block header %}User Management{% endblock %}
+{% block title %}
+    {% if can_manage_all_users|default(true) %}
+        Users | BPI Ops
+    {% else %}
+        Team Members | BPI Ops
+    {% endif %}
+{% endblock %}
+
+{% block header %}
+    {% if can_manage_all_users|default(true) %}
+        User Management
+    {% else %}
+        Team Member Management
+    {% endif %}
+{% endblock %}
 
 {% macro account_role_label(role) -%}
     {%- if role == 'general_manager' -%}General Manager
@@ -11,17 +24,40 @@
 {%- endmacro %}
 
 {% block content %}
+{% set can_manage_all = can_manage_all_users|default(true) %}
+
 <div class="command-bar panel" style="margin-bottom: 24px;">
     <div class="command-bar-left">
-        <div class="command-eyebrow">USER ADMIN</div>
-        <h2 class="command-title">User Management</h2>
+        <div class="command-eyebrow">
+            {% if can_manage_all %}
+                USER ADMIN
+            {% else %}
+                STORE TEAM
+            {% endif %}
+        </div>
+        <h2 class="command-title">
+            {% if can_manage_all %}
+                User Management
+            {% else %}
+                Team Member Management
+            {% endif %}
+        </h2>
         <p class="command-subtitle">
-            Create users, manage access, control email settings, and keep roles aligned to stores and areas.
+            {% if can_manage_all %}
+                Create users, manage access, control email settings, and keep roles aligned to stores and areas.
+            {% else %}
+                Create and manage TM accounts for your assigned store only. TM accounts include Drivers and CSRs.
+            {% endif %}
         </p>
     </div>
     <div class="command-bar-right">
-        <div class="command-chip">{{ users|length }} Users</div>
-        <div class="command-chip">Admin Only</div>
+        <div class="command-chip">{{ users|length }} {% if can_manage_all %}Users{% else %}TMs{% endif %}</div>
+        {% if can_manage_all %}
+            <div class="command-chip">Admin Only</div>
+        {% else %}
+            <div class="command-chip">Store {{ gm_store }}</div>
+            <div class="command-chip">General Manager</div>
+        {% endif %}
     </div>
 </div>
 
@@ -35,8 +71,20 @@
             aria-expanded="false"
         >
             <div>
-                <h3 style="margin: 0;">Create User</h3>
-                <div class="area-subtitle">Add a new General Manager, Manager, TM, Supervisor, Maintenance user, or Admin</div>
+                <h3 style="margin: 0;">
+                    {% if can_manage_all %}
+                        Create User
+                    {% else %}
+                        Create TM Account
+                    {% endif %}
+                </h3>
+                <div class="area-subtitle">
+                    {% if can_manage_all %}
+                        Add a new General Manager, Manager, TM, Supervisor, Maintenance user, or Admin
+                    {% else %}
+                        Add a new Driver or CSR login for store {{ gm_store }}
+                    {% endif %}
+                </div>
             </div>
             <span id="create-user-chevron" class="summary-pill">Show ▼</span>
         </button>
@@ -44,6 +92,11 @@
         <div id="create-user-body" style="display: none; margin-top: 16px;">
             <form method="POST" class="login-form">
                 <input type="hidden" name="action" value="create">
+
+                {% if not can_manage_all %}
+                    <input type="hidden" name="role" value="tm">
+                    <input type="hidden" name="store_number" value="{{ gm_store }}">
+                {% endif %}
 
                 <div class="admin-task-grid">
                     <div class="form-group">
@@ -63,6 +116,7 @@
                         <input type="password" id="create_password" name="password" required>
                     </div>
 
+                    {% if can_manage_all %}
                     <div class="form-group">
                         <label for="create_role">Role</label>
                         <select id="create_role" name="role" required onchange="toggleCreateFields()">
@@ -74,8 +128,15 @@
                             <option value="admin">Admin</option>
                         </select>
                     </div>
+                    {% else %}
+                    <div class="form-group">
+                        <label>Role</label>
+                        <input type="text" value="TM" disabled>
+                    </div>
+                    {% endif %}
                 </div>
 
+                {% if can_manage_all %}
                 <div class="admin-task-grid">
                     <div class="form-group" id="create-area-field" style="display:none;">
                         <label for="create_area_name">Assigned Area</label>
@@ -87,6 +148,18 @@
                         <input type="text" id="create_store_number" name="store_number" placeholder="Example: 3209">
                     </div>
                 </div>
+                {% else %}
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label>Assigned Store</label>
+                        <input type="text" value="{{ gm_store }}" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Account Type</label>
+                        <input type="text" value="Driver / CSR" disabled>
+                    </div>
+                </div>
+                {% endif %}
 
                 <div class="admin-task-grid">
                     <div class="form-group">
@@ -107,7 +180,13 @@
                     </label>
                 </div>
 
-                <button type="submit" class="btn-primary">Create User</button>
+                <button type="submit" class="btn-primary">
+                    {% if can_manage_all %}
+                        Create User
+                    {% else %}
+                        Create TM Account
+                    {% endif %}
+                </button>
             </form>
         </div>
     </section>
@@ -218,8 +297,20 @@
 <section class="panel premium-panel">
     <div class="panel-head">
         <div>
-            <h3>Existing Users</h3>
-            <div class="area-subtitle">Expand a user card to edit access, email, and account settings</div>
+            <h3>
+                {% if can_manage_all %}
+                    Existing Users
+                {% else %}
+                    Existing Team Members
+                {% endif %}
+            </h3>
+            <div class="area-subtitle">
+                {% if can_manage_all %}
+                    Expand a user card to edit access, email, and account settings
+                {% else %}
+                    Expand a TM card to edit email, reset password, or activate/deactivate access
+                {% endif %}
+            </div>
         </div>
         <span class="summary-pill">{{ users|length }} total</span>
     </div>
@@ -272,6 +363,11 @@
                 <form method="POST" class="login-form" style="margin-top: 16px;">
                     <input type="hidden" name="user_id" value="{{ user.id }}">
 
+                    {% if not can_manage_all %}
+                        <input type="hidden" name="role" value="tm">
+                        <input type="hidden" name="store_number" value="{{ gm_store }}">
+                    {% endif %}
+
                     <div class="user-section-label">Identity</div>
                     <div class="admin-task-grid compact-grid">
                         <div class="form-group compact-group">
@@ -297,6 +393,7 @@
                     <div class="admin-task-grid compact-grid">
                         <div class="form-group compact-group">
                             <label>Role</label>
+                            {% if can_manage_all %}
                             <select name="role"
                                     class="edit-role-select"
                                     data-user-id="{{ user.id }}"
@@ -310,6 +407,9 @@
                                 <option value="maintenance" {% if user.role == 'maintenance' %}selected{% endif %}>Maintenance</option>
                                 <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
                             </select>
+                            {% else %}
+                            <input type="text" value="TM" disabled>
+                            {% endif %}
                         </div>
 
                         <div class="form-group compact-group">
@@ -320,6 +420,7 @@
                         </div>
                     </div>
 
+                    {% if can_manage_all %}
                     <div class="admin-task-grid compact-grid">
                         <div class="form-group compact-group edit-area-field"
                              id="edit-area-field-{{ user.id }}"
@@ -343,6 +444,18 @@
                                    {% if user.role == 'admin' %}disabled{% endif %}>
                         </div>
                     </div>
+                    {% else %}
+                    <div class="admin-task-grid compact-grid">
+                        <div class="form-group compact-group">
+                            <label>Assigned Store</label>
+                            <input type="text" value="{{ gm_store }}" disabled>
+                        </div>
+                        <div class="form-group compact-group">
+                            <label>Account Type</label>
+                            <input type="text" value="Driver / CSR" disabled>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <div class="user-section-label">Email Settings</div>
                     <div class="admin-task-grid compact-grid">
@@ -385,7 +498,11 @@
                                 name="action"
                                 value="update"
                                 class="btn-primary">
-                            Save User
+                            {% if can_manage_all %}
+                                Save User
+                            {% else %}
+                                Save TM
+                            {% endif %}
                         </button>
 
                         {% if user.is_active %}
@@ -418,13 +535,24 @@
                 </form>
             </div>
         </div>
+        {% else %}
+        <div class="summary-pill neutral-pill">
+            {% if can_manage_all %}
+                No users found.
+            {% else %}
+                No TM accounts found for store {{ gm_store }}.
+            {% endif %}
+        </div>
         {% endfor %}
     </div>
 </section>
 
 <script>
 function toggleCreateFields() {
-    const role = document.getElementById("create_role").value;
+    const roleSelect = document.getElementById("create_role");
+    if (!roleSelect) return;
+
+    const role = roleSelect.value;
     const areaField = document.getElementById("create-area-field");
     const storeField = document.getElementById("create-store-field");
     const areaInput = document.getElementById("create_area_name");

@@ -120,6 +120,17 @@
                     {% endif %}
                 </div>
 
+                {% if account_role == 'general_manager' %}
+                <div class="nav-section">
+                    <div class="nav-section-label">Store Leadership</div>
+
+                    <a href="{{ url_for('auth.manage_users') }}"
+                       class="{% if request.endpoint == 'auth.manage_users' %}active{% endif %}">
+                        Team Members
+                    </a>
+                </div>
+                {% endif %}
+
                 {% if access_role in ['admin', 'supervisor'] %}
                 <div class="nav-section">
                     <div class="nav-section-label">Prep</div>
@@ -183,7 +194,7 @@
                     <div>
                         <h2>{% block header %}Dashboard{% endblock %}</h2>
                         <p class="subtitle">
-                            Welcome, {{ session.get('user_name', 'User') }} · {{ session.get('user_role', 'role')|title }}
+                            Welcome, {{ session.get('user_name', 'User') }} · {{ role_label }}
                         </p>
                     </div>
                 </div>

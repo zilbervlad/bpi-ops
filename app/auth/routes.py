@@ -49,6 +49,41 @@ def get_access_role(user):
     return user.role
 
 
+def get_current_account_role():
+    return session.get("account_role", session.get("user_role"))
+
+
+def current_user_is_admin():
+    return get_current_account_role() == "admin"
+
+
+def current_user_is_general_manager():
+    return get_current_account_role() == "general_manager"
+
+
+def current_user_store():
+    return session.get("user_store")
+
+
+def user_is_tm_in_current_gm_store(user):
+    return (
+        current_user_is_general_manager()
+        and user
+        and user.role == "tm"
+        and user.store_number == current_user_store()
+    )
+
+
+def current_user_can_manage_target_user(user):
+    if current_user_is_admin():
+        return True
+
+    if current_user_is_general_manager():
+        return user_is_tm_in_current_gm_store(user)
+
+    return False
+
+
 def login_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
@@ -151,10 +186,139 @@ def logout():
 
 @auth_bp.route("/users", methods=["GET", "POST"])
 @login_required
-@role_required("admin")
+@role_required("admin", "general_manager")
 def manage_users():
+    can_manage_all_users = current_user_is_admin()
+    gm_store = current_user_store()
+
+    if current_user_is_general_manager() and not gm_store:
+        flash("Your General Manager account does not have a store assigned.", "error")
+        return redirect(url_for("dashboard.home"))
+
     if request.method == "POST":
         action = request.form.get("action", "").strip()
+
+        # =========================================================
+        # GENERAL MANAGER USER MANAGEMENT
+        # GMs may only create/edit/reactivate/deactivate TM accounts
+        # for their own assigned store.
+        # =========================================================
+        if current_user_is_general_manager():
+            if action == "create":
+                name = request.form.get("name", "").strip()
+                username = request.form.get("username", "").strip()
+                password = request.form.get("password", "").strip()
+                email = request.form.get("email", "").strip() or None
+                notification_email = request.form.get("notification_email", "").strip() or None
+                email_enabled = request.form.get("email_enabled") == "on"
+
+                if not name or not username or not password:
+                    flash("Please complete all required fields.", "error")
+                    return redirect(url_for("auth.manage_users"))
+
+                existing_user = User.query.filter_by(username=username).first()
+                if existing_user:
+                    flash("That username already exists.", "error")
+                    return redirect(url_for("auth.manage_users"))
+
+                user = User(
+                    name=name,
+                    username=username,
+                    role="tm",
+                    area_name=None,
+                    store_number=gm_store,
+                    email=email,
+                    notification_email=notification_email,
+                    email_enabled=email_enabled,
+                    is_active=True,
+                )
+                user.set_password(password)
+
+                db.session.add(user)
+                db.session.commit()
+
+                flash(f"TM account created for store {gm_store}.", "success")
+                return redirect(url_for("auth.manage_users"))
+
+            if action == "update":
+                user_id = request.form.get("user_id", "").strip()
+                user = User.query.get(user_id)
+
+                if not user_is_tm_in_current_gm_store(user):
+                    flash("You can only update TM accounts assigned to your store.", "error")
+                    return redirect(url_for("auth.manage_users"))
+
+                name = request.form.get("name", "").strip()
+                username = request.form.get("username", "").strip()
+                email = request.form.get("email", "").strip() or None
+                notification_email = request.form.get("notification_email", "").strip() or None
+                email_enabled = request.form.get("email_enabled") == "on"
+                new_password = request.form.get("password", "").strip()
+
+                if not name or not username:
+                    flash("Please complete all required fields.", "error")
+                    return redirect(url_for("auth.manage_users"))
+
+                existing_user = User.query.filter(
+                    User.username == username,
+                    User.id != user.id
+                ).first()
+                if existing_user:
+                    flash("That username already exists.", "error")
+                    return redirect(url_for("auth.manage_users"))
+
+                user.name = name
+                user.username = username
+                user.role = "tm"
+                user.area_name = None
+                user.store_number = gm_store
+                user.email = email
+                user.notification_email = notification_email
+                user.email_enabled = email_enabled
+
+                if new_password:
+                    user.set_password(new_password)
+
+                db.session.commit()
+
+                flash("TM account updated successfully.", "success")
+                return redirect(url_for("auth.manage_users"))
+
+            if action == "deactivate":
+                user_id = request.form.get("user_id", "").strip()
+                user = User.query.get(user_id)
+
+                if not user_is_tm_in_current_gm_store(user):
+                    flash("You can only deactivate TM accounts assigned to your store.", "error")
+                    return redirect(url_for("auth.manage_users"))
+
+                user.is_active = False
+                db.session.commit()
+
+                flash("TM account deactivated.", "success")
+                return redirect(url_for("auth.manage_users"))
+
+            if action == "activate":
+                user_id = request.form.get("user_id", "").strip()
+                user = User.query.get(user_id)
+
+                if not user_is_tm_in_current_gm_store(user):
+                    flash("You can only activate TM accounts assigned to your store.", "error")
+                    return redirect(url_for("auth.manage_users"))
+
+                user.is_active = True
+                db.session.commit()
+
+                flash("TM account activated.", "success")
+                return redirect(url_for("auth.manage_users"))
+
+            flash("Invalid action.", "error")
+            return redirect(url_for("auth.manage_users"))
+
+        # =========================================================
+        # ADMIN USER MANAGEMENT
+        # Admins can manage all account types.
+        # =========================================================
 
         # -------------------------
         # CREATE USER
@@ -309,15 +473,32 @@ def manage_users():
             flash("User activated.", "success")
             return redirect(url_for("auth.manage_users"))
 
-    users = User.query.order_by(User.name.asc()).all()
-    return render_template("users.html", users=users, role_labels=ROLE_LABELS)
+    if current_user_is_general_manager():
+        users = User.query.filter_by(
+            role="tm",
+            store_number=gm_store
+        ).order_by(User.name.asc()).all()
+    else:
+        users = User.query.order_by(User.name.asc()).all()
+
+    return render_template(
+        "users.html",
+        users=users,
+        role_labels=ROLE_LABELS,
+        can_manage_all_users=can_manage_all_users,
+        gm_store=gm_store,
+    )
 
 
 @auth_bp.route("/users/<int:user_id>/send-test-email", methods=["POST"])
 @login_required
-@role_required("admin")
+@role_required("admin", "general_manager")
 def send_test_email_to_user(user_id):
     user = User.query.get_or_404(user_id)
+
+    if not current_user_can_manage_target_user(user):
+        flash("You do not have permission to email that user.", "error")
+        return redirect(url_for("auth.manage_users"))
 
     to_email = user.get_notification_email()
     if not to_email:

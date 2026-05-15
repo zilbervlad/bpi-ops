@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if mode == "gm" %}Shift To-Dos | BPI Ops{% else %}My To-Dos | BPI Ops{% endif %}
+{% endblock %}
+
+{% block header %}
+    {% if mode == "gm" %}Shift To-Dos{% else %}My To-Dos{% endif %}
+{% endblock %}
+
+{% block content %}
+<style>
+    .todo-assignee-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .todo-assignee-card { border: 1px solid rgba(120, 146, 190, 0.16); background: rgba(8, 16, 31, 0.72); border-radius: 12px; padding: 10px 12px; }
+    .todo-list { display: grid; gap: 12px; }
+    .todo-card { border: 1px solid rgba(120, 146, 190, 0.12); background: rgba(8, 16, 31, 0.82); border-radius: 16px; padding: 16px; }
+    .todo-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .todo-title { margin: 0; color: #fff; font-size: 16px; font-weight: 800; }
+    .todo-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .todo-description { color: var(--text-soft); font-size: 13px; line-height: 1.45; margin-top: 10px; white-space: pre-wrap; }
+    .todo-assignment-list { display: grid; gap: 8px; margin-top: 12px; }
+    .todo-assignment-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; border-top: 1px solid rgba(120, 146, 190, 0.10); color: var(--text-soft); font-size: 13px; }
+    .todo-complete-form { display: grid; gap: 10px; margin-top: 12px; }
+    @media (max-width: 800px) { .todo-assignee-grid { grid-template-columns: 1fr; } .todo-card-head { flex-direction: column; } }
+</style>
+
+{% if mode == "gm" %}
+<div class="command-bar panel" style="margin-bottom: 24px;">
+    <div class="command-bar-left">
+        <div class="command-eyebrow">SHIFT EXECUTION</div>
+        <h2 class="command-title">Shift To-Dos</h2>
+        <p class="command-subtitle">Create quick shift tasks for store {{ store_number }} and assign them to 1 or 2 TMs.</p>
+    </div>
+    <div class="command-bar-right">
+        <div class="command-chip">Store {{ store_number }}</div>
+        <div class="command-chip">{{ open_todos|length }} Open</div>
+        <div class="command-chip">{{ completed_todos|length }} Complete</div>
+    </div>
+</div>
+
+<section class="panel premium-panel" style="margin-bottom: 24px;">
+    <button type="button" id="create-todo-toggle" class="panel-head" style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;" aria-expanded="false">
+        <div>
+            <h3 style="margin: 0;">Create Shift To-Do</h3>
+            <div class="area-subtitle">Assign a task to one or two TMs for today’s shift.</div>
+        </div>
+        <span id="create-todo-chevron" class="summary-pill">Show ▼</span>
+    </button>
+
+    <div id="create-todo-body" style="display: none; margin-top: 16px;">
+        {% if tms %}
+        <form method="POST" action="{{ url_for('shift_todos.create') }}" class="login-form">
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="title">To-Do Title</label>
+                    <input type="text" id="title" name="title" placeholder="Example: Clean walk-in shelves" required>
+                </div>
+                <div class="form-group">
+                    <label for="shift_type">Shift</label>
+                    <select id="shift_type" name="shift_type">
+                        <option value="dayshift">Dayshift</option>
+                        <option value="rush">Rush</option>
+                        <option value="closing">Closing</option>
+                        <option value="general">General</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-task-grid">
+                <div class="form-group">
+                    <label for="due_date">Due Date</label>
+                    <input type="date" id="due_date" name="due_date" value="{{ today.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="form-group">
+                    <label for="due_time">Due Time</label>
+                    <input type="time" id="due_time" name="due_time">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="priority">Priority</label>
+                <select id="priority" name="priority">
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Notes</label>
+                <textarea id="description" name="description" rows="3" placeholder="Optional details or instructions"></textarea>
+            </div>
+
+            <div class="user-section-label">Assign To</div>
+            <div class="todo-assignee-grid">
+                {% for tm in tms %}
+                <label class="todo-assignee-card checkbox-inline">
+                    <input type="checkbox" name="assignee_ids" value="{{ tm.id }}" class="assignee-checkbox">
+                    <span>{{ tm.name }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="area-subtitle" style="margin-top: 10px;">Select up to 2 TMs.</div>
+            <button type="submit" class="btn-primary" style="margin-top: 12px;">Create To-Do</button>
+        </form>
+        {% else %}
+        <div class="summary-pill neutral-pill">No active TM accounts found for store {{ store_number }} yet.</div>
+        {% endif %}
+    </div>
+</section>
+
+<div class="content-grid">
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <div><h3>Open Shift To-Dos</h3><div class="area-subtitle">Tasks still waiting on at least one assigned TM.</div></div>
+            <span class="summary-pill">{{ open_todos|length }} open</span>
+        </div>
+        <div class="todo-list">
+            {% for todo in open_todos %}
+            <div class="todo-card">
+                <div class="todo-card-head">
+                    <div>
+                        <h4 class="todo-title">{{ todo.title }}</h4>
+                        <div class="todo-meta">
+                            <span class="summary-pill">{{ todo.shift_type|replace('_', ' ')|title }}</span>
+                            <span class="summary-pill">{{ todo.priority|title }}</span>
+                            <span class="summary-pill">Due {{ todo.due_date.strftime('%m/%d') }}{% if todo.due_time %} at {{ todo.due_time }}{% endif %}</span>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ url_for('shift_todos.cancel', todo_id=todo.id) }}">
+                        <button type="submit" class="btn-danger" onclick="return confirm('Cancel this Shift To-Do?');">Cancel</button>
+                    </form>
+                </div>
+                {% if todo.description %}<div class="todo-description">{{ todo.description }}</div>{% endif %}
+                <div class="todo-assignment-list">
+                    {% for assignment in todo.assignments %}
+                    <div class="todo-assignment-row">
+                        <span>{{ assignment.assigned_user.name }}</span>
+                        {% if assignment.is_completed %}<span class="summary-pill success-pill">Completed</span>{% else %}<span class="summary-pill warning-pill">Open</span>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="summary-pill neutral-pill">No open shift to-dos right now.</div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <div><h3>Completed</h3><div class="area-subtitle">Tasks fully completed by assigned TMs.</div></div>
+            <span class="summary-pill">{{ completed_todos|length }} done</span>
+        </div>
+        <div class="todo-list">
+            {% for todo in completed_todos[:10] %}
+            <div class="todo-card">
+                <div class="todo-card-head">
+                    <div>
+                        <h4 class="todo-title">{{ todo.title }}</h4>
+                        <div class="todo-meta"><span class="summary-pill success-pill">Complete</span><span class="summary-pill">{{ todo.shift_type|replace('_', ' ')|title }}</span></div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="summary-pill neutral-pill">No completed shift to-dos yet.</div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const toggle = document.getElementById("create-todo-toggle");
+    const body = document.getElementById("create-todo-body");
+    const chevron = document.getElementById("create-todo-chevron");
+    if (toggle && body && chevron) {
+        toggle.addEventListener("click", function () {
+            const isHidden = body.style.display === "none";
+            body.style.display = isHidden ? "block" : "none";
+            toggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
+            chevron.textContent = isHidden ? "Hide ▲" : "Show ▼";
+        });
+    }
+    document.querySelectorAll(".assignee-checkbox").forEach(box => {
+        box.addEventListener("change", function () {
+            const checked = document.querySelectorAll(".assignee-checkbox:checked");
+            if (checked.length > 2) {
+                this.checked = false;
+                alert("You can assign a Shift To-Do to a maximum of 2 TMs.");
+            }
+        });
+    });
+});
+</script>
+{% endif %}
+
+{% if mode == "tm" %}
+<div class="command-bar panel" style="margin-bottom: 24px;">
+    <div class="command-bar-left">
+        <div class="command-eyebrow">MY SHIFT</div>
+        <h2 class="command-title">My To-Dos</h2>
+        <p class="command-subtitle">These are the shift tasks assigned to you by your General Manager.</p>
+    </div>
+    <div class="command-bar-right">
+        <div class="command-chip">Store {{ store_number }}</div>
+        <div class="command-chip">{{ open_assignments|length }} Open</div>
+    </div>
+</div>
+
+<div class="content-grid">
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <div><h3>Open To-Dos</h3><div class="area-subtitle">Mark complete when finished.</div></div>
+            <span class="summary-pill">{{ open_assignments|length }} open</span>
+        </div>
+        <div class="todo-list">
+            {% for assignment in open_assignments %}
+            {% set todo = assignment.todo %}
+            <div class="todo-card">
+                <div class="todo-card-head">
+                    <div>
+                        <h4 class="todo-title">{{ todo.title }}</h4>
+                        <div class="todo-meta">
+                            <span class="summary-pill">{{ todo.shift_type|replace('_', ' ')|title }}</span>
+                            <span class="summary-pill">{{ todo.priority|title }}</span>
+                            <span class="summary-pill">Due {{ todo.due_date.strftime('%m/%d') }}{% if todo.due_time %} at {{ todo.due_time }}{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+                {% if todo.description %}<div class="todo-description">{{ todo.description }}</div>{% endif %}
+                <form method="POST" action="{{ url_for('shift_todos.complete_assignment', assignment_id=assignment.id) }}" class="todo-complete-form">
+                    <div class="form-group">
+                        <label>Completion Notes</label>
+                        <textarea name="completion_notes" rows="2" placeholder="Optional note"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Mark Complete</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="summary-pill neutral-pill">No open to-dos right now.</div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <div><h3>Completed</h3><div class="area-subtitle">Recently completed tasks.</div></div>
+            <span class="summary-pill">{{ completed_assignments|length }} done</span>
+        </div>
+        <div class="todo-list">
+            {% for assignment in completed_assignments[:10] %}
+            {% set todo = assignment.todo %}
+            <div class="todo-card">
+                <div class="todo-card-head">
+                    <div>
+                        <h4 class="todo-title">{{ todo.title }}</h4>
+                        <div class="todo-meta">
+                            <span class="summary-pill success-pill">Complete</span>
+                            {% if assignment.completed_at %}<span class="summary-pill">{{ assignment.completed_at.strftime('%m/%d %I:%M %p') }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% if assignment.completion_notes %}<div class="todo-description">{{ assignment.completion_notes }}</div>{% endif %}
+            </div>
+            {% else %}
+            <div class="summary-pill neutral-pill">Nothing completed yet.</div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endif %}
+{% endblock %}

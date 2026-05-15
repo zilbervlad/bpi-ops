@@ -35,6 +35,7 @@ def create_app():
     from app.verification.routes import verification_bp
     from app.store_dashboard import store_dashboard_bp
     from app.prep.routes import prep_bp
+    from app.shift_todos.routes import shift_todos_bp
 
     # Register blueprints
     app.register_blueprint(auth_bp)
@@ -50,16 +51,21 @@ def create_app():
     app.register_blueprint(verification_bp)
     app.register_blueprint(store_dashboard_bp)
     app.register_blueprint(prep_bp)
+    app.register_blueprint(shift_todos_bp)
 
     @app.route("/create-db")
     def create_db():
         from app import models
+        from app.shift_todos import models as shift_todo_models
+
         db.create_all()
         return "Database tables created"
 
     # Seed data + ensure tables exist
     with app.app_context():
         from app import models
+        from app.shift_todos import models as shift_todo_models
+
         db.create_all()
         seed_admin()
         seed_stores()

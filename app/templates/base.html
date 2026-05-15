@@ -14,6 +14,7 @@
     {% set access_role = session.get('user_role') %}
     {% set account_role = session.get('account_role', access_role) %}
     {% set role_label = session.get('role_label', account_role|replace('_', ' ')|title) %}
+
     {% if session.get('user_id') %}
     <div class="layout">
         <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay"></div>
@@ -42,6 +43,13 @@
                        class="{% if request.endpoint == 'dashboard.home' %}active{% endif %}">
                         Dashboard
                     </a>
+
+                    {% if account_role == 'tm' %}
+                    <a href="{{ url_for('shift_todos.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
+                        My To-Dos
+                    </a>
+                    {% endif %}
 
                     {% if access_role in ['admin', 'supervisor', 'manager'] %}
                     <a href="{{ url_for('store_dashboard.index') }}"
@@ -127,6 +135,11 @@
                     <a href="{{ url_for('auth.manage_users') }}"
                        class="{% if request.endpoint == 'auth.manage_users' %}active{% endif %}">
                         Team Members
+                    </a>
+
+                    <a href="{{ url_for('shift_todos.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
+                        Shift To-Dos
                     </a>
                 </div>
                 {% endif %}

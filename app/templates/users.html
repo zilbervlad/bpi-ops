@@ -281,6 +281,42 @@
         background: rgba(255, 255, 255, 0.08);
     }
 
+    .user-search-bar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 16px;
+        margin-bottom: 4px;
+        flex-wrap: wrap;
+    }
+
+    .user-search-input {
+        flex: 1;
+        min-width: 240px;
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        background: rgba(255, 255, 255, 0.06);
+        color: inherit;
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 14px;
+        outline: none;
+    }
+
+    .user-search-input:focus {
+        border-color: rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.09);
+    }
+
+    .user-search-empty {
+        display: none;
+        margin-top: 14px;
+        padding: 14px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        opacity: 0.78;
+        font-size: 13px;
+    }
+
     @media (max-width: 900px) {
         .user-card-summary {
             align-items: flex-start;
@@ -315,9 +351,35 @@
         <span class="summary-pill">{{ users|length }} total</span>
     </div>
 
+    <div class="user-search-bar">
+        <input
+            type="search"
+            id="userSearchInput"
+            class="user-search-input"
+            placeholder="{% if can_manage_all %}Search users by name, username, role, store, area, or email...{% else %}Search team members by name, username, or email...{% endif %}"
+            autocomplete="off"
+        >
+
+        <button type="button" id="userSearchClear" class="btn-primary" style="display:none;">
+            Clear
+        </button>
+
+        <span id="userSearchCount" class="summary-pill">{{ users|length }} showing</span>
+    </div>
+
+    <div id="userSearchEmpty" class="user-search-empty">
+        {% if can_manage_all %}
+            No matching users found.
+        {% else %}
+            No matching team members found.
+        {% endif %}
+    </div>
+
     <div class="user-card-list" style="margin-top: 16px;">
         {% for user in users %}
-        <div class="user-card">
+        <div class="user-card"
+             data-user-card
+             data-search-text="{{ (user.name ~ ' ' ~ user.username ~ ' ' ~ user.role ~ ' ' ~ account_role_label(user.role) ~ ' ' ~ (user.area_name or '') ~ ' ' ~ (user.store_number or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.notification_email or '') ~ ' ' ~ ('active' if user.is_active else 'inactive'))|lower }}">
             <button
                 type="button"
                 class="user-card-summary"
@@ -669,6 +731,60 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function bindUserSearch() {
+        const searchInput = document.getElementById("userSearchInput");
+        const clearButton = document.getElementById("userSearchClear");
+        const countBadge = document.getElementById("userSearchCount");
+        const emptyMessage = document.getElementById("userSearchEmpty");
+        const userCards = Array.from(document.querySelectorAll("[data-user-card]"));
+
+        if (!searchInput || !clearButton || !countBadge || !emptyMessage) return;
+
+        function closeAllEditors() {
+            document.querySelectorAll("[data-user-body]").forEach(body => {
+                body.style.display = "none";
+            });
+
+            document.querySelectorAll("[data-user-chevron]").forEach(chevron => {
+                chevron.textContent = "Edit ▼";
+            });
+
+            document.querySelectorAll("[data-user-toggle]").forEach(btn => {
+                btn.setAttribute("aria-expanded", "false");
+            });
+        }
+
+        function runSearch() {
+            const term = searchInput.value.trim().toLowerCase();
+            let visibleCount = 0;
+
+            userCards.forEach(card => {
+                const haystack = card.getAttribute("data-search-text") || "";
+                const isMatch = !term || haystack.includes(term);
+
+                card.style.display = isMatch ? "" : "none";
+
+                if (isMatch) {
+                    visibleCount += 1;
+                }
+            });
+
+            clearButton.style.display = term ? "inline-flex" : "none";
+            countBadge.textContent = `${visibleCount} showing`;
+            emptyMessage.style.display = visibleCount === 0 ? "block" : "none";
+
+            closeAllEditors();
+        }
+
+        searchInput.addEventListener("input", runSearch);
+
+        clearButton.addEventListener("click", function () {
+            searchInput.value = "";
+            runSearch();
+            searchInput.focus();
+        });
+    }
+
     toggleCreateFields();
 
     document.querySelectorAll(".edit-role-select").forEach(select => {
@@ -677,6 +793,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     bindToggle("create-user-toggle", "create-user-body", "create-user-chevron");
     bindUserEditors();
+    bindUserSearch();
 });
 </script>
 

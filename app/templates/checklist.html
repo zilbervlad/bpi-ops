@@ -261,6 +261,30 @@
     </div>
 </div>
 
+<div id="one-way-proof-modal" class="burst-warning-modal" aria-hidden="true">
+    <div class="burst-warning-backdrop"></div>
+
+    <div class="burst-warning-card" role="dialog" aria-modal="true" aria-labelledby="one-way-proof-title">
+        <div class="burst-warning-icon">🍞</div>
+
+        <h3 id="one-way-proof-title">1-Way Proofing Check</h3>
+
+        <p>
+            Dough properly labeled in the walk-in?
+        </p>
+
+        <div class="burst-warning-actions">
+            <button type="button" id="one-way-proof-no" class="burst-warning-secondary-button">
+                No
+            </button>
+
+            <button type="button" id="one-way-proof-yes" class="btn-primary burst-warning-button">
+                Yes
+            </button>
+        </div>
+    </div>
+</div>
+
 <style>
 .burst-warning-modal {
     position: fixed;
@@ -325,6 +349,27 @@
     width: 100%;
     justify-content: center;
 }
+
+.burst-warning-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.burst-warning-secondary-button {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 11px 14px;
+    background: #e5e7eb;
+    color: #111827;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.burst-warning-secondary-button:hover {
+    background: #d1d5db;
+}
 </style>
 
 <script>
@@ -341,6 +386,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const burstWarningModal = document.getElementById("burst-warning-modal");
     const burstWarningMessage = document.getElementById("burst-warning-message");
     const burstWarningContinue = document.getElementById("burst-warning-continue");
+    const oneWayProofModal = document.getElementById("one-way-proof-modal");
+    const oneWayProofYes = document.getElementById("one-way-proof-yes");
+    const oneWayProofNo = document.getElementById("one-way-proof-no");
+
+    let oneWayProofResolve = null;
 
     const storeNumber = "{{ store_number }}";
     const selectedDate = "{{ selected_date }}";
@@ -384,13 +434,68 @@ document.addEventListener("DOMContentLoaded", function () {
         burstWarningModal.setAttribute("aria-hidden", "true");
     }
 
+    function isOneWayProofingItem(checkbox) {
+        const card = checkbox.closest(".checklist-item-card");
+        const taskTextEl = card ? card.querySelector(".checklist-task-text") : null;
+        const taskText = taskTextEl ? taskTextEl.textContent.toLowerCase() : "";
+
+        const hasOneWayText =
+            taskText.includes("1-way") ||
+            taskText.includes("1 way") ||
+            taskText.includes("one way");
+
+        return hasOneWayText && taskText.includes("proof");
+    }
+
+    function showOneWayProofReminder() {
+        if (!oneWayProofModal) {
+            return Promise.resolve(true);
+        }
+
+        oneWayProofModal.classList.add("is-open");
+        oneWayProofModal.setAttribute("aria-hidden", "false");
+
+        if (oneWayProofYes) {
+            oneWayProofYes.focus();
+        }
+
+        return new Promise(resolve => {
+            oneWayProofResolve = resolve;
+        });
+    }
+
+    function closeOneWayProofReminder(answer) {
+        if (!oneWayProofModal) return;
+
+        oneWayProofModal.classList.remove("is-open");
+        oneWayProofModal.setAttribute("aria-hidden", "true");
+
+        if (oneWayProofResolve) {
+            oneWayProofResolve(answer);
+            oneWayProofResolve = null;
+        }
+    }
+
     if (burstWarningContinue) {
         burstWarningContinue.addEventListener("click", closeBurstWarning);
+    }
+
+    if (oneWayProofYes) {
+        oneWayProofYes.addEventListener("click", function () {
+            closeOneWayProofReminder(true);
+        });
+    }
+
+    if (oneWayProofNo) {
+        oneWayProofNo.addEventListener("click", function () {
+            closeOneWayProofReminder(false);
+        });
     }
 
     document.addEventListener("keydown", function (event) {
         if (event.key === "Escape") {
             closeBurstWarning();
+            closeOneWayProofReminder(false);
         }
     });
 
@@ -543,7 +648,17 @@ document.addEventListener("DOMContentLoaded", function () {
     checkboxes.forEach(box => {
         refreshCardState(box.dataset.itemId);
 
-        box.addEventListener("change", function () {
+        box.addEventListener("change", async function () {
+            if (this.checked && isOneWayProofingItem(this)) {
+                const confirmed = await showOneWayProofReminder();
+
+                if (!confirmed) {
+                    this.checked = false;
+                    refreshCardState(this.dataset.itemId);
+                    return;
+                }
+            }
+
             refreshCardState(this.dataset.itemId);
             autosaveItem(this.dataset.itemId);
         });

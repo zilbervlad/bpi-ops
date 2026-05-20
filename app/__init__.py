@@ -36,6 +36,7 @@ def create_app():
     from app.store_dashboard import store_dashboard_bp
     from app.prep.routes import prep_bp
     from app.shift_todos.routes import shift_todos_bp
+    from app.forms.routes import forms_bp
 
     # Register blueprints
     app.register_blueprint(auth_bp)
@@ -52,11 +53,13 @@ def create_app():
     app.register_blueprint(store_dashboard_bp)
     app.register_blueprint(prep_bp)
     app.register_blueprint(shift_todos_bp)
+    app.register_blueprint(forms_bp)
 
     @app.route("/create-db")
     def create_db():
         from app import models
         from app.shift_todos import models as shift_todo_models
+        from app.forms import routes as forms_routes
 
         db.create_all()
         return "Database tables created"
@@ -65,12 +68,14 @@ def create_app():
     with app.app_context():
         from app import models
         from app.shift_todos import models as shift_todo_models
+        from app.forms import routes as forms_routes
 
         db.create_all()
         seed_admin()
         seed_stores()
         seed_checklist_template()
         seed_svr_template()
+        seed_morning_inspection_form()
 
     return app
 
@@ -274,6 +279,65 @@ def seed_svr_template():
                 field_label=field_label,
                 field_type=field_type,
                 sort_order=sort_order,
+                is_active=True,
+            )
+        )
+
+    db.session.commit()
+
+def seed_morning_inspection_form():
+    from app.models import FormTemplate, FormQuestion
+
+    existing = FormTemplate.query.filter_by(slug="morning-inspection").first()
+    if existing:
+        return
+
+    template = FormTemplate(
+        title="Morning Inspection",
+        slug="morning-inspection",
+        description="Opening inspection used to grade the close, capture missed items, and later feed Manager's Walk follow-up.",
+        is_active=True,
+        submit_roles_json='["admin", "supervisor", "manager", "general_manager"]',
+        view_roles_json='["admin", "supervisor", "manager", "general_manager"]',
+        created_by_user_id=None,
+    )
+    db.session.add(template)
+    db.session.flush()
+
+    questions = [
+        ("Who closed?", "short_text", True, 0, False, None),
+        ("All equipment turned off?", "yes_no", True, 3, True, None),
+        ("Carryout area clean?", "yes_no", True, 2, False, None),
+        ("Phone area clean?", "yes_no", True, 1, False, None),
+        ("Laundry started?", "yes_no", True, 1, False, None),
+        ("Box counter filled?", "yes_no", True, 1, False, None),
+        ("Heat Rack clean?", "yes_no", True, 2, False, None),
+        ("Cut table clean w/dishes?", "yes_no", True, 2, False, None),
+        ("Oven & catch trays clean?", "yes_no", True, 3, True, None),
+        ("Driver area clean?", "yes_no", True, 2, False, None),
+        ("Hot bags clean & neat?", "yes_no", True, 2, False, None),
+        ("Hand sink(s) clean?", "yes_no", True, 3, True, None),
+        ("Makeline clean & put together?", "yes_no", True, 3, True, None),
+        ("Slap table clean w/dishes?", "yes_no", True, 2, False, None),
+        ("Office neat & mopped?", "yes_no", True, 1, False, None),
+        ("Paperwork properly filed?", "yes_no", True, 1, False, None),
+        ("Back area & sinks clean?", "yes_no", True, 2, False, None),
+        ("Floors swept & mopped?", "yes_no", True, 2, False, None),
+        ("Walk-in clean, including swept?", "yes_no", True, 3, True, None),
+        ("Food properly covered?", "yes_no", True, 3, True, None),
+    ]
+
+    for sort_order, (text, field_type, required, weight, critical, options_json) in enumerate(questions, start=1):
+        db.session.add(
+            FormQuestion(
+                form_template_id=template.id,
+                question_text=text,
+                field_type=field_type,
+                is_required=required,
+                sort_order=sort_order,
+                weight=weight,
+                is_critical=critical,
+                options_json=options_json,
                 is_active=True,
             )
         )

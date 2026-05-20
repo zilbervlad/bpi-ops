@@ -391,6 +391,147 @@ class VerificationReportValue(db.Model):
     template_field = db.relationship("VerificationTemplateField")
 
 
+
+
+# =========================
+# FORMS MODULE
+# =========================
+
+class FormTemplate(db.Model):
+    __tablename__ = "form_templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(db.String(160), nullable=False)
+    slug = db.Column(db.String(180), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+
+    # JSON arrays stored as text. Example: ["admin", "supervisor", "manager"]
+    submit_roles_json = db.Column(db.Text, nullable=True)
+    view_roles_json = db.Column(db.Text, nullable=True)
+
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    created_by = db.relationship("User")
+
+    questions = db.relationship(
+        "FormQuestion",
+        backref="template",
+        lazy=True,
+        cascade="all, delete-orphan",
+        order_by="FormQuestion.sort_order"
+    )
+
+    submissions = db.relationship(
+        "FormSubmission",
+        backref="template",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+
+
+class FormQuestion(db.Model):
+    __tablename__ = "form_questions"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    form_template_id = db.Column(
+        db.Integer,
+        db.ForeignKey("form_templates.id"),
+        nullable=False
+    )
+
+    question_text = db.Column(db.String(255), nullable=False)
+
+    # Supported: short_text, long_text, yes_no, number, date, dropdown
+    field_type = db.Column(db.String(50), nullable=False, default="short_text")
+
+    is_required = db.Column(db.Boolean, nullable=False, default=False)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+
+    # For dropdown fields, JSON array as text. Example: ["Open", "Closed"]
+    options_json = db.Column(db.Text, nullable=True)
+
+    # For scored forms. Yes/No questions with weight > 0 count toward score.
+    weight = db.Column(db.Integer, nullable=False, default=0)
+    is_critical = db.Column(db.Boolean, nullable=False, default=False)
+
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+
+
+class FormSubmission(db.Model):
+    __tablename__ = "form_submissions"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    form_template_id = db.Column(
+        db.Integer,
+        db.ForeignKey("form_templates.id"),
+        nullable=False
+    )
+
+    store_number = db.Column(db.String(10), nullable=False)
+    submitted_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Scoring fields are generic so any Yes/No form can become a scored form later.
+    score_earned = db.Column(db.Integer, nullable=False, default=0)
+    score_possible = db.Column(db.Integer, nullable=False, default=0)
+    score_percent = db.Column(db.Float, nullable=False, default=0.0)
+    grade = db.Column(db.String(10), nullable=True)
+
+    failed_count = db.Column(db.Integer, nullable=False, default=0)
+    critical_failed_count = db.Column(db.Integer, nullable=False, default=0)
+
+    submitted_by = db.relationship("User")
+
+    answers = db.relationship(
+        "FormAnswer",
+        backref="submission",
+        lazy=True,
+        cascade="all, delete-orphan",
+        order_by="FormAnswer.sort_order"
+    )
+
+
+class FormAnswer(db.Model):
+    __tablename__ = "form_answers"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    form_submission_id = db.Column(
+        db.Integer,
+        db.ForeignKey("form_submissions.id"),
+        nullable=False
+    )
+
+    form_question_id = db.Column(
+        db.Integer,
+        db.ForeignKey("form_questions.id"),
+        nullable=False
+    )
+
+    question_text = db.Column(db.String(255), nullable=False)
+    field_type = db.Column(db.String(50), nullable=False)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+
+    answer_text = db.Column(db.Text, nullable=True)
+
+    weight = db.Column(db.Integer, nullable=False, default=0)
+    is_critical = db.Column(db.Boolean, nullable=False, default=False)
+
+    # Useful for dashboards later.
+    is_failure = db.Column(db.Boolean, nullable=False, default=False)
+    is_critical_failure = db.Column(db.Boolean, nullable=False, default=False)
+
+    question = db.relationship("FormQuestion")
+
+
 # =========================
 # PREP MODULE
 # =========================

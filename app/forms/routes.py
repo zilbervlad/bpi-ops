@@ -5,7 +5,8 @@ from datetime import datetime
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from app.extensions import db
-from app.models import FormAnswer, FormQuestion, FormSubmission, FormTemplate, Store, today_et
+from app.services.email_service import send_email
+from app.models import FormAnswer, FormQuestion, FormSubmission, FormTemplate, Store, User, today_et
 
 
 forms_bp = Blueprint("forms", __name__, url_prefix="/forms")
@@ -142,6 +143,108 @@ def grade_from_score(percent, critical_failed_count=0):
     if percent >= 70:
         return "C"
     return "F"
+
+
+def send_form_submission_email(submission: FormSubmission):
+    store = Store.query.filter_by(store_number=submission.store_number).first()
+
+    store_leaders = User.query.filter(
+        User.store_number == submission.store_number,
+        User.role.in_(["general_manager", "manager"]),
+        User.is_active == True
+    ).all()
+
+    store_leader_emails = []
+    for user in store_leaders:
+        email = user.get_notification_email()
+        if email:
+            store_leader_emails.append(email)
+
+    supervisor_email = None
+    if store:
+        supervisor = User.query.filter_by(
+            area_name=store.area_name,
+            role="supervisor",
+            is_active=True
+        ).first()
+        supervisor_email = supervisor.get_notification_email() if supervisor else None
+
+    admin_users = User.query.filter_by(role="admin", is_active=True).all()
+    admin_emails = []
+    for admin in admin_users:
+        email = admin.get_notification_email()
+        if email:
+            admin_emails.append(email)
+
+    all_recipients = []
+    all_recipients.extend(store_leader_emails)
+
+    if supervisor_email:
+        all_recipients.append(supervisor_email)
+
+    all_recipients.extend(admin_emails)
+
+    all_recipients = [email for email in dict.fromkeys(all_recipients) if email]
+
+    if not all_recipients:
+        raise ValueError(f"No notification emails configured for store {submission.store_number}.")
+
+    answers = (
+        FormAnswer.query
+        .filter_by(form_submission_id=submission.id)
+        .order_by(FormAnswer.sort_order.asc(), FormAnswer.id.asc())
+        .all()
+    )
+
+    failed_answers = [answer for answer in answers if answer.is_failure]
+
+    submitted_by = submission.submitted_by.name if submission.submitted_by else "Unknown"
+
+    body_lines = [
+        f"{submission.template.title}",
+        f"Store: {submission.store_number}",
+        f"Submitted By: {submitted_by}",
+        f"Submitted At: {submission.submitted_at.strftime('%B %d, %Y %I:%M %p')}",
+    ]
+
+    if submission.score_possible and submission.score_possible > 0:
+        body_lines.extend([
+            "",
+            f"Score: {submission.score_percent}% - {submission.grade}",
+            f"Failed Items: {submission.failed_count}",
+            f"Critical Failures: {submission.critical_failed_count}",
+        ])
+
+    if failed_answers:
+        body_lines.append("")
+        body_lines.append("Failed Items:")
+        for answer in failed_answers:
+            critical_text = " [CRITICAL]" if answer.is_critical_failure else ""
+            body_lines.append(f"- {answer.question_text}: {answer.answer_text}{critical_text}")
+
+    body_lines.append("")
+    body_lines.append("All Answers:")
+    for answer in answers:
+        body_lines.append(f"- {answer.question_text}: {answer.answer_text or 'Not provided'}")
+
+    body_lines.append("")
+    body_lines.append("- BPI Ops")
+
+    subject = f"Store {submission.store_number} {submission.template.title}"
+    if submission.score_possible and submission.score_possible > 0:
+        subject += f" - {submission.score_percent}% {submission.grade}"
+
+    send_email(
+        to_email=all_recipients[0],
+        subject=subject,
+        body="\n".join(body_lines),
+        cc_emails=all_recipients[1:] if len(all_recipients) > 1 else None
+    )
+
+    return {
+        "to_email": all_recipients[0],
+        "cc_emails": all_recipients[1:],
+    }
 
 
 def accessible_template_or_redirect(template_id, submit=False):
@@ -305,7 +408,12 @@ def submit_form(template_id):
 
         db.session.commit()
 
-        flash("Form submitted.", "success")
+        try:
+            email_result = send_form_submission_email(submission)
+            flash(f"Form submitted and emailed to {email_result['to_email']}.", "success")
+        except Exception as e:
+            flash(f"Form submitted, but email failed: {str(e)}", "error")
+
         return redirect(url_for("forms.submission_detail", submission_id=submission.id))
 
     return render_template(

@@ -81,11 +81,54 @@ def role_allowed(json_text):
 
 
 def user_store_number():
-    return session.get("store_number")
+    return session.get("user_store") or session.get("store_number")
+
+
+def user_area_name():
+    return session.get("user_area") or session.get("area_name")
+
+
+def visible_store_numbers():
+    role = current_access_role()
+
+    if role == "admin":
+        stores = Store.query.filter_by(is_active=True).all()
+        return [store.store_number for store in stores]
+
+    if role == "supervisor":
+        area_name = user_area_name()
+        if not area_name:
+            return []
+        stores = Store.query.filter_by(area_name=area_name, is_active=True).all()
+        return [store.store_number for store in stores]
+
+    store_number = user_store_number()
+    return [store_number] if store_number else []
 
 
 def store_choices():
-    return Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
+    role = current_access_role()
+
+    if role == "admin":
+        return Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
+
+    if role == "supervisor":
+        area_name = user_area_name()
+        if not area_name:
+            return []
+        return Store.query.filter_by(
+            area_name=area_name,
+            is_active=True
+        ).order_by(Store.store_number.asc()).all()
+
+    store_number = user_store_number()
+    if store_number:
+        return Store.query.filter_by(
+            store_number=store_number,
+            is_active=True
+        ).order_by(Store.store_number.asc()).all()
+
+    return []
 
 
 def slugify(value):
@@ -285,9 +328,12 @@ def index():
         .order_by(FormSubmission.submitted_at.desc())
     )
 
-    if not is_admin() and current_access_role() not in ["supervisor"]:
-        if user_store_number():
-            recent_query = recent_query.filter(FormSubmission.store_number == user_store_number())
+    if not is_admin():
+        allowed_stores = visible_store_numbers()
+        if allowed_stores:
+            recent_query = recent_query.filter(FormSubmission.store_number.in_(allowed_stores))
+        else:
+            recent_query = recent_query.filter(FormSubmission.store_number == "__none__")
 
     recent_submissions = recent_query.limit(8).all()
 
@@ -312,7 +358,7 @@ def submit_form(template_id):
     )
 
     stores = store_choices()
-    locked_store = user_store_number() if current_access_role() == "manager" and user_store_number() else None
+    locked_store = user_store_number() if current_access_role() in ["manager", "general_manager"] and user_store_number() else None
 
     if request.method == "POST":
         store_number = locked_store or request.form.get("store_number", "").strip()
@@ -440,9 +486,12 @@ def submissions():
     if store_number:
         query = query.filter(FormSubmission.store_number == store_number)
 
-    if not is_admin() and current_access_role() not in ["supervisor"]:
-        if user_store_number():
-            query = query.filter(FormSubmission.store_number == user_store_number())
+    if not is_admin():
+        allowed_stores = visible_store_numbers()
+        if allowed_stores:
+            query = query.filter(FormSubmission.store_number.in_(allowed_stores))
+        else:
+            query = query.filter(FormSubmission.store_number == "__none__")
 
     submissions = query.order_by(FormSubmission.submitted_at.desc()).limit(200).all()
 
@@ -467,8 +516,9 @@ def submission_detail(submission_id):
         flash("You do not have access to that submission.", "error")
         return redirect(url_for("forms.index"))
 
-    if not is_admin() and current_access_role() not in ["supervisor"]:
-        if user_store_number() and submission.store_number != user_store_number():
+    if not is_admin():
+        allowed_stores = visible_store_numbers()
+        if submission.store_number not in allowed_stores:
             flash("You do not have access to that store submission.", "error")
             return redirect(url_for("forms.index"))
 

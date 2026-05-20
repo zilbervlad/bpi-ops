@@ -5,8 +5,7 @@ from datetime import datetime
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from app.extensions import db
-from app.services.email_service import send_email
-from app.models import FormAnswer, FormQuestion, FormSubmission, FormTemplate, Store, User, today_et
+from app.models import FormAnswer, FormQuestion, FormSubmission, FormTemplate, Store, today_et
 
 
 forms_bp = Blueprint("forms", __name__, url_prefix="/forms")
@@ -143,119 +142,6 @@ def grade_from_score(percent, critical_failed_count=0):
     if percent >= 70:
         return "C"
     return "F"
-
-
-def get_answer_value(answers, search_text):
-    search_text = search_text.lower()
-    for answer in answers:
-        if search_text in (answer.question_text or "").lower():
-            return answer.answer_text or ""
-    return ""
-
-
-def collect_form_email_recipients(submission):
-    """
-    Sends form notifications to:
-    - active admins
-    - active supervisors
-    - active general managers/managers assigned to that store
-
-    Uses notification_email first, then email.
-    """
-    recipients = []
-
-    users = (
-        User.query
-        .filter(User.is_active == True)
-        .filter(User.email_enabled == True)
-        .filter(
-            (User.role.in_(["admin", "supervisor"])) |
-            (
-                (User.store_number == submission.store_number) &
-                (User.role.in_(["general_manager", "manager"]))
-            )
-        )
-        .all()
-    )
-
-    for user in users:
-        email = user.get_notification_email()
-        if email and email not in recipients:
-            recipients.append(email)
-
-    return recipients
-
-
-def build_form_submission_email_body(submission):
-    answers = (
-        FormAnswer.query
-        .filter_by(form_submission_id=submission.id)
-        .order_by(FormAnswer.sort_order.asc(), FormAnswer.id.asc())
-        .all()
-    )
-
-    failed_answers = [answer for answer in answers if answer.is_failure]
-    critical_answers = [answer for answer in answers if answer.is_critical_failure]
-
-    submitted_by = submission.submitted_by.name if submission.submitted_by else "Unknown"
-    who_closed = get_answer_value(answers, "who closed")
-
-    lines = [
-        f"{submission.template.title} submitted",
-        "",
-        f"Store: {submission.store_number}",
-        f"Submitted by: {submitted_by}",
-        f"Submitted at: {submission.submitted_at.strftime('%m/%d/%Y %I:%M %p')}",
-    ]
-
-    if who_closed:
-        lines.append(f"Who closed: {who_closed}")
-
-    if submission.score_possible and submission.score_possible > 0:
-        lines.extend([
-            "",
-            f"Score: {submission.score_percent}% - {submission.grade}",
-            f"Failed Items: {submission.failed_count}",
-            f"Critical Failures: {submission.critical_failed_count}",
-        ])
-
-    if failed_answers:
-        lines.extend(["", "Failed Items:"])
-        for answer in failed_answers:
-            critical_label = " [CRITICAL]" if answer.is_critical_failure else ""
-            lines.append(f"- {answer.question_text}: {answer.answer_text}{critical_label}")
-
-    lines.extend(["", "All Answers:"])
-    for answer in answers:
-        lines.append(f"- {answer.question_text}: {answer.answer_text or '-'}")
-
-    return "\n".join(lines)
-
-
-def notify_form_submission(submission):
-    recipients = collect_form_email_recipients(submission)
-
-    if not recipients:
-        print(f"No form email recipients found for submission {submission.id}.")
-        return
-
-    subject = f"{submission.template.title} Submitted - Store {submission.store_number}"
-    if submission.score_possible and submission.score_possible > 0:
-        subject += f" - {submission.score_percent}% {submission.grade}"
-
-    body = build_form_submission_email_body(submission)
-
-    try:
-        send_email(
-            to_email=recipients[0],
-            subject=subject,
-            body=body,
-            cc_emails=recipients[1:] if len(recipients) > 1 else None,
-        )
-        print(f"Form submission email sent for submission {submission.id}.")
-    except Exception as exc:
-        # Do not block store operations if email fails.
-        print(f"Form submission email failed for submission {submission.id}: {exc}")
 
 
 def accessible_template_or_redirect(template_id, submit=False):
@@ -418,8 +304,6 @@ def submit_form(template_id):
             )
 
         db.session.commit()
-
-        notify_form_submission(submission)
 
         flash("Form submitted.", "success")
         return redirect(url_for("forms.submission_detail", submission_id=submission.id))

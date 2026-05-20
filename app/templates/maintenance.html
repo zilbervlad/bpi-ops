@@ -12,9 +12,26 @@
             Clean list view for fast scanning and quick updates.
         </p>
     </div>
-    <div class="command-bar-right">
-        <div class="command-chip">{{ tickets|length }} Tasks</div>
-        <div class="command-chip">{{ stores|length }} Stores</div>
+    <div class="command-bar-right maintenance-command-tiles">
+        <a class="command-chip maintenance-command-tile status-open-tile" href="{{ url_for('maintenance.index', status='open') }}">
+            <span class="tile-number">{{ open_tickets|length }}</span>
+            <span class="tile-label">Open</span>
+        </a>
+
+        <a class="command-chip maintenance-command-tile status-assigned-tile" href="{{ url_for('maintenance.index', status='assigned') }}">
+            <span class="tile-number">{{ assigned_tickets|length }}</span>
+            <span class="tile-label">Assigned</span>
+        </a>
+
+        <a class="command-chip maintenance-command-tile status-progress-tile" href="{{ url_for('maintenance.index', status='in_progress') }}">
+            <span class="tile-number">{{ in_progress_tickets|length }}</span>
+            <span class="tile-label">In Progress</span>
+        </a>
+
+        <div class="command-chip maintenance-command-tile">
+            <span class="tile-number">{{ stores|length }}</span>
+            <span class="tile-label">Stores</span>
+        </div>
     </div>
 </div>
 
@@ -130,6 +147,73 @@
 </div>
 
 <style>
+    .maintenance-command-tiles {
+        align-items: stretch;
+    }
+
+    .maintenance-command-tile {
+        min-width: 118px;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        text-align: center;
+        padding: 10px 14px;
+        line-height: 1.1;
+        transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+    }
+
+    a.maintenance-command-tile {
+        color: inherit;
+    }
+
+    a.maintenance-command-tile:hover {
+        transform: translateY(-1px);
+        background: rgba(56, 189, 248, 0.1);
+        border-color: rgba(56, 189, 248, 0.28);
+    }
+
+    .maintenance-command-tile .tile-number {
+        font-size: 20px;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: -0.02em;
+    }
+
+    .maintenance-command-tile .tile-label {
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+    }
+
+    .status-open-tile {
+        border-color: rgba(239, 68, 68, 0.22);
+    }
+
+    .status-assigned-tile {
+        border-color: rgba(245, 158, 11, 0.22);
+    }
+
+    .status-progress-tile {
+        border-color: rgba(59, 130, 246, 0.22);
+    }
+
+    @media (max-width: 900px) {
+        .maintenance-command-tiles {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .maintenance-command-tile {
+            min-width: 0;
+            width: 100%;
+        }
+    }
+
     .maintenance-sections {
         display: grid;
         gap: 24px;

@@ -236,45 +236,34 @@ def send_form_submission_email(submission: FormSubmission):
     failed_answers = [answer for answer in answers if answer.is_failure]
     submitted_by = submission.submitted_by.name if submission.submitted_by else "Unknown"
 
-    body_lines = [
-        f"{submission.template.title}",
-        f"Store: {submission.store_number}",
-        f"Submitted By: {submitted_by}",
-        f"Submitted At: {submission.submitted_at.strftime('%B %d, %Y %I:%M %p')}",
-    ]
-
-    if submission.score_possible and submission.score_possible > 0:
-        body_lines.extend([
-            "",
-            f"Score: {submission.score_percent}% - {submission.grade}",
-            f"Points: {submission.score_earned} / {submission.score_possible}",
-            f"Failed Items: {submission.failed_count}",
-            f"Critical Failures: {submission.critical_failed_count}",
-        ])
-
+    failed_text = "None"
     if failed_answers:
-        body_lines.append("")
-        body_lines.append("Failed Items:")
-        for answer in failed_answers:
-            critical_text = " [CRITICAL]" if answer.is_critical_failure else ""
-            body_lines.append(f"- {answer.question_text}: {answer.answer_text}{critical_text}")
+        failed_text = "\n".join(
+            f"- {answer.question_text}: {answer.answer_text}"
+            for answer in failed_answers
+        )
 
-    body_lines.append("")
-    body_lines.append("All Answers:")
-    for answer in answers:
-        body_lines.append(f"- {answer.question_text}: {answer.answer_text or 'Not provided'}")
-
-    body_lines.append("")
-    body_lines.append("- BPI Ops")
-
-    subject = f"Store {submission.store_number} {submission.template.title}"
+    score_text = "Not scored"
     if submission.score_possible and submission.score_possible > 0:
-        subject += f" - {submission.score_percent}% {submission.grade}"
+        score_text = f"{submission.score_percent}% - {submission.grade}"
+
+    body = (
+        f"{submission.template.title}\n"
+        f"Store: {submission.store_number}\n"
+        f"Submitted By: {submitted_by}\n"
+        f"Submitted At: {submission.submitted_at.strftime('%B %d, %Y %I:%M %p')}\n\n"
+        f"Score: {score_text}\n"
+        f"Failed Items: {submission.failed_count}\n"
+        f"Critical Failures: {submission.critical_failed_count}\n\n"
+        f"Failed Item Details:\n"
+        f"{failed_text}\n\n"
+        f"- BPI Ops"
+    )
 
     send_email(
         to_email=manager_email,
-        subject=subject,
-        body="\n".join(body_lines),
+        subject=f"Store {submission.store_number} {submission.template.title}",
+        body=body,
         cc_emails=cc_emails if cc_emails else None
     )
 
@@ -452,17 +441,10 @@ def submit_form(template_id):
 
         try:
             email_result = send_form_submission_email(submission)
-            cc_list = email_result.get("cc_emails") or []
-            if cc_list:
-                flash(
-                    f"Form submitted and emailed to {email_result['manager_email']}. CC: {', '.join(cc_list)}.",
-                    "success"
-                )
-            else:
-                flash(
-                    f"Form submitted and emailed to {email_result['manager_email']}. No CC recipients found.",
-                    "success"
-                )
+            flash(
+                f"Form submitted and emailed to {email_result['manager_email']}.",
+                "success"
+            )
         except Exception as e:
             flash(f"Form submitted, but email failed: {str(e)}", "error")
 

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ template.title }} | BPI Ops{% endblock %}
+{% block header %}Edit Form{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3>{{ template.title }}</h3>
+                <p class="muted">Update form settings, access, questions, scoring, and critical flags.</p>
+            </div>
+            <a class="btn secondary" href="{{ url_for('forms.admin') }}">Forms Admin</a>
+        </div>
+
+        <form method="post" class="admin-form">
+            <input type="hidden" name="action" value="update_template">
+
+            <label>Title</label>
+            <input type="text" name="title" value="{{ template.title }}" required>
+
+            <label>Description</label>
+            <textarea name="description" rows="3">{{ template.description or "" }}</textarea>
+
+            <label class="check-row"><input type="checkbox" name="is_active" value="1" {% if template.is_active %}checked{% endif %}> Active</label>
+
+            <div class="role-grid">
+                <div>
+                    <h4>Can Submit</h4>
+                    {% set submit_roles = load_roles(template.submit_roles_json) %}
+                    {% for role in role_options %}
+                    <label class="check-row"><input type="checkbox" name="submit_roles" value="{{ role }}" {% if role in submit_roles %}checked{% endif %}> {{ role|replace('_',' ')|title }}</label>
+                    {% endfor %}
+                </div>
+                <div>
+                    <h4>Can View</h4>
+                    {% set view_roles = load_roles(template.view_roles_json) %}
+                    {% for role in role_options %}
+                    <label class="check-row"><input type="checkbox" name="view_roles" value="{{ role }}" {% if role in view_roles %}checked{% endif %}> {{ role|replace('_',' ')|title }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button class="btn" type="submit">Save Settings</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3>Add Question</h3>
+                <p class="muted">Use weights for integrity scoring. Critical flags jump out on submissions.</p>
+            </div>
+        </div>
+
+        <form method="post" class="admin-form">
+            <input type="hidden" name="action" value="add_question">
+
+            <label>Question</label>
+            <input type="text" name="question_text" required>
+
+            <label>Field Type</label>
+            <select name="field_type">
+                {% for value, label in field_types %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Dropdown Options</label>
+            <textarea name="options_text" rows="3" placeholder="Only for dropdowns. One option per line."></textarea>
+
+            <div class="mini-grid">
+                <label>Weight <input type="number" name="weight" value="0" min="0"></label>
+                <label class="check-row"><input type="checkbox" name="is_required" value="1" checked> Required</label>
+                <label class="check-row"><input type="checkbox" name="is_critical" value="1"> Critical</label>
+            </div>
+
+            <button class="btn" type="submit">Add Question</button>
+        </form>
+    </div>
+</div>
+
+<div class="card" style="margin-top:18px;">
+    <div class="card-header">
+        <div>
+            <h3>Questions</h3>
+            <p class="muted">Save after edits. Sort order controls display order.</p>
+        </div>
+    </div>
+
+    <form method="post">
+        <input type="hidden" name="action" value="update_questions">
+
+        <div class="question-admin-list">
+            {% for question in template.questions|sort(attribute='sort_order') %}
+            <div class="question-admin-card">
+                <div class="mini-grid">
+                    <label>Sort <input type="number" name="sort_{{ question.id }}" value="{{ question.sort_order }}"></label>
+                    <label>Weight <input type="number" name="weight_{{ question.id }}" value="{{ question.weight }}" min="0"></label>
+                    <label>Type
+                        <select name="type_{{ question.id }}">
+                            {% for value, label in field_types %}
+                                <option value="{{ value }}" {% if question.field_type == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+
+                <label>Question Text</label>
+                <input type="text" name="text_{{ question.id }}" value="{{ question.question_text }}" required>
+
+                <div class="question-flags">
+                    <label><input type="checkbox" name="required_{{ question.id }}" value="1" {% if question.is_required %}checked{% endif %}> Required</label>
+                    <label><input type="checkbox" name="critical_{{ question.id }}" value="1" {% if question.is_critical %}checked{% endif %}> Critical</label>
+                    <label><input type="checkbox" name="active_{{ question.id }}" value="1" {% if question.is_active %}checked{% endif %}> Active</label>
+                </div>
+            </div>
+            {% else %}
+                <p class="muted">No questions yet.</p>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <button class="btn" type="submit">Save Questions</button>
+        </div>
+    </form>
+</div>
+
+<style>
+.admin-form { display:grid; gap:12px; }
+.admin-form input[type="text"], .admin-form input[type="number"], .admin-form textarea, .admin-form select,
+.question-admin-card input[type="text"], .question-admin-card input[type="number"], .question-admin-card select {
+    width:100%; border:1px solid #d0d5dd; border-radius:12px; padding:11px 12px; font:inherit; box-sizing:border-box;
+}
+.admin-form label, .question-admin-card label { font-weight:800; }
+.role-grid, .mini-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+.check-row { display:block; font-weight:500 !important; margin:8px 0; }
+.question-admin-list { display:grid; gap:12px; }
+.question-admin-card { border:1px solid #eaecf0; border-radius:16px; padding:15px; background:#fff; display:grid; gap:12px; }
+.question-flags { display:flex; flex-wrap:wrap; gap:14px; }
+.question-flags label { font-weight:500; }
+.form-actions { margin-top:16px; display:flex; justify-content:flex-end; }
+</style>
+{% endblock %}

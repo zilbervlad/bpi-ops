@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Forms | BPI Ops{% endblock %}
+{% block header %}Forms{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3>Available Forms</h3>
+                <p class="muted">Submit store forms, inspections, follow-ups, and future BPI Ops workflows.</p>
+            </div>
+            <a class="btn secondary" href="{{ url_for('forms.submissions') }}">View Submissions</a>
+        </div>
+
+        {% if templates %}
+            <div class="forms-grid">
+                {% for template in templates %}
+                <div class="form-card">
+                    <div>
+                        <h4>{{ template.title }}</h4>
+                        <p>{{ template.description or "No description yet." }}</p>
+                    </div>
+                    <a class="btn" href="{{ url_for('forms.submit_form', template_id=template.id) }}">Open Form</a>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">No active forms are available for your role yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3>Recent Submissions</h3>
+                <p class="muted">Quick look at the newest forms entered.</p>
+            </div>
+        </div>
+
+        {% if recent_submissions %}
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Submitted</th>
+                            <th>Form</th>
+                            <th>Store</th>
+                            <th>Score</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for submission in recent_submissions %}
+                        <tr>
+                            <td>{{ submission.submitted_at.strftime('%m/%d %I:%M %p') }}</td>
+                            <td>{{ submission.template.title }}</td>
+                            <td>{{ submission.store_number }}</td>
+                            <td>
+                                {% if submission.score_possible > 0 %}
+                                    <span class="score-pill score-{{ submission.grade|lower|replace('+','plus') }}">
+                                        {{ submission.score_percent }}% · {{ submission.grade }}
+                                    </span>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td><a href="{{ url_for('forms.submission_detail', submission_id=submission.id) }}">View</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="muted">No submissions yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.forms-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin-top:16px; }
+.form-card { border:1px solid rgba(0,0,0,.08); border-radius:16px; padding:18px; background:#fff; display:flex; flex-direction:column; justify-content:space-between; gap:16px; box-shadow:0 8px 24px rgba(0,0,0,.04); }
+.form-card h4 { margin:0 0 6px; }
+.form-card p { margin:0; color:#667085; font-size:14px; }
+.score-pill { display:inline-block; padding:5px 9px; border-radius:999px; font-weight:700; font-size:12px; background:#eef2ff; }
+.score-f, .score-c { background:#fee2e2; color:#991b1b; }
+.score-b { background:#fef3c7; color:#92400e; }
+.score-a, .score-aplus { background:#dcfce7; color:#166534; }
+</style>
+{% endblock %}

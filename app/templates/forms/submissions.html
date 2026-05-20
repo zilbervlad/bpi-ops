@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block title %}Form Submissions | BPI Ops{% endblock %}
+{% block header %}Form Submissions{% endblock %}
+
+{% block content %}
+<div class="forms-shell">
+    <section class="forms-panel">
+        <div class="forms-hero">
+            <div>
+                <p class="forms-eyebrow">Forms</p>
+                <h3 class="forms-title">Submissions</h3>
+                <p class="forms-subtitle">Review submitted forms by store, form, and score.</p>
+            </div>
+            <div class="forms-actions">
+                <a class="forms-btn secondary" href="{{ url_for('forms.index') }}">Back to Forms</a>
+            </div>
+        </div>
+
+        <form method="get" class="forms-filter-row">
+            <select name="template_id">
+                <option value="">All forms</option>
+                {% for template in templates %}
+                    <option value="{{ template.id }}" {% if selected_template_id == template.id %}selected{% endif %}>{{ template.title }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="store_number">
+                <option value="">All stores</option>
+                {% for store in stores %}
+                    <option value="{{ store.store_number }}" {% if selected_store_number == store.store_number %}selected{% endif %}>{{ store.store_number }}</option>
+                {% endfor %}
+            </select>
+
+            <button class="forms-btn" type="submit">Filter</button>
+            <a class="forms-btn secondary" href="{{ url_for('forms.submissions') }}">Clear</a>
+        </form>
+
+        <div class="forms-table-wrap" style="padding-top:14px;">
+            <table class="forms-table">
+                <thead>
+                    <tr>
+                        <th>Submitted</th>
+                        <th>Form</th>
+                        <th>Store</th>
+                        <th>By</th>
+                        <th>Score</th>
+                        <th>Fails</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for submission in submissions %}
+                    <tr>
+                        <td>{{ submission.submitted_at.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                        <td>{{ submission.template.title }}</td>
+                        <td>{{ submission.store_number }}</td>
+                        <td>{{ submission.submitted_by.name if submission.submitted_by else "Unknown" }}</td>
+                        <td>
+                            {% if submission.score_possible > 0 %}
+                                <span class="score-pill score-{{ submission.grade|lower|replace('+','plus') }}">
+                                    {{ submission.score_percent }}% · {{ submission.grade }}
+                                </span>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ submission.failed_count }}
+                            {% if submission.critical_failed_count > 0 %}
+                                <span class="critical-pill">{{ submission.critical_failed_count }} critical</span>
+                            {% endif %}
+                        </td>
+                        <td><a href="{{ url_for('forms.submission_detail', submission_id=submission.id) }}">View</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7">No submissions found.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+
+<style>
+/* Live Forms polish - scoped to the Forms module only */
+.forms-shell {
+    display: grid;
+    gap: 16px;
+}
+
+.forms-page-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(360px, .8fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.forms-panel {
+    background: linear-gradient(180deg, rgba(13, 22, 40, 0.94) 0%, rgba(8, 16, 31, 0.98) 100%);
+    border: 1px solid rgba(120, 146, 190, 0.14);
+    border-radius: 20px;
+    box-shadow: 0 16px 36px rgba(0,0,0,.24);
+    overflow: hidden;
+}
+
+.forms-panel-pad {
+    padding: 18px;
+}
+
+.forms-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px;
+    border-bottom: 1px solid rgba(120, 146, 190, 0.10);
+    background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, .12), transparent 28%),
+        linear-gradient(180deg, rgba(15, 26, 48, .96), rgba(9, 18, 34, .94));
+}
+
+.forms-eyebrow {
+    margin: 0 0 6px 0;
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    color: #8fe7ff;
+}
+
+.forms-title {
+    margin: 0;
+    color: #fff;
+    font-size: 22px;
+    line-height: 1.1;
+    letter-spacing: -.03em;
+}
+
+.forms-subtitle {
+    margin: 6px 0 0;
+    color: var(--text-soft, #c8d5e8);
+    font-size: 13px;
+    line-height: 1.45;
+    max-width: 760px;
+}
+
+.forms-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.forms-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 9px 13px;
+    border-radius: 12px;
+    border: 1px solid rgba(56, 189, 248, .22);
+    background: linear-gradient(135deg, #1da7f0 0%, #2563eb 100%);
+    color: #fff !important;
+    font-weight: 800;
+    font-size: 13px;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 10px 22px rgba(2, 132, 199, .18), inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.forms-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.04);
+}
+
+.forms-btn.secondary {
+    background: rgba(8, 16, 31, .72);
+    border-color: rgba(120, 146, 190, .16);
+    color: #e8f1ff !important;
+    box-shadow: none;
+}
+
+.forms-list {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+}
+
+.live-form-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(8, 16, 31, .72);
+    border: 1px solid rgba(120, 146, 190, .12);
+    transition: border-color .16s ease, transform .16s ease, background .16s ease;
+}
+
+.live-form-card:hover {
+    transform: translateY(-1px);
+    background: rgba(10, 20, 38, .86);
+    border-color: rgba(56, 189, 248, .22);
+}
+
+.live-form-card h4 {
+    margin: 0 0 5px;
+    color: #fff;
+    font-size: 16px;
+    letter-spacing: -.02em;
+}
+
+.live-form-card p {
+    margin: 0;
+    color: var(--text-muted, #8ea3c4);
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.forms-mini-meta {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.forms-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 999px;
+    padding: 5px 9px;
+    background: rgba(56, 189, 248, .09);
+    border: 1px solid rgba(56, 189, 248, .16);
+    color: #bfeaff;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.forms-chip.neutral {
+    background: rgba(148, 163, 184, .10);
+    border-color: rgba(148, 163, 184, .16);
+    color: #d8e2f1;
+}
+
+.forms-empty {
+    padding: 18px;
+    color: var(--text-muted, #8ea3c4);
+    font-size: 14px;
+}
+
+.forms-table-wrap {
+    overflow-x: auto;
+    padding: 0 14px 14px;
+}
+
+.forms-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.forms-table th,
+.forms-table td {
+    padding: 11px 8px;
+    border-bottom: 1px solid rgba(120, 146, 190, .10);
+    text-align: left;
+    color: #f5f7fb;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.forms-table th {
+    color: var(--text-muted, #8ea3c4);
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.forms-table a {
+    color: #8fe7ff;
+    font-weight: 800;
+}
+
+.score-pill,
+.critical-pill,
+.weight-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.score-pill { background: rgba(148, 163, 184, .12); color: #d8e2f1; border: 1px solid rgba(148, 163, 184, .18); }
+.score-f, .score-c { background: rgba(239, 68, 68, .14); color: #fecaca; border-color: rgba(239, 68, 68, .26); }
+.score-b { background: rgba(245, 158, 11, .14); color: #fde68a; border-color: rgba(245, 158, 11, .26); }
+.score-a, .score-aplus { background: rgba(34, 197, 94, .14); color: #bbf7d0; border-color: rgba(34, 197, 94, .26); }
+
+.critical-pill { background: rgba(239, 68, 68, .14); color: #fecaca; border: 1px solid rgba(239, 68, 68, .26); }
+.weight-pill { background: rgba(56, 189, 248, .11); color: #bfeaff; border: 1px solid rgba(56, 189, 248, .20); }
+
+.forms-filter-row {
+    display: flex;
+    gap: 9px;
+    flex-wrap: wrap;
+    padding: 14px;
+    border-bottom: 1px solid rgba(120,146,190,.10);
+}
+
+.forms-filter-row select,
+.forms-input,
+.forms-select,
+.forms-textarea,
+.forms-number,
+.forms-date {
+    width: 100%;
+    border: 1px solid rgba(120,146,190,.18);
+    background: rgba(7,14,28,.92);
+    color: #fff;
+    border-radius: 12px;
+    padding: 10px 11px;
+    font: inherit;
+    min-height: 40px;
+}
+
+.forms-filter-row select {
+    width: auto;
+    min-width: 170px;
+}
+
+.forms-input:focus,
+.forms-select:focus,
+.forms-textarea:focus,
+.forms-number:focus,
+.forms-date:focus,
+.forms-filter-row select:focus {
+    outline: none;
+    border-color: rgba(56,189,248,.72);
+    box-shadow: 0 0 0 3px rgba(56,189,248,.10);
+}
+
+.forms-label {
+    display: block;
+    color: #d8e2f1;
+    font-size: 12px;
+    font-weight: 900;
+    margin-bottom: 7px;
+}
+
+.required-star {
+    color: #fca5a5;
+}
+
+@media (max-width: 1100px) {
+    .forms-page-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .forms-hero {
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .forms-actions {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .forms-btn {
+        width: 100%;
+    }
+
+    .live-form-card {
+        grid-template-columns: 1fr;
+    }
+
+    .forms-filter-row select,
+    .forms-filter-row .forms-btn {
+        width: 100%;
+    }
+}
+</style>
+
+{% endblock %}

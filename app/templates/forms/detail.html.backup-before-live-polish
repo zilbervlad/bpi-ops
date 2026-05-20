@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ submission.template.title }} Submission | BPI Ops{% endblock %}
+{% block header %}{{ submission.template.title }}{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3>{{ submission.template.title }}</h3>
+                <p class="muted">
+                    Store {{ submission.store_number }} ·
+                    {{ submission.submitted_at.strftime('%m/%d/%Y %I:%M %p') }} ·
+                    Submitted by {{ submission.submitted_by.name if submission.submitted_by else "Unknown" }}
+                </p>
+            </div>
+            <a class="btn secondary" href="{{ url_for('forms.submissions') }}">All Submissions</a>
+        </div>
+
+        {% if submission.score_possible > 0 %}
+        <div class="score-summary grade-{{ submission.grade|lower|replace('+','plus') }}">
+            <div><span>Score</span><strong>{{ submission.score_percent }}% · {{ submission.grade }}</strong></div>
+            <div><span>Points</span><strong>{{ submission.score_earned }} / {{ submission.score_possible }}</strong></div>
+            <div><span>Failed Items</span><strong>{{ submission.failed_count }}</strong></div>
+            <div><span>Critical Flags</span><strong>{{ submission.critical_failed_count }}</strong></div>
+        </div>
+        {% endif %}
+
+        <div class="answer-list">
+            {% for answer in submission.answers %}
+            <div class="answer-card {% if answer.is_critical_failure %}critical-fail{% elif answer.is_failure %}fail{% endif %}">
+                <div>
+                    <strong>{{ answer.sort_order }}. {{ answer.question_text }}</strong>
+                    {% if answer.is_critical %}<span class="critical-pill">Critical</span>{% endif %}
+                    {% if answer.weight > 0 %}<span class="weight-pill">{{ answer.weight }} pts</span>{% endif %}
+                </div>
+                <p>{{ answer.answer_text or "—" }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.score-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; border-radius:18px; padding:16px; margin:18px 0; background:#f2f4f7; }
+.score-summary div { background:#fff; border-radius:14px; padding:14px; }
+.score-summary span { display:block; color:#667085; font-size:12px; font-weight:700; }
+.score-summary strong { font-size:20px; }
+.grade-f, .grade-c { background:#fee2e2; }
+.grade-b { background:#fef3c7; }
+.grade-a, .grade-aplus { background:#dcfce7; }
+.answer-list { display:grid; gap:12px; margin-top:18px; }
+.answer-card { border:1px solid #eaecf0; border-radius:16px; padding:15px; background:#fff; }
+.answer-card p { margin:8px 0 0; color:#344054; }
+.answer-card.fail { border-color:#fed7aa; background:#fff7ed; }
+.answer-card.critical-fail { border-color:#fecaca; background:#fef2f2; }
+.critical-pill, .weight-pill { display:inline-block; margin-left:8px; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; }
+.critical-pill { background:#fee2e2; color:#991b1b; }
+.weight-pill { background:#eef2ff; color:#3730a3; }
+</style>
+{% endblock %}

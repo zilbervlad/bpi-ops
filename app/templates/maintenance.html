@@ -13,17 +13,17 @@
         </p>
     </div>
     <div class="command-bar-right maintenance-command-tiles">
-        <a class="command-chip maintenance-command-tile status-open-tile" href="{{ url_for('maintenance.index', status='open') }}">
+        <a class="command-chip maintenance-command-tile status-open-tile" href="#maintenance-open-section">
             <span class="tile-number">{{ open_tickets|length }}</span>
             <span class="tile-label">Open</span>
         </a>
 
-        <a class="command-chip maintenance-command-tile status-assigned-tile" href="{{ url_for('maintenance.index', status='assigned') }}">
+        <a class="command-chip maintenance-command-tile status-assigned-tile" href="#maintenance-assigned-section">
             <span class="tile-number">{{ assigned_tickets|length }}</span>
             <span class="tile-label">Assigned</span>
         </a>
 
-        <a class="command-chip maintenance-command-tile status-progress-tile" href="{{ url_for('maintenance.index', status='in_progress') }}">
+        <a class="command-chip maintenance-command-tile status-progress-tile" href="#maintenance-progress-section">
             <span class="tile-number">{{ in_progress_tickets|length }}</span>
             <span class="tile-label">In Progress</span>
         </a>
@@ -212,6 +212,14 @@
             min-width: 0;
             width: 100%;
         }
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    .maintenance-status-panel {
+        scroll-margin-top: 18px;
     }
 
     .maintenance-sections {
@@ -691,7 +699,7 @@
 {% endmacro %}
 
 {% macro render_section(title, section_id, tickets, default_open=True) %}
-<section class="panel premium-panel maintenance-status-panel">
+<section id="maintenance-{{ section_id }}-section" class="panel premium-panel maintenance-status-panel">
     <button
         type="button"
         id="maintenance-{{ section_id }}-toggle"

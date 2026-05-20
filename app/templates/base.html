@@ -135,7 +135,7 @@
                     {% endif %}
                     {% endif %}
 
-                    {% if access_role in ['admin', 'supervisor', 'maintenance'] %}
+                    {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager', 'maintenance'] %}
                     <a href="{{ url_for('maintenance.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
                         Maintenance

@@ -189,28 +189,25 @@ def grade_from_score(percent, critical_failed_count=0):
 
 
 def send_form_submission_email(submission: FormSubmission):
+    manager_user = User.query.filter_by(
+        store_number=submission.store_number,
+        role="manager",
+        is_active=True
+    ).first()
+
+    manager_email = manager_user.get_notification_email() if manager_user else None
+
     store = Store.query.filter_by(store_number=submission.store_number).first()
 
-    store_leaders = User.query.filter(
-        User.store_number == submission.store_number,
-        User.role.in_(["general_manager", "manager"]),
-        User.is_active == True
-    ).all()
-
-    store_leader_emails = []
-    for user in store_leaders:
-        email = user.get_notification_email()
-        if email:
-            store_leader_emails.append(email)
-
-    supervisor_email = None
+    supervisor = None
     if store:
         supervisor = User.query.filter_by(
             area_name=store.area_name,
             role="supervisor",
             is_active=True
         ).first()
-        supervisor_email = supervisor.get_notification_email() if supervisor else None
+
+    supervisor_email = supervisor.get_notification_email() if supervisor else None
 
     admin_users = User.query.filter_by(role="admin", is_active=True).all()
     admin_emails = []
@@ -219,18 +216,15 @@ def send_form_submission_email(submission: FormSubmission):
         if email:
             admin_emails.append(email)
 
-    all_recipients = []
-    all_recipients.extend(store_leader_emails)
-
+    cc_emails = []
     if supervisor_email:
-        all_recipients.append(supervisor_email)
+        cc_emails.append(supervisor_email)
+    cc_emails.extend(admin_emails)
 
-    all_recipients.extend(admin_emails)
+    cc_emails = [email for email in dict.fromkeys(cc_emails) if email and email != manager_email]
 
-    all_recipients = [email for email in dict.fromkeys(all_recipients) if email]
-
-    if not all_recipients:
-        raise ValueError(f"No notification emails configured for store {submission.store_number}.")
+    if not manager_email:
+        raise ValueError(f"No manager notification email configured for store {submission.store_number}.")
 
     answers = (
         FormAnswer.query
@@ -240,7 +234,6 @@ def send_form_submission_email(submission: FormSubmission):
     )
 
     failed_answers = [answer for answer in answers if answer.is_failure]
-
     submitted_by = submission.submitted_by.name if submission.submitted_by else "Unknown"
 
     body_lines = [
@@ -254,6 +247,7 @@ def send_form_submission_email(submission: FormSubmission):
         body_lines.extend([
             "",
             f"Score: {submission.score_percent}% - {submission.grade}",
+            f"Points: {submission.score_earned} / {submission.score_possible}",
             f"Failed Items: {submission.failed_count}",
             f"Critical Failures: {submission.critical_failed_count}",
         ])
@@ -278,15 +272,17 @@ def send_form_submission_email(submission: FormSubmission):
         subject += f" - {submission.score_percent}% {submission.grade}"
 
     send_email(
-        to_email=all_recipients[0],
+        to_email=manager_email,
         subject=subject,
         body="\n".join(body_lines),
-        cc_emails=all_recipients[1:] if len(all_recipients) > 1 else None
+        cc_emails=cc_emails if cc_emails else None
     )
 
     return {
-        "to_email": all_recipients[0],
-        "cc_emails": all_recipients[1:],
+        "manager_email": manager_email,
+        "supervisor_email": supervisor_email,
+        "admin_emails": admin_emails,
+        "cc_emails": cc_emails,
     }
 
 
@@ -456,7 +452,17 @@ def submit_form(template_id):
 
         try:
             email_result = send_form_submission_email(submission)
-            flash(f"Form submitted and emailed to {email_result['to_email']}.", "success")
+            cc_list = email_result.get("cc_emails") or []
+            if cc_list:
+                flash(
+                    f"Form submitted and emailed to {email_result['manager_email']}. CC: {', '.join(cc_list)}.",
+                    "success"
+                )
+            else:
+                flash(
+                    f"Form submitted and emailed to {email_result['manager_email']}. No CC recipients found.",
+                    "success"
+                )
         except Exception as e:
             flash(f"Form submitted, but email failed: {str(e)}", "error")
 

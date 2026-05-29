@@ -1,0 +1,828 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Calendar | BPI Ops{% endblock %}
+{% block header %}Maintenance Calendar{% endblock %}
+
+{% block content %}
+<div class="command-bar panel" style="margin-bottom: 24px;">
+    <div class="command-bar-left">
+        <div class="command-eyebrow">MAINTENANCE CALENDAR</div>
+        <h2 class="command-title">Weekly Maintenance Schedule</h2>
+        <p class="command-subtitle">
+            Assign work, schedule visits, and keep unscheduled maintenance from getting lost.
+        </p>
+    </div>
+
+    <div class="command-bar-right">
+        <a href="{{ url_for('maintenance.calendar', start=previous_week.strftime('%Y-%m-%d')) }}" class="action-btn" style="max-width: 150px;">← Previous</a>
+        <div class="command-chip">
+            {{ week_start.strftime('%b %d') }} - {{ week_end.strftime('%b %d') }}
+        </div>
+        <a href="{{ url_for('maintenance.calendar', start=next_week.strftime('%Y-%m-%d')) }}" class="action-btn" style="max-width: 150px;">Next →</a>
+        <a href="{{ url_for('maintenance.index') }}" class="action-btn" style="max-width: 150px;">Board View</a>
+    </div>
+</div>
+
+<style>
+    .maintenance-calendar-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: 24px;
+        align-items: start;
+    }
+
+    .maintenance-calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(190px, 1fr));
+        gap: 14px;
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 8px;
+    }
+
+    .maintenance-day-card {
+        min-height: 680px;
+        padding: 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.025);
+        overflow: hidden;
+    }
+
+    .maintenance-day-header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: rgba(8, 17, 42, 0.92);
+        backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+        margin: -14px -14px 10px -14px;
+        padding: 14px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .maintenance-day-name {
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .maintenance-day-date {
+        font-size: 12px;
+        opacity: 0.68;
+        margin-top: 2px;
+    }
+
+    .maintenance-day-count {
+        font-size: 11px;
+        font-weight: 900;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.1);
+        white-space: nowrap;
+    }
+
+    .maintenance-anytime-zone {
+        min-height: 52px;
+        border-radius: 14px;
+        border: 1px dashed rgba(255,255,255,0.16);
+        background: rgba(255,255,255,0.018);
+        padding: 8px;
+        margin-bottom: 10px;
+    }
+
+    .maintenance-anytime-label {
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        opacity: 0.55;
+        margin-bottom: 6px;
+    }
+
+    .maintenance-time-slot {
+        min-height: 54px;
+        display: block;
+        border-top: 1px solid rgba(255,255,255,0.055);
+        padding: 8px 0;
+    }
+
+    .maintenance-time-slot.is-empty {
+        min-height: 34px;
+        padding: 5px 0;
+        opacity: 0.62;
+    }
+
+    .maintenance-time-slot.is-empty .maintenance-time-label {
+        margin-bottom: 0;
+    }
+
+    .maintenance-time-slot.is-empty .maintenance-slot-body {
+        min-height: 8px;
+        padding: 0;
+    }
+
+    .maintenance-time-label {
+        font-size: 11px;
+        font-weight: 900;
+        opacity: 0.58;
+        white-space: nowrap;
+        margin-bottom: 8px;
+        letter-spacing: 0.03em;
+    }
+
+    .maintenance-slot-body {
+        min-height: 40px;
+        border-radius: 12px;
+        padding: 2px;
+        width: 100%;
+    }
+
+    .js-drop-zone.is-drop-hover .maintenance-slot-body,
+    .maintenance-anytime-zone.is-drop-hover,
+    .maintenance-unscheduled-drop.is-drop-hover {
+        background: rgba(56, 189, 248, 0.12);
+        outline: 2px solid rgba(56, 189, 248, 0.32);
+        box-shadow: 0 12px 30px rgba(56, 189, 248, 0.12);
+    }
+
+    .maintenance-event-card {
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(15, 23, 42, 0.48);
+        color: inherit;
+        padding: 7px 8px;
+        margin-bottom: 6px;
+        cursor: grab;
+        user-select: none;
+        transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease, opacity 0.14s ease;
+    }
+
+    .maintenance-event-card:hover {
+        transform: translateY(-1px);
+        background: rgba(15, 23, 42, 0.78);
+        border-color: rgba(255,255,255,0.16);
+    }
+
+    .maintenance-event-card.is-dragging {
+        opacity: 0.45;
+        transform: scale(0.98);
+    }
+
+    .maintenance-event-time {
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        opacity: 0.72;
+        margin-bottom: 3px;
+    }
+
+    .maintenance-event-title {
+        font-size: 11px;
+        font-weight: 900;
+        line-height: 1.18;
+        margin-bottom: 3px;
+        overflow-wrap: anywhere;
+    }
+
+    .maintenance-event-meta {
+        font-size: 10px;
+        opacity: 0.70;
+        line-height: 1.2;
+    }
+
+    .maintenance-pill-row {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        margin-top: 5px;
+    }
+
+    .maintenance-status-pill,
+    .maintenance-priority-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 3px 7px;
+        font-size: 8px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.08);
+        white-space: nowrap;
+    }
+
+    .maintenance-status-pill.status-open {
+        background: rgba(255, 77, 79, 0.18);
+        color: #ffd0d1;
+    }
+
+    .maintenance-status-pill.status-assigned {
+        background: rgba(240, 196, 25, 0.18);
+        color: #fff0b0;
+    }
+
+    .maintenance-status-pill.status-in_progress {
+        background: rgba(59, 130, 246, 0.18);
+        color: #c5ddff;
+    }
+
+    .maintenance-status-pill.status-complete {
+        background: rgba(34, 197, 94, 0.20);
+        color: #b9ffd1;
+    }
+
+    .maintenance-event-card.status-complete {
+        background: rgba(22, 101, 52, 0.34);
+        border-color: rgba(34, 197, 94, 0.34);
+        box-shadow: inset 4px 0 0 rgba(34, 197, 94, 0.72);
+    }
+
+    .maintenance-event-card.status-complete .maintenance-event-title::before {
+        content: "✓ ";
+        color: #86efac;
+    }
+
+    .maintenance-priority-pill.priority-low {
+        background: rgba(148, 163, 184, 0.18);
+        color: #e2e8f0;
+    }
+
+    .maintenance-priority-pill.priority-normal {
+        background: rgba(59, 130, 246, 0.18);
+        color: #c5ddff;
+    }
+
+    .maintenance-priority-pill.priority-high {
+        background: rgba(240, 196, 25, 0.18);
+        color: #fff0b0;
+    }
+
+    .maintenance-priority-pill.priority-urgent {
+        background: rgba(255, 77, 79, 0.20);
+        color: #ffd0d1;
+    }
+
+    .maintenance-side-panel {
+        position: sticky;
+        top: 20px;
+    }
+
+    .maintenance-unscheduled-drop {
+        min-height: 160px;
+        border-radius: 18px;
+    }
+
+    .maintenance-unscheduled-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .maintenance-empty-day {
+        font-size: 12px;
+        opacity: 0.62;
+        padding: 10px 0;
+    }
+
+    .maintenance-toast {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(7, 18, 48, 0.94);
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 18px 45px rgba(0,0,0,0.22);
+        font-size: 13px;
+        font-weight: 900;
+        display: none;
+        z-index: 10000;
+    }
+
+    .maintenance-toast.is-open {
+        display: block;
+    }
+
+    .maintenance-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(3, 8, 20, 0.62);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        z-index: 9999;
+    }
+
+    .maintenance-modal-backdrop.is-open {
+        display: flex;
+    }
+
+    .maintenance-modal {
+        width: min(820px, 100%);
+        max-height: 90vh;
+        overflow-y: auto;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(9,20,53,0.98), rgba(6,14,38,0.98));
+        box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+    }
+
+    .maintenance-modal-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .maintenance-modal-title {
+        font-size: 18px;
+        font-weight: 900;
+        margin: 0;
+    }
+
+    .maintenance-modal-subtitle {
+        font-size: 12px;
+        opacity: 0.66;
+        margin-top: 2px;
+    }
+
+    .maintenance-modal-close {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 999px;
+        color: inherit;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+    .maintenance-modal-body {
+        padding: 18px;
+    }
+
+    .maintenance-modal-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .maintenance-modal-grid .form-group {
+        margin-bottom: 0;
+    }
+
+    .maintenance-modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 16px;
+    }
+
+    @media (max-width: 1450px) {
+        .maintenance-calendar-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .maintenance-side-panel {
+            position: static;
+        }
+
+        .maintenance-calendar-grid {
+            grid-template-columns: repeat(7, minmax(240px, 1fr));
+        }
+    }
+
+    @media (max-width: 900px) {
+        .maintenance-calendar-grid {
+            grid-template-columns: 1fr;
+            overflow-x: visible;
+        }
+
+        .maintenance-day-card {
+            min-height: auto;
+        }
+
+        .maintenance-modal-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .maintenance-modal-actions {
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+    }
+</style>
+
+{% macro render_ticket_card(ticket) %}
+<div
+    class="maintenance-event-card status-{{ ticket.status }} js-open-maintenance-modal {% if user_role in ['admin', 'supervisor', 'maintenance'] %}js-draggable-ticket{% endif %}"
+    {% if user_role in ['admin', 'supervisor', 'maintenance'] %}draggable="true"{% endif %}
+    data-ticket-id="{{ ticket.id }}"
+    data-ticket-store="{{ ticket.store_number }}"
+    data-ticket-title="{{ ticket.title }}"
+    data-ticket-details="{{ ticket.details or '' }}"
+    data-ticket-status="{{ ticket.status }}"
+    data-ticket-assigned-to="{{ ticket.assigned_to or '' }}"
+    data-ticket-scheduled-date="{{ ticket.scheduled_date.strftime('%Y-%m-%d') if ticket.scheduled_date else '' }}"
+    data-ticket-scheduled-time="{{ ticket.scheduled_time.strftime('%H:%M') if ticket.scheduled_time else '' }}"
+    data-ticket-estimated-minutes="{{ ticket.estimated_minutes or '' }}"
+    data-ticket-priority="{{ ticket.priority or 'normal' }}"
+>
+    <div class="maintenance-event-time">{{ format_time(ticket) if ticket.scheduled_date else 'Unscheduled' }}</div>
+    <div class="maintenance-event-title">Store {{ ticket.store_number }} — {{ ticket.title }}</div>
+    <div class="maintenance-event-meta">
+        {% if ticket.assigned_to %}
+            Assigned to {{ ticket.assigned_to }}
+        {% else %}
+            Unassigned
+        {% endif %}
+
+        {% if ticket.estimated_minutes %}
+            • {{ ticket.estimated_minutes }} min
+        {% endif %}
+    </div>
+
+    <div class="maintenance-pill-row">
+        <span class="maintenance-status-pill status-{{ ticket.status }}">
+            {{ ticket.status.replace('_', ' ')|title }}
+        </span>
+        <span class="maintenance-priority-pill priority-{{ ticket.priority or 'normal' }}">
+            {{ (ticket.priority or 'normal')|title }}
+        </span>
+    </div>
+</div>
+{% endmacro %}
+
+<div class="maintenance-calendar-layout">
+    <section class="panel premium-panel">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px;">
+            <div>
+                <h3 style="margin: 0;">This Week</h3>
+                <div class="area-subtitle">Drag tasks into a day/time slot or click to edit</div>
+            </div>
+            <span class="summary-pill">{{ week_start.strftime('%b %d') }} - {{ week_end.strftime('%b %d') }}</span>
+        </div>
+
+        <div class="maintenance-calendar-grid">
+            {% for day in days %}
+            <div class="maintenance-day-card">
+                <div class="maintenance-day-header">
+                    <div>
+                        <div class="maintenance-day-name">{{ day.date.strftime('%A') }}</div>
+                        <div class="maintenance-day-date">{{ day.date.strftime('%b %d, %Y') }}</div>
+                    </div>
+                    <div class="maintenance-day-count">{{ day.tickets|length }}</div>
+                </div>
+
+                <div
+                    class="maintenance-anytime-zone js-drop-zone"
+                    data-drop-date="{{ day.date.strftime('%Y-%m-%d') }}"
+                    data-drop-time=""
+                >
+                    <div class="maintenance-anytime-label">Any Time</div>
+                    {% if day.any_time_tickets %}
+                        {% for ticket in day.any_time_tickets %}
+                            {{ render_ticket_card(ticket) }}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                {% for slot in day.slots %}
+                <div
+                    class="maintenance-time-slot js-drop-zone {% if not slot.tickets %}is-empty{% endif %}"
+                    data-drop-date="{{ day.date.strftime('%Y-%m-%d') }}"
+                    data-drop-time="{{ slot.value }}"
+                >
+                    <div class="maintenance-time-label">{{ slot.label }}</div>
+                    <div class="maintenance-slot-body">
+                        {% if slot.tickets %}
+                            {% for ticket in slot.tickets %}
+                                {{ render_ticket_card(ticket) }}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <aside class="panel premium-panel maintenance-side-panel">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div>
+                <h3 style="margin: 0;">Unscheduled</h3>
+                <div class="area-subtitle">Drop here to clear date/time</div>
+            </div>
+            <span class="summary-pill">{{ unscheduled_tickets|length }}</span>
+        </div>
+
+        <div class="maintenance-unscheduled-drop js-drop-zone" data-drop-date="unscheduled" data-drop-time="">
+            <div class="maintenance-unscheduled-list">
+                {% if unscheduled_tickets %}
+                    {% for ticket in unscheduled_tickets %}
+                        {{ render_ticket_card(ticket) }}
+                    {% endfor %}
+                {% else %}
+                    <div class="maintenance-empty-day">No unscheduled maintenance tasks. Suspiciously organized. I like it.</div>
+                {% endif %}
+            </div>
+        </div>
+    </aside>
+</div>
+
+<div id="maintenance-toast" class="maintenance-toast">Maintenance task moved.</div>
+
+<div id="maintenance-edit-modal-backdrop" class="maintenance-modal-backdrop">
+    <div class="maintenance-modal" role="dialog" aria-modal="true" aria-labelledby="maintenance-modal-title">
+        <div class="maintenance-modal-header">
+            <div>
+                <h3 id="maintenance-modal-title" class="maintenance-modal-title">Schedule Maintenance Task</h3>
+                <div id="maintenance-modal-subtitle" class="maintenance-modal-subtitle">Update task schedule</div>
+            </div>
+            <button type="button" class="maintenance-modal-close" id="maintenance-modal-close">Close</button>
+        </div>
+
+        <div class="maintenance-modal-body">
+            <form method="POST" id="maintenance-modal-form">
+                <input type="hidden" name="action" value="schedule">
+                <input type="hidden" name="ticket_id" id="modal_ticket_id">
+                <input type="hidden" name="calendar_start" value="{{ week_start.strftime('%Y-%m-%d') }}">
+
+                <div class="maintenance-modal-grid">
+                    <div class="form-group">
+                        <label>Store</label>
+                        <select name="store_number" id="modal_store_number" required>
+                            {% for store in stores %}
+                            <option value="{{ store.store_number }}">{{ store.store_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status" id="modal_status" required>
+                            <option value="open">Open</option>
+                            <option value="assigned">Assigned</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="complete">Complete</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Assigned To</label>
+                        <input type="text" name="assigned_to" id="modal_assigned_to" placeholder="Example: Mike">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select name="priority" id="modal_priority">
+                            <option value="low">Low</option>
+                            <option value="normal">Normal</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Scheduled Date</label>
+                        <input type="date" name="scheduled_date" id="modal_scheduled_date">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Scheduled Time</label>
+                        <input type="time" name="scheduled_time" id="modal_scheduled_time">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Estimated Minutes</label>
+                        <input type="number" min="0" name="estimated_minutes" id="modal_estimated_minutes">
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Task Title</label>
+                        <input type="text" name="title" id="modal_title" required>
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Details</label>
+                        <textarea name="details" id="modal_details" rows="4"></textarea>
+                    </div>
+                </div>
+
+                <div class="maintenance-modal-actions">
+                    {% if user_role in ['admin', 'supervisor', 'maintenance'] %}
+                    <button type="submit" class="btn-primary">Save Schedule</button>
+                    {% else %}
+                    <button type="button" class="action-btn" id="maintenance-readonly-close">Close</button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const moveUrl = "{{ url_for('maintenance.move_calendar_ticket') }}";
+    const canMove = {{ 'true' if user_role in ['admin', 'supervisor', 'maintenance'] else 'false' }};
+    const toast = document.getElementById("maintenance-toast");
+
+    let draggedTicketId = null;
+    let dragStarted = false;
+
+    function showToast(message) {
+        if (!toast) return;
+
+        toast.textContent = message || "Maintenance task moved.";
+        toast.classList.add("is-open");
+
+        setTimeout(function () {
+            toast.classList.remove("is-open");
+        }, 1800);
+    }
+
+    function moveTicket(ticketId, scheduledDate, scheduledTime) {
+        const formData = new FormData();
+        formData.append("ticket_id", ticketId);
+        formData.append("scheduled_date", scheduledDate);
+        formData.append("scheduled_time", scheduledTime || "");
+
+        return fetch(moveUrl, {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin"
+        }).then(response => response.json());
+    }
+
+    if (canMove) {
+        document.querySelectorAll(".js-draggable-ticket").forEach(card => {
+            card.addEventListener("dragstart", function (e) {
+                draggedTicketId = this.dataset.ticketId;
+                dragStarted = true;
+                this.classList.add("is-dragging");
+
+                if (e.dataTransfer) {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", draggedTicketId);
+                }
+            });
+
+            card.addEventListener("dragend", function () {
+                this.classList.remove("is-dragging");
+
+                setTimeout(function () {
+                    dragStarted = false;
+                    draggedTicketId = null;
+                }, 100);
+            });
+        });
+
+        document.querySelectorAll(".js-drop-zone").forEach(zone => {
+            zone.addEventListener("dragover", function (e) {
+                e.preventDefault();
+                this.classList.add("is-drop-hover");
+
+                if (e.dataTransfer) {
+                    e.dataTransfer.dropEffect = "move";
+                }
+            });
+
+            zone.addEventListener("dragleave", function (e) {
+                if (!this.contains(e.relatedTarget)) {
+                    this.classList.remove("is-drop-hover");
+                }
+            });
+
+            zone.addEventListener("drop", function (e) {
+                e.preventDefault();
+                this.classList.remove("is-drop-hover");
+
+                const ticketId = draggedTicketId || (e.dataTransfer ? e.dataTransfer.getData("text/plain") : "");
+                const scheduledDate = this.dataset.dropDate;
+                const scheduledTime = this.dataset.dropTime || "";
+
+                if (!ticketId || !scheduledDate) return;
+
+                moveTicket(ticketId, scheduledDate, scheduledTime)
+                    .then(data => {
+                        if (!data.ok) {
+                            showToast(data.message || "Could not move task.");
+                            return;
+                        }
+
+                        showToast(data.message || "Maintenance task moved.");
+                        window.location.reload();
+                    })
+                    .catch(() => {
+                        showToast("Could not move task.");
+                    });
+            });
+        });
+    }
+
+    const modalBackdrop = document.getElementById("maintenance-edit-modal-backdrop");
+    const modalClose = document.getElementById("maintenance-modal-close");
+    const readonlyClose = document.getElementById("maintenance-readonly-close");
+    const modalSubtitle = document.getElementById("maintenance-modal-subtitle");
+
+    const ticketIdInput = document.getElementById("modal_ticket_id");
+    const storeInput = document.getElementById("modal_store_number");
+    const statusInput = document.getElementById("modal_status");
+    const titleInput = document.getElementById("modal_title");
+    const detailsInput = document.getElementById("modal_details");
+    const assignedToInput = document.getElementById("modal_assigned_to");
+    const scheduledDateInput = document.getElementById("modal_scheduled_date");
+    const scheduledTimeInput = document.getElementById("modal_scheduled_time");
+    const estimatedMinutesInput = document.getElementById("modal_estimated_minutes");
+    const priorityInput = document.getElementById("modal_priority");
+
+    function setReadonlyFields() {
+        if (canMove) return;
+        [storeInput, statusInput, titleInput, detailsInput, assignedToInput, scheduledDateInput, scheduledTimeInput, estimatedMinutesInput, priorityInput].forEach(el => {
+            if (el) el.disabled = true;
+        });
+    }
+
+    function openModal(data) {
+        ticketIdInput.value = data.ticketId || "";
+        storeInput.value = data.store || "";
+        statusInput.value = data.status || "open";
+        titleInput.value = data.title || "";
+        detailsInput.value = data.details || "";
+        assignedToInput.value = data.assignedTo || "";
+        scheduledDateInput.value = data.scheduledDate || "";
+        scheduledTimeInput.value = data.scheduledTime || "";
+        estimatedMinutesInput.value = data.estimatedMinutes || "";
+        priorityInput.value = data.priority || "normal";
+
+        let statusText = data.status ? data.status.replace("_", " ") : "Open";
+        let assignedText = data.assignedTo ? ` • ${data.assignedTo}` : "";
+        modalSubtitle.textContent = `Store ${data.store || ""} • ${statusText}${assignedText}`;
+
+        setReadonlyFields();
+        modalBackdrop.classList.add("is-open");
+    }
+
+    function closeModal() {
+        modalBackdrop.classList.remove("is-open");
+    }
+
+    document.querySelectorAll(".js-open-maintenance-modal").forEach(btn => {
+        btn.addEventListener("click", function () {
+            if (dragStarted) return;
+
+            openModal({
+                ticketId: this.dataset.ticketId,
+                store: this.dataset.ticketStore,
+                title: this.dataset.ticketTitle,
+                details: this.dataset.ticketDetails,
+                status: this.dataset.ticketStatus,
+                assignedTo: this.dataset.ticketAssignedTo,
+                scheduledDate: this.dataset.ticketScheduledDate,
+                scheduledTime: this.dataset.ticketScheduledTime,
+                estimatedMinutes: this.dataset.ticketEstimatedMinutes,
+                priority: this.dataset.ticketPriority
+            });
+        });
+    });
+
+    if (modalClose) {
+        modalClose.addEventListener("click", closeModal);
+    }
+
+    if (readonlyClose) {
+        readonlyClose.addEventListener("click", closeModal);
+    }
+
+    if (modalBackdrop) {
+        modalBackdrop.addEventListener("click", function (e) {
+            if (e.target === modalBackdrop) {
+                closeModal();
+            }
+        });
+    }
+
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+            closeModal();
+        }
+    });
+});
+</script>
+{% endblock %}

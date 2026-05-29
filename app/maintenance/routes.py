@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, date, time, timedelta
 from io import BytesIO
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
@@ -143,6 +143,106 @@ def create_maintenance_excel(tickets, status_filter, store_filter):
     wb.save(output)
     output.seek(0)
     return output
+
+
+
+def parse_optional_date(value):
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def parse_optional_time(value):
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%H:%M").time()
+    except ValueError:
+        return None
+
+
+def parse_optional_int(value):
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        parsed = int(value)
+        return parsed if parsed >= 0 else None
+    except ValueError:
+        return None
+
+
+def normalize_priority(value):
+    value = (value or "normal").strip().lower()
+    valid_priorities = {"low", "normal", "high", "urgent"}
+    return value if value in valid_priorities else "normal"
+
+
+def format_maintenance_time(ticket):
+    if not ticket or not getattr(ticket, "scheduled_time", None):
+        return "Any Time"
+
+    try:
+        return ticket.scheduled_time.strftime("%I:%M %p").lstrip("0")
+    except Exception:
+        return "Any Time"
+
+
+def build_calendar_time_slots():
+    slots = []
+    for hour in range(7, 20):
+        slot_time = time(hour=hour, minute=0)
+        slots.append({
+            "value": slot_time.strftime("%H:%M"),
+            "label": slot_time.strftime("%I:%M %p").lstrip("0"),
+            "time": slot_time,
+            "tickets": [],
+        })
+    return slots
+
+
+def get_calendar_week_start():
+    raw_start = request.args.get("start", "").strip()
+    requested = parse_optional_date(raw_start) or date.today()
+    return requested - timedelta(days=requested.weekday())
+
+
+def visible_ticket_or_none(ticket_id, visible_store_numbers):
+    try:
+        ticket_id = int(ticket_id)
+    except (TypeError, ValueError):
+        return None
+
+    ticket = MaintenanceTicket.query.get(ticket_id)
+    if not ticket:
+        return None
+
+    if ticket.store_number not in visible_store_numbers:
+        return None
+
+    return ticket
+
+
+def apply_schedule_form_to_ticket(ticket):
+    ticket.store_number = request.form.get("store_number", ticket.store_number).strip()
+    ticket.title = request.form.get("title", ticket.title or "").strip()
+    ticket.details = request.form.get("details", ticket.details or "").strip()
+    ticket.status = request.form.get("status", ticket.status or "open").strip()
+
+    ticket.assigned_to = request.form.get("assigned_to", ticket.assigned_to or "").strip() or None
+    ticket.scheduled_date = parse_optional_date(request.form.get("scheduled_date"))
+    ticket.scheduled_time = parse_optional_time(request.form.get("scheduled_time"))
+    ticket.estimated_minutes = parse_optional_int(request.form.get("estimated_minutes"))
+    ticket.priority = normalize_priority(request.form.get("priority"))
+
+    valid_statuses = {"open", "assigned", "in_progress", "complete"}
+    if ticket.status not in valid_statuses:
+        ticket.status = "open"
 
 
 @maintenance_bp.route("/", methods=["GET", "POST"])
@@ -320,6 +420,150 @@ def index():
         store_filter=store_filter,
         user_role=role,
     )
+
+
+
+@maintenance_bp.route("/calendar", methods=["GET", "POST"])
+@login_required
+@role_required("admin", "supervisor", "maintenance", "manager")
+def calendar():
+    visible_stores = get_visible_stores()
+    visible_store_numbers = get_visible_store_numbers()
+    role = get_current_role()
+
+    week_start = get_calendar_week_start()
+    calendar_start_raw = request.form.get("calendar_start", "").strip()
+    if calendar_start_raw:
+        posted_week_start = parse_optional_date(calendar_start_raw)
+        if posted_week_start:
+            week_start = posted_week_start
+
+    week_end = week_start + timedelta(days=6)
+    previous_week = week_start - timedelta(days=7)
+    next_week = week_start + timedelta(days=7)
+
+    if request.method == "POST":
+        action = request.form.get("action", "").strip()
+
+        if action == "schedule":
+            if role == "manager":
+                flash("Managers can view the maintenance calendar, but cannot schedule maintenance tasks.", "error")
+                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+
+            ticket = visible_ticket_or_none(request.form.get("ticket_id"), visible_store_numbers)
+            if not ticket:
+                flash("Maintenance task not found or not available.", "error")
+                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+
+            new_store_number = request.form.get("store_number", ticket.store_number).strip()
+            if new_store_number not in visible_store_numbers:
+                flash("Invalid store selection.", "error")
+                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+
+            title = request.form.get("title", "").strip()
+            if not title:
+                flash("Task title is required.", "error")
+                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+
+            apply_schedule_form_to_ticket(ticket)
+
+            if ticket.scheduled_time and not ticket.scheduled_date:
+                flash("Please choose a scheduled date when setting a scheduled time.", "error")
+                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+
+            db.session.commit()
+            flash("Maintenance schedule updated.", "success")
+            return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+
+    tickets = MaintenanceTicket.query.order_by(
+        MaintenanceTicket.created_at.asc(),
+        MaintenanceTicket.id.asc()
+    ).all()
+
+    tickets = [
+        t for t in tickets
+        if t.store_number in visible_store_numbers
+    ]
+
+    def ticket_sort_key(ticket):
+        return (
+            ticket.scheduled_date or date.max,
+            ticket.scheduled_time or time(hour=23, minute=59),
+            ticket.created_at or datetime.min,
+            ticket.id or 0,
+        )
+
+    tickets = sorted(tickets, key=ticket_sort_key)
+
+    days = []
+    for offset in range(7):
+        current_day = week_start + timedelta(days=offset)
+        day_tickets = [t for t in tickets if t.scheduled_date == current_day]
+        any_time_tickets = [t for t in day_tickets if not t.scheduled_time]
+
+        slots = build_calendar_time_slots()
+        for slot in slots:
+            slot["tickets"] = [
+                t for t in day_tickets
+                if t.scheduled_time and t.scheduled_time.hour == slot["time"].hour
+            ]
+
+        days.append({
+            "date": current_day,
+            "tickets": day_tickets,
+            "any_time_tickets": any_time_tickets,
+            "slots": slots,
+        })
+
+    # Keep completed tasks visible on the calendar when scheduled,
+    # but do not keep completed unscheduled work in the dispatch pile.
+    unscheduled_tickets = [
+        t for t in tickets
+        if not t.scheduled_date and t.status != "complete"
+    ]
+
+    return render_template(
+        "maintenance_calendar.html",
+        stores=visible_stores,
+        days=days,
+        unscheduled_tickets=unscheduled_tickets,
+        week_start=week_start,
+        week_end=week_end,
+        previous_week=previous_week,
+        next_week=next_week,
+        user_role=role,
+        format_time=format_maintenance_time,
+    )
+
+
+@maintenance_bp.route("/calendar/move", methods=["POST"])
+@login_required
+@role_required("admin", "supervisor", "maintenance")
+def move_calendar_ticket():
+    visible_store_numbers = get_visible_store_numbers()
+
+    ticket = visible_ticket_or_none(request.form.get("ticket_id"), visible_store_numbers)
+    if not ticket:
+        return jsonify({"ok": False, "message": "Task not found or access denied."}), 404
+
+    scheduled_date_raw = request.form.get("scheduled_date", "").strip()
+    scheduled_time_raw = request.form.get("scheduled_time", "").strip()
+
+    if scheduled_date_raw == "unscheduled":
+        ticket.scheduled_date = None
+        ticket.scheduled_time = None
+        db.session.commit()
+        return jsonify({"ok": True, "message": "Task moved to unscheduled."})
+
+    scheduled_date = parse_optional_date(scheduled_date_raw)
+    if not scheduled_date:
+        return jsonify({"ok": False, "message": "Invalid scheduled date."}), 400
+
+    ticket.scheduled_date = scheduled_date
+    ticket.scheduled_time = parse_optional_time(scheduled_time_raw)
+
+    db.session.commit()
+    return jsonify({"ok": True, "message": "Maintenance task moved."})
 
 
 @maintenance_bp.route("/export/excel")

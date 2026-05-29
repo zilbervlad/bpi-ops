@@ -28,7 +28,17 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) 360px;
         gap: 24px;
-        align-items: start;
+        align-items: stretch;
+        height: calc(100vh - 170px);
+        min-height: 620px;
+        overflow: hidden;
+    }
+
+    .maintenance-calendar-layout > section.panel {
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
     .maintenance-calendar-grid {
@@ -37,11 +47,15 @@
         gap: 14px;
         width: 100%;
         overflow-x: auto;
+        overflow-y: hidden;
         padding-bottom: 8px;
+        flex: 1;
+        min-height: 0;
     }
 
     .maintenance-day-card {
-        min-height: 680px;
+        height: 100%;
+        min-height: 0;
         padding: 14px;
         border-radius: 20px;
         border: 1px solid rgba(255,255,255,0.08);
@@ -276,17 +290,59 @@
     .maintenance-side-panel {
         position: sticky;
         top: 20px;
+        height: 100%;
+        max-height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
     .maintenance-unscheduled-drop {
-        min-height: 160px;
+        flex: 1;
+        min-height: 0;
         border-radius: 18px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 6px;
+        scrollbar-width: thin;
     }
 
     .maintenance-unscheduled-list {
         display: grid;
-        gap: 10px;
+        gap: 8px;
         margin-top: 14px;
+        padding-bottom: 12px;
+    }
+
+    .maintenance-unscheduled-drop .maintenance-event-card {
+        border-radius: 10px;
+        padding: 8px 9px;
+        margin-bottom: 0;
+    }
+
+    .maintenance-unscheduled-drop .maintenance-event-time {
+        font-size: 8px;
+        margin-bottom: 2px;
+    }
+
+    .maintenance-unscheduled-drop .maintenance-event-title {
+        font-size: 10px;
+        line-height: 1.15;
+        margin-bottom: 2px;
+    }
+
+    .maintenance-unscheduled-drop .maintenance-event-meta {
+        font-size: 9px;
+    }
+
+    .maintenance-unscheduled-drop .maintenance-pill-row {
+        margin-top: 5px;
+    }
+
+    .maintenance-unscheduled-drop .maintenance-status-pill,
+    .maintenance-unscheduled-drop .maintenance-priority-pill {
+        padding: 2px 6px;
+        font-size: 7px;
     }
 
     .maintenance-empty-day {
@@ -408,13 +464,37 @@
     }
 
     @media (max-width: 900px) {
+        .maintenance-calendar-layout {
+            height: auto;
+            min-height: 0;
+            overflow: visible;
+        }
+
+        .maintenance-calendar-layout > section.panel {
+            height: auto;
+            overflow: visible;
+        }
+
         .maintenance-calendar-grid {
             grid-template-columns: 1fr;
             overflow-x: visible;
+            overflow-y: visible;
         }
 
         .maintenance-day-card {
+            height: auto;
             min-height: auto;
+        }
+
+        .maintenance-side-panel {
+            height: auto;
+            max-height: none;
+            overflow: visible;
+        }
+
+        .maintenance-unscheduled-drop {
+            max-height: 520px;
+            overflow-y: auto;
         }
 
         .maintenance-modal-grid {

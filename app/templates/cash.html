@@ -176,7 +176,7 @@
         </div>
         {% endif %}
 
-        <form method="POST" class="login-form">
+        <form method="POST" class="login-form" id="cash-control-form">
             {% if edit_log %}
             <input type="hidden" name="edit_log_id" value="{{ edit_log.id }}">
             {% endif %}
@@ -447,6 +447,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const frontTill = document.getElementById("front_till");
     const driverBanks = document.getElementById("driver_banks");
     const amountToAccountFor = document.getElementById("amount_to_account_for");
+    const cashForm = document.getElementById("cash-control-form");
     const cashOverShort = document.getElementById("cash_over_short");
 
     function num(value) {
@@ -489,6 +490,27 @@ document.addEventListener("DOMContentLoaded", function () {
             el.addEventListener("input", updateCashOverShort);
         }
     });
+
+    if (cashForm) {
+        cashForm.addEventListener("submit", function (event) {
+            updateCashOverShort();
+
+            const isMidshift = shiftType && shiftType.value === "midshift";
+            const difference = num(cashOverShort ? cashOverShort.value : 0);
+
+            if (isMidshift && Math.abs(difference) > 10) {
+                const message =
+                    "Cash Difference Warning\n\n" +
+                    "This midshift count is over/short by $" + Math.abs(difference).toFixed(2) + ".\n\n" +
+                    "Please double-check the tills, driver banks, and Amount to Account For before submitting.\n\n" +
+                    "Click OK to submit anyway, or Cancel to go back and fix it.";
+
+                if (!confirm(message)) {
+                    event.preventDefault();
+                }
+            }
+        });
+    }
 
     updateMidshiftVisibility();
 });

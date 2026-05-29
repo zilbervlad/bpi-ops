@@ -445,6 +445,44 @@ def calendar():
     if request.method == "POST":
         action = request.form.get("action", "").strip()
 
+        if action == "unschedule":
+            if role == "manager":
+                flash("Managers can view the maintenance calendar, but cannot schedule maintenance tasks.", "error")
+                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+
+            ticket = visible_ticket_or_none(request.form.get("ticket_id"), visible_store_numbers)
+            if not ticket:
+                flash("Maintenance task not found or not available.", "error")
+                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+
+            ticket.scheduled_date = None
+            ticket.scheduled_time = None
+            ticket.assigned_to = None
+
+            db.session.commit()
+            flash("Maintenance task moved back to unscheduled.", "success")
+            return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+
+        if action == "unschedule_all":
+            if role == "manager":
+                flash("Managers can view the maintenance calendar, but cannot schedule maintenance tasks.", "error")
+                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+
+            scheduled_tickets = MaintenanceTicket.query.filter(
+                MaintenanceTicket.store_number.in_(visible_store_numbers),
+                MaintenanceTicket.scheduled_date.isnot(None),
+                MaintenanceTicket.status != "complete"
+            ).all()
+
+            for ticket in scheduled_tickets:
+                ticket.scheduled_date = None
+                ticket.scheduled_time = None
+                ticket.assigned_to = None
+
+            db.session.commit()
+            flash(f"{len(scheduled_tickets)} maintenance tasks moved back to Unscheduled.", "success")
+            return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+
         if action == "schedule":
             if role == "manager":
                 flash("Managers can view the maintenance calendar, but cannot schedule maintenance tasks.", "error")

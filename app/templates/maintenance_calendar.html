@@ -47,15 +47,17 @@
         gap: 14px;
         width: 100%;
         overflow-x: auto;
-        overflow-y: hidden;
+        overflow-y: auto;
         padding-bottom: 8px;
         flex: 1;
         min-height: 0;
+        align-items: start;
+        scrollbar-width: thin;
     }
 
     .maintenance-day-card {
-        height: 100%;
-        min-height: 0;
+        min-height: 980px;
+        height: auto;
         padding: 14px;
         border-radius: 20px;
         border: 1px solid rgba(255,255,255,0.08);
@@ -609,7 +611,24 @@
                 <h3 style="margin: 0;">Unscheduled</h3>
                 <div class="area-subtitle">Drop here to clear date/time</div>
             </div>
-            <span class="summary-pill">{{ unscheduled_tickets|length }}</span>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+                {% if user_role in ['admin', 'supervisor', 'maintenance'] %}
+                <form method="POST" style="margin: 0;">
+                    <input type="hidden" name="action" value="unschedule_all">
+                    <input type="hidden" name="calendar_start" value="{{ week_start.strftime('%Y-%m-%d') }}">
+                    <button
+                        type="submit"
+                        class="action-btn"
+                        style="max-width: 130px; padding: 7px 10px; font-size: 11px;"
+                        onclick="return confirm('Move all scheduled incomplete maintenance tasks back to Unscheduled?')"
+                    >
+                        Unassign All
+                    </button>
+                </form>
+                {% endif %}
+                <span class="summary-pill">{{ unscheduled_tickets|length }}</span>
+            </div>
         </div>
 
         <div class="maintenance-unscheduled-drop js-drop-zone" data-drop-date="unscheduled" data-drop-time="">
@@ -640,7 +659,7 @@
 
         <div class="maintenance-modal-body">
             <form method="POST" id="maintenance-modal-form">
-                <input type="hidden" name="action" value="schedule">
+                <!-- action is set by the Save / Unassign buttons -->
                 <input type="hidden" name="ticket_id" id="modal_ticket_id">
                 <input type="hidden" name="calendar_start" value="{{ week_start.strftime('%Y-%m-%d') }}">
 
@@ -707,7 +726,17 @@
 
                 <div class="maintenance-modal-actions">
                     {% if user_role in ['admin', 'supervisor', 'maintenance'] %}
-                    <button type="submit" class="btn-primary">Save Schedule</button>
+                    <button
+                        type="submit"
+                        name="action"
+                        value="unschedule"
+                        class="action-btn"
+                        formnovalidate
+                        onclick="return confirm('Move this task back to Unscheduled and clear the assignment?')"
+                    >
+                        Unassign
+                    </button>
+                    <button type="submit" name="action" value="schedule" class="btn-primary">Save Schedule</button>
                     {% else %}
                     <button type="button" class="action-btn" id="maintenance-readonly-close">Close</button>
                     {% endif %}

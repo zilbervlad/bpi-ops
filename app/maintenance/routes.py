@@ -560,6 +560,28 @@ def calendar():
         if not t.scheduled_date and t.status != "complete"
     ]
 
+    def unscheduled_sort_key(ticket):
+        try:
+            store_sort = int(ticket.store_number)
+        except (TypeError, ValueError):
+            store_sort = 999999
+
+        status_order = {
+            "open": 1,
+            "assigned": 2,
+            "in_progress": 3,
+            "complete": 4,
+        }
+
+        return (
+            store_sort,
+            status_order.get(ticket.status, 99),
+            ticket.created_at or datetime.min,
+            ticket.id or 0,
+        )
+
+    unscheduled_tickets = sorted(unscheduled_tickets, key=unscheduled_sort_key)
+
     return render_template(
         "maintenance_calendar.html",
         stores=visible_stores,

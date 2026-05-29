@@ -307,10 +307,15 @@
             <div class="cash-stat-label">Midshift Exceptions</div>
             <div class="cash-stat-value">{{ midshift_logs|length }}</div>
         </div>
-        <div class="panel premium-panel cash-stat-card">
-            <div class="cash-stat-label">Closing → Opening Pairs</div>
+        <button
+            type="button"
+            id="handoff-differences-card"
+            class="panel premium-panel cash-stat-card"
+            style="width: 100%; text-align: left; color: inherit; cursor: pointer;"
+        >
+            <div class="cash-stat-label">Handoff Differences</div>
             <div class="cash-stat-value">{{ closing_opening_diffs|length }}</div>
-        </div>
+        </button>
         <div class="panel premium-panel cash-stat-card">
             <div class="cash-stat-label">Stores in View</div>
             <div class="cash-stat-value">{{ stores|length }}</div>
@@ -718,6 +723,20 @@ document.addEventListener("DOMContentLoaded", function () {
     bindToggle("midshift-exceptions-toggle", "midshift-exceptions-body", "midshift-exceptions-chevron");
     bindToggle("closing-opening-toggle", "closing-opening-body", "closing-opening-chevron");
     bindToggle("recent-cash-toggle", "recent-cash-body", "recent-cash-chevron");
+
+    const handoffCard = document.getElementById("handoff-differences-card");
+    const closingToggle = document.getElementById("closing-opening-toggle");
+    const closingBody = document.getElementById("closing-opening-body");
+    const closingChevron = document.getElementById("closing-opening-chevron");
+
+    if (handoffCard && closingToggle && closingBody && closingChevron) {
+        handoffCard.addEventListener("click", function () {
+            closingBody.style.display = "block";
+            closingToggle.setAttribute("aria-expanded", "true");
+            closingChevron.textContent = "Hide ▲";
+            closingToggle.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+    }
 });
 </script>
 {% endblock %}

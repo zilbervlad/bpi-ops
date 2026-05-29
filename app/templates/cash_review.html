@@ -59,6 +59,13 @@
         line-height: 1.1;
     }
 
+    .cash-stat-detail {
+        margin-top: 8px;
+        font-size: 0.82rem;
+        line-height: 1.35;
+        opacity: 0.76;
+    }
+
     .cash-filter-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -291,22 +298,48 @@
             </p>
         </div>
         <div class="cash-command-bar-right">
-            <div class="command-chip">{{ logs|length }} Logs</div>
-            <div class="command-chip">{{ stores|length }} Stores</div>
-            <div class="command-chip">{{ midshift_logs|length }} Midshift</div>
+            <div class="command-chip">{{ missed_night_stores|length }} Night Missed</div>
+            <div class="command-chip">{{ missed_morning_stores|length }} Morning Missed</div>
+            <div class="command-chip">{{ missed_midshift_stores|length }} Midshift Missed</div>
             <div class="command-chip">{{ closing_opening_diffs|length }} Handoffs</div>
         </div>
     </div>
 
     <div class="cash-summary-grid">
         <div class="panel premium-panel cash-stat-card">
-            <div class="cash-stat-label">Visible Logs</div>
-            <div class="cash-stat-value">{{ logs|length }}</div>
+            <div class="cash-stat-label">Missed Night Count</div>
+            <div class="cash-stat-value">{{ missed_night_stores|length }}</div>
+            <div class="cash-stat-detail">
+                {% if missed_night_stores|length %}
+                    Stores: {{ missed_night_stores[:8]|join(', ') }}{% if missed_night_stores|length > 8 %} +{{ missed_night_stores|length - 8 }} more{% endif %}
+                {% else %}
+                    All stores completed night count.
+                {% endif %}
+            </div>
         </div>
         <div class="panel premium-panel cash-stat-card">
-            <div class="cash-stat-label">Midshift Exceptions</div>
-            <div class="cash-stat-value">{{ midshift_logs|length }}</div>
+            <div class="cash-stat-label">Missed Morning Count</div>
+            <div class="cash-stat-value">{{ missed_morning_stores|length }}</div>
+            <div class="cash-stat-detail">
+                {% if missed_morning_stores|length %}
+                    Stores: {{ missed_morning_stores[:8]|join(', ') }}{% if missed_morning_stores|length > 8 %} +{{ missed_morning_stores|length - 8 }} more{% endif %}
+                {% else %}
+                    All stores completed morning count.
+                {% endif %}
+            </div>
         </div>
+        <div class="panel premium-panel cash-stat-card">
+            <div class="cash-stat-label">Missed Midshift Count</div>
+            <div class="cash-stat-value">{{ missed_midshift_stores|length }}</div>
+            <div class="cash-stat-detail">
+                {% if missed_midshift_stores|length %}
+                    Stores: {{ missed_midshift_stores[:8]|join(', ') }}{% if missed_midshift_stores|length > 8 %} +{{ missed_midshift_stores|length - 8 }} more{% endif %}
+                {% else %}
+                    All stores completed midshift count.
+                {% endif %}
+            </div>
+        </div>
+
         <button
             type="button"
             id="handoff-differences-card"

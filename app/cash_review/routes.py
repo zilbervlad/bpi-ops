@@ -125,6 +125,47 @@ def build_cash_review_payload():
 
     logs = query.limit(100).all()
 
+    missed_scope_stores = visible_stores
+    if store_filter:
+        missed_scope_stores = [
+            store for store in visible_stores
+            if str(store.store_number) == str(store_filter)
+        ]
+
+    missed_scope_store_numbers = {
+        store.store_number for store in missed_scope_stores
+    }
+
+    missed_logs = CashLog.query.filter(
+        CashLog.store_number.in_(missed_scope_store_numbers),
+        CashLog.log_date == dashboard_date
+    ).all()
+
+    stores_by_shift = {
+        "opening": set(),
+        "midshift": set(),
+        "closing": set(),
+    }
+
+    for log in missed_logs:
+        if log.shift_type in stores_by_shift:
+            stores_by_shift[log.shift_type].add(log.store_number)
+
+    missed_morning_stores = [
+        store.store_number for store in missed_scope_stores
+        if store.store_number not in stores_by_shift["opening"]
+    ]
+
+    missed_midshift_stores = [
+        store.store_number for store in missed_scope_stores
+        if store.store_number not in stores_by_shift["midshift"]
+    ]
+
+    missed_night_stores = [
+        store.store_number for store in missed_scope_stores
+        if store.store_number not in stores_by_shift["closing"]
+    ]
+
     midshift_logs = [
         log for log in logs
         if log.shift_type == "midshift"
@@ -160,6 +201,9 @@ def build_cash_review_payload():
         "midshift_count": len(midshift_logs),
         "diff_pair_count": len(closing_opening_diffs),
         "stores_in_scope": len(visible_stores),
+        "missed_night_count": len(missed_night_stores),
+        "missed_morning_count": len(missed_morning_stores),
+        "missed_midshift_count": len(missed_midshift_stores),
     }
 
     return {
@@ -167,6 +211,9 @@ def build_cash_review_payload():
         "logs": logs,
         "midshift_logs": midshift_logs,
         "closing_opening_diffs": closing_opening_diffs,
+        "missed_night_stores": missed_night_stores,
+        "missed_morning_stores": missed_morning_stores,
+        "missed_midshift_stores": missed_midshift_stores,
         "store_filter": store_filter,
         "shift_filter": shift_filter,
         "date_filter": date_filter,
@@ -321,6 +368,9 @@ def index():
         logs=payload["logs"],
         midshift_logs=payload["midshift_logs"],
         closing_opening_diffs=payload["closing_opening_diffs"],
+        missed_night_stores=payload["missed_night_stores"],
+        missed_morning_stores=payload["missed_morning_stores"],
+        missed_midshift_stores=payload["missed_midshift_stores"],
         store_filter=payload["store_filter"],
         shift_filter=payload["shift_filter"],
         date_filter=payload["date_filter"],

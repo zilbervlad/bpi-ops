@@ -464,6 +464,16 @@
         border-color: rgba(255,255,255,0.18);
     }
 
+    .maintenance-complete-btn {
+        border-color: rgba(34, 197, 94, 0.26);
+        background: rgba(34, 197, 94, 0.08);
+    }
+
+    .maintenance-complete-btn:hover {
+        border-color: rgba(34, 197, 94, 0.42);
+        background: rgba(34, 197, 94, 0.14);
+    }
+
     .maintenance-empty {
         padding: 16px 14px;
         opacity: 0.8;
@@ -660,6 +670,16 @@
             <input type="hidden" name="status" value="in_progress">
             <button type="submit" class="maintenance-quick-btn">Start Fix</button>
         </form>
+
+        <form method="POST">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+            <input type="hidden" name="store_number" value="{{ ticket.store_number }}">
+            <input type="hidden" name="title" value="{{ ticket.title }}">
+            <input type="hidden" name="details" value="{{ ticket.details or '' }}">
+            <input type="hidden" name="status" value="complete">
+            <button type="submit" class="maintenance-quick-btn maintenance-complete-btn">Complete</button>
+        </form>
         {% elif ticket.status == "in_progress" %}
         <form method="POST">
             <input type="hidden" name="action" value="update">
@@ -668,7 +688,7 @@
             <input type="hidden" name="title" value="{{ ticket.title }}">
             <input type="hidden" name="details" value="{{ ticket.details or '' }}">
             <input type="hidden" name="status" value="complete">
-            <button type="submit" class="maintenance-quick-btn">Mark Done</button>
+            <button type="submit" class="maintenance-quick-btn maintenance-complete-btn">Complete</button>
         </form>
         {% endif %}
 
@@ -748,7 +768,7 @@
 
 <div class="maintenance-sections">
     {{ render_section('Open', 'open', open_tickets, True) }}
-    {{ render_section('Assigned', 'assigned', assigned_tickets, False) }}
+    {{ render_section('Assigned', 'assigned', assigned_tickets, True) }}
     {{ render_section('In Progress', 'progress', in_progress_tickets, True) }}
     {{ render_section('Complete', 'complete', complete_tickets, False) }}
 </div>
@@ -841,11 +861,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!toggle || !body || !chevron) return;
 
+        const stateKey = "maintenanceToggle:" + bodyId;
+        const savedState = sessionStorage.getItem(stateKey);
+
+        if (savedState === "open" || savedState === "closed") {
+            const shouldOpen = savedState === "open";
+            body.style.display = shouldOpen ? "block" : "none";
+            toggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+            chevron.textContent = shouldOpen ? "Hide ▲" : "Show ▼";
+        }
+
         toggle.addEventListener("click", function () {
             const isHidden = body.style.display === "none";
             body.style.display = isHidden ? "block" : "none";
             toggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
             chevron.textContent = isHidden ? "Hide ▲" : "Show ▼";
+            sessionStorage.setItem(stateKey, isHidden ? "open" : "closed");
         });
     }
 

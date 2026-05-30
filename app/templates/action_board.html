@@ -61,6 +61,30 @@
             </div>
 
             <div class="action-sidebar-section">
+                <div class="action-sidebar-title">Store Filter</div>
+
+                <div class="action-store-filter-controls">
+                    <button type="button" class="action-mini-btn" id="select-all-stores-btn">All</button>
+                    <button type="button" class="action-mini-btn" id="clear-store-filter-btn">Clear</button>
+                </div>
+
+                <div class="action-store-picker">
+                    {% for tile in store_tiles %}
+                        {% set store_open_total = (tile.open_cleaning|length) + (tile.open_goal|length) %}
+                        <button
+                            type="button"
+                            class="action-store-pick-btn"
+                            data-store-select="{{ tile.store_number }}"
+                            data-store-open-count="{{ store_open_total }}"
+                        >
+                            <span>Store {{ tile.store_number }}</span>
+                            <strong>{{ store_open_total }}</strong>
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="action-sidebar-section">
                 <div class="action-sidebar-title">Actions</div>
                 <div class="action-sidebar-stack">
                     <button type="button" class="action-sidebar-btn" id="expand-all-btn">Expand All</button>
@@ -81,7 +105,8 @@
 
             <div class="action-toolbar">
                 <div class="summary-pill" id="visible-store-count">{{ store_tiles|length }} stores</div>
-                <div class="summary-pill">Open work stays front and center</div>
+                <div class="summary-pill" id="selected-store-count">All stores selected</div>
+                <div class="summary-pill action-open-total-pill" id="selected-open-count">{{ ns.total_open }} open items</div>
 
                 <div class="action-sort-group">
                     <select id="action-sort-by" class="action-sort-select" aria-label="Sort stores by">
@@ -280,6 +305,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const actionStoreList = document.getElementById("action-store-list");
     const sortBySelect = document.getElementById("action-sort-by");
     const sortDirectionBtn = document.getElementById("action-sort-direction");
+    const storeSelectButtons = Array.from(document.querySelectorAll("[data-store-select]"));
+    const selectAllStoresBtn = document.getElementById("select-all-stores-btn");
+    const clearStoreFilterBtn = document.getElementById("clear-store-filter-btn");
+    const selectedStoreCount = document.getElementById("selected-store-count");
+    const selectedOpenCount = document.getElementById("selected-open-count");
+    const selectedStores = new Set();
 
     function getDetail(row) {
         return row.querySelector("[data-store-detail]");
@@ -300,9 +331,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function updateVisibleCount() {
-        const visible = storeRows.filter(row => !row.classList.contains("action-hidden")).length;
+        const visibleRows = storeRows.filter(row => !row.classList.contains("action-hidden"));
+        const visible = visibleRows.length;
+        const openTotal = visibleRows.reduce((sum, row) => sum + Number(row.dataset.openTotal || 0), 0);
+
         if (visibleStoreCount) {
-            visibleStoreCount.textContent = `${visible} stores`;
+            visibleStoreCount.textContent = `${visible} stores shown`;
+        }
+
+        if (selectedStoreCount) {
+            selectedStoreCount.textContent = selectedStores.size
+                ? `${selectedStores.size} selected`
+                : "All stores selected";
+        }
+
+        if (selectedOpenCount) {
+            selectedOpenCount.textContent = `${openTotal} open items`;
         }
     }
 
@@ -345,30 +389,82 @@ document.addEventListener("DOMContentLoaded", function () {
         rows.forEach(row => actionStoreList.appendChild(row));
     }
 
+    function getActiveViewFilter() {
+        const active = document.querySelector("[data-view-filter].is-active");
+        return active ? active.dataset.viewFilter || "all" : "all";
+    }
+
+    function rowMatchesView(row, filter) {
+        const rowFilter = row.dataset.storeFilter || "";
+
+        return (
+            filter === "all" ||
+            (filter === "with_open" && rowFilter === "with_open") ||
+            (filter === "done_only" && rowFilter === "done_only")
+        );
+    }
+
+    function rowMatchesStoreSelection(row) {
+        if (selectedStores.size === 0) return true;
+        return selectedStores.has(row.dataset.storeNumber || "");
+    }
+
+    function applyBoardFilters() {
+        const filter = getActiveViewFilter();
+
+        storeRows.forEach(row => {
+            const shouldShow = rowMatchesView(row, filter) && rowMatchesStoreSelection(row);
+
+            row.classList.toggle("action-hidden", !shouldShow);
+
+            if (!shouldShow) {
+                setRowOpen(row, false);
+            }
+        });
+
+        updateVisibleCount();
+    }
+
     filterButtons.forEach(btn => {
         btn.addEventListener("click", function () {
-            const filter = this.dataset.viewFilter || "all";
-
             filterButtons.forEach(other => other.classList.remove("is-active"));
             this.classList.add("is-active");
-
-            storeRows.forEach(row => {
-                const rowFilter = row.dataset.storeFilter || "";
-                const shouldShow =
-                    filter === "all" ||
-                    (filter === "with_open" && rowFilter === "with_open") ||
-                    (filter === "done_only" && rowFilter === "done_only");
-
-                row.classList.toggle("action-hidden", !shouldShow);
-
-                if (!shouldShow) {
-                    setRowOpen(row, false);
-                }
-            });
-
-            updateVisibleCount();
+            applyBoardFilters();
         });
     });
+
+    storeSelectButtons.forEach(btn => {
+        btn.addEventListener("click", function () {
+            const storeNumber = this.dataset.storeSelect || "";
+            if (!storeNumber) return;
+
+            if (selectedStores.has(storeNumber)) {
+                selectedStores.delete(storeNumber);
+                this.classList.remove("is-selected");
+            } else {
+                selectedStores.add(storeNumber);
+                this.classList.add("is-selected");
+            }
+
+            applyBoardFilters();
+        });
+    });
+
+    if (selectAllStoresBtn) {
+        selectAllStoresBtn.addEventListener("click", function () {
+            selectedStores.clear();
+            storeSelectButtons.forEach(btn => btn.classList.remove("is-selected"));
+            applyBoardFilters();
+        });
+    }
+
+    if (clearStoreFilterBtn) {
+        clearStoreFilterBtn.addEventListener("click", function () {
+            selectedStores.clear();
+            storeSelectButtons.forEach(btn => btn.classList.remove("is-selected"));
+            applyBoardFilters();
+        });
+    }
 
     storeRows.forEach(row => {
         const summary = row.querySelector("[data-store-row-toggle]");
@@ -438,7 +534,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     sortRows();
-    updateVisibleCount();
+    applyBoardFilters();
 });
 </script>
 {% endblock %}

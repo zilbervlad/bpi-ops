@@ -2768,3 +2768,197 @@ textarea:focus {
         font-size: 9.5px;
     }
 }
+
+
+/* =========================================================
+   BPI OPS CASH REVIEW MOBILE POLISH
+   Tightens existing mobile cash cards + filters
+========================================================= */
+
+@media (max-width: 800px) {
+    .cash-review-page {
+        gap: 10px !important;
+    }
+
+    .cash-command-bar {
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+
+    .cash-command-bar-left {
+        flex: 1 1 auto !important;
+    }
+
+    .cash-command-bar-right {
+        width: 100%;
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px !important;
+    }
+
+    .cash-command-bar-right .command-chip {
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
+        line-height: 1.15;
+        min-height: 36px;
+    }
+
+    .cash-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .cash-stat-card {
+        padding: 11px !important;
+        border-radius: 16px !important;
+        background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(8, 15, 28, 0.9)) !important;
+        border-color: rgba(148, 163, 184, 0.14) !important;
+    }
+
+    .cash-stat-label {
+        font-size: 9.75px !important;
+        line-height: 1.1;
+        margin-bottom: 5px !important;
+        letter-spacing: .09em;
+    }
+
+    .cash-stat-value {
+        font-size: 21px !important;
+        line-height: 1.05;
+    }
+
+    .cash-stat-detail {
+        margin-top: 5px !important;
+        font-size: 10.75px !important;
+        line-height: 1.22 !important;
+        max-height: 38px;
+        overflow: hidden;
+    }
+
+    #handoff-differences-card {
+        cursor: pointer;
+    }
+
+    .cash-filter-grid {
+        grid-template-columns: 1fr !important;
+        gap: 9px !important;
+    }
+
+    .cash-filter-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px !important;
+        margin-top: 10px !important;
+    }
+
+    .cash-filter-actions .btn-primary,
+    .cash-filter-actions .action-btn {
+        width: 100%;
+        max-width: none !important;
+        min-height: 40px;
+    }
+
+    .cash-section-toggle {
+        padding: 2px 0 !important;
+        align-items: flex-start !important;
+    }
+
+    .cash-section-toggle-left {
+        gap: 7px !important;
+    }
+
+    .cash-section-title {
+        font-size: 15px !important;
+        line-height: 1.12;
+    }
+
+    .cash-mobile-list {
+        margin-top: 10px !important;
+        gap: 9px !important;
+    }
+
+    .cash-mobile-card {
+        padding: 11px !important;
+        border-radius: 16px !important;
+        background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(8, 15, 28, 0.9)) !important;
+        border: 1px solid rgba(148, 163, 184, 0.13) !important;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22) !important;
+    }
+
+    .cash-mobile-card-head {
+        margin-bottom: 10px !important;
+        gap: 8px !important;
+    }
+
+    .cash-mobile-store {
+        font-size: 15px !important;
+        letter-spacing: -0.035em;
+        line-height: 1.05;
+    }
+
+    .cash-mobile-date {
+        font-size: 10.75px !important;
+        margin-top: 3px !important;
+        color: rgba(203, 213, 225, 0.68) !important;
+    }
+
+    .cash-mobile-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .cash-mobile-item {
+        padding: 8px 9px;
+        border-radius: 13px;
+        background: rgba(15, 23, 42, 0.54);
+        border: 1px solid rgba(148, 163, 184, 0.09);
+    }
+
+    .cash-mobile-label {
+        font-size: 9.5px !important;
+        font-weight: 800;
+        letter-spacing: .085em;
+        color: rgba(203, 213, 225, 0.62) !important;
+        margin-bottom: 3px !important;
+    }
+
+    .cash-mobile-value {
+        font-size: 12.75px !important;
+        line-height: 1.2 !important;
+        color: #e5edf7 !important;
+    }
+
+    .cash-mobile-footer {
+        margin-top: 9px !important;
+        padding-top: 9px !important;
+        border-top-color: rgba(148, 163, 184, 0.12) !important;
+    }
+
+    .cash-empty-state {
+        padding: 12px !important;
+        border-radius: 15px !important;
+        font-size: 12px;
+        border-color: rgba(148, 163, 184, 0.18) !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .cash-command-bar-right {
+        grid-template-columns: 1fr;
+    }
+
+    .cash-summary-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .cash-filter-actions {
+        grid-template-columns: 1fr !important;
+    }
+
+    .cash-mobile-grid {
+        grid-template-columns: 1fr !important;
+    }
+}

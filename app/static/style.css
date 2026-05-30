@@ -2309,3 +2309,462 @@ textarea:focus {
     }
 }
 
+
+
+/* =========================================================
+   BPI OPS MOBILE PREMIUM PASS
+   Safe mobile-only overrides for tighter app-like feel
+========================================================= */
+
+.mobile-bottom-nav {
+    display: none;
+}
+
+@media (max-width: 800px) {
+    html,
+    body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
+
+    body {
+        background:
+            radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.13), transparent 24%),
+            radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.08), transparent 26%),
+            linear-gradient(180deg, #050913 0%, #071120 48%, #081526 100%) !important;
+    }
+
+    .layout {
+        display: block;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    .main-content {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        padding: 12px 10px 92px !important;
+    }
+
+    .page-content {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .topbar {
+        margin: -2px 0 12px !important;
+        padding: 10px 10px 11px;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 18px;
+        background: rgba(8, 15, 28, 0.84);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
+        position: sticky;
+        top: 8px;
+        z-index: 35;
+    }
+
+    .topbar-left {
+        gap: 10px;
+        align-items: flex-start;
+        min-width: 0;
+    }
+
+    .mobile-nav-toggle {
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        background: rgba(15, 23, 42, 0.94);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        color: #e5edf7;
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+        transform: translateY(1px);
+    }
+
+    .topbar h2 {
+        font-size: 21px !important;
+        line-height: 1.04;
+        letter-spacing: -0.045em;
+        max-width: calc(100vw - 86px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .subtitle {
+        margin-top: 5px;
+        font-size: 11.5px !important;
+        line-height: 1.25;
+        color: rgba(203, 213, 225, 0.74) !important;
+    }
+
+    .sidebar {
+        width: min(86vw, 330px) !important;
+        padding: 14px 12px 18px !important;
+        border-right: 1px solid rgba(148, 163, 184, 0.12);
+        box-shadow: 24px 0 64px rgba(0, 0, 0, 0.36);
+        transition: transform 0.22s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .brand-mobile-row {
+        padding: 8px 6px 10px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        margin-bottom: 8px;
+    }
+
+    .brand-logo,
+    .brand-mobile-row img {
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 10px !important;
+    }
+
+    .brand h1 {
+        font-size: 17px !important;
+    }
+
+    .brand p {
+        font-size: 11px !important;
+        margin-top: 2px !important;
+    }
+
+    .mobile-nav-close {
+        width: 36px;
+        height: 36px;
+        border-radius: 13px;
+    }
+
+    .mobile-sidebar-overlay {
+        background: rgba(2, 6, 23, 0.52);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+    }
+
+    .nav {
+        margin-top: 8px !important;
+        gap: 2px;
+    }
+
+    .nav-section {
+        margin-bottom: 10px;
+    }
+
+    .nav-section-label {
+        font-size: 10px !important;
+        letter-spacing: .12em;
+        padding: 8px 8px 4px;
+    }
+
+    .nav a {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        padding: 10px 11px !important;
+        border-radius: 14px !important;
+        font-size: 13.5px !important;
+        margin-bottom: 2px;
+    }
+
+    .nav a.active {
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.08),
+            0 10px 22px rgba(37,99,235,.16) !important;
+    }
+
+    .dashboard-grid,
+    .dashboard-grid-premium,
+    .content-grid,
+    .admin-task-grid,
+    .maintenance-content-grid,
+    .mobile-checklist-layout {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .panel,
+    .premium-panel,
+    .metric-card,
+    .premium-card,
+    .command-bar,
+    .area-panel,
+    .heatmap-panel,
+    .exception-panel,
+    .checklist-item-card,
+    .admin-task-card,
+    .svr-value-card {
+        border-radius: 17px !important;
+        padding: 12px !important;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18) !important;
+        border-color: rgba(148, 163, 184, 0.13) !important;
+    }
+
+    .panel + .panel,
+    .premium-panel + .premium-panel {
+        margin-top: 10px;
+    }
+
+    .panel-head {
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+        align-items: flex-start !important;
+        flex-wrap: wrap;
+    }
+
+    .panel-head h3,
+    .command-title {
+        font-size: 15px !important;
+        line-height: 1.12;
+    }
+
+    .area-subtitle,
+    .command-subtitle,
+    .metric-footnote {
+        font-size: 11.5px !important;
+        line-height: 1.28;
+    }
+
+    .metric-card h3 {
+        font-size: 24px !important;
+    }
+
+    .metric-label {
+        font-size: 10px !important;
+        margin-bottom: 5px !important;
+    }
+
+    .summary-pill,
+    .table-badge,
+    .status-badge,
+    .command-chip,
+    .exception-chip {
+        font-size: 10.5px !important;
+        padding: 4px 8px !important;
+        border-radius: 999px !important;
+        line-height: 1.1;
+    }
+
+    .action-btn,
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger,
+    button[type="submit"] {
+        min-height: 40px;
+        border-radius: 13px !important;
+        font-size: 13px !important;
+        font-weight: 750;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+    }
+
+    .action-grid .action-btn,
+    .panel > .btn-primary,
+    form > .btn-primary {
+        width: 100%;
+    }
+
+    .form-group {
+        gap: 5px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .form-group label {
+        font-size: 11px !important;
+        font-weight: 750;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        min-height: 42px;
+        border-radius: 13px !important;
+        font-size: 14px !important;
+        padding: 9px 11px !important;
+    }
+
+    textarea {
+        min-height: 94px;
+        line-height: 1.35;
+    }
+
+    input[type="file"] {
+        min-height: 40px;
+        padding: 8px !important;
+        font-size: 12px !important;
+    }
+
+    .table-wrap,
+    .premium-table-wrap,
+    .panel:has(table),
+    .premium-panel:has(table) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .data-table,
+    .premium-table {
+        min-width: 720px;
+    }
+
+    .data-table th,
+    .data-table td,
+    .premium-table th,
+    .premium-table td {
+        padding: 8px 9px !important;
+        font-size: 12px !important;
+        white-space: nowrap;
+    }
+
+    .flash-wrap {
+        margin-bottom: 10px;
+    }
+
+    .flash {
+        border-radius: 14px;
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .mobile-bottom-nav {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        z-index: 45;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 4px;
+        padding: 7px;
+        border-radius: 22px;
+        background: rgba(8, 15, 28, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        box-shadow:
+            0 18px 48px rgba(0, 0, 0, 0.38),
+            inset 0 1px 0 rgba(255,255,255,.07);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    .mobile-bottom-nav a,
+    .mobile-bottom-nav button {
+        min-width: 0;
+        height: 48px;
+        border: 0;
+        border-radius: 17px;
+        background: transparent;
+        color: rgba(203, 213, 225, 0.72);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        font-family: inherit;
+        cursor: pointer;
+        text-decoration: none;
+        touch-action: manipulation;
+    }
+
+    .mobile-bottom-nav span {
+        font-size: 17px;
+        line-height: 1;
+    }
+
+    .mobile-bottom-nav small {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1;
+    }
+
+    .mobile-bottom-nav a.active {
+        background: linear-gradient(180deg, rgba(37, 99, 235, 0.26), rgba(37, 99, 235, 0.12));
+        color: #dbeafe;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    }
+
+    .mobile-bottom-nav button:active,
+    .mobile-bottom-nav a:active {
+        transform: scale(.97);
+    }
+}
+
+@media (max-width: 520px) {
+    .main-content {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    .topbar {
+        top: 6px;
+        padding: 9px 9px 10px;
+        border-radius: 16px;
+    }
+
+    .topbar h2 {
+        font-size: 19px !important;
+    }
+
+    .subtitle {
+        font-size: 10.75px !important;
+    }
+
+    .panel,
+    .premium-panel,
+    .metric-card,
+    .premium-card,
+    .command-bar,
+    .svr-value-card {
+        padding: 11px !important;
+        border-radius: 16px !important;
+    }
+
+    .dashboard-grid {
+        gap: 8px !important;
+    }
+
+    .metric-card {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        column-gap: 10px;
+    }
+
+    .metric-card h3 {
+        font-size: 22px !important;
+        grid-column: 2;
+        grid-row: 1 / span 2;
+    }
+
+    .metric-footnote {
+        margin-top: 2px;
+    }
+
+    .content-grid {
+        gap: 8px !important;
+    }
+
+    .mobile-bottom-nav {
+        left: 6px;
+        right: 6px;
+        bottom: 7px;
+        padding: 6px;
+    }
+
+    .mobile-bottom-nav a,
+    .mobile-bottom-nav button {
+        height: 45px;
+        border-radius: 15px;
+    }
+
+    .mobile-bottom-nav small {
+        font-size: 9.5px;
+    }
+}

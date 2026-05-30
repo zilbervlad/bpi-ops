@@ -2059,23 +2059,26 @@ textarea:focus {
     align-items: center;
     justify-content: flex-start;
     gap: 10px;
-    padding-right: 138px;
-    min-height: 32px;
+    padding-right: 0;
+    min-height: 38px;
 }
 
 .checklist-section-card .checklist-checkbox-row,
 .checklist-section-card .mobile-checklist-checkbox-row {
+    width: 100%;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    flex-direction: row-reverse;
+    gap: 12px;
     font-size: 14px;
-    line-height: 1.2;
+    line-height: 1.25;
     min-width: 0;
 }
 
 .checklist-section-card .checklist-checkbox-row input[type="checkbox"],
 .checklist-section-card .mobile-checklist-checkbox-row input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     margin-top: 0;
     flex-shrink: 0;
     accent-color: #22c55e;
@@ -2087,27 +2090,21 @@ textarea:focus {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding-right: 4px;
 }
 
 .checklist-section-card .task-time-pill {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    padding: 5px 9px;
-    font-size: 10px;
-    min-width: 48px;
-    text-align: center;
+    display: none !important;
 }
 
 .checklist-section-card .task-row-footer {
-    position: absolute;
-    right: 72px;
-    top: 50%;
-    transform: translateY(-50%);
+    position: static;
+    transform: none;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    margin-top: 7px;
+    padding-left: 0;
 }
 
 .checklist-section-card .note-toggle-btn {
@@ -2168,7 +2165,7 @@ textarea:focus {
     }
 
     .checklist-section-card .checklist-row-top {
-        padding-right: 58px;
+        padding-right: 0;
         align-items: flex-start;
     }
 
@@ -2188,7 +2185,212 @@ textarea:focus {
         transform: none;
         justify-content: flex-start;
         margin-top: 6px;
-        padding-left: 30px;
+        padding-left: 0;
+    }
+}
+
+
+
+/* =========================================================
+   BPI OPS CHECKLIST THUMB FRIENDLY TASKS
+   Makes manager tasks feel natural on mobile.
+========================================================= */
+
+.mobile-checklist-page .task-time-pill {
+    display: none !important;
+}
+
+.mobile-checklist-page .checklist-section-card .checklist-item-card,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-card,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-item-card {
+    cursor: pointer;
+}
+
+.mobile-checklist-page .checklist-section-card .checklist-checkbox-row input[type="checkbox"],
+.mobile-checklist-page .checklist-section-card .mobile-checklist-checkbox-row input[type="checkbox"] {
+    border-radius: 999px;
+    accent-color: #22c55e;
+    cursor: pointer;
+}
+
+.mobile-checklist-page .checklist-section-card .checklist-task-text {
+    font-size: 14.5px;
+    font-weight: 750;
+}
+
+.mobile-checklist-page .checklist-section-card .checklist-item-card.is-completed .checklist-task-text,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-card.is-completed .checklist-task-text {
+    color: rgba(220, 252, 231, 0.88);
+}
+
+.mobile-checklist-page .checklist-section-card .note-toggle-btn {
+    opacity: 0.82;
+}
+
+.mobile-checklist-page .checklist-section-card .note-toggle-btn.has-note {
+    opacity: 1;
+}
+
+@media (max-width: 800px) {
+    .mobile-checklist-page .checklist-section-card .checklist-task-text {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        font-size: 14.75px;
+        line-height: 1.28;
+    }
+
+    .mobile-checklist-page .checklist-section-card .checklist-checkbox-row,
+    .mobile-checklist-page .checklist-section-card .mobile-checklist-checkbox-row {
+        align-items: flex-start;
+    }
+
+    .mobile-checklist-page .checklist-section-card .checklist-checkbox-row input[type="checkbox"],
+    .mobile-checklist-page .checklist-section-card .mobile-checklist-checkbox-row input[type="checkbox"] {
+        margin-top: -2px;
+    }
+}
+
+
+
+/* =========================================================
+   BPI OPS CHECKLIST TASK BUTTON POLISH
+   Makes the right-side completion control feel intentional.
+========================================================= */
+
+.mobile-checklist-page .checklist-section-card .checklist-item-card,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-card,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-item-card {
+    border-radius: 15px;
+    background: rgba(8, 16, 31, 0.76);
+    transition:
+        border-color 0.14s ease,
+        background 0.14s ease,
+        transform 0.10s ease;
+}
+
+.mobile-checklist-page .checklist-section-card .checklist-item-card:active,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-card:active,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-item-card:active {
+    transform: scale(0.992);
+}
+
+.mobile-checklist-page .checklist-section-card .checklist-checkbox-row,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-checkbox-row {
+    width: 100%;
+    min-height: 36px;
+}
+
+.mobile-checklist-page .checklist-section-card .checklist-task-text {
+    color: rgba(248, 250, 252, 0.94);
+    font-size: 15px;
+    font-weight: 850;
+    letter-spacing: -0.02em;
+}
+
+/* Replace ugly native square with a clean round action button */
+.mobile-checklist-page .checklist-section-card .checklist-checkbox-row input[type="checkbox"],
+.mobile-checklist-page .checklist-section-card .mobile-checklist-checkbox-row input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border-radius: 999px !important;
+    margin: -3px 0 0 12px !important;
+    border: 2px solid rgba(226, 232, 240, 0.86);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow:
+        0 8px 18px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+}
+
+.mobile-checklist-page .checklist-section-card .checklist-checkbox-row input[type="checkbox"]::after,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-checkbox-row input[type="checkbox"]::after {
+    content: "✓";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    font-size: 21px;
+    font-weight: 1000;
+    line-height: 1;
+    opacity: 0;
+    transform: scale(0.72);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.mobile-checklist-page .checklist-section-card .checklist-checkbox-row input[type="checkbox"]:checked,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-checkbox-row input[type="checkbox"]:checked {
+    border-color: rgba(34, 197, 94, 0.95);
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    box-shadow:
+        0 10px 22px rgba(34, 197, 94, 0.24),
+        inset 0 1px 0 rgba(255,255,255,0.28);
+}
+
+.mobile-checklist-page .checklist-section-card .checklist-checkbox-row input[type="checkbox"]:checked::after,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-checkbox-row input[type="checkbox"]:checked::after {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Completed card should feel done, but not neon-gas-station done */
+.mobile-checklist-page .checklist-section-card .checklist-item-card.is-completed,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-card.is-completed,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-item-card.is-completed {
+    background:
+        linear-gradient(90deg, rgba(34, 197, 94, 0.14), rgba(8, 16, 31, 0.72));
+    border-color: rgba(34, 197, 94, 0.34);
+}
+
+.mobile-checklist-page .checklist-section-card .checklist-item-card.is-completed .checklist-task-text,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-card.is-completed .checklist-task-text,
+.mobile-checklist-page .checklist-section-card .mobile-checklist-item-card.is-completed .checklist-task-text {
+    color: rgba(220, 252, 231, 0.94);
+}
+
+/* Make notes feel like a secondary action, not another task */
+.mobile-checklist-page .checklist-section-card .note-toggle-btn {
+    min-height: 26px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 850;
+    color: rgba(203, 213, 225, 0.72);
+    background: rgba(15, 23, 42, 0.48);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.mobile-checklist-page .checklist-section-card .note-toggle-btn::before {
+    content: "+ ";
+}
+
+.mobile-checklist-page .checklist-section-card .note-toggle-btn.has-note::before {
+    content: "✓ ";
+}
+
+.mobile-checklist-page .checklist-section-card .note-toggle-btn.has-note {
+    color: #bbf7d0;
+    background: rgba(34, 197, 94, 0.10);
+    border-color: rgba(34, 197, 94, 0.22);
+}
+
+@media (max-width: 800px) {
+    .mobile-checklist-page .checklist-section-card .checklist-item-card,
+    .mobile-checklist-page .checklist-section-card .mobile-checklist-card,
+    .mobile-checklist-page .checklist-section-card .mobile-checklist-item-card {
+        min-height: 76px;
+    }
+
+    .mobile-checklist-page .checklist-section-card .checklist-checkbox-row input[type="checkbox"],
+    .mobile-checklist-page .checklist-section-card .mobile-checklist-checkbox-row input[type="checkbox"] {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
     }
 }
 

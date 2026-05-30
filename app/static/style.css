@@ -2962,3 +2962,384 @@ textarea:focus {
         grid-template-columns: 1fr !important;
     }
 }
+
+
+/* =========================================================
+   BPI OPS MAINTENANCE MOBILE POLISH
+   Tightens board rows, command tiles, modals, and calendar on phones
+========================================================= */
+
+@media (max-width: 800px) {
+    .maintenance-command-tiles {
+        width: 100%;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .maintenance-command-tile {
+        min-width: 0 !important;
+        width: 100% !important;
+        padding: 10px 9px !important;
+        border-radius: 15px !important;
+        min-height: 66px;
+        background: rgba(15, 23, 42, 0.58) !important;
+        border: 1px solid rgba(148, 163, 184, 0.13) !important;
+    }
+
+    .maintenance-command-tile .tile-number {
+        font-size: 21px !important;
+        line-height: 1;
+    }
+
+    .maintenance-command-tile .tile-label {
+        font-size: 9.5px !important;
+        letter-spacing: .08em;
+        line-height: 1.1;
+    }
+
+    .maintenance-sections {
+        gap: 10px !important;
+    }
+
+    .maintenance-status-panel {
+        padding: 12px !important;
+        border-radius: 17px !important;
+        scroll-margin-top: 86px !important;
+    }
+
+    .maintenance-status-header {
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+
+    .maintenance-status-header h3 {
+        font-size: 15px !important;
+        line-height: 1.12;
+    }
+
+    .maintenance-status-body {
+        margin-top: 10px !important;
+    }
+
+    .maintenance-list-shell {
+        border-radius: 15px !important;
+        border-color: rgba(148, 163, 184, 0.12) !important;
+        background: transparent !important;
+        overflow: visible !important;
+    }
+
+    .maintenance-list-head {
+        display: none !important;
+    }
+
+    .maintenance-store-group {
+        border-top: 0 !important;
+        margin-bottom: 10px;
+    }
+
+    .maintenance-store-group-header {
+        padding: 9px 10px !important;
+        border-radius: 14px !important;
+        background: rgba(15, 23, 42, 0.58) !important;
+        border: 1px solid rgba(148, 163, 184, 0.1) !important;
+        margin-bottom: 8px;
+    }
+
+    .maintenance-store-folder {
+        font-size: 15px !important;
+    }
+
+    .maintenance-store-group-title {
+        font-size: 13.5px !important;
+        line-height: 1.1;
+    }
+
+    .maintenance-store-group-count {
+        font-size: 10px !important;
+        padding: 4px 8px !important;
+    }
+
+    .maintenance-list-row {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+        padding: 11px !important;
+        margin-bottom: 8px;
+        border-radius: 16px !important;
+        background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.84), rgba(8, 15, 28, 0.9)) !important;
+        border: 1px solid rgba(148, 163, 184, 0.12) !important;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+    }
+
+    .maintenance-list-row:hover {
+        transform: none !important;
+    }
+
+    .maintenance-store-cell {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .maintenance-store-number {
+        font-size: 16px !important;
+        font-weight: 900 !important;
+        line-height: 1;
+    }
+
+    .maintenance-source {
+        font-size: 10px !important;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.10);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        opacity: 1 !important;
+    }
+
+    .maintenance-title-cell {
+        min-width: 0;
+    }
+
+    .maintenance-title-line {
+        gap: 7px !important;
+        align-items: flex-start !important;
+    }
+
+    .maintenance-title-text {
+        font-size: 14px !important;
+        line-height: 1.22 !important;
+        font-weight: 850 !important;
+    }
+
+    .maintenance-meta {
+        margin-top: 6px !important;
+        font-size: 11px !important;
+        line-height: 1.25 !important;
+        color: rgba(203, 213, 225, 0.72) !important;
+    }
+
+    .maintenance-status-pill {
+        width: fit-content;
+        font-size: 9px !important;
+        padding: 4px 8px !important;
+        border-radius: 999px !important;
+    }
+
+    .maintenance-date-cell {
+        font-size: 11px !important;
+        color: rgba(203, 213, 225, 0.72) !important;
+    }
+
+    .maintenance-actions-cell {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px !important;
+        width: 100%;
+    }
+
+    .maintenance-actions-cell form {
+        margin: 0 !important;
+    }
+
+    .maintenance-quick-btn {
+        width: 100% !important;
+        min-height: 40px !important;
+        border-radius: 13px !important;
+        font-size: 12.5px !important;
+        padding: 8px 9px !important;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .maintenance-complete-btn {
+        background: rgba(22, 163, 74, 0.26) !important;
+        border-color: rgba(34, 197, 94, 0.28) !important;
+    }
+
+    .maintenance-empty {
+        padding: 12px !important;
+        border-radius: 15px !important;
+        font-size: 12px !important;
+    }
+
+    .maintenance-modal-backdrop {
+        padding: 10px !important;
+        align-items: flex-end !important;
+    }
+
+    .maintenance-modal {
+        width: 100% !important;
+        max-width: none !important;
+        max-height: 88vh !important;
+        border-radius: 22px 22px 16px 16px !important;
+        padding: 14px !important;
+        overflow-y: auto;
+    }
+
+    .maintenance-modal-header {
+        gap: 10px !important;
+        align-items: flex-start !important;
+    }
+
+    .maintenance-modal-title {
+        font-size: 17px !important;
+        line-height: 1.1;
+    }
+
+    .maintenance-modal-subtitle {
+        font-size: 11.5px !important;
+    }
+
+    .maintenance-modal-close {
+        min-height: 36px !important;
+        border-radius: 12px !important;
+    }
+
+    .maintenance-modal-grid {
+        grid-template-columns: 1fr !important;
+        gap: 9px !important;
+    }
+
+    .maintenance-modal-actions {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+
+    .maintenance-modal-actions button,
+    .maintenance-modal-actions a {
+        width: 100% !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .maintenance-command-tiles {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .maintenance-actions-cell {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+
+/* =========================================================
+   BPI OPS MAINTENANCE CALENDAR MOBILE POLISH
+========================================================= */
+
+@media (max-width: 800px) {
+    .maintenance-calendar-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        gap: 10px !important;
+    }
+
+    .maintenance-calendar-layout > section.panel {
+        height: auto !important;
+        overflow: visible !important;
+        min-height: 0 !important;
+    }
+
+    .maintenance-calendar-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        overflow: visible !important;
+        padding-bottom: 0 !important;
+    }
+
+    .maintenance-day-card {
+        min-height: 0 !important;
+        height: auto !important;
+        padding: 11px !important;
+        border-radius: 17px !important;
+        background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.84), rgba(8, 15, 28, 0.9)) !important;
+        border: 1px solid rgba(148, 163, 184, 0.12) !important;
+    }
+
+    .maintenance-day-header {
+        position: relative !important;
+        top: auto !important;
+        margin: -11px -11px 9px -11px !important;
+        padding: 10px 11px !important;
+        border-radius: 17px 17px 0 0 !important;
+        background: rgba(15, 23, 42, 0.72) !important;
+    }
+
+    .maintenance-day-name {
+        font-size: 12px !important;
+    }
+
+    .maintenance-day-date {
+        font-size: 10.5px !important;
+    }
+
+    .maintenance-day-count {
+        font-size: 10px !important;
+        padding: 4px 8px !important;
+    }
+
+    .maintenance-time-slot.is-empty {
+        display: none !important;
+    }
+
+    .maintenance-time-slot {
+        min-height: 0 !important;
+        padding: 6px 0 !important;
+    }
+
+    .maintenance-time-label {
+        font-size: 10px !important;
+        margin-bottom: 5px !important;
+    }
+
+    .maintenance-slot-body {
+        min-height: 0 !important;
+    }
+
+    .maintenance-anytime-zone {
+        min-height: 0 !important;
+        padding: 8px !important;
+        margin-bottom: 8px !important;
+        border-radius: 13px !important;
+    }
+
+    .maintenance-event-card {
+        padding: 9px !important;
+        border-radius: 13px !important;
+        margin-bottom: 7px !important;
+        background: rgba(2, 6, 23, 0.42) !important;
+    }
+
+    .maintenance-event-time {
+        font-size: 9px !important;
+    }
+
+    .maintenance-event-title {
+        font-size: 12px !important;
+        line-height: 1.18 !important;
+    }
+
+    .maintenance-event-meta {
+        font-size: 10.5px !important;
+    }
+
+    .maintenance-side-panel {
+        order: -1;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .maintenance-unscheduled-drop {
+        max-height: 380px !important;
+        overflow-y: auto !important;
+        border-radius: 15px !important;
+    }
+}

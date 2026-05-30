@@ -10,6 +10,7 @@ from openpyxl.utils import get_column_letter
 
 from app.auth.routes import login_required, role_required
 from app.models import Store, DailyChecklist, NightlyNumbersReport
+from sqlalchemy.orm import selectinload
 
 reports_bp = Blueprint("reports", __name__, url_prefix="/reports")
 
@@ -137,7 +138,7 @@ def build_report_payload():
 
     checklist_rows = []
     if filtered_store_numbers:
-        checklist_rows = DailyChecklist.query.filter(
+        checklist_rows = DailyChecklist.query.options(selectinload(DailyChecklist.items)).filter(
             DailyChecklist.store_number.in_(filtered_store_numbers),
             DailyChecklist.checklist_date >= start_date,
             DailyChecklist.checklist_date <= end_date,
@@ -657,7 +658,7 @@ def build_store_detail_payload(store_number):
 
     start_date, end_date, start_date_str, end_date_str = parse_report_dates()
 
-    store_rows = DailyChecklist.query.filter(
+    store_rows = DailyChecklist.query.options(selectinload(DailyChecklist.items)).filter(
         DailyChecklist.store_number == store_number,
         DailyChecklist.checklist_date >= start_date,
         DailyChecklist.checklist_date <= end_date,

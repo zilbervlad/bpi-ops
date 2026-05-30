@@ -255,40 +255,88 @@
                     <small>Home</small>
                 </a>
 
-                {% if account_role in ['tm', 'manager', 'general_manager'] %}
-                <a href="{{ url_for('shift_todos.index') }}"
-                   class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
-                    <span>✓</span>
-                    <small>To-Dos</small>
-                </a>
+                {% if access_role == 'manager' %}
+                    <a href="{{ url_for('checklist.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
+                        <span>☑</span>
+                        <small>Checklist</small>
+                    </a>
+
+                    <a href="{{ url_for('cash.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('cash') and not request.endpoint.startswith('cash_review') %}active{% endif %}">
+                        <span>💵</span>
+                        <small>Cash</small>
+                    </a>
+
+                    <a href="{{ url_for('nightly_numbers.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('nightly_numbers') and request.endpoint != 'nightly_numbers.admin' %}active{% endif %}">
+                        <span>#</span>
+                        <small>Nightly</small>
+                    </a>
+
+                {% elif account_role == 'tm' %}
+                    <a href="{{ url_for('shift_todos.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
+                        <span>✓</span>
+                        <small>To-Dos</small>
+                    </a>
+
+                    <a href="{{ url_for('checklist.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
+                        <span>☑</span>
+                        <small>Checklist</small>
+                    </a>
+
+                    <a href="{{ url_for('store_dashboard.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('store_dashboard') %}active{% endif %}">
+                        <span>🏪</span>
+                        <small>Store</small>
+                    </a>
+
+                {% elif account_role == 'general_manager' %}
+                    <a href="{{ url_for('shift_todos.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
+                        <span>✓</span>
+                        <small>To-Dos</small>
+                    </a>
+
+                    <a href="{{ url_for('forms.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('forms') and request.endpoint != 'forms.admin' and request.endpoint != 'forms.edit_template' %}active{% endif %}">
+                        <span>📝</span>
+                        <small>Forms</small>
+                    </a>
+
+                    <a href="{{ url_for('maintenance.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
+                        <span>🔧</span>
+                        <small>Fix</small>
+                    </a>
+
                 {% elif access_role in ['admin', 'supervisor'] %}
-                <a href="{{ url_for('svr.index') }}"
-                   class="{% if request.endpoint and request.endpoint.startswith('svr') and request.endpoint != 'svr.admin' %}active{% endif %}">
-                    <span>📋</span>
-                    <small>SVR</small>
-                </a>
-                {% endif %}
+                    <a href="{{ url_for('svr.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('svr') and request.endpoint != 'svr.admin' %}active{% endif %}">
+                        <span>📋</span>
+                        <small>SVR</small>
+                    </a>
 
-                {% if access_role in ['admin', 'supervisor'] %}
-                <a href="{{ url_for('checklist.overview') }}"
-                   class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
-                    <span>☑</span>
-                    <small>Checklist</small>
-                </a>
-                {% elif access_role == 'manager' %}
-                <a href="{{ url_for('checklist.index') }}"
-                   class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
-                    <span>☑</span>
-                    <small>Checklist</small>
-                </a>
-                {% endif %}
+                    <a href="{{ url_for('checklist.overview') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
+                        <span>☑</span>
+                        <small>Checklist</small>
+                    </a>
 
-                {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager', 'maintenance'] %}
-                <a href="{{ url_for('maintenance.index') }}"
-                   class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
-                    <span>🔧</span>
-                    <small>Fix</small>
-                </a>
+                    <a href="{{ url_for('maintenance.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
+                        <span>🔧</span>
+                        <small>Fix</small>
+                    </a>
+
+                {% elif access_role == 'maintenance' %}
+                    <a href="{{ url_for('maintenance.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
+                        <span>🔧</span>
+                        <small>Fix</small>
+                    </a>
                 {% endif %}
 
                 <button type="button" id="mobile-bottom-more" aria-label="Open menu">

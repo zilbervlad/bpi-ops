@@ -3343,3 +3343,194 @@ textarea:focus {
         border-radius: 15px !important;
     }
 }
+
+
+
+/* =========================================================
+   BPI OPS SVR MOBILE POLISH
+   Mobile cards for SVR list + tighter form/view
+========================================================= */
+
+.svr-mobile-report-list {
+    display: none;
+}
+
+@media (max-width: 800px) {
+    .svr-desktop-report-table-wrap {
+        display: none !important;
+    }
+
+    .svr-mobile-report-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .svr-mobile-report-card {
+        background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(8, 15, 28, 0.92));
+        border: 1px solid rgba(148, 163, 184, 0.13);
+        border-radius: 17px;
+        padding: 12px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+    }
+
+    .svr-mobile-report-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .svr-mobile-store {
+        font-size: 16px;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: -0.035em;
+        line-height: 1.05;
+    }
+
+    .svr-mobile-date {
+        margin-top: 3px;
+        font-size: 11px;
+        font-weight: 750;
+        color: rgba(203, 213, 225, 0.68);
+    }
+
+    .svr-mobile-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 11px;
+    }
+
+    .svr-mobile-meta div {
+        background: rgba(15, 23, 42, 0.54);
+        border: 1px solid rgba(148, 163, 184, 0.09);
+        border-radius: 13px;
+        padding: 8px 9px;
+        min-width: 0;
+    }
+
+    .svr-mobile-meta span {
+        display: block;
+        font-size: 9.5px;
+        font-weight: 850;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: rgba(203, 213, 225, 0.62);
+        margin-bottom: 3px;
+    }
+
+    .svr-mobile-meta strong {
+        display: block;
+        font-size: 12.5px;
+        color: #e5edf7;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .svr-mobile-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: stretch;
+    }
+
+    .svr-mobile-actions .action-btn {
+        width: 100%;
+        min-height: 40px;
+    }
+
+    .svr-mobile-actions form {
+        margin: 0;
+    }
+
+    .svr-mobile-actions .btn-danger {
+        min-width: 86px;
+        height: 40px;
+        background: rgba(127, 29, 29, 0.92);
+        color: #fee2e2;
+        border: 0;
+    }
+
+    .svr-value-list {
+        gap: 8px !important;
+    }
+
+    .svr-value-card {
+        padding: 11px !important;
+        border-radius: 15px !important;
+        background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(8, 15, 28, 0.88)) !important;
+        border: 1px solid rgba(148, 163, 184, 0.12) !important;
+    }
+
+    .svr-value-label {
+        font-size: 9.75px !important;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+        margin-bottom: 5px !important;
+        color: rgba(203, 213, 225, 0.62) !important;
+    }
+
+    .svr-value-text {
+        font-size: 13px !important;
+        line-height: 1.34 !important;
+        color: #e5edf7 !important;
+    }
+
+    #svr-form {
+        padding: 12px !important;
+        border-radius: 17px !important;
+    }
+
+    #svr-form .panel-head {
+        gap: 7px !important;
+        align-items: flex-start !important;
+    }
+
+    #svr-form .content-grid {
+        grid-template-columns: 1fr !important;
+        gap: 9px !important;
+    }
+
+    #svr-form .form-group {
+        padding: 10px;
+        border-radius: 15px;
+        background: rgba(15, 23, 42, 0.44);
+        border: 1px solid rgba(148, 163, 184, 0.09);
+        margin-bottom: 0 !important;
+    }
+
+    #svr-form label {
+        font-size: 10.5px !important;
+        font-weight: 850 !important;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: rgba(203, 213, 225, 0.68) !important;
+    }
+
+    #svr-form textarea {
+        min-height: 86px !important;
+    }
+
+    #svr-form button[type="submit"] {
+        width: 100%;
+        margin-top: 10px;
+        min-height: 46px;
+    }
+}
+
+@media (max-width: 420px) {
+    .svr-mobile-meta,
+    .svr-mobile-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .svr-mobile-actions .btn-danger {
+        width: 100%;
+    }
+}

@@ -3039,6 +3039,53 @@ textarea:focus {
 
 
 
+
+/* =========================================================
+   BPI OPS SVR LIST CLEANUP
+   Moves SVR list inline styles into stylesheet.
+========================================================= */
+
+.svr-action-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.svr-open-pill,
+.svr-delete-pill {
+    min-width: 110px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.svr-delete-form {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .svr-report-table th:nth-child(3),
+    .svr-report-table td:nth-child(3),
+    .svr-report-table th:nth-child(4),
+    .svr-report-table td:nth-child(4) {
+        display: none;
+    }
+
+    .svr-action-wrap {
+        min-width: 90px;
+    }
+
+    .svr-action-wrap .summary-pill,
+    .svr-action-wrap .danger-pill {
+        display: block;
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box;
+    }
+}
+
+
 /* =========================================================
    BPI OPS SVR MOBILE POLISH
    Mobile cards for SVR list + tighter form/view

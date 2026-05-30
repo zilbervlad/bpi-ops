@@ -5,29 +5,6 @@
 
 {% block content %}
 
-<style>
-@media (max-width: 768px) {
-    .svr-report-table th:nth-child(3),
-    .svr-report-table td:nth-child(3),
-    .svr-report-table th:nth-child(4),
-    .svr-report-table td:nth-child(4) {
-        display: none;
-    }
-
-    .svr-action-wrap {
-        min-width: 90px !important;
-    }
-
-    .svr-action-wrap .summary-pill,
-    .svr-action-wrap .danger-pill {
-        display: block;
-        width: 100%;
-        text-align: center;
-        box-sizing: border-box;
-    }
-}
-</style>
-
 <div class="panel premium-panel" style="margin-bottom: 24px;">
     <div class="panel-head" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
         <div>
@@ -138,20 +115,18 @@
                     <td>{{ report.supervisor_name or '—' }}</td>
                     <td>{{ report.manager_on_duty or '—' }}</td>
                     <td>
-                        <div class="svr-action-wrap" style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
+                        <div class="svr-action-wrap">
                             <a href="{{ url_for('svr.view_report', report_id=report.id) }}"
-                               class="summary-pill"
-                               style="text-align:center; text-decoration:none; display:inline-block; min-width:110px;">
+                               class="summary-pill svr-open-pill">
                                 Open
                             </a>
 
                             <form method="POST"
                                   action="{{ url_for('svr.delete_report', report_id=report.id) }}"
                                   onsubmit="return confirm('Delete this SVR? This cannot be undone.');"
-                                  style="margin:0;">
+                                  class="svr-delete-form">
                                 <button type="submit"
-                                        class="summary-pill danger-pill"
-                                        style="min-width:110px;">
+                                        class="summary-pill danger-pill svr-delete-pill">
                                     Delete
                                 </button>
                             </form>

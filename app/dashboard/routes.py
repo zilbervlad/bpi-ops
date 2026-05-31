@@ -201,6 +201,7 @@ def build_dashboard_data():
     restock_progress = []
     manager_walk_progress = []
     area_groups = defaultdict(list)
+    heatmap_items = []
 
     today = business_date_et()
 
@@ -256,6 +257,20 @@ def build_dashboard_data():
 
         area_groups[store.area_name].append(store_payload)
 
+        heatmap_status = "progress"
+        if opening_percent == 0 and integrity_score == 0:
+            heatmap_status = "not_started"
+        elif integrity_score > 0 and integrity_score < 80:
+            heatmap_status = "risk"
+        elif opening_percent >= 100 and integrity_score >= 90:
+            heatmap_status = "strong"
+
+        heatmap_items.append({
+            "area_name": store.area_name,
+            "store": store_payload,
+            "status": heatmap_status,
+        })
+
         opening_progress.append({
             "store_number": store.store_number,
             "store_name": store.store_name or f"Store {store.store_number}",
@@ -291,6 +306,11 @@ def build_dashboard_data():
     )
 
     ordered_area_groups = dict(sorted(area_groups.items(), key=lambda x: x[0]))
+
+    heatmap_items = sorted(
+        heatmap_items,
+        key=lambda item: int(item["store"]["store_number"]) if str(item["store"]["store_number"]).isdigit() else 99999
+    )
 
     area_summaries = {}
 
@@ -404,6 +424,7 @@ def build_dashboard_data():
         "stats": stats,
         "alerts": alerts,
         "area_groups": ordered_area_groups,
+        "heatmap_items": heatmap_items,
         "area_summaries": area_summaries,
         "total_stores": total_stores,
         "completed_today": completed_today,
@@ -472,6 +493,7 @@ def home():
         account_role=session.get("account_role", user_role),
         role_label=session.get("role_label", user_role.title()),
         area_groups=data["area_groups"],
+        heatmap_items=data["heatmap_items"],
         area_summaries=data["area_summaries"],
         total_stores=data["total_stores"],
         completed_today=data["completed_today"],

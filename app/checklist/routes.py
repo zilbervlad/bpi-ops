@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 from collections import defaultdict
 from zoneinfo import ZoneInfo
+from sqlalchemy.orm import selectinload
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from app.auth.routes import login_required, role_required
@@ -602,7 +603,9 @@ def overview():
     completed = []
     recent_archives = []
 
-    today_rows = DailyChecklist.query.filter(
+    today_rows = DailyChecklist.query.options(
+        selectinload(DailyChecklist.items)
+    ).filter(
         DailyChecklist.store_number.in_(visible_store_numbers),
         DailyChecklist.checklist_date == today
     ).all() if visible_store_numbers else []
@@ -612,7 +615,9 @@ def overview():
         for row in today_rows
     }
 
-    archive_rows = DailyChecklist.query.filter(
+    archive_rows = DailyChecklist.query.options(
+        selectinload(DailyChecklist.items)
+    ).filter(
         DailyChecklist.store_number.in_(visible_store_numbers),
         DailyChecklist.checklist_date < today
     ).order_by(

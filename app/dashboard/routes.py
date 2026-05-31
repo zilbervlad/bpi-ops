@@ -324,25 +324,32 @@ def build_dashboard_data():
     week_start = today - timedelta(days=today.weekday())
 
     weekly_svr_reports = SVRReport.query.filter(
-        SVRReport.visit_date >= week_start
-    ).all()
+        SVRReport.visit_date >= week_start,
+        SVRReport.store_number.in_(visible_store_numbers)
+    ).all() if visible_store_numbers else []
 
     weekly_svr_store_numbers = {
         report.store_number
         for report in weekly_svr_reports
-        if report.store_number in visible_store_numbers
     }
 
     svr_completed_count = len(weekly_svr_store_numbers)
     svr_missing_stores = sorted(list(visible_store_numbers - weekly_svr_store_numbers))
     svr_compliance_percent = round((svr_completed_count / total_stores) * 100, 1) if total_stores else 0.0
 
-    visible_tickets = MaintenanceTicket.query.filter(
-        MaintenanceTicket.store_number.in_(visible_store_numbers)
-    ).all() if visible_store_numbers else []
+    if visible_store_numbers:
+        open_maintenance_count = MaintenanceTicket.query.filter(
+            MaintenanceTicket.store_number.in_(visible_store_numbers),
+            MaintenanceTicket.status != "complete"
+        ).count()
 
-    open_maintenance_count = sum(1 for t in visible_tickets if t.status != "complete")
-    complete_maintenance_count = sum(1 for t in visible_tickets if t.status == "complete")
+        complete_maintenance_count = MaintenanceTicket.query.filter(
+            MaintenanceTicket.store_number.in_(visible_store_numbers),
+            MaintenanceTicket.status == "complete"
+        ).count()
+    else:
+        open_maintenance_count = 0
+        complete_maintenance_count = 0
 
     manager_weekly_focus = []
     if user_role == "manager" and visible_store_numbers:

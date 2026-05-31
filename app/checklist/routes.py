@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta
 from collections import defaultdict
 from zoneinfo import ZoneInfo
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from app.auth.routes import login_required, role_required
@@ -795,6 +796,238 @@ def run_checklist_summary_batch(
         "send_results": send_results,
         "summary_email_result": summary_email_result,
     }
+
+
+def build_auto_summary_body(title, visible_stores, send_results):
+    ops_date = current_ops_date()
+    total_visible = len(visible_stores)
+    sent_count = len([r for r in send_results if r.get("success")])
+    failed_results = [r for r in send_results if not r.get("success")]
+    failed_count = len(failed_results)
+
+    store_numbers = [store.store_number for store in visible_stores]
+
+    today_checklists = DailyChecklist.query.filter(
+        DailyChecklist.store_number.in_(store_numbers),
+        DailyChecklist.checklist_date == ops_date
+    ).all() if store_numbers else []
+
+    not_started_count = total_visible - len(today_checklists)
+    completed_count = sum(1 for c in today_checklists if c.status == "completed")
+    in_progress_count = len(today_checklists) - completed_count
+
+    avg_completion = round(
+        sum(c.percent_complete or 0 for c in today_checklists) / len(today_checklists),
+        1
+    ) if today_checklists else 0.0
+
+    avg_integrity = round(
+        sum(c.integrity_score or 0 for c in today_checklists) / len(today_checklists),
+        1
+    ) if today_checklists else 0.0
+
+    lines = []
+    for result in send_results:
+        if result.get("success"):
+            lines.append(
+                f"Store {result['store_number']}: "
+                f"{result['percent_complete']}% complete | "
+                f"Integrity {result['integrity_score']} | "
+                f"Walk {result['manager_walk_integrity']} | "
+                f"{result['status'].replace('_', ' ').title()}"
+            )
+
+    failed_lines = []
+    for result in failed_results[:10]:
+        failed_lines.append(f"- {result.get('store_number', 'Unknown')}: {result.get('error', 'Unknown error')}")
+
+    return (
+        f"{title}\n"
+        f"Date: {ops_date.strftime('%B %d, %Y')}\n\n"
+        f"Visible Stores: {total_visible}\n"
+        f"Store Emails Sent: {sent_count}\n"
+        f"Failed Sends: {failed_count}\n\n"
+        f"Completed Stores: {completed_count}\n"
+        f"In Progress Stores: {in_progress_count}\n"
+        f"Not Started Stores: {not_started_count}\n\n"
+        f"Average Completion: {avg_completion}%\n"
+        f"Average Integrity: {avg_integrity}%\n\n"
+        f"Store Summary:\n"
+        f"{chr(10).join(lines) if lines else '- No successful store sends'}\n\n"
+        f"Failed Sends:\n"
+        f"{chr(10).join(failed_lines) if failed_lines else '- None'}\n\n"
+        f"- BPI Ops"
+    )
+
+
+def send_auto_admin_summary_emails(visible_stores, send_results, slot):
+    ops_date = current_ops_date()
+
+    users = User.query.filter(
+        User.role.in_(["admin", "platform_admin"]),
+        User.is_active == True
+    ).all()
+
+    sent_to = []
+    seen_emails = set()
+
+    for user in users:
+        email = user.get_notification_email()
+        if not email or email in seen_emails:
+            continue
+
+        seen_emails.add(email)
+        body = build_auto_summary_body(
+            f"BPI Ops Automatic Checklist Summary - {slot.upper()}",
+            visible_stores,
+            send_results
+        )
+
+        send_email(
+            to_email=email,
+            subject=f"BPI Ops Auto Checklist Summary {slot.upper()} - {ops_date.strftime('%b %d, %Y')}",
+            body=body
+        )
+        sent_to.append(email)
+
+    return sent_to
+
+
+def send_auto_supervisor_summary_emails(visible_stores, send_results, slot):
+    ops_date = current_ops_date()
+    supervisors = User.query.filter_by(role="supervisor", is_active=True).all()
+
+    sent_to = []
+    seen_emails = set()
+
+    for supervisor in supervisors:
+        email = supervisor.get_notification_email()
+        if not email or email in seen_emails:
+            continue
+
+        supervisor_stores = [
+            store for store in visible_stores
+            if store.area_name == supervisor.area_name
+        ]
+
+        if not supervisor_stores:
+            continue
+
+        supervisor_store_numbers = {store.store_number for store in supervisor_stores}
+        supervisor_results = [
+            result for result in send_results
+            if result.get("store_number") in supervisor_store_numbers
+        ]
+
+        seen_emails.add(email)
+        body = build_auto_summary_body(
+            f"BPI Ops Supervisor Checklist Summary - {slot.upper()} - {supervisor.area_name or 'Area'}",
+            supervisor_stores,
+            supervisor_results
+        )
+
+        send_email(
+            to_email=email,
+            subject=f"BPI Ops Supervisor Checklist Summary {slot.upper()} - {ops_date.strftime('%b %d, %Y')}",
+            body=body
+        )
+        sent_to.append(email)
+
+    return sent_to
+
+
+def maybe_send_checklist_auto_summaries():
+    try:
+        settings = ChecklistAutoEmailSettings.query.first()
+        if not settings or not settings.enabled:
+            return
+
+        now = now_et()
+        ops_date = current_ops_date()
+
+        slots = []
+        if settings.send_11am and now.hour >= 11:
+            slots.append("11am")
+        if settings.send_4pm and now.hour >= 16:
+            slots.append("4pm")
+
+        if not slots:
+            return
+
+        for slot in slots:
+            existing = ChecklistAutoEmailLog.query.filter_by(
+                summary_date=ops_date,
+                slot=slot
+            ).first()
+
+            if existing:
+                continue
+
+            log = ChecklistAutoEmailLog(
+                summary_date=ops_date,
+                slot=slot,
+                triggered_by="app_activity"
+            )
+            db.session.add(log)
+
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                continue
+
+            visible_stores = Store.query.filter_by(is_active=True).order_by(
+                Store.store_number.asc()
+            ).all()
+
+            batch_result = run_checklist_summary_batch(
+                visible_stores=visible_stores,
+                user_id=None,
+                include_store_emails=settings.send_store_emails,
+                include_supervisor_cc=False,
+                include_owner_recap=False,
+            )
+
+            if settings.send_admin_summary:
+                send_auto_admin_summary_emails(
+                    visible_stores=visible_stores,
+                    send_results=batch_result["send_results"],
+                    slot=slot
+                )
+
+            if settings.send_supervisor_summary:
+                send_auto_supervisor_summary_emails(
+                    visible_stores=visible_stores,
+                    send_results=batch_result["send_results"],
+                    slot=slot
+                )
+
+            log.sent_count = batch_result["sent_count"]
+            log.failed_count = batch_result["failed_count"]
+            db.session.commit()
+
+    except Exception:
+        db.session.rollback()
+        return
+
+
+@checklist_bp.before_app_request
+def checklist_auto_email_before_request():
+    if request.method != "GET":
+        return
+
+    endpoint = request.endpoint or ""
+    if endpoint.startswith("static") or endpoint.startswith("auth"):
+        return
+
+    if not session.get("user_id"):
+        return
+
+    user_role = session.get("user_role")
+    if user_role not in ["admin", "supervisor", "manager", "platform_admin"]:
+        return
+
+    maybe_send_checklist_auto_summaries()
 
 
 @checklist_bp.route("/send-all-summaries", methods=["POST"])

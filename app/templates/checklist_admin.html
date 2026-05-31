@@ -372,6 +372,66 @@
         <section class="panel premium-panel checklist-admin-panel">
             <div class="panel-head">
                 <div>
+                    <h3>Automatic Summary Emails</h3>
+                    <div class="checklist-admin-muted">
+                        Controls the automatic 11 AM and 4 PM checklist summary emails. Stores receive individual summaries; admin/supervisor summary behavior is controlled here.
+                    </div>
+                </div>
+                <span class="summary-pill">
+                    {{ "Enabled" if auto_email_settings and auto_email_settings.enabled else "Off" }}
+                </span>
+            </div>
+
+            <form method="POST">
+                <input type="hidden" name="action" value="update_auto_email">
+
+                <div class="checklist-admin-grid">
+                    <label class="checklist-admin-note-card">
+                        <input type="checkbox" name="enabled" {% if auto_email_settings and auto_email_settings.enabled %}checked{% endif %}>
+                        <strong>Enable automatic summary emails</strong>
+                        <div class="checklist-admin-helper">When enabled, BPI Ops can send summaries automatically after the selected times.</div>
+                    </label>
+
+                    <label class="checklist-admin-note-card">
+                        <input type="checkbox" name="send_store_emails" {% if not auto_email_settings or auto_email_settings.send_store_emails %}checked{% endif %}>
+                        <strong>Send individual store emails</strong>
+                        <div class="checklist-admin-helper">Each store manager gets their own checklist summary.</div>
+                    </label>
+
+                    <label class="checklist-admin-note-card">
+                        <input type="checkbox" name="send_11am" {% if not auto_email_settings or auto_email_settings.send_11am %}checked{% endif %}>
+                        <strong>11 AM summary</strong>
+                        <div class="checklist-admin-helper">Send once per ops day after 11 AM Eastern.</div>
+                    </label>
+
+                    <label class="checklist-admin-note-card">
+                        <input type="checkbox" name="send_4pm" {% if not auto_email_settings or auto_email_settings.send_4pm %}checked{% endif %}>
+                        <strong>4 PM summary</strong>
+                        <div class="checklist-admin-helper">Send once per ops day after 4 PM Eastern.</div>
+                    </label>
+
+                    <label class="checklist-admin-note-card">
+                        <input type="checkbox" name="send_admin_summary" {% if not auto_email_settings or auto_email_settings.send_admin_summary %}checked{% endif %}>
+                        <strong>Send admin summary</strong>
+                        <div class="checklist-admin-helper">Admin recap email after the batch runs.</div>
+                    </label>
+
+                    <label class="checklist-admin-note-card">
+                        <input type="checkbox" name="send_supervisor_summary" {% if not auto_email_settings or auto_email_settings.send_supervisor_summary %}checked{% endif %}>
+                        <strong>Send supervisor summaries</strong>
+                        <div class="checklist-admin-helper">Reserved for supervisor-only recap emails in the next step.</div>
+                    </label>
+                </div>
+
+                <div class="checklist-admin-actions">
+                    <button type="submit" class="btn-primary">Save Automatic Email Settings</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel premium-panel checklist-admin-panel">
+            <div class="panel-head">
+                <div>
                     <h3>Integrity Settings</h3>
                     <div class="checklist-admin-muted">
                         Control which section drives integrity scoring, how completion and timing are weighted, how burst completion is detected, and how timing score bands are applied.

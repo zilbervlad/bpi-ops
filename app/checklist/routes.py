@@ -14,6 +14,8 @@ from app.models import (
     ChecklistException,
     User,
     IntegritySettings,
+    ChecklistAutoEmailSettings,
+    ChecklistAutoEmailLog,
 )
 from app.services.email_service import send_email
 
@@ -36,6 +38,15 @@ def current_ops_date():
     if now.hour < 5:
         return now.date() - timedelta(days=1)
     return now.date()
+
+
+def get_or_create_auto_email_settings():
+    settings = ChecklistAutoEmailSettings.query.first()
+    if not settings:
+        settings = ChecklistAutoEmailSettings()
+        db.session.add(settings)
+        db.session.commit()
+    return settings
 
 
 def is_past_ops_day(checklist_date: date):
@@ -994,9 +1005,22 @@ def index():
 @role_required("admin")
 def admin():
     settings = IntegritySettings.query.first()
+    auto_email_settings = get_or_create_auto_email_settings()
 
     if request.method == "POST":
         action = request.form.get("action", "").strip()
+
+        if action == "update_auto_email":
+            auto_email_settings.enabled = request.form.get("enabled") == "on"
+            auto_email_settings.send_11am = request.form.get("send_11am") == "on"
+            auto_email_settings.send_4pm = request.form.get("send_4pm") == "on"
+            auto_email_settings.send_store_emails = request.form.get("send_store_emails") == "on"
+            auto_email_settings.send_admin_summary = request.form.get("send_admin_summary") == "on"
+            auto_email_settings.send_supervisor_summary = request.form.get("send_supervisor_summary") == "on"
+
+            db.session.commit()
+            flash("Automatic checklist email settings updated.", "success")
+            return redirect(url_for("checklist.admin"))
 
         if action == "update_integrity":
             if not settings:
@@ -1124,6 +1148,7 @@ def admin():
         items=items,
         section_options=section_options,
         integrity_settings=settings,
+        auto_email_settings=auto_email_settings,
     )
 
 

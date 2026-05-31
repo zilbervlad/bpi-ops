@@ -179,6 +179,41 @@ class IntegritySettings(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class ChecklistAutoEmailSettings(db.Model):
+    __tablename__ = "checklist_auto_email_settings"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    enabled = db.Column(db.Boolean, nullable=False, default=False)
+    send_11am = db.Column(db.Boolean, nullable=False, default=True)
+    send_4pm = db.Column(db.Boolean, nullable=False, default=True)
+
+    send_store_emails = db.Column(db.Boolean, nullable=False, default=True)
+    send_admin_summary = db.Column(db.Boolean, nullable=False, default=True)
+    send_supervisor_summary = db.Column(db.Boolean, nullable=False, default=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ChecklistAutoEmailLog(db.Model):
+    __tablename__ = "checklist_auto_email_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    summary_date = db.Column(db.Date, nullable=False)
+    slot = db.Column(db.String(20), nullable=False)  # 11am / 4pm
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    sent_count = db.Column(db.Integer, nullable=False, default=0)
+    failed_count = db.Column(db.Integer, nullable=False, default=0)
+    triggered_by = db.Column(db.String(50), nullable=True)
+
+    __table_args__ = (
+        db.UniqueConstraint("summary_date", "slot", name="uq_checklist_auto_email_date_slot"),
+    )
+
+
 class SVRTemplateField(db.Model):
     __tablename__ = "svr_template_fields"
 

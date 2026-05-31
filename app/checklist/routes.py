@@ -945,16 +945,19 @@ def maybe_send_checklist_auto_summaries():
         now = now_et()
         ops_date = current_ops_date()
 
-        slots = []
-        if settings.send_11am and now.hour >= 11:
-            slots.append("11am")
-        if settings.send_4pm and now.hour >= 16:
-            slots.append("4pm")
+        slot = None
 
-        if not slots:
+        # Do not backfill earlier missed slots.
+        # If the first app activity happens after 4 PM, only the 4 PM summary sends.
+        if settings.send_4pm and now.hour >= 16:
+            slot = "4pm"
+        elif settings.send_11am and now.hour >= 11:
+            slot = "11am"
+
+        if not slot:
             return
 
-        for slot in slots:
+        for slot in [slot]:
             existing = ChecklistAutoEmailLog.query.filter_by(
                 summary_date=ops_date,
                 slot=slot

@@ -595,17 +595,62 @@ def overview():
 
     visible_stores = get_visible_stores()
     today = current_ops_date()
+    visible_store_numbers = [store.store_number for store in visible_stores]
 
     not_started = []
     in_progress = []
     completed = []
     recent_archives = []
 
+    today_rows = DailyChecklist.query.filter(
+        DailyChecklist.store_number.in_(visible_store_numbers),
+        DailyChecklist.checklist_date == today
+    ).all() if visible_store_numbers else []
+
+    today_map = {
+        row.store_number: row
+        for row in today_rows
+    }
+
+    archive_rows = DailyChecklist.query.filter(
+        DailyChecklist.store_number.in_(visible_store_numbers),
+        DailyChecklist.checklist_date < today
+    ).order_by(
+        DailyChecklist.checklist_date.desc(),
+        DailyChecklist.store_number.asc()
+    ).limit(150).all() if visible_store_numbers else []
+
+    archive_count_by_store = {}
+
+    store_map = {
+        store.store_number: store
+        for store in visible_stores
+    }
+
+    for row in archive_rows:
+        count = archive_count_by_store.get(row.store_number, 0)
+        if count >= 5:
+            continue
+
+        store = store_map.get(row.store_number)
+        if not store:
+            continue
+
+        archive_count_by_store[row.store_number] = count + 1
+
+        recent_archives.append({
+            "store_number": store.store_number,
+            "store_name": store.store_name or f"Store {store.store_number}",
+            "area_name": store.area_name,
+            "percent_complete": row.percent_complete,
+            "integrity_score": row.integrity_score,
+            "manager_walk_integrity": calculate_manager_walk_integrity(row),
+            "checklist_date": row.checklist_date,
+            "status": row.status,
+        })
+
     for store in visible_stores:
-        today_checklist = DailyChecklist.query.filter_by(
-            store_number=store.store_number,
-            checklist_date=today
-        ).first()
+        today_checklist = today_map.get(store.store_number)
 
         if not today_checklist:
             not_started.append({
@@ -632,23 +677,6 @@ def overview():
                 "integrity_score": today_checklist.integrity_score,
                 "manager_walk_integrity": calculate_manager_walk_integrity(today_checklist),
                 "checklist_date": today_checklist.checklist_date,
-            })
-
-        archive_rows = DailyChecklist.query.filter(
-            DailyChecklist.store_number == store.store_number,
-            DailyChecklist.checklist_date < today
-        ).order_by(DailyChecklist.checklist_date.desc()).limit(5).all()
-
-        for row in archive_rows:
-            recent_archives.append({
-                "store_number": store.store_number,
-                "store_name": store.store_name or f"Store {store.store_number}",
-                "area_name": store.area_name,
-                "percent_complete": row.percent_complete,
-                "integrity_score": row.integrity_score,
-                "manager_walk_integrity": calculate_manager_walk_integrity(row),
-                "checklist_date": row.checklist_date,
-                "status": row.status,
             })
 
     recent_archives = sorted(

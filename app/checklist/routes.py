@@ -798,67 +798,138 @@ def run_checklist_summary_batch(
     }
 
 
+def _section_percent_from_checklist(checklist, section_name):
+    if not checklist:
+        return None
+
+    items = [
+        item for item in checklist.items
+        if item.section_name == section_name and item.is_required
+    ]
+
+    if not items:
+        return None
+
+    completed = sum(1 for item in items if item.is_completed)
+    return round((completed / len(items)) * 100, 1)
+
+
+def _format_percent(value):
+    if value is None:
+        return "Not Started"
+
+    if float(value).is_integer():
+        return f"{int(value)}%"
+
+    return f"{value}%"
+
+
+def _format_score(value):
+    if value is None:
+        return "0"
+
+    value = round(value, 1)
+    if float(value).is_integer():
+        return str(int(value))
+
+    return str(value)
+
+
 def build_auto_summary_body(title, visible_stores, send_results):
     ops_date = current_ops_date()
     total_visible = len(visible_stores)
-    sent_count = len([r for r in send_results if r.get("success")])
-    failed_results = [r for r in send_results if not r.get("success")]
-    failed_count = len(failed_results)
 
     store_numbers = [store.store_number for store in visible_stores]
 
-    today_checklists = DailyChecklist.query.filter(
+    today_checklists = DailyChecklist.query.options(
+        selectinload(DailyChecklist.items)
+    ).filter(
         DailyChecklist.store_number.in_(store_numbers),
         DailyChecklist.checklist_date == ops_date
     ).all() if store_numbers else []
 
-    not_started_count = total_visible - len(today_checklists)
-    completed_count = sum(1 for c in today_checklists if c.status == "completed")
-    in_progress_count = len(today_checklists) - completed_count
+    checklist_by_store = {
+        checklist.store_number: checklist
+        for checklist in today_checklists
+    }
 
-    avg_completion = round(
-        sum(c.percent_complete or 0 for c in today_checklists) / len(today_checklists),
-        1
-    ) if today_checklists else 0.0
+    opening_section = "Before Open / Before 10:30"
+    restock_section = "3-O'Clock Restock"
 
-    avg_integrity = round(
-        sum(c.integrity_score or 0 for c in today_checklists) / len(today_checklists),
-        1
-    ) if today_checklists else 0.0
+    store_rows = []
+    needs_attention = []
 
-    lines = []
-    for result in send_results:
-        if result.get("success"):
-            lines.append(
-                f"Store {result['store_number']}: "
-                f"{result['percent_complete']}% complete | "
-                f"Integrity {result['integrity_score']} | "
-                f"Walk {result['manager_walk_integrity']} | "
-                f"{result['status'].replace('_', ' ').title()}"
+    opening_values = []
+    integrity_values = []
+    restock_values = []
+
+    for store in visible_stores:
+        checklist = checklist_by_store.get(store.store_number)
+
+        if checklist:
+            opening_percent = _section_percent_from_checklist(checklist, opening_section)
+            integrity_score = round(checklist.integrity_score or 0, 1)
+            restock_percent = _section_percent_from_checklist(checklist, restock_section)
+
+            if opening_percent is not None:
+                opening_values.append(opening_percent)
+
+            integrity_values.append(integrity_score)
+
+            if restock_percent is not None:
+                restock_values.append(restock_percent)
+
+            store_rows.append(
+                f"{store.store_number}: "
+                f"Opening {_format_percent(opening_percent)} | "
+                f"Integrity {_format_score(integrity_score)} | "
+                f"3PM Restock {_format_percent(restock_percent)}"
             )
 
-    failed_lines = []
-    for result in failed_results[:10]:
-        failed_lines.append(f"- {result.get('store_number', 'Unknown')}: {result.get('error', 'Unknown error')}")
+            attention_flags = []
+            if opening_percent is None or opening_percent < 100:
+                attention_flags.append(f"Opening {_format_percent(opening_percent)}")
+            if integrity_score < 70:
+                attention_flags.append(f"Integrity {_format_score(integrity_score)}")
+            if restock_percent is None or restock_percent < 100:
+                attention_flags.append(f"3PM Restock {_format_percent(restock_percent)}")
+
+            if attention_flags:
+                needs_attention.append(
+                    f"- {store.store_number}: " + " | ".join(attention_flags)
+                )
+        else:
+            store_rows.append(
+                f"{store.store_number}: "
+                f"Opening Not Started | "
+                f"Integrity 0 | "
+                f"3PM Restock Not Started"
+            )
+            needs_attention.append(
+                f"- {store.store_number}: No checklist started"
+            )
+
+    avg_opening = round(sum(opening_values) / len(opening_values), 1) if opening_values else 0.0
+    avg_integrity = round(sum(integrity_values) / len(integrity_values), 1) if integrity_values else 0.0
+    avg_restock = round(sum(restock_values) / len(restock_values), 1) if restock_values else 0.0
+
+    not_started_count = total_visible - len(today_checklists)
 
     return (
         f"{title}\n"
         f"Date: {ops_date.strftime('%B %d, %Y')}\n\n"
+        f"Company Snapshot:\n"
         f"Visible Stores: {total_visible}\n"
-        f"Store Emails Sent: {sent_count}\n"
-        f"Failed Sends: {failed_count}\n\n"
-        f"Completed Stores: {completed_count}\n"
-        f"In Progress Stores: {in_progress_count}\n"
-        f"Not Started Stores: {not_started_count}\n\n"
-        f"Average Completion: {avg_completion}%\n"
-        f"Average Integrity: {avg_integrity}%\n\n"
-        f"Store Summary:\n"
-        f"{chr(10).join(lines) if lines else '- No successful store sends'}\n\n"
-        f"Failed Sends:\n"
-        f"{chr(10).join(failed_lines) if failed_lines else '- None'}\n\n"
+        f"Not Started: {not_started_count}\n"
+        f"Opening Average: {_format_percent(avg_opening)}\n"
+        f"Integrity Average: {_format_score(avg_integrity)}\n"
+        f"3PM Restock Average: {_format_percent(avg_restock)}\n\n"
+        f"Needs Attention:\n"
+        f"{chr(10).join(needs_attention[:15]) if needs_attention else '- None'}\n\n"
+        f"Store Breakdown:\n"
+        f"{chr(10).join(store_rows) if store_rows else '- No stores found'}\n\n"
         f"- BPI Ops"
     )
-
 
 def send_auto_admin_summary_emails(visible_stores, send_results, slot):
     ops_date = current_ops_date()

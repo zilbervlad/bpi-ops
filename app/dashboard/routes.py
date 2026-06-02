@@ -459,6 +459,7 @@ def home():
     elif user_role == "maintenance":
         quick_actions = [
             {"label": "Open Maintenance", "url": "/maintenance/"},
+            {"label": "Time Card", "url": "/maintenance/time-card"},
         ]
     elif user_role == "manager":
         quick_actions = [

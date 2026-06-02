@@ -137,8 +137,15 @@
 
                     {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager', 'maintenance'] %}
                     <a href="{{ url_for('maintenance.index') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
+                       class="{% if request.endpoint and request.endpoint.startswith('maintenance') and request.endpoint not in ['maintenance.time_card', 'maintenance.time_cards', 'maintenance.time_cards_pdf'] %}active{% endif %}">
                         Maintenance
+                    </a>
+                    {% endif %}
+
+                    {% if access_role == 'maintenance' %}
+                    <a href="{{ url_for('maintenance.time_cards') }}"
+                       class="{% if request.endpoint in ['maintenance.time_card', 'maintenance.time_cards', 'maintenance.time_cards_pdf'] %}active{% endif %}">
+                        Time Card
                     </a>
                     {% endif %}
                 </div>

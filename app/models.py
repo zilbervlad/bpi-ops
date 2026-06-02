@@ -311,6 +311,35 @@ class MaintenanceTicket(db.Model):
     svr_report = db.relationship("SVRReport")
 
 
+class MaintenanceTimeCard(db.Model):
+    __tablename__ = "maintenance_time_cards"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    work_date = db.Column(db.Date, nullable=False, default=today_et)
+
+    clock_in_at = db.Column(db.DateTime, nullable=True)
+    clock_out_at = db.Column(db.DateTime, nullable=True)
+
+    notes = db.Column(db.Text, nullable=True)
+
+    # True when a time card is manually added/edited outside normal clock in/out.
+    is_edited = db.Column(db.Boolean, nullable=False, default=False)
+    edited_at = db.Column(db.DateTime, nullable=True)
+    edited_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship("User", foreign_keys=[user_id])
+    edited_by = db.relationship("User", foreign_keys=[edited_by_user_id])
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "work_date", name="uq_maintenance_time_card_user_date"),
+    )
+
+
 class NightlyNumbersReport(db.Model):
     __tablename__ = "nightly_numbers_reports"
 

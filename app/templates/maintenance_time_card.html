@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Time Card | BPI Ops{% endblock %}
+{% block header %}Maintenance Time Card{% endblock %}
+
+{% block content %}
+<div class="command-bar panel" style="margin-bottom: 24px;">
+    <div class="command-bar-left">
+        <div class="command-eyebrow">MAINTENANCE TIME CARD</div>
+        <h2 class="command-title">Today’s Time Card</h2>
+        <p class="command-subtitle">
+            {{ user.name }} · {{ work_date.strftime('%A, %b %d, %Y') }}
+        </p>
+    </div>
+
+    <div class="command-bar-right">
+        {% if is_clocked_in %}
+        <div class="command-chip" style="border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.10);">Clocked In</div>
+        {% else %}
+        <div class="command-chip">Clocked Out</div>
+        {% endif %}
+        <a href="{{ url_for('maintenance.time_cards') }}" class="action-btn" style="max-width: 180px;">Time Card Report</a>
+    </div>
+</div>
+
+<style>
+    .command-bar .btn-primary,
+    .command-bar .action-btn {
+        padding: 10px 14px !important;
+        min-height: 42px;
+        font-size: 13px;
+        border-radius: 12px;
+        line-height: 1.15;
+    }
+
+    .time-card-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 420px;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .time-card-big-number {
+        font-size: 34px;
+        font-weight: 950;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        margin: 8px 0 4px;
+    }
+
+    .time-card-status-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin: 14px 0;
+    }
+
+    .time-card-stat {
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.018);
+        border-radius: 12px;
+        padding: 11px 12px;
+    }
+
+    .time-card-stat-label {
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0.58;
+        margin-bottom: 5px;
+    }
+
+    .time-card-stat-value {
+        font-size: 16px;
+        font-weight: 900;
+    }
+
+    .time-card-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 220px));
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .time-card-actions .btn-primary,
+    .time-card-actions .action-btn {
+        padding: 11px 14px !important;
+        min-height: 42px;
+        border-radius: 12px;
+        font-size: 13px;
+    }
+
+    .time-card-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .time-card-table th,
+    .time-card-table td {
+        padding: 8px 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        text-align: left;
+    }
+
+    .time-card-table th {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        opacity: 0.62;
+    }
+
+    @media (max-width: 1000px) {
+        .time-card-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .time-card-status-row,
+        .time-card-actions {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="time-card-grid">
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Clock In / Clock Out</h3>
+            <span class="summary-pill">{{ work_date.strftime('%b %d') }}</span>
+        </div>
+
+        <div class="time-card-big-number">
+            {% if today_hours is not none %}
+                {{ "%.2f"|format(today_hours) }} hrs
+            {% elif is_clocked_in %}
+                Active
+            {% else %}
+                0.00 hrs
+            {% endif %}
+        </div>
+
+        <div class="area-subtitle">
+            Today’s punches are recorded in Eastern Time.
+        </div>
+
+        <div class="time-card-status-row">
+            <div class="time-card-stat">
+                <div class="time-card-stat-label">Clock In</div>
+                <div class="time-card-stat-value">{{ format_dt_et(card.clock_in_at) if card.clock_in_at else 'Missing' }}</div>
+            </div>
+            <div class="time-card-stat">
+                <div class="time-card-stat-label">Clock Out</div>
+                <div class="time-card-stat-value">{{ format_dt_et(card.clock_out_at) if card.clock_out_at else 'Missing' }}</div>
+            </div>
+            <div class="time-card-stat">
+                <div class="time-card-stat-label">Status</div>
+                <div class="time-card-stat-value">{% if is_clocked_in %}Working{% else %}Not Clocked In{% endif %}</div>
+            </div>
+        </div>
+
+        <form method="POST" class="time-card-actions">
+            <button
+                type="submit"
+                name="action"
+                value="clock_in"
+                class="btn-primary"
+                {% if card.clock_in_at %}disabled{% endif %}
+                style="padding: 16px;"
+            >
+                Clock In
+            </button>
+
+            <button
+                type="submit"
+                name="action"
+                value="clock_out"
+                class="btn-primary"
+                {% if not card.clock_in_at or card.clock_out_at %}disabled{% endif %}
+                style="padding: 16px;"
+            >
+                Clock Out
+            </button>
+        </form>
+
+        <form method="POST" style="margin-top: 18px;">
+            <div class="form-group">
+                <label for="notes">Today’s Notes</label>
+                <textarea id="notes" name="notes" rows="4" placeholder="Optional notes...">{{ card.notes or '' }}</textarea>
+            </div>
+            <button type="submit" name="action" value="save_note" class="action-btn" style="max-width: 220px;">
+                Save Note
+            </button>
+        </form>
+    </section>
+
+    <section class="panel premium-panel">
+        <div class="panel-head">
+            <h3>Recent Time Cards</h3>
+            <span class="summary-pill">Last 14</span>
+        </div>
+
+        <table class="time-card-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>In</th>
+                    <th>Out</th>
+                    <th>Hours</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in recent_cards %}
+                {% set item_hours = hours_between(item.clock_in_at, item.clock_out_at) %}
+                <tr>
+                    <td>{{ item.work_date.strftime('%m/%d') }}</td>
+                    <td>{{ format_dt_et(item.clock_in_at) if item.clock_in_at else 'Missing' }}</td>
+                    <td>{{ format_dt_et(item.clock_out_at) if item.clock_out_at else 'Missing' }}</td>
+                    <td>{% if item_hours is not none %}{{ "%.2f"|format(item_hours) }}{% else %}-{% endif %}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4">No recent time cards yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+{% endblock %}

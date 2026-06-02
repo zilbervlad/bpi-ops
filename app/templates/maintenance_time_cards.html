@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Time Cards | BPI Ops{% endblock %}
+{% block header %}Maintenance Time Cards{% endblock %}
+
+{% block content %}
+<div class="command-bar panel" style="margin-bottom: 24px;">
+    <div class="command-bar-left">
+        <div class="command-eyebrow">MAINTENANCE TIME CARDS</div>
+        <h2 class="command-title">Maintenance Time Card Report</h2>
+        <p class="command-subtitle">
+            {% if user_role == "maintenance" %}View and export your maintenance time cards. OT is calculated Monday-Sunday over 40 hours.{% else %}Spreadsheet-style time card review with Monday-Sunday OT over 40 hours.{% endif %}
+        </p>
+    </div>
+
+    <div class="command-bar-right">
+        {% if user_role == "maintenance" %}
+        <a href="{{ url_for('maintenance.time_card') }}" class="action-btn" style="max-width: 170px;">Clock In / Out</a>
+        {% else %}
+        <a href="{{ url_for('maintenance.index') }}" class="action-btn" style="max-width: 170px;">Maintenance Board</a>
+        {% endif %}
+        <a
+            href="{{ url_for('maintenance.time_cards_pdf', start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), tech=tech_raw) }}"
+            class="btn-primary"
+            style="max-width: 170px; text-align: center;"
+        >
+            Export PDF
+        </a>
+    </div>
+</div>
+
+<style>
+    .command-bar .btn-primary,
+    .command-bar .action-btn {
+        padding: 10px 14px !important;
+        min-height: 42px;
+        font-size: 13px;
+        border-radius: 12px;
+        line-height: 1.15;
+    }
+
+    .time-report-filters {
+        display: grid;
+        grid-template-columns: 180px 180px 240px minmax(160px, 1fr);
+        gap: 12px;
+        align-items: end;
+        margin-bottom: 14px;
+    }
+
+    .time-report-filters .form-group {
+        margin-bottom: 0;
+    }
+
+    .time-report-filters input,
+    .time-report-filters select {
+        height: 40px;
+        border-radius: 10px;
+        font-size: 13px;
+        padding: 8px 10px;
+    }
+
+    .time-report-filters .btn-primary {
+        height: 40px;
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-size: 13px;
+    }
+
+    .time-shortcut-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .time-shortcut-row .action-btn {
+        max-width: none !important;
+        width: auto;
+        padding: 8px 12px;
+        min-height: 36px;
+        border-radius: 10px;
+        font-size: 12px;
+    }
+
+    .time-report-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .time-report-stat {
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.018);
+        border-radius: 12px;
+        padding: 11px 12px;
+    }
+
+    .time-report-stat-label {
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0.55;
+        margin-bottom: 5px;
+    }
+
+    .time-report-stat-value {
+        font-size: 19px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        line-height: 1;
+    }
+
+    .timesheet-table-wrap {
+        overflow-x: auto;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.012);
+    }
+
+    .timesheet-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        min-width: 980px;
+    }
+
+    .timesheet-table th,
+    .timesheet-table td {
+        padding: 7px 9px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        border-right: 1px solid rgba(255,255,255,0.035);
+        vertical-align: middle;
+        line-height: 1.25;
+    }
+
+    .timesheet-table th {
+        position: sticky;
+        top: 0;
+        background: rgba(12, 24, 58, 0.98);
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        opacity: 0.78;
+        z-index: 1;
+    }
+
+    .timesheet-table tr:hover td {
+        background: rgba(255,255,255,0.022);
+    }
+
+    .time-warning {
+        color: #ffd0d1;
+        font-weight: 900;
+    }
+
+    .time-good {
+        color: #b9ffd1;
+        font-weight: 900;
+    }
+
+    .time-edit-btn {
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.035);
+        color: inherit;
+        border-radius: 8px;
+        padding: 5px 9px;
+        font-size: 11px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .time-edit-btn:hover {
+        background: rgba(255,255,255,0.07);
+    }
+
+    .time-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(3, 8, 20, 0.62);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        z-index: 9999;
+    }
+
+    .time-modal-backdrop.is-open {
+        display: flex;
+    }
+
+    .time-modal {
+        width: min(760px, 100%);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(9,20,53,0.98), rgba(6,14,38,0.98));
+        box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+        overflow: hidden;
+    }
+
+    .time-modal-header {
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .time-modal-body {
+        padding: 16px;
+    }
+
+    .time-modal-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .time-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    @media (max-width: 900px) {
+        .time-report-filters,
+        .time-report-summary-grid,
+        .time-modal-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<section class="panel premium-panel" style="margin-bottom: 24px;">
+    <form method="GET" class="time-report-filters">
+        <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" name="start" value="{{ start_date.strftime('%Y-%m-%d') }}">
+        </div>
+
+        <div class="form-group">
+            <label>End Date</label>
+            <input type="date" name="end" value="{{ end_date.strftime('%Y-%m-%d') }}">
+        </div>
+
+        {% if user_role in ["admin", "supervisor"] %}
+        <div class="form-group">
+            <label>Tech</label>
+            <select name="tech">
+                <option value="all" {% if tech_raw == 'all' %}selected{% endif %}>All</option>
+                {% for tech in maintenance_users %}
+                <option value="{{ tech.id }}" {% if tech_id == tech.id %}selected{% endif %}>{{ tech.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% else %}
+        <input type="hidden" name="tech" value="{{ tech_raw }}">
+        <div class="form-group">
+            <label>Tech</label>
+            <input type="text" value="{{ current_user.name }}" disabled>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn-primary">Apply</button>
+    </form>
+
+    <div class="time-shortcut-row">
+        <a class="action-btn" style="max-width: 150px;" href="{{ url_for('maintenance.time_cards', start=this_week_start.strftime('%Y-%m-%d'), end=this_week_end.strftime('%Y-%m-%d'), tech=tech_raw) }}">This Week</a>
+        <a class="action-btn" style="max-width: 150px;" href="{{ url_for('maintenance.time_cards', start=last_week_start.strftime('%Y-%m-%d'), end=last_week_end.strftime('%Y-%m-%d'), tech=tech_raw) }}">Last Week</a>
+        <a class="action-btn" style="max-width: 150px;" href="{{ url_for('maintenance.time_cards', start=last_14_start.strftime('%Y-%m-%d'), end=last_14_end.strftime('%Y-%m-%d'), tech=tech_raw) }}">Last 14 Days</a>
+        <button type="button" class="action-btn js-open-time-modal" style="max-width: 170px;">Add Time Card</button>
+    </div>
+</section>
+
+<section class="panel premium-panel" style="margin-bottom: 24px;">
+    <div class="panel-head">
+        <h3>Summary</h3>
+        <span class="summary-pill">{{ start_date.strftime('%m/%d/%y') }} - {{ end_date.strftime('%m/%d/%y') }}</span>
+    </div>
+
+    <div class="time-report-summary-grid">
+        <div class="time-report-stat">
+            <div class="time-report-stat-label">Regular Hours</div>
+            <div class="time-report-stat-value">{{ "%.2f"|format(total_summary.regular) }}</div>
+        </div>
+        <div class="time-report-stat">
+            <div class="time-report-stat-label">OT Hours</div>
+            <div class="time-report-stat-value">{{ "%.2f"|format(total_summary.ot) }}</div>
+        </div>
+        <div class="time-report-stat">
+            <div class="time-report-stat-label">Total Hours</div>
+            <div class="time-report-stat-value">{{ "%.2f"|format(total_summary.total) }}</div>
+        </div>
+        <div class="time-report-stat">
+            <div class="time-report-stat-label">Missing Punches</div>
+            <div class="time-report-stat-value">{{ total_summary.missing }}</div>
+        </div>
+    </div>
+
+    <div class="timesheet-table-wrap">
+        <table class="timesheet-table">
+            <thead>
+                <tr>
+                    <th>Tech</th>
+                    <th>Days Worked</th>
+                    <th>Regular</th>
+                    <th>OT</th>
+                    <th>Total</th>
+                    <th>Missing</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for summary in summaries %}
+                <tr>
+                    <td><strong>{{ summary.user.name }}</strong></td>
+                    <td>{{ summary.days_worked }}</td>
+                    <td>{{ "%.2f"|format(summary.regular) }}</td>
+                    <td>{{ "%.2f"|format(summary.ot) }}</td>
+                    <td>{{ "%.2f"|format(summary.total) }}</td>
+                    <td class="{% if summary.missing %}time-warning{% endif %}">{{ summary.missing }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="panel premium-panel">
+    <div class="panel-head">
+        <h3>Daily Detail</h3>
+        <span class="summary-pill">Editable</span>
+    </div>
+
+    <div class="timesheet-table-wrap">
+        <table class="timesheet-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Day</th>
+                    <th>Tech</th>
+                    <th>Clock In</th>
+                    <th>Clock Out</th>
+                    <th>Reg</th>
+                    <th>OT</th>
+                    <th>Total</th>
+                    <th>Edited</th>
+                    <th>Notes</th>
+                    <th>Edit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr class="{% if row.missing %}time-warning{% endif %}">
+                    <td>{{ row.date.strftime('%m/%d/%y') }}</td>
+                    <td>{{ row.day }}</td>
+                    <td><strong>{{ row.user.name }}</strong></td>
+                    <td>{{ row.clock_in }}</td>
+                    <td>{{ row.clock_out }}</td>
+                    <td>{% if row.regular is not none %}{{ "%.2f"|format(row.regular) }}{% else %}-{% endif %}</td>
+                    <td>{% if row.ot is not none %}{{ "%.2f"|format(row.ot) }}{% else %}-{% endif %}</td>
+                    <td>{% if row.total is not none %}{{ "%.2f"|format(row.total) }}{% else %}-{% endif %}</td>
+                    <td>
+                        {% if row.is_edited %}
+                            <span class="summary-pill" title="{% if row.edited_by %}Edited by {{ row.edited_by }}{% endif %}{% if row.edited_at %} at {{ row.edited_at }}{% endif %}">Edited</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ row.notes or '-' }}</td>
+                    <td>
+                        <button
+                            type="button"
+                            class="time-edit-btn js-open-time-modal"
+                            data-card-id="{{ row.card.id }}"
+                            data-user-id="{{ row.user.id }}"
+                            data-work-date="{{ row.date.strftime('%Y-%m-%d') }}"
+                            data-clock-in="{{ row.clock_in_input }}"
+                            data-clock-out="{{ row.clock_out_input }}"
+                            data-notes="{{ row.notes }}"
+                        >
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="11">No maintenance time cards found for this range.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div id="time-modal-backdrop" class="time-modal-backdrop">
+    <div class="time-modal" role="dialog" aria-modal="true">
+        <div class="time-modal-header">
+            <div>
+                <h3 style="margin: 0;">Edit Time Card</h3>
+                <div class="area-subtitle">Times are Eastern Time</div>
+            </div>
+            <button type="button" class="action-btn" id="time-modal-close" style="max-width: 100px;">Close</button>
+        </div>
+
+        <div class="time-modal-body">
+            <form method="POST">
+                <input type="hidden" name="action" value="save_card">
+                <input type="hidden" name="card_id" id="modal_card_id">
+
+                <div class="time-modal-grid">
+                    <div class="form-group">
+                        <label>Tech</label>
+                        {% if user_role == "maintenance" %}
+                            <input type="hidden" name="user_id" id="modal_user_id_hidden" value="{{ current_user.id }}">
+                            <input type="text" value="{{ current_user.name }}" disabled>
+                            <select name="user_id_display" id="modal_user_id" style="display: none;">
+                                <option value="{{ current_user.id }}">{{ current_user.name }}</option>
+                            </select>
+                        {% else %}
+                            <select name="user_id" id="modal_user_id" required>
+                                {% for tech in maintenance_users %}
+                                <option value="{{ tech.id }}">{{ tech.name }}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Work Date</label>
+                        <input type="date" name="work_date" id="modal_work_date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Clock In</label>
+                        <input type="datetime-local" name="clock_in_at" id="modal_clock_in_at">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Clock Out</label>
+                        <input type="datetime-local" name="clock_out_at" id="modal_clock_out_at">
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Notes</label>
+                        <textarea name="notes" id="modal_notes" rows="4"></textarea>
+                    </div>
+                </div>
+
+                <div class="time-modal-actions">
+                    <button type="button" class="action-btn" id="time-modal-cancel">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Time Card</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const backdrop = document.getElementById("time-modal-backdrop");
+    const closeBtn = document.getElementById("time-modal-close");
+    const cancelBtn = document.getElementById("time-modal-cancel");
+
+    const cardId = document.getElementById("modal_card_id");
+    const userId = document.getElementById("modal_user_id");
+    const workDate = document.getElementById("modal_work_date");
+    const clockIn = document.getElementById("modal_clock_in_at");
+    const clockOut = document.getElementById("modal_clock_out_at");
+    const notes = document.getElementById("modal_notes");
+
+    function openModal(button) {
+        cardId.value = button.dataset.cardId || "";
+        userId.value = button.dataset.userId || (userId.options[0] ? userId.options[0].value : "");
+        workDate.value = button.dataset.workDate || "{{ today.strftime('%Y-%m-%d') }}";
+        clockIn.value = button.dataset.clockIn || "";
+        clockOut.value = button.dataset.clockOut || "";
+        notes.value = button.dataset.notes || "";
+
+        backdrop.classList.add("is-open");
+    }
+
+    function closeModal() {
+        backdrop.classList.remove("is-open");
+    }
+
+    document.querySelectorAll(".js-open-time-modal").forEach(button => {
+        button.addEventListener("click", function () {
+            openModal(this);
+        });
+    });
+
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
+    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+
+    if (backdrop) {
+        backdrop.addEventListener("click", function (e) {
+            if (e.target === backdrop) closeModal();
+        });
+    }
+
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeModal();
+    });
+});
+</script>
+{% endblock %}

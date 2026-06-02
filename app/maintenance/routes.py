@@ -8,7 +8,7 @@ from openpyxl.utils import get_column_letter
 
 from app.auth.routes import login_required, role_required
 from app.extensions import db
-from app.models import MaintenanceTicket, Store
+from app.models import MaintenanceTicket, Store, User
 
 maintenance_bp = Blueprint("maintenance", __name__, url_prefix="/maintenance")
 
@@ -431,6 +431,17 @@ def calendar():
     visible_store_numbers = get_visible_store_numbers()
     role = get_current_role()
 
+    maintenance_users = (
+        User.query
+        .filter(User.role == "maintenance", User.is_active == True)
+        .order_by(User.name.asc())
+        .all()
+    )
+    maintenance_names = [u.name.strip() for u in maintenance_users if u.name and u.name.strip()]
+    valid_assignees = set(maintenance_names)
+
+    tech_filter = request.args.get("tech", "all").strip() or "all"
+
     week_start = get_calendar_week_start()
     calendar_start_raw = request.form.get("calendar_start", "").strip()
     if calendar_start_raw:
@@ -442,31 +453,40 @@ def calendar():
     previous_week = week_start - timedelta(days=7)
     next_week = week_start + timedelta(days=7)
 
+    def calendar_redirect():
+        args = {"start": week_start.strftime("%Y-%m-%d")}
+        if tech_filter and tech_filter != "all":
+            args["tech"] = tech_filter
+        return redirect(url_for("maintenance.calendar", **args))
+
     if request.method == "POST":
         action = request.form.get("action", "").strip()
+        posted_tech_filter = request.form.get("tech_filter", "").strip()
+        if posted_tech_filter:
+            tech_filter = posted_tech_filter
 
         if action == "unschedule":
             if role == "manager":
                 flash("Managers can view the maintenance calendar, but cannot schedule maintenance tasks.", "error")
-                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+                return calendar_redirect()
 
             ticket = visible_ticket_or_none(request.form.get("ticket_id"), visible_store_numbers)
             if not ticket:
                 flash("Maintenance task not found or not available.", "error")
-                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+                return calendar_redirect()
 
             ticket.scheduled_date = None
             ticket.scheduled_time = None
             ticket.assigned_to = None
 
             db.session.commit()
-            flash("Maintenance task moved back to unscheduled.", "success")
-            return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+            flash("Maintenance task moved back to unscheduled and unassigned.", "success")
+            return calendar_redirect()
 
         if action == "unschedule_all":
             if role == "manager":
                 flash("Managers can view the maintenance calendar, but cannot schedule maintenance tasks.", "error")
-                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+                return calendar_redirect()
 
             scheduled_tickets = MaintenanceTicket.query.filter(
                 MaintenanceTicket.store_number.in_(visible_store_numbers),
@@ -481,47 +501,81 @@ def calendar():
 
             db.session.commit()
             flash(f"{len(scheduled_tickets)} maintenance tasks moved back to Unscheduled.", "success")
-            return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+            return calendar_redirect()
 
         if action == "schedule":
             if role == "manager":
                 flash("Managers can view the maintenance calendar, but cannot schedule maintenance tasks.", "error")
-                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+                return calendar_redirect()
 
             ticket = visible_ticket_or_none(request.form.get("ticket_id"), visible_store_numbers)
             if not ticket:
                 flash("Maintenance task not found or not available.", "error")
-                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+                return calendar_redirect()
 
             new_store_number = request.form.get("store_number", ticket.store_number).strip()
             if new_store_number not in visible_store_numbers:
                 flash("Invalid store selection.", "error")
-                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+                return calendar_redirect()
 
             title = request.form.get("title", "").strip()
             if not title:
                 flash("Task title is required.", "error")
-                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+                return calendar_redirect()
+
+            assigned_to = request.form.get("assigned_to", "").strip()
+            if assigned_to and assigned_to not in valid_assignees:
+                flash("Invalid maintenance assignment.", "error")
+                return calendar_redirect()
 
             apply_schedule_form_to_ticket(ticket)
 
             if ticket.scheduled_time and not ticket.scheduled_date:
                 flash("Please choose a scheduled date when setting a scheduled time.", "error")
-                return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+                return calendar_redirect()
+
+            if ticket.assigned_to and ticket.status == "open":
+                ticket.status = "assigned"
 
             db.session.commit()
             flash("Maintenance schedule updated.", "success")
-            return redirect(url_for("maintenance.calendar", start=week_start.strftime("%Y-%m-%d")))
+            return calendar_redirect()
 
-    tickets = MaintenanceTicket.query.order_by(
+    all_tickets = MaintenanceTicket.query.order_by(
         MaintenanceTicket.created_at.asc(),
         MaintenanceTicket.id.asc()
     ).all()
 
-    tickets = [
-        t for t in tickets
+    all_tickets = [
+        t for t in all_tickets
         if t.store_number in visible_store_numbers
     ]
+
+    def ticket_matches_calendar_filter(ticket):
+        assigned_to = (ticket.assigned_to or "").strip()
+
+        if tech_filter == "all":
+            return True
+
+        if tech_filter == "unassigned":
+            return not assigned_to
+
+        return assigned_to == tech_filter
+
+    tickets = [t for t in all_tickets if ticket_matches_calendar_filter(t)]
+
+    def ticket_matches_unscheduled_dispatch(ticket):
+        assigned_to = (ticket.assigned_to or "").strip()
+
+        if tech_filter == "all":
+            return True
+
+        if tech_filter == "unassigned":
+            return not assigned_to
+
+        # When viewing Nick/Jim, keep unassigned tasks visible so they can be dragged
+        # directly onto that tech's calendar and assigned in one move.
+        return (not assigned_to) or assigned_to == tech_filter
 
     def ticket_sort_key(ticket):
         return (
@@ -553,11 +607,13 @@ def calendar():
             "slots": slots,
         })
 
-    # Keep completed tasks visible on the calendar when scheduled,
-    # but do not keep completed unscheduled work in the dispatch pile.
     unscheduled_tickets = [
-        t for t in tickets
-        if not t.scheduled_date and t.status != "complete"
+        t for t in all_tickets
+        if (
+            not t.scheduled_date
+            and t.status != "complete"
+            and ticket_matches_unscheduled_dispatch(t)
+        )
     ]
 
     def unscheduled_sort_key(ticket):
@@ -587,6 +643,8 @@ def calendar():
         stores=visible_stores,
         days=days,
         unscheduled_tickets=unscheduled_tickets,
+        maintenance_users=maintenance_users,
+        tech_filter=tech_filter,
         week_start=week_start,
         week_end=week_end,
         previous_week=previous_week,
@@ -606,8 +664,21 @@ def move_calendar_ticket():
     if not ticket:
         return jsonify({"ok": False, "message": "Task not found or access denied."}), 404
 
+    maintenance_users = (
+        User.query
+        .filter(User.role == "maintenance", User.is_active == True)
+        .order_by(User.name.asc())
+        .all()
+    )
+    valid_assignees = {u.name.strip() for u in maintenance_users if u.name and u.name.strip()}
+
     scheduled_date_raw = request.form.get("scheduled_date", "").strip()
     scheduled_time_raw = request.form.get("scheduled_time", "").strip()
+    assigned_to_raw = request.form.get("assigned_to", "").strip()
+    should_update_assignment = request.form.get("update_assignment", "").strip() == "1"
+
+    if assigned_to_raw and assigned_to_raw not in valid_assignees:
+        return jsonify({"ok": False, "message": "Invalid maintenance assignment."}), 400
 
     if scheduled_date_raw == "unscheduled":
         ticket.scheduled_date = None
@@ -621,6 +692,14 @@ def move_calendar_ticket():
 
     ticket.scheduled_date = scheduled_date
     ticket.scheduled_time = parse_optional_time(scheduled_time_raw)
+
+    # When viewing a specific tech filter, dragging onto the calendar assigns it to that tech.
+    # When viewing All, drag only changes date/time and preserves the current assignment.
+    if should_update_assignment:
+        ticket.assigned_to = assigned_to_raw or None
+
+    if ticket.assigned_to and ticket.status == "open":
+        ticket.status = "assigned"
 
     db.session.commit()
     return jsonify({"ok": True, "message": "Maintenance task moved."})

@@ -9,27 +9,71 @@
         <div class="command-eyebrow">MAINTENANCE CALENDAR</div>
         <h2 class="command-title">Weekly Maintenance Schedule</h2>
         <p class="command-subtitle">
-            Assign work, schedule visits, and keep unscheduled maintenance from getting lost.
+            Schedule work by day and time. Use the tech filters to focus on one maintenance person at a time.
         </p>
     </div>
 
     <div class="command-bar-right">
-        <a href="{{ url_for('maintenance.calendar', start=previous_week.strftime('%Y-%m-%d')) }}" class="action-btn" style="max-width: 150px;">← Previous</a>
+        <a href="{{ url_for('maintenance.calendar', start=previous_week.strftime('%Y-%m-%d'), tech=tech_filter) }}" class="action-btn" style="max-width: 150px;">← Previous</a>
         <div class="command-chip">
             {{ week_start.strftime('%b %d') }} - {{ week_end.strftime('%b %d') }}
         </div>
-        <a href="{{ url_for('maintenance.calendar', start=next_week.strftime('%Y-%m-%d')) }}" class="action-btn" style="max-width: 150px;">Next →</a>
+        <a href="{{ url_for('maintenance.calendar', start=next_week.strftime('%Y-%m-%d'), tech=tech_filter) }}" class="action-btn" style="max-width: 150px;">Next →</a>
         <a href="{{ url_for('maintenance.index') }}" class="action-btn" style="max-width: 150px;">Board View</a>
     </div>
 </div>
 
 <style>
+    .maintenance-tech-filter-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+
+    .maintenance-tech-chips {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .maintenance-tech-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.10);
+        background: rgba(255,255,255,0.035);
+        color: inherit;
+        font-size: 12px;
+        font-weight: 900;
+        text-decoration: none;
+        transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+    }
+
+    .maintenance-tech-chip:hover {
+        transform: translateY(-1px);
+        background: rgba(56, 189, 248, 0.10);
+        border-color: rgba(56, 189, 248, 0.24);
+    }
+
+    .maintenance-tech-chip.is-active {
+        background: rgba(56, 189, 248, 0.18);
+        border-color: rgba(56, 189, 248, 0.36);
+        color: #dff7ff;
+    }
+
     .maintenance-calendar-layout {
         display: grid;
         grid-template-columns: minmax(0, 1fr) 360px;
         gap: 24px;
         align-items: stretch;
-        height: calc(100vh - 170px);
+        height: calc(100vh - 210px);
         min-height: 620px;
         overflow: hidden;
     }
@@ -213,6 +257,28 @@
         font-size: 10px;
         opacity: 0.70;
         line-height: 1.2;
+    }
+
+    .maintenance-assignee-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        border: 1px solid rgba(56, 189, 248, 0.22);
+        background: rgba(56, 189, 248, 0.10);
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #dff7ff;
+        margin-right: 4px;
+    }
+
+    .maintenance-assignee-badge.is-unassigned {
+        border-color: rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.05);
+        color: rgba(255,255,255,0.72);
     }
 
     .maintenance-pill-row {
@@ -529,13 +595,13 @@
     <div class="maintenance-event-title">Store {{ ticket.store_number }} — {{ ticket.title }}</div>
     <div class="maintenance-event-meta">
         {% if ticket.assigned_to %}
-            Assigned to {{ ticket.assigned_to }}
+            <span class="maintenance-assignee-badge">{{ ticket.assigned_to }}</span>
         {% else %}
-            Unassigned
+            <span class="maintenance-assignee-badge is-unassigned">Unassigned</span>
         {% endif %}
 
         {% if ticket.estimated_minutes %}
-            • {{ ticket.estimated_minutes }} min
+            {{ ticket.estimated_minutes }} min
         {% endif %}
     </div>
 
@@ -552,11 +618,35 @@
 
 <div class="maintenance-calendar-layout">
     <section class="panel premium-panel">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px;">
+        <div class="maintenance-tech-filter-bar">
             <div>
                 <h3 style="margin: 0;">This Week</h3>
                 <div class="area-subtitle">Drag tasks into a day/time slot or click to edit</div>
             </div>
+
+            <div class="maintenance-tech-chips">
+                <a
+                    href="{{ url_for('maintenance.calendar', start=week_start.strftime('%Y-%m-%d'), tech='all') }}"
+                    class="maintenance-tech-chip {% if tech_filter == 'all' %}is-active{% endif %}"
+                >
+                    All
+                </a>
+                <a
+                    href="{{ url_for('maintenance.calendar', start=week_start.strftime('%Y-%m-%d'), tech='unassigned') }}"
+                    class="maintenance-tech-chip {% if tech_filter == 'unassigned' %}is-active{% endif %}"
+                >
+                    Unassigned
+                </a>
+                {% for tech in maintenance_users %}
+                <a
+                    href="{{ url_for('maintenance.calendar', start=week_start.strftime('%Y-%m-%d'), tech=tech.name) }}"
+                    class="maintenance-tech-chip {% if tech_filter == tech.name %}is-active{% endif %}"
+                >
+                    {{ tech.name }}
+                </a>
+                {% endfor %}
+            </div>
+
             <span class="summary-pill">{{ week_start.strftime('%b %d') }} - {{ week_end.strftime('%b %d') }}</span>
         </div>
 
@@ -617,11 +707,12 @@
                 <form method="POST" style="margin: 0;">
                     <input type="hidden" name="action" value="unschedule_all">
                     <input type="hidden" name="calendar_start" value="{{ week_start.strftime('%Y-%m-%d') }}">
+                    <input type="hidden" name="tech_filter" value="{{ tech_filter }}">
                     <button
                         type="submit"
                         class="action-btn"
                         style="max-width: 130px; padding: 7px 10px; font-size: 11px;"
-                        onclick="return confirm('Move all scheduled incomplete maintenance tasks back to Unscheduled?')"
+                        onclick="return confirm('Move all scheduled incomplete maintenance tasks back to Unscheduled and clear assignments?')"
                     >
                         Unassign All
                     </button>
@@ -659,9 +750,9 @@
 
         <div class="maintenance-modal-body">
             <form method="POST" id="maintenance-modal-form">
-                <!-- action is set by the Save / Unassign buttons -->
                 <input type="hidden" name="ticket_id" id="modal_ticket_id">
                 <input type="hidden" name="calendar_start" value="{{ week_start.strftime('%Y-%m-%d') }}">
+                <input type="hidden" name="tech_filter" value="{{ tech_filter }}">
 
                 <div class="maintenance-modal-grid">
                     <div class="form-group">
@@ -685,7 +776,12 @@
 
                     <div class="form-group">
                         <label>Assigned To</label>
-                        <input type="text" name="assigned_to" id="modal_assigned_to" placeholder="Example: Mike">
+                        <select name="assigned_to" id="modal_assigned_to">
+                            <option value="">Unassigned</option>
+                            {% for tech in maintenance_users %}
+                            <option value="{{ tech.name }}">{{ tech.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -766,11 +862,25 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 1800);
     }
 
+    const activeTechFilter = "{{ tech_filter }}";
+    const dragAssignTo = (
+        activeTechFilter && 
+        activeTechFilter !== "all" && 
+        activeTechFilter !== "unassigned"
+    ) ? activeTechFilter : "";
+
+    const shouldUpdateAssignmentOnDrag = (
+        activeTechFilter && 
+        activeTechFilter !== "all"
+    );
+
     function moveTicket(ticketId, scheduledDate, scheduledTime) {
         const formData = new FormData();
         formData.append("ticket_id", ticketId);
         formData.append("scheduled_date", scheduledDate);
         formData.append("scheduled_time", scheduledTime || "");
+        formData.append("assigned_to", dragAssignTo || "");
+        formData.append("update_assignment", shouldUpdateAssignmentOnDrag ? "1" : "0");
 
         return fetch(moveUrl, {
             method: "POST",
@@ -881,7 +991,7 @@ document.addEventListener("DOMContentLoaded", function () {
         priorityInput.value = data.priority || "normal";
 
         let statusText = data.status ? data.status.replace("_", " ") : "Open";
-        let assignedText = data.assignedTo ? ` • ${data.assignedTo}` : "";
+        let assignedText = data.assignedTo ? ` • ${data.assignedTo}` : " • Unassigned";
         modalSubtitle.textContent = `Store ${data.store || ""} • ${statusText}${assignedText}`;
 
         setReadonlyFields();

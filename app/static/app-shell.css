@@ -1,0 +1,523 @@
+/* BPI Ops app shell navigation, topbar, sidebar, and mobile polish */
+
+.nav a {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+
+    .nav-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 8px;
+        display: inline-grid;
+        place-items: center;
+        flex: 0 0 22px;
+        font-size: 12px;
+        color: #8fb4d9;
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid rgba(148, 163, 184, 0.10);
+    }
+
+    .nav a.active .nav-icon {
+        color: #e0f2fe;
+        background: rgba(56, 189, 248, 0.16);
+        border-color: rgba(56, 189, 248, 0.30);
+    }
+
+    .nav-admin-section {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .admin-gear-wrap {
+        position: relative;
+        display: inline-flex;
+    }
+
+    .admin-gear-btn {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(15, 23, 42, 0.78);
+        color: #e5eefb;
+        border-radius: 999px;
+        padding: 9px 13px;
+        font-weight: 900;
+        font-size: 12px;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.20);
+    }
+
+    .admin-gear-menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 10px);
+        width: 245px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 18px;
+        background: rgba(2, 6, 23, 0.98);
+        box-shadow: 0 24px 70px rgba(0,0,0,0.42);
+        padding: 8px;
+        display: none;
+        z-index: 50;
+    }
+
+    .admin-gear-wrap:hover .admin-gear-menu,
+    .admin-gear-wrap:focus-within .admin-gear-menu {
+        display: grid;
+        gap: 4px;
+    }
+
+    .admin-gear-menu a {
+        text-decoration: none;
+        color: #dbeafe;
+        padding: 11px 12px;
+        border-radius: 13px;
+        font-size: 13px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .admin-gear-menu a:hover {
+        background: rgba(56, 189, 248, 0.12);
+        color: #ffffff;
+    }
+
+    .admin-gear-menu .muted {
+        color: #7dd3fc;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 9px 12px 5px;
+        font-weight: 900;
+    }
+    .premium-panel {
+        border-radius: 22px;
+    }
+
+    .command-chip {
+        backdrop-filter: blur(12px);
+    }
+
+    @media (max-width: 900px) {
+        .admin-gear-wrap {
+            display: none;
+        }
+    }
+
+    .topbar {
+        min-height: 74px;
+        padding: 18px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.10);
+        background:
+            linear-gradient(180deg, rgba(2, 6, 23, 0.74), rgba(2, 6, 23, 0.40));
+        backdrop-filter: blur(14px);
+    }
+
+    .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+    }
+
+    .topbar-title-wrap {
+        min-width: 0;
+    }
+
+    .topbar-title-wrap h2 {
+        margin: 0;
+        color: #f8fafc;
+        font-size: 22px;
+        line-height: 1.05;
+        letter-spacing: -0.045em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .topbar-title-wrap .subtitle {
+        margin: 5px 0 0;
+        color: rgba(203, 213, 225, 0.62);
+        font-size: 12px;
+        font-weight: 750;
+    }
+
+    .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 0 0 auto;
+    }
+
+    .topbar-user-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(15, 23, 42, 0.56);
+        border-radius: 999px;
+        padding: 7px 11px 7px 7px;
+        color: #e5eefb;
+    }
+
+    .topbar-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: rgba(56, 189, 248, 0.16);
+        border: 1px solid rgba(56, 189, 248, 0.24);
+        color: #bae6fd;
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+    }
+
+    .topbar-user-meta {
+        display: grid;
+        line-height: 1.1;
+    }
+
+    .topbar-user-meta strong {
+        font-size: 12px;
+        font-weight: 950;
+        color: #f8fafc;
+        max-width: 130px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .topbar-user-meta span {
+        margin-top: 2px;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #8fa3bd;
+    }
+
+    .topbar-logout {
+        text-decoration: none;
+        border: 1px solid rgba(248, 113, 113, 0.16);
+        background: rgba(127, 29, 29, 0.10);
+        color: #fecaca;
+        border-radius: 999px;
+        padding: 9px 12px;
+        font-size: 12px;
+        font-weight: 950;
+    }
+
+    .topbar-logout:hover {
+        background: rgba(127, 29, 29, 0.20);
+        color: #fff;
+    }
+
+    @media (max-width: 860px) {
+        .topbar {
+            padding: 14px 16px;
+            min-height: 66px;
+        }
+
+        .topbar-right {
+            display: none;
+        }
+
+        .topbar-title-wrap h2 {
+            font-size: 19px;
+        }
+    }
+
+
+
+    .sidebar {
+        border-right: 1px solid rgba(148, 163, 184, 0.10);
+        background:
+            linear-gradient(180deg, rgba(2, 6, 23, 0.98), rgba(8, 13, 28, 0.98));
+    }
+
+    .brand {
+        padding: 18px 18px 14px !important;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.10);
+        margin-bottom: 8px;
+    }
+
+    .brand-logo {
+        height: 32px !important;
+        width: 32px !important;
+        border-radius: 10px !important;
+        box-shadow: 0 8px 22px rgba(0,0,0,0.24);
+    }
+
+    .brand h1 {
+        font-size: 16px !important;
+        letter-spacing: -0.04em;
+        color: #f8fafc;
+    }
+
+    .brand p {
+        font-size: 10px !important;
+        font-weight: 850;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(203, 213, 225, 0.52);
+    }
+
+    .nav {
+        padding: 10px 12px 16px;
+    }
+
+    .nav-section {
+        margin-bottom: 16px;
+    }
+
+    .nav-section-label {
+        margin: 0 8px 7px;
+        color: rgba(148, 163, 184, 0.62);
+        font-size: 10px;
+        font-weight: 950;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+    }
+
+    .nav a {
+        min-height: 38px;
+        padding: 8px 10px;
+        border-radius: 13px;
+        color: rgba(226, 232, 240, 0.78);
+        font-size: 13px;
+        font-weight: 850;
+        border: 1px solid transparent;
+        background: transparent;
+        transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.14s ease;
+    }
+
+    .nav a:hover {
+        color: #ffffff;
+        background: rgba(148, 163, 184, 0.075);
+        border-color: rgba(148, 163, 184, 0.10);
+    }
+
+    .nav a.active {
+        color: #ffffff;
+        background:
+            linear-gradient(135deg, rgba(37, 99, 235, 0.26), rgba(14, 165, 233, 0.14));
+        border-color: rgba(96, 165, 250, 0.26);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 24px rgba(37, 99, 235, 0.10);
+    }
+
+    .nav-icon {
+        width: 20px !important;
+        height: 20px !important;
+        flex-basis: 20px !important;
+        border-radius: 7px !important;
+        font-size: 11px !important;
+    }
+
+    .nav-admin-section {
+        margin-top: 8px !important;
+        padding-top: 12px !important;
+    }
+
+    .nav-logout-section {
+        margin-top: 10px !important;
+        padding-top: 12px !important;
+    }
+
+    .logout-link {
+        color: rgba(254, 202, 202, 0.88) !important;
+        background: transparent !important;
+        border-color: rgba(248, 113, 113, 0.10) !important;
+    }
+
+    .logout-link:hover {
+        background: rgba(127, 29, 29, 0.18) !important;
+        color: #fecaca !important;
+    }
+
+    .mobile-nav-close {
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(15, 23, 42, 0.72);
+        color: #cbd5e1;
+        border-radius: 10px;
+    }
+
+
+
+    @media (max-width: 860px) {
+        body {
+            font-size: 14px;
+        }
+
+        .layout {
+            min-height: 100vh;
+        }
+
+        .main-content {
+            padding-bottom: 68px !important;
+        }
+
+        .page-content {
+            padding: 14px !important;
+        }
+
+        .topbar {
+            min-height: 58px !important;
+            padding: 10px 12px !important;
+            gap: 10px !important;
+        }
+
+        .topbar-left {
+            gap: 10px !important;
+            width: 100%;
+        }
+
+        .mobile-nav-toggle {
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            border-radius: 12px !important;
+            font-size: 18px !important;
+            display: grid !important;
+            place-items: center !important;
+            padding: 0 !important;
+        }
+
+        .topbar-title-wrap h2 {
+            font-size: 17px !important;
+            line-height: 1.05 !important;
+            letter-spacing: -0.035em !important;
+            max-width: calc(100vw - 82px);
+        }
+
+        .topbar-title-wrap .subtitle {
+            margin-top: 3px !important;
+            font-size: 10px !important;
+            line-height: 1.1 !important;
+        }
+
+        .sidebar {
+            width: min(82vw, 310px) !important;
+        }
+
+        .brand {
+            padding: 14px 14px 10px !important;
+            gap: 10px !important;
+        }
+
+        .brand-logo {
+            height: 30px !important;
+            width: 30px !important;
+        }
+
+        .brand h1 {
+            font-size: 15px !important;
+        }
+
+        .brand p {
+            font-size: 9px !important;
+        }
+
+        .mobile-nav-close {
+            width: 32px !important;
+            height: 32px !important;
+            padding: 0 !important;
+            display: grid !important;
+            place-items: center !important;
+        }
+
+        .nav {
+            padding: 8px 10px 14px !important;
+        }
+
+        .nav-section {
+            margin-bottom: 11px !important;
+        }
+
+        .nav-section-label {
+            margin: 0 8px 5px !important;
+            font-size: 9px !important;
+            letter-spacing: 0.14em !important;
+        }
+
+        .nav a {
+            min-height: 35px !important;
+            padding: 7px 9px !important;
+            border-radius: 12px !important;
+            font-size: 12px !important;
+            gap: 9px !important;
+        }
+
+        .nav-icon {
+            width: 18px !important;
+            height: 18px !important;
+            flex-basis: 18px !important;
+            font-size: 10px !important;
+            border-radius: 6px !important;
+        }
+
+        .nav-admin-section,
+        .nav-logout-section {
+            margin-top: 7px !important;
+            padding-top: 9px !important;
+        }
+
+        .mobile-bottom-nav {
+            height: 58px !important;
+            padding: 6px 8px calc(6px + env(safe-area-inset-bottom)) !important;
+            border-top: 1px solid rgba(148, 163, 184, 0.12) !important;
+            background: rgba(2, 6, 23, 0.94) !important;
+            backdrop-filter: blur(16px) !important;
+        }
+
+        .mobile-bottom-nav a,
+        .mobile-bottom-nav button {
+            min-height: 44px !important;
+            border-radius: 13px !important;
+            font-size: 11px !important;
+            padding: 5px 6px !important;
+        }
+
+        .mobile-bottom-nav span {
+            font-size: 17px !important;
+            line-height: 1 !important;
+        }
+
+        .mobile-bottom-nav small {
+            font-size: 9px !important;
+            margin-top: 2px !important;
+        }
+
+        .flash-wrap {
+            padding: 0 14px !important;
+            margin-top: 10px !important;
+        }
+
+        .flash {
+            font-size: 12px !important;
+            padding: 10px 12px !important;
+            border-radius: 13px !important;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .page-content {
+            padding: 12px !important;
+        }
+
+        .topbar-title-wrap h2 {
+            font-size: 16px !important;
+        }
+
+        .sidebar {
+            width: 86vw !important;
+        }
+    }

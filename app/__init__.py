@@ -77,6 +77,7 @@ def create_app():
         from app.forms import routes as forms_routes
 
         db.create_all()
+        ensure_user_position_column()
         return "Database tables created"
 
     # Seed data + ensure tables exist
@@ -86,6 +87,7 @@ def create_app():
         from app.forms import routes as forms_routes
 
         db.create_all()
+        ensure_user_position_column()
         seed_admin()
         seed_stores()
         seed_checklist_template()

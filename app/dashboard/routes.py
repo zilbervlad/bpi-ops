@@ -663,7 +663,14 @@ def home():
 
     data = build_dashboard_data()
 
-    if user_role == "tm":
+    if user_role == "hr" or session.get("account_role") == "hr":
+        quick_actions = [
+            {"label": "HR Documents", "url": "/hr-documents/"},
+            {"label": "Upload Document", "url": "/hr-documents/new"},
+            {"label": "Registration Requests", "url": "/users/registration-requests"},
+            {"label": "QR Center", "url": "/users/registration-qr"},
+        ]
+    elif user_role == "tm":
         quick_actions = [
             {"label": "Training & Standards", "url": "#tm-training"},
             {"label": "Image Standards", "url": "#tm-image"},

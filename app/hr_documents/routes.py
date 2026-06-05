@@ -354,11 +354,10 @@ def detail(document_id):
         User.name.asc(),
     ).all()
 
-    store_options = sorted({
-        recipient.user.store_number
-        for recipient in all_recipients
-        if recipient.user and recipient.user.store_number
-    })
+    store_options = [
+        store.store_number
+        for store in Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
+    ]
 
     total_count = len(all_recipients)
     acknowledged_count = sum(1 for recipient in all_recipients if recipient.status == "acknowledged")

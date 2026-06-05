@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime
+from datetime import datetime, date
 from collections import Counter
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, abort, Response
@@ -37,6 +37,26 @@ def current_account_role():
 
 def can_manage_hr_documents():
     return current_account_role() in {"admin", "hr"}
+
+
+
+def parse_due_date(value):
+    value = (value or "").strip()
+    if not value:
+        return None
+
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def is_recipient_overdue(recipient):
+    document = recipient.document
+    if not document or not document.due_date:
+        return False
+
+    return recipient.status != "acknowledged" and document.due_date < date.today()
 
 
 def allowed_file(filename):
@@ -198,12 +218,14 @@ def index():
         counts = Counter(recipient.status for recipient in document.recipients)
         total = len(document.recipients)
         acknowledged = counts.get("acknowledged", 0)
+        overdue = sum(1 for recipient in document.recipients if is_recipient_overdue(recipient))
 
         document_cards.append({
             "document": document,
             "total": total,
             "acknowledged": acknowledged,
             "pending": total - acknowledged,
+            "overdue": overdue,
         })
 
     active_count = HRDocument.query.filter(HRDocument.is_active == True).count()
@@ -249,6 +271,7 @@ def new_document():
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip() or None
+        due_date = parse_due_date(request.form.get("due_date"))
         target_mode = request.form.get("target_mode", "").strip()
         upload = request.files.get("document_file")
 
@@ -287,6 +310,7 @@ def new_document():
         document = HRDocument(
             title=title,
             description=description,
+            due_date=due_date,
             original_filename=filename,
             content_type=upload.mimetype,
             file_size=len(file_data),
@@ -381,6 +405,7 @@ def detail(document_id):
     acknowledged_count = sum(1 for recipient in all_recipients if recipient.status == "acknowledged")
     pending_count = total_count - acknowledged_count
     email_failed_count = sum(1 for recipient in all_recipients if recipient.email_error)
+    overdue_count = sum(1 for recipient in all_recipients if is_recipient_overdue(recipient))
 
     return render_template(
         "hr_documents/detail.html",
@@ -393,6 +418,8 @@ def detail(document_id):
         acknowledged_count=acknowledged_count,
         pending_count=pending_count,
         email_failed_count=email_failed_count,
+        overdue_count=overdue_count,
+        today=date.today(),
     )
 
 
@@ -565,6 +592,7 @@ def export_document_tracking(document_id):
         "Position",
         "Store",
         "Email",
+        "Due Date",
         "Status",
         "Assigned At",
         "Email Sent At",
@@ -583,6 +611,7 @@ def export_document_tracking(document_id):
             getattr(user, "position", None) or "",
             user.store_number or "",
             user.get_notification_email() or "",
+            document.due_date.strftime("%Y-%m-%d") if document.due_date else "",
             recipient.status,
             recipient.assigned_at.strftime("%Y-%m-%d %H:%M:%S") if recipient.assigned_at else "",
             recipient.email_sent_at.strftime("%Y-%m-%d %H:%M:%S") if recipient.email_sent_at else "",

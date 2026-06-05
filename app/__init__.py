@@ -17,6 +17,24 @@ def ensure_user_position_column():
             connection.execute(text("ALTER TABLE users ADD COLUMN position VARCHAR(80)"))
 
 
+
+def ensure_hr_document_due_date_column():
+    """Add hr_documents.due_date for existing databases that were created before this column existed."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    table_names = set(inspector.get_table_names())
+
+    if "hr_documents" not in table_names:
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("hr_documents")}
+
+    if "due_date" not in columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE hr_documents ADD COLUMN due_date DATE"))
+
+
 def create_app():
     from flask import Flask
 
@@ -78,6 +96,7 @@ def create_app():
 
         db.create_all()
         ensure_user_position_column()
+        ensure_hr_document_due_date_column()
         return "Database tables created"
 
     # Seed data + ensure tables exist
@@ -88,6 +107,7 @@ def create_app():
 
         db.create_all()
         ensure_user_position_column()
+        ensure_hr_document_due_date_column()
         seed_admin()
         seed_stores()
         seed_checklist_template()

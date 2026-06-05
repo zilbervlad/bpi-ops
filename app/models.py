@@ -111,6 +111,7 @@ class HRDocument(db.Model):
 
     title = db.Column(db.String(160), nullable=False)
     description = db.Column(db.Text, nullable=True)
+    due_date = db.Column(db.Date, nullable=True)
 
     original_filename = db.Column(db.String(255), nullable=False)
     content_type = db.Column(db.String(120), nullable=True)

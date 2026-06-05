@@ -20,6 +20,10 @@
             <div class="my-doc-title">{{ document.title }}</div>
             <div class="my-doc-meta">
                 Assigned {{ recipient.assigned_at.strftime('%m/%d/%Y') if recipient.assigned_at else '' }}
+                {% if document.due_date %} · Due {{ document.due_date.strftime('%m/%d/%Y') }}{% endif %}
+                {% if recipient.status != 'acknowledged' and document.due_date and document.due_date < today_et() %}
+                · Overdue
+                {% endif %}
                 {% if recipient.status == 'acknowledged' %}
                 · Acknowledged {{ recipient.acknowledged_at.strftime('%m/%d/%Y %I:%M %p') if recipient.acknowledged_at else '' }}
                 {% endif %}

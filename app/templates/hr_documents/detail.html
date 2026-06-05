@@ -124,6 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
             <p class="area-subtitle">
                 {{ document.original_filename }} · {{ (document.file_size / 1024)|round(1) }} KB
                 · {% if document.is_active %}Active{% else %}Archived{% endif %}
+                {% if document.due_date %} · Due {{ document.due_date.strftime('%m/%d/%Y') }}{% endif %}
             </p>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
@@ -179,6 +180,7 @@ document.addEventListener("DOMContentLoaded", function () {
             <span class="summary-pill">{{ pending_count }} Pending</span>
             <span class="summary-pill success-pill">{{ acknowledged_count }} Acknowledged</span>
             <span class="summary-pill danger-pill">{{ email_failed_count }} Email Failed</span>
+            <span class="summary-pill danger-pill">{{ overdue_count }} Overdue</span>
             <span class="summary-pill"><span id="trackingVisibleCount">{{ recipients|length }}</span> Showing</span>
         </div>
 
@@ -203,6 +205,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <th>Store</th>
                     <th>Status</th>
                     <th>Email</th>
+                    <th>Due</th>
                     <th>Email Error</th>
                     <th>Actions</th>
                     <th>Acknowledged</th>
@@ -234,6 +237,17 @@ document.addEventListener("DOMContentLoaded", function () {
                             —
                         {% endif %}
                     </td>
+                    <td>
+                        {% if document.due_date %}
+                            {% if recipient.status != 'acknowledged' and document.due_date < today %}
+                                <span class="summary-pill danger-pill">{{ document.due_date.strftime('%m/%d/%Y') }}</span>
+                            {% else %}
+                                {{ document.due_date.strftime('%m/%d/%Y') }}
+                            {% endif %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
                     <td style="max-width:260px;">
                         {% if recipient.email_error %}
                             <span class="summary-pill danger-pill">{{ recipient.email_error[:80] }}{% if recipient.email_error|length > 80 %}...{% endif %}</span>
@@ -259,7 +273,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="9">No recipients.</td></tr>
+                <tr><td colspan="10">No recipients.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

@@ -681,14 +681,6 @@ def public_register():
                 requested_position=requested_position,
             )
 
-        if len(password) < 6:
-            flash("Password must be at least 6 characters.", "error")
-            return render_template(
-                "public_register.html",
-                store_number=store_number,
-                requested_position=requested_position,
-            )
-
         if password != confirm_password:
             flash("Passwords do not match.", "error")
             return render_template(

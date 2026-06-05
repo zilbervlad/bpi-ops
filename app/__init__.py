@@ -4,6 +4,19 @@ from app.config import Config
 from app.extensions import db, migrate
 
 
+
+def ensure_user_position_column():
+    """Add users.position for existing databases that were created before this column existed."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    user_columns = {column["name"] for column in inspector.get_columns("users")}
+
+    if "position" not in user_columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN position VARCHAR(80)"))
+
+
 def create_app():
     from flask import Flask
 

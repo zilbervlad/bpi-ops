@@ -103,6 +103,23 @@
                     {% endif %}
                 </div>
 
+                <div class="admin-task-grid">
+                    <div class="form-group">
+                        <label for="create_position">Position</label>
+                        <select id="create_position" name="position">
+                            <option value="">Not Set</option>
+                            <option value="CSR">CSR</option>
+                            <option value="Driver">Driver</option>
+                            <option value="MIT / Shift Runner">MIT / Shift Runner</option>
+                            <option value="Manager">Manager</option>
+                            <option value="General Manager">General Manager</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="HR">HR</option>
+                        </select>
+                    </div>
+                </div>
+
                 {% if can_manage_all %}
                 <div class="admin-task-grid">
                     <div class="form-group" id="create-area-field" style="display:none;">
@@ -354,7 +371,7 @@
         {% for user in users %}
         <div class="user-card"
              data-user-card
-             data-search-text="{{ (user.name ~ ' ' ~ user.username ~ ' ' ~ user.role ~ ' ' ~ account_role_label(user.role) ~ ' ' ~ (user.area_name or '') ~ ' ' ~ (user.store_number or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.notification_email or '') ~ ' ' ~ ('active' if user.is_active else 'inactive'))|lower }}">
+             data-search-text="{{ (user.name ~ ' ' ~ user.username ~ ' ' ~ user.role ~ ' ' ~ (user.position or '') ~ ' ' ~ account_role_label(user.role) ~ ' ' ~ (user.area_name or '') ~ ' ' ~ (user.store_number or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.notification_email or '') ~ ' ' ~ ('active' if user.is_active else 'inactive'))|lower }}">
             <button
                 type="button"
                 class="user-card-summary"
@@ -369,6 +386,9 @@
                     </span>
 
                     <span class="summary-pill">{{ account_role_label(user.role) }}</span>
+                    {% if user.position %}
+                    <span class="summary-pill">{{ user.position }}</span>
+                    {% endif %}
 
                     {% if user.role == 'admin' %}
                     <span class="summary-pill protected-pill">Protected</span>

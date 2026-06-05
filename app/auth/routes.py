@@ -312,6 +312,7 @@ def manage_users():
                 password = request.form.get("password", "").strip()
                 email = request.form.get("email", "").strip() or None
                 notification_email = request.form.get("notification_email", "").strip() or None
+                position = request.form.get("position", "").strip() or None
                 email_enabled = request.form.get("email_enabled") == "on"
 
                 if not name or not username or not password:
@@ -327,6 +328,7 @@ def manage_users():
                     name=name,
                     username=username,
                     role="tm",
+                    position=position,
                     area_name=None,
                     store_number=gm_store,
                     email=email,
@@ -354,6 +356,7 @@ def manage_users():
                 username = request.form.get("username", "").strip()
                 email = request.form.get("email", "").strip() or None
                 notification_email = request.form.get("notification_email", "").strip() or None
+                position = request.form.get("position", "").strip() or None
                 email_enabled = request.form.get("email_enabled") == "on"
                 new_password = request.form.get("password", "").strip()
 
@@ -372,6 +375,7 @@ def manage_users():
                 user.name = name
                 user.username = username
                 user.role = "tm"
+                user.position = position
                 user.area_name = None
                 user.store_number = gm_store
                 user.email = email
@@ -430,6 +434,7 @@ def manage_users():
             username = request.form.get("username", "").strip()
             password = request.form.get("password", "").strip()
             role = request.form.get("role", "").strip()
+            position = request.form.get("position", "").strip() or None
             area_name = request.form.get("area_name", "").strip() or None
             store_number = request.form.get("store_number", "").strip() or None
             email = request.form.get("email", "").strip() or None
@@ -452,6 +457,7 @@ def manage_users():
                 name=name,
                 username=username,
                 role=role,
+                position=position,
                 area_name=area_name,
                 store_number=store_number,
                 email=email,
@@ -481,6 +487,7 @@ def manage_users():
             name = request.form.get("name", "").strip()
             username = request.form.get("username", "").strip()
             role = request.form.get("role", "").strip()
+            position = request.form.get("position", "").strip() or None
             area_name = request.form.get("area_name", "").strip() or None
             store_number = request.form.get("store_number", "").strip() or None
             email = request.form.get("email", "").strip() or None
@@ -524,6 +531,7 @@ def manage_users():
             user.name = name
             user.username = username
             user.role = role
+            user.position = position
             user.area_name = area_name
             user.store_number = store_number
             user.email = email
@@ -831,6 +839,7 @@ def approve_registration_request(registration_id):
         username=registration.username,
         password_hash=registration.password_hash,
         role=final_role,
+        position=registration.requested_position,
         store_number=registration.store_number if final_role in ["tm", "manager", "general_manager"] else None,
         email=registration.email,
         notification_email=registration.email,

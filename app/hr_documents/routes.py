@@ -182,7 +182,16 @@ Boston Pie, Inc.
 @login_required
 @role_required("admin", "hr")
 def index():
-    documents = HRDocument.query.order_by(HRDocument.created_at.desc()).all()
+    status_filter = request.args.get("status", "active").strip()
+
+    query = HRDocument.query
+
+    if status_filter == "active":
+        query = query.filter(HRDocument.is_active == True)
+    elif status_filter == "archived":
+        query = query.filter(HRDocument.is_active == False)
+
+    documents = query.order_by(HRDocument.created_at.desc()).all()
 
     document_cards = []
     for document in documents:
@@ -197,7 +206,16 @@ def index():
             "pending": total - acknowledged,
         })
 
-    return render_template("hr_documents/index.html", document_cards=document_cards)
+    active_count = HRDocument.query.filter(HRDocument.is_active == True).count()
+    archived_count = HRDocument.query.filter(HRDocument.is_active == False).count()
+
+    return render_template(
+        "hr_documents/index.html",
+        document_cards=document_cards,
+        status_filter=status_filter,
+        active_count=active_count,
+        archived_count=archived_count,
+    )
 
 
 @hr_documents_bp.route("/new", methods=["GET", "POST"])
@@ -378,6 +396,31 @@ def detail(document_id):
     )
 
 
+
+
+
+@hr_documents_bp.route("/<int:document_id>/archive", methods=["POST"])
+@login_required
+@role_required("admin", "hr")
+def archive_document(document_id):
+    document = HRDocument.query.get_or_404(document_id)
+    document.is_active = False
+    db.session.commit()
+
+    flash(f"Archived {document.title}. Acknowledgment history was kept.", "success")
+    return redirect(url_for("hr_documents.index", status="active"))
+
+
+@hr_documents_bp.route("/<int:document_id>/restore", methods=["POST"])
+@login_required
+@role_required("admin", "hr")
+def restore_document(document_id):
+    document = HRDocument.query.get_or_404(document_id)
+    document.is_active = True
+    db.session.commit()
+
+    flash(f"Restored {document.title}.", "success")
+    return redirect(url_for("hr_documents.index", status="archived"))
 
 
 @hr_documents_bp.route("/<int:document_id>/add-recipients", methods=["GET", "POST"])

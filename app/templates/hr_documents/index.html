@@ -15,6 +15,34 @@
     .doc-title { color:#f8fafc; font-weight:950; font-size:15px; }
     .doc-meta { margin-top:5px; color:rgba(203,213,225,.66); font-size:12px; font-weight:750; }
     .doc-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+
+    .doc-filter-bar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        border: 1px solid rgba(148,163,184,.12);
+        background: rgba(15,23,42,.46);
+        border-radius: 16px;
+    }
+
+    .doc-filter-links {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .doc-filter-links a {
+        text-decoration: none;
+        opacity: .72;
+    }
+
+    .doc-filter-links a.is-active {
+        opacity: 1;
+        box-shadow: 0 0 0 1px rgba(56,189,248,.20) inset;
+    }
 </style>
 
 <div class="hr-doc-shell">
@@ -27,6 +55,22 @@
             <a href="{{ url_for('hr_documents.my_documents') }}" class="btn-primary" style="text-decoration:none;">My Documents</a>
             <a href="{{ url_for('hr_documents.new_document') }}" class="btn-primary" style="text-decoration:none;">Upload Document</a>
         </div>
+    </section>
+
+    <section class="doc-filter-bar">
+        <div class="doc-filter-links">
+            <a href="{{ url_for('hr_documents.index', status='active') }}" class="summary-pill {% if status_filter == 'active' %}is-active{% endif %}">
+                Active · {{ active_count }}
+            </a>
+            <a href="{{ url_for('hr_documents.index', status='archived') }}" class="summary-pill {% if status_filter == 'archived' %}is-active{% endif %}">
+                Archived · {{ archived_count }}
+            </a>
+            <a href="{{ url_for('hr_documents.index', status='all') }}" class="summary-pill {% if status_filter == 'all' %}is-active{% endif %}">
+                All
+            </a>
+        </div>
+
+        <span class="summary-pill">{{ document_cards|length }} Showing</span>
     </section>
 
     <section class="doc-grid">
@@ -44,7 +88,21 @@
                 <div class="doc-actions">
                     <span class="summary-pill">{{ card.acknowledged }}/{{ card.total }} Acknowledged</span>
                     <span class="summary-pill">{{ card.pending }} Pending</span>
+                    {% if document.is_active %}
+                    <span class="summary-pill success-pill">Active</span>
+                    {% else %}
+                    <span class="summary-pill neutral-pill">Archived</span>
+                    {% endif %}
                     <a href="{{ url_for('hr_documents.detail', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">View</a>
+                    {% if document.is_active %}
+                    <form method="POST" action="{{ url_for('hr_documents.archive_document', document_id=document.id) }}" style="display:inline;">
+                        <button type="submit" class="btn-danger" onclick="return confirm('Archive this document? Acknowledgment history will be kept.');">Archive</button>
+                    </form>
+                    {% else %}
+                    <form method="POST" action="{{ url_for('hr_documents.restore_document', document_id=document.id) }}" style="display:inline;">
+                        <button type="submit" class="btn-primary">Restore</button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
         </div>

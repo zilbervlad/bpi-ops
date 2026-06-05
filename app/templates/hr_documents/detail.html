@@ -123,12 +123,24 @@ document.addEventListener("DOMContentLoaded", function () {
             <h2>{{ document.title }}</h2>
             <p class="area-subtitle">
                 {{ document.original_filename }} · {{ (document.file_size / 1024)|round(1) }} KB
+                · {% if document.is_active %}Active{% else %}Archived{% endif %}
             </p>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
             <a href="{{ url_for('hr_documents.download_document', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Download</a>
+            {% if document.is_active %}
             <a href="{{ url_for('hr_documents.add_recipients', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Add Recipients</a>
+            {% endif %}
             <a href="{{ url_for('hr_documents.export_document_tracking', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Export CSV</a>
+            {% if document.is_active %}
+            <form method="POST" action="{{ url_for('hr_documents.archive_document', document_id=document.id) }}" style="display:inline;">
+                <button type="submit" class="btn-danger" onclick="return confirm('Archive this document? Acknowledgment history will be kept.');">Archive</button>
+            </form>
+            {% else %}
+            <form method="POST" action="{{ url_for('hr_documents.restore_document', document_id=document.id) }}" style="display:inline;">
+                <button type="submit" class="btn-primary">Restore</button>
+            </form>
+            {% endif %}
             <form method="POST" action="{{ url_for('hr_documents.resend_pending_document_emails', document_id=document.id) }}" style="display:inline;">
                 <button type="submit" class="btn-primary" onclick="return confirm('Resend email to everyone still pending?');">Resend Pending</button>
             </form>

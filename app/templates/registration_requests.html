@@ -9,41 +9,7 @@
         display: grid;
         gap: 18px;
     }
-
-    .reg-hero {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        gap: 18px;
-        padding: 4px 0 14px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-    }
-
-    .reg-kicker {
-        color: #7dd3fc;
-        font-size: 11px;
-        font-weight: 950;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        margin-bottom: 8px;
-    }
-
-    .reg-hero h2 {
-        margin: 0;
-        color: #f8fafc;
-        font-size: clamp(28px, 3vw, 42px);
-        line-height: 0.96;
-        letter-spacing: -0.065em;
-    }
-
-    .reg-hero p {
-        margin: 10px 0 0;
-        color: rgba(203, 213, 225, 0.70);
-        font-size: 14px;
-        font-weight: 750;
-    }
-
-    .reg-stat-grid {
+.reg-stat-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 12px;
@@ -331,11 +297,6 @@
     }
 
     @media (max-width: 900px) {
-        .reg-hero {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
         .reg-stat-grid {
             grid-template-columns: 1fr;
         }
@@ -347,15 +308,7 @@
 </style>
 
 <div class="reg-page">
-    <section class="reg-hero">
-        <div>
-            <div class="reg-kicker">Account Access</div>
-            <h2>Registration Requests</h2>
-            <p>Review QR/self-registration requests before access is activated.</p>
-        </div>
-    </section>
-
-    <section class="reg-stat-grid">
+<section class="reg-stat-grid">
         <div class="reg-stat-card">
             <div class="reg-stat-icon">◷</div>
             <div>

@@ -1,6 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Document Tracking · BPI Ops{% endblock %}
+{% block title %}Document Tracking · BPI Ops
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("trackingSearchInput");
+    const visibleCount = document.getElementById("trackingVisibleCount");
+    const rows = Array.from(document.querySelectorAll(".recipient-row"));
+
+    if (!searchInput || !visibleCount || !rows.length) return;
+
+    function applyTrackingSearch() {
+        const query = searchInput.value.trim().toLowerCase();
+        let shown = 0;
+
+        rows.forEach(row => {
+            const haystack = row.dataset.search || "";
+            const isMatch = !query || haystack.includes(query);
+
+            row.classList.toggle("is-hidden-by-search", !isMatch);
+
+            if (isMatch) shown += 1;
+        });
+
+        visibleCount.textContent = shown;
+    }
+
+    searchInput.addEventListener("input", applyTrackingSearch);
+});
+</script>
+
+{% endblock %}
 {% block header %}Document Tracking{% endblock %}
 
 {% block content %}
@@ -61,6 +90,31 @@
         gap: 8px;
         flex-wrap: wrap;
     }
+
+    .tracking-search-wrap {
+        margin-top: 10px;
+        width: 100%;
+    }
+
+    .tracking-search-input {
+        width: 100%;
+        min-height: 40px;
+        border-radius: 14px;
+        padding: 9px 12px;
+        background: rgba(2,6,23,.62);
+        border: 1px solid rgba(148,163,184,.16);
+        color: #e5eefb;
+        font-weight: 850;
+        outline: none;
+    }
+
+    .tracking-search-input::placeholder {
+        color: rgba(148,163,184,.68);
+    }
+
+    tr.is-hidden-by-search {
+        display: none;
+    }
 </style>
 
 <div class="tracking-shell">
@@ -113,7 +167,17 @@
             <span class="summary-pill">{{ pending_count }} Pending</span>
             <span class="summary-pill success-pill">{{ acknowledged_count }} Acknowledged</span>
             <span class="summary-pill danger-pill">{{ email_failed_count }} Email Failed</span>
-            <span class="summary-pill">{{ recipients|length }} Showing</span>
+            <span class="summary-pill"><span id="trackingVisibleCount">{{ recipients|length }}</span> Showing</span>
+        </div>
+
+        <div class="tracking-search-wrap">
+            <input
+                id="trackingSearchInput"
+                class="tracking-search-input"
+                type="search"
+                placeholder="Search name, username, role, position, store, status, or email error..."
+                autocomplete="off"
+            >
         </div>
     </section>
 
@@ -134,7 +198,16 @@
             </thead>
             <tbody>
                 {% for recipient in recipients %}
-                <tr>
+                <tr class="recipient-row"
+                    data-search="{{ (
+                        recipient.user.name ~ ' ' ~
+                        recipient.user.username ~ ' ' ~
+                        recipient.user.role ~ ' ' ~
+                        (recipient.user.position or '') ~ ' ' ~
+                        (recipient.user.store_number or '') ~ ' ' ~
+                        recipient.status ~ ' ' ~
+                        (recipient.email_error or '')
+                    )|lower }}">
                     <td>{{ recipient.user.name }}</td>
                     <td>{{ recipient.user.role|replace('_',' ')|title }}</td>
                     <td>{{ recipient.user.position or '—' }}</td>

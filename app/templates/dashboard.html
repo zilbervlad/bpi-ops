@@ -213,6 +213,272 @@
     }
 </style>
 
+<style>
+    .dashboard-compact .command-bar {
+        padding: 16px 20px !important;
+        margin-bottom: 16px !important;
+        border-radius: 20px !important;
+        min-height: auto !important;
+    }
+
+    .dashboard-compact .command-eyebrow {
+        font-size: 10px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .dashboard-compact .command-title {
+        font-size: clamp(24px, 2.4vw, 34px) !important;
+        line-height: 1 !important;
+        letter-spacing: -0.055em !important;
+    }
+
+    .dashboard-compact .command-subtitle {
+        max-width: 780px !important;
+        margin-top: 6px !important;
+        font-size: 12px !important;
+        line-height: 1.35 !important;
+        color: rgba(203, 213, 225, 0.72) !important;
+    }
+
+    .dashboard-compact .command-bar-right {
+        gap: 7px !important;
+    }
+
+    .dashboard-compact .command-chip {
+        padding: 7px 10px !important;
+        font-size: 11px !important;
+        border-radius: 999px !important;
+    }
+
+    .dashboard-compact .premium-panel {
+        border-radius: 20px !important;
+    }
+
+    .dashboard-compact .panel-head h3 {
+        font-size: 16px !important;
+        letter-spacing: -0.02em;
+    }
+
+    .dashboard-compact .area-subtitle {
+        font-size: 12px !important;
+        opacity: 0.78;
+    }
+
+    .section-progress-shell {
+        margin-bottom: 18px !important;
+    }
+
+    .section-progress-toggle-clean {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        text-align: left;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+    }
+
+    .section-progress-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-progress-title h3 {
+        margin: 0;
+    }
+
+    .section-toggle-pill {
+        border-radius: 999px;
+        padding: 7px 10px;
+        font-size: 11px;
+        font-weight: 900;
+        color: #dbeafe;
+        background: rgba(37, 99, 235, 0.16);
+        border: 1px solid rgba(96, 165, 250, 0.22);
+    }
+
+    .heatmap-panel {
+        margin-bottom: 18px !important;
+    }
+
+    .heatmap-grid {
+        gap: 10px !important;
+    }
+
+    .heatmap-link {
+        text-decoration: none;
+    }
+
+    .heatmap-tile {
+        min-height: 88px !important;
+        padding: 12px 13px !important;
+        border-radius: 16px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 26px rgba(0,0,0,0.16) !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+    }
+
+    .heatmap-tile.tile-green {
+        background: linear-gradient(180deg, rgba(20, 83, 45, 0.95), rgba(6, 78, 59, 0.82)) !important;
+        border-color: rgba(34, 197, 94, 0.22) !important;
+    }
+
+    .heatmap-tile.tile-yellow {
+        background: linear-gradient(180deg, rgba(124, 58, 24, 0.95), rgba(120, 53, 15, 0.84)) !important;
+        border-color: rgba(251, 146, 60, 0.24) !important;
+    }
+
+    .heatmap-tile.tile-red {
+        background: linear-gradient(180deg, rgba(127, 29, 29, 0.95), rgba(88, 28, 28, 0.86)) !important;
+        border-color: rgba(248, 113, 113, 0.25) !important;
+    }
+
+    .heatmap-tile.tile-gray {
+        background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.90)) !important;
+        border-color: rgba(148, 163, 184, 0.16) !important;
+    }
+
+    .heatmap-store {
+        font-size: 21px !important;
+        letter-spacing: -0.05em !important;
+        line-height: 1 !important;
+    }
+
+    .heatmap-area {
+        font-size: 10px !important;
+        margin-top: 4px !important;
+        opacity: 0.82;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .heatmap-metrics {
+        margin-top: 9px !important;
+        display: grid !important;
+        gap: 4px !important;
+        font-size: 10px !important;
+    }
+
+    .heatmap-metrics span {
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        color: rgba(255,255,255,0.94) !important;
+        font-weight: 800 !important;
+    }
+
+    .quick-actions-panel {
+        align-self: start;
+    }
+
+    .quick-actions-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .quick-actions-head h3 {
+        margin: 0;
+        font-size: 16px;
+    }
+
+    .quick-action-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 9px;
+    }
+
+    .quick-action-tile {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        text-decoration: none;
+        border-radius: 14px;
+        padding: 11px 12px;
+        color: #dbeafe;
+        font-size: 12px;
+        font-weight: 900;
+        line-height: 1.15;
+        background: rgba(15, 23, 42, 0.62);
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+    }
+
+    .quick-action-tile:hover {
+        transform: translateY(-1px);
+        background: rgba(37, 99, 235, 0.16);
+        border-color: rgba(96, 165, 250, 0.30);
+    }
+
+    .quick-action-arrow {
+        color: #93c5fd;
+        font-size: 13px;
+        flex: 0 0 auto;
+    }
+
+    .closeout-compact-btn {
+        width: 100%;
+        margin-top: 10px;
+        padding: 10px 12px !important;
+        border-radius: 14px !important;
+        font-size: 12px !important;
+    }
+
+    @media (max-width: 900px) {
+        .dashboard-compact .command-bar {
+            padding: 18px !important;
+        }
+
+        .quick-action-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<style>
+    .dashboard-compact.ops-command-clean .command-bar {
+        padding: 14px 18px !important;
+        margin-bottom: 14px !important;
+        min-height: auto !important;
+        border-radius: 19px !important;
+    }
+
+    .dashboard-compact.ops-command-clean .command-bar-left {
+        display: block !important;
+    }
+
+    .dashboard-compact.ops-command-clean .command-eyebrow {
+        margin-bottom: 5px !important;
+    }
+
+    .dashboard-compact .ops-status-line {
+        color: rgba(203, 213, 225, 0.72);
+        font-size: 12px;
+        font-weight: 850;
+        letter-spacing: -0.01em;
+    }
+
+    .dashboard-compact.ops-command-clean .command-bar-right {
+        align-self: center;
+    }
+
+    .dashboard-compact.ops-command-clean .command-bar-left::after {
+        content: none !important;
+    }
+</style>
+
+<div class="dashboard-compact {% if is_ops_view %}ops-command-clean{% endif %}">
+
 <div class="command-bar panel" style="margin-bottom: 24px;">
     <div class="command-bar-left">
         <div class="command-eyebrow">
@@ -226,14 +492,16 @@
                 LIVE OPERATIONS
             {% endif %}
         </div>
-
+        {% if is_ops_view %}
+        <div class="ops-status-line">Real-time execution status</div>
+        {% else %}
         <h2 class="command-title">
             {% if is_manager %}
                 {% if is_general_manager %}BPI Ops General Manager Dashboard{% else %}BPI Ops Manager Dashboard{% endif %}
             {% elif is_tm %}
                 BPI Ops TM Home
             {% elif is_maintenance %}
-                BPI Ops Maintenance Dashboard
+                BPI Ops Maintenance Command Center
             {% else %}
                 BPI Ops Command Center
             {% endif %}
@@ -250,6 +518,7 @@
                 Real-time checklist execution, opening integrity, SVR compliance, maintenance visibility, and shift execution progress.
             {% endif %}
         </p>
+        {% endif %}
     </div>
 
     <div class="command-bar-right">
@@ -532,19 +801,18 @@
 {% endif %}
 
 {% if is_ops_view %}
-<div class="panel premium-panel" style="margin-bottom: 24px;">
+<div class="panel premium-panel section-progress-shell">
     <button
         type="button"
         id="section-progress-toggle"
-        class="panel-head"
-        style="width: 100%; background: transparent; border: none; color: inherit; cursor: pointer; text-align: left; padding: 0; display: flex; align-items: center; justify-content: space-between;"
+        class="section-progress-toggle-clean"
         aria-expanded="false"
     >
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <h3 style="margin: 0;">Section Progress Board</h3>
+        <div class="section-progress-title">
+            <h3>Section Progress Board</h3>
             <span class="summary-pill">{{ opening_progress|length }} stores</span>
         </div>
-        <span id="section-progress-chevron" class="summary-pill">Show ▼</span>
+        <span id="section-progress-chevron" class="section-toggle-pill">Show ▼</span>
     </button>
 
     <div id="section-progress-body" style="margin-top: 16px; display: none;">
@@ -646,27 +914,24 @@
 {% endif %}
 
 <div class="content-grid {% if is_manager %}manager-content-grid{% endif %} {% if is_maintenance %}maintenance-content-grid{% endif %}">
-    <section class="panel premium-panel">
-        <div class="panel-head">
+    <section class="panel premium-panel quick-actions-panel">
+        <div class="quick-actions-head">
             <h3>Quick Actions</h3>
             <span class="summary-pill">Role Based</span>
         </div>
 
-        <div class="action-grid" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+        <div class="quick-action-grid">
             {% for action in quick_actions %}
-            <a
-                class="action-btn"
-                href="{{ action.url }}"
-                style="padding: 14px 16px; text-align: center;"
-            >
-                {{ action.label }}
+            <a class="quick-action-tile" href="{{ action.url }}">
+                <span>{{ action.label }}</span>
+                <span class="quick-action-arrow">→</span>
             </a>
             {% endfor %}
         </div>
 
         {% if user_role == "admin" %}
-        <form method="POST" action="{{ url_for('checklist.run_closeout') }}" style="margin-top: 12px;">
-            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px 16px;">
+        <form method="POST" action="{{ url_for('checklist.run_closeout') }}">
+            <button type="submit" class="btn-primary closeout-compact-btn">
                 Run Yesterday Closeout
             </button>
         </form>
@@ -879,6 +1144,8 @@
     {% endfor %}
 </div>
 {% endif %}
+
+</div><!-- dashboard-compact-close -->
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

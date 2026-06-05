@@ -79,6 +79,25 @@
         margin-top: 8px;
     }
 
+    .shift-store-selector {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .shift-store-selector select {
+        min-width: 180px;
+        height: 38px;
+        border-radius: 999px;
+        padding: 0 14px;
+        color: var(--text-main);
+        background: rgba(8, 16, 31, 0.82);
+        border: 1px solid rgba(120, 146, 190, 0.22);
+        font-weight: 800;
+    }
+
     @media (max-width: 800px) {
         .todo-card-head { flex-direction: column; }
     }
@@ -94,7 +113,20 @@
         </p>
     </div>
     <div class="command-bar-right">
+        {% if show_store_selector %}
+        <form method="GET" action="{{ url_for('shift_todos.index') }}" class="shift-store-selector">
+            <label class="area-subtitle" for="shift-store-number">Store</label>
+            <select id="shift-store-number" name="store_number" onchange="this.form.submit()">
+                {% for store in available_stores %}
+                <option value="{{ store.store_number }}" {% if store.store_number == store_number %}selected{% endif %}>
+                    {{ store.store_number }}{% if store.store_name %} · {{ store.store_name }}{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+        {% else %}
         <div class="command-chip">Store {{ store_number }}</div>
+        {% endif %}
         <div class="command-chip">{{ open_todos|length }} Open</div>
         <div class="command-chip">{{ completed_todos|length }} Complete</div>
     </div>
@@ -112,6 +144,7 @@
     <div id="create-todo-body" style="display: none; margin-top: 16px;">
         {% if tms %}
         <form method="POST" action="{{ url_for('shift_todos.create') }}" class="login-form" id="todo-create-form">
+            <input type="hidden" name="store_number" value="{{ store_number }}">
             <div class="form-group">
                 <label for="task_titles">To-Do Items</label>
                 <textarea id="task_titles" name="task_titles" rows="6" placeholder="One task per line. Example:&#10;Clean walk-in shelves&#10;Restock coke cooler&#10;Sweep outside" required></textarea>

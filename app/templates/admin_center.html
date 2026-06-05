@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Center · BPI Ops{% endblock %}
+{% block header %}Admin Center{% endblock %}
+
+{% block content %}
+<style>
+    .admin-shell {
+        max-width: 1320px;
+        display: grid;
+        gap: 18px;
+    }
+
+    .admin-top {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .admin-title-block {
+        display: grid;
+        gap: 5px;
+    }
+
+    .admin-kicker {
+        color: #38bdf8;
+        font-size: 10px;
+        font-weight: 950;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+    }
+
+    .admin-top h1 {
+        margin: 0;
+        color: #f8fafc;
+        font-size: 30px;
+        line-height: 1;
+        letter-spacing: -0.055em;
+    }
+
+    .admin-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .admin-pill {
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(15, 23, 42, 0.58);
+        color: #cbd5e1;
+        border-radius: 999px;
+        padding: 8px 11px;
+        font-size: 11px;
+        font-weight: 900;
+    }
+
+    .admin-layout {
+        display: block;
+    }
+
+    .admin-main-panel {
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.13);
+        background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(2, 6, 23, 0.92));
+        border-radius: 22px;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.20);
+    }
+
+    .admin-panel-head {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr 120px 86px;
+        gap: 14px;
+        padding: 13px 16px;
+        background: rgba(15, 23, 42, 0.72);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        color: #7f8ea3;
+        font-size: 10px;
+        font-weight: 950;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+    }
+
+    .admin-row {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr 120px 86px;
+        gap: 14px;
+        align-items: center;
+        min-height: 66px;
+        padding: 13px 16px;
+        color: inherit;
+        text-decoration: none;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.09);
+        transition: background 0.14s ease, border-color 0.14s ease;
+    }
+
+    .admin-row:last-child {
+        border-bottom: none;
+    }
+
+    .admin-row:hover {
+        background: rgba(56, 189, 248, 0.075);
+    }
+
+    .tool-name {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .tool-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(56, 189, 248, 0.22);
+        background: rgba(14, 165, 233, 0.10);
+        color: #bae6fd;
+        font-size: 11px;
+        font-weight: 950;
+        flex: 0 0 34px;
+    }
+
+    .tool-name-text {
+        min-width: 0;
+    }
+
+    .tool-name-text strong {
+        display: block;
+        color: #f8fafc;
+        font-size: 15px;
+        font-weight: 950;
+        letter-spacing: -0.025em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tool-name-text span {
+        display: block;
+        margin-top: 3px;
+        color: #71839b;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .tool-category {
+        color: #cbd5e1;
+        font-size: 13px;
+        font-weight: 850;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tool-access {
+        justify-self: start;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(15, 23, 42, 0.58);
+        color: #cbd5e1;
+        border-radius: 999px;
+        padding: 6px 9px;
+        font-size: 11px;
+        font-weight: 900;
+    }
+
+    .tool-open {
+        justify-self: end;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-width: 72px;
+        border-radius: 999px;
+        padding: 8px 10px;
+        color: #dbeafe;
+        font-size: 12px;
+        font-weight: 950;
+        background: rgba(37, 99, 235, 0.18);
+        border: 1px solid rgba(96, 165, 250, 0.24);
+    }
+
+    .admin-row:hover .tool-open {
+        background: rgba(37, 99, 235, 0.28);
+        border-color: rgba(96, 165, 250, 0.36);
+    }
+
+    @media (max-width: 760px) {
+        .admin-top {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .admin-panel-head {
+            display: none;
+        }
+
+        .admin-row {
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+        }
+
+        .tool-category,
+        .tool-access {
+            display: none;
+        }
+
+        .tool-open {
+            grid-column: 2;
+            grid-row: 1;
+        }
+    }
+</style>
+
+{% set marks = {
+    "Checklist Admin": "CA",
+    "Forms Admin": "FA",
+    "SVR Admin": "SVR",
+    "Verification Admin": "VA",
+    "Nightly Numbers Admin": "NN",
+    "Users & Roles": "UR",
+    "Store Admin": "SA",
+    "Prep Admin": "PA"
+} %}
+
+<div class="admin-shell">
+    <section class="admin-top">
+        <div class="admin-title-block">
+            <div class="admin-kicker">System Administration</div>
+            <h1>Admin Center</h1>
+        </div>
+
+        <div class="admin-meta">
+            <span class="admin-pill">{{ tools|length }} tools</span>
+            <span class="admin-pill">Role-based access</span>
+        </div>
+    </section>
+
+    <section class="admin-layout">
+        <section class="admin-main-panel">
+            <div class="admin-panel-head">
+                <div>Tool</div>
+                <div>Category</div>
+                <div>Access</div>
+                <div></div>
+            </div>
+
+            {% for tool in tools %}
+            <a class="admin-row" href="{{ tool.url }}">
+                <div class="tool-name">
+                    <div class="tool-mark">{{ marks.get(tool.title, tool.title[:2]) }}</div>
+                    <div class="tool-name-text">
+                        <strong>{{ tool.title }}</strong>
+                        <span>{{ tool.eyebrow }}</span>
+                    </div>
+                </div>
+
+                <div class="tool-category">{{ tool.eyebrow }}</div>
+                <div class="tool-access">{{ tool.status }}</div>
+                <div class="tool-open">Open →</div>
+            </a>
+            {% endfor %}
+        </section>
+    </section>
+</div>
+{% endblock %}

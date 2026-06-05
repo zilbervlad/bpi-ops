@@ -9,6 +9,129 @@
 
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='bpi-logo.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='bpi-logo.png') }}">
+
+<style>
+    .nav a {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+
+    .nav-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 8px;
+        display: inline-grid;
+        place-items: center;
+        flex: 0 0 22px;
+        font-size: 12px;
+        color: #8fb4d9;
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid rgba(148, 163, 184, 0.10);
+    }
+
+    .nav a.active .nav-icon {
+        color: #e0f2fe;
+        background: rgba(56, 189, 248, 0.16);
+        border-color: rgba(56, 189, 248, 0.30);
+    }
+
+    .nav-admin-section {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .admin-gear-wrap {
+        position: relative;
+        display: inline-flex;
+    }
+
+    .admin-gear-btn {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(15, 23, 42, 0.78);
+        color: #e5eefb;
+        border-radius: 999px;
+        padding: 9px 13px;
+        font-weight: 900;
+        font-size: 12px;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.20);
+    }
+
+    .admin-gear-menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 10px);
+        width: 245px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 18px;
+        background: rgba(2, 6, 23, 0.98);
+        box-shadow: 0 24px 70px rgba(0,0,0,0.42);
+        padding: 8px;
+        display: none;
+        z-index: 50;
+    }
+
+    .admin-gear-wrap:hover .admin-gear-menu,
+    .admin-gear-wrap:focus-within .admin-gear-menu {
+        display: grid;
+        gap: 4px;
+    }
+
+    .admin-gear-menu a {
+        text-decoration: none;
+        color: #dbeafe;
+        padding: 11px 12px;
+        border-radius: 13px;
+        font-size: 13px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .admin-gear-menu a:hover {
+        background: rgba(56, 189, 248, 0.12);
+        color: #ffffff;
+    }
+
+    .admin-gear-menu .muted {
+        color: #7dd3fc;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 9px 12px 5px;
+        font-weight: 900;
+    }
+
+    .action-grid {
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+    }
+
+    .action-btn {
+        min-height: 62px !important;
+        border-radius: 16px !important;
+        font-size: 14px !important;
+        letter-spacing: -0.01em;
+        box-shadow: 0 14px 30px rgba(37, 99, 235, 0.18) !important;
+    }
+
+    .premium-panel {
+        border-radius: 22px;
+    }
+
+    .command-chip {
+        backdrop-filter: blur(12px);
+    }
+
+    @media (max-width: 900px) {
+        .admin-gear-wrap {
+            display: none;
+        }
+    }
+</style>
+
 </head>
 <body>
     {% set access_role = session.get('user_role') %}
@@ -37,190 +160,152 @@
             <nav class="nav">
 
                 <div class="nav-section">
-                    <div class="nav-section-label">Main</div>
+                    <div class="nav-section-label">Command</div>
 
                     <a href="{{ url_for('dashboard.home') }}"
                        class="{% if request.endpoint == 'dashboard.home' %}active{% endif %}">
-                        Dashboard
+                        <span class="nav-icon">⌁</span>
+                        <span>Dashboard</span>
                     </a>
-
-                    {% if account_role == 'tm' %}
-                    <a href="{{ url_for('shift_todos.index') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
-                        My To-Dos
-                    </a>
-                    {% endif %}
-
-                    {% if account_role == 'manager' %}
-                    <a href="{{ url_for('shift_todos.index') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
-                        Shift To-Dos
-                    </a>
-                    {% endif %}
 
                     {% if access_role in ['admin', 'supervisor', 'manager'] %}
                     <a href="{{ url_for('store_dashboard.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('store_dashboard') %}active{% endif %}">
-                        Store Dashboard
+                        <span class="nav-icon">▦</span>
+                        <span>Store Dashboard</span>
                     </a>
                     {% endif %}
+                </div>
+
+                {% if account_role == 'tm' %}
+                <div class="nav-section">
+                    <div class="nav-section-label">My Shift</div>
+
+                    <a href="{{ url_for('shift_todos.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
+                        <span class="nav-icon">✓</span>
+                        <span>My To-Dos</span>
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager'] %}
+                <div class="nav-section">
+                    <div class="nav-section-label">Daily Ops</div>
 
                     {% if access_role in ['admin', 'supervisor'] %}
                     <a href="{{ url_for('checklist.overview') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
-                        Checklist
+                       class="{% if request.endpoint and request.endpoint.startswith('checklist') and request.endpoint != 'checklist.admin' %}active{% endif %}">
+                        <span class="nav-icon">☑</span>
+                        <span>Checklist</span>
                     </a>
-                    {% elif access_role == 'manager' %}
+                    {% else %}
                     <a href="{{ url_for('checklist.index') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
-                        Checklist
+                       class="{% if request.endpoint == 'checklist.index' %}active{% endif %}">
+                        <span class="nav-icon">☑</span>
+                        <span>Checklist</span>
                     </a>
                     {% endif %}
 
-
-                    {% if access_role in ['admin', 'supervisor', 'manager'] or account_role == 'general_manager' %}
                     <a href="{{ url_for('forms.index') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('forms') and request.endpoint != 'forms.admin' and request.endpoint != 'forms.edit_template' %}active{% endif %}">
-                        Forms
+                       class="{% if request.endpoint and request.endpoint.startswith('forms') and request.endpoint not in ['forms.admin', 'forms.edit_template'] %}active{% endif %}">
+                        <span class="nav-icon">□</span>
+                        <span>Forms</span>
                     </a>
-                    {% endif %}
 
-                    {% if access_role in ['admin', 'supervisor', 'manager'] %}
                     <a href="{{ url_for('prep.index') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('prep') %}active{% endif %}">
-                        Prep
+                       class="{% if request.endpoint == 'prep.index' %}active{% endif %}">
+                        <span class="nav-icon">◫</span>
+                        <span>Prep</span>
                     </a>
-                    {% endif %}
 
-                    {% if access_role == 'manager' %}
-                    <a href="{{ url_for('nightly_numbers.index') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('nightly_numbers') and request.endpoint != 'nightly_numbers.admin' %}active{% endif %}">
-                        Nightly Numbers
-                    </a>
-                    {% endif %}
-
-                    {% if access_role == 'manager' %}
-                    <a href="{{ url_for('cash.index') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('cash') and not request.endpoint.startswith('cash_review') %}active{% endif %}">
-                        Cash Control
-                    </a>
-                    {% endif %}
-
-                    {% if access_role in ['admin', 'supervisor'] %}
                     <a href="{{ url_for('cash_review.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('cash_review') %}active{% endif %}">
-                        Cash Review
+                        <span class="nav-icon">$</span>
+                        <span>Cash Review</span>
                     </a>
 
+                    {% if access_role in ['admin', 'supervisor', 'manager'] %}
+                    <a href="{{ url_for('shift_todos.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
+                        <span class="nav-icon">↳</span>
+                        <span>Shift To-Dos</span>
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager', 'maintenance'] %}
+                <div class="nav-section">
+                    <div class="nav-section-label">Review</div>
+
+                    {% if access_role in ['admin', 'supervisor'] %}
                     <a href="{{ url_for('reports.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('reports') %}active{% endif %}">
-                        Reports
+                        <span class="nav-icon">↗</span>
+                        <span>Reports</span>
                     </a>
 
                     <a href="{{ url_for('svr.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('svr') and request.endpoint != 'svr.admin' %}active{% endif %}">
-                        SVR
+                        <span class="nav-icon">◎</span>
+                        <span>SVR</span>
                     </a>
 
-                    {% if access_role == 'admin' %}
                     <a href="{{ url_for('verification.dashboard') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('verification') and request.endpoint != 'verification.admin' %}active{% endif %}">
-                        Verification
+                        <span class="nav-icon">◇</span>
+                        <span>Verification</span>
                     </a>
-                    {% else %}
-                    <a href="{{ url_for('verification.new_report') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('verification') and request.endpoint != 'verification.admin' %}active{% endif %}">
-                        Verification
-                    </a>
-                    {% endif %}
                     {% endif %}
 
-                    {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager', 'maintenance'] %}
                     <a href="{{ url_for('maintenance.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('maintenance') and request.endpoint not in ['maintenance.time_card', 'maintenance.time_cards', 'maintenance.time_cards_pdf'] %}active{% endif %}">
-                        Maintenance
+                        <span class="nav-icon">⚙</span>
+                        <span>Maintenance</span>
                     </a>
-                    {% endif %}
 
                     {% if access_role == 'maintenance' %}
                     <a href="{{ url_for('maintenance.time_cards') }}"
                        class="{% if request.endpoint in ['maintenance.time_card', 'maintenance.time_cards', 'maintenance.time_cards_pdf'] %}active{% endif %}">
-                        Time Card
+                        <span class="nav-icon">◷</span>
+                        <span>Time Cards</span>
                     </a>
                     {% endif %}
                 </div>
-
-                {% if account_role == 'general_manager' %}
-                <div class="nav-section">
-                    <div class="nav-section-label">Store Leadership</div>
-
-                    <a href="{{ url_for('auth.manage_users') }}"
-                       class="{% if request.endpoint == 'auth.manage_users' %}active{% endif %}">
-                        Team Members
-                    </a>
-
-                    <a href="{{ url_for('shift_todos.index') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
-                        Shift To-Dos
-                    </a>
-                </div>
                 {% endif %}
 
-                {% if access_role in ['admin', 'supervisor'] %}
-                <div class="nav-section">
-                    <div class="nav-section-label">Prep</div>
+                {% set can_access_admin_center = access_role in ['admin', 'supervisor'] %}
 
-                    <a href="{{ url_for('prep.manage') }}"
-                       class="{% if request.endpoint == 'prep.manage' %}active{% endif %}">
-                        Prep Admin
-                    </a>
-                </div>
-                {% endif %}
-
-                {% if access_role == 'admin' %}
-                <div class="nav-section">
+                {% if can_access_admin_center %}
+                <div class="nav-section nav-admin-section">
                     <div class="nav-section-label">Admin</div>
 
-                    <a href="{{ url_for('checklist.admin') }}"
-                       class="{% if request.endpoint == 'checklist.admin' %}active{% endif %}">
-                        Checklist Admin
-                    </a>
-
-                    <a href="{{ url_for('svr.admin') }}"
-                       class="{% if request.endpoint == 'svr.admin' %}active{% endif %}">
-                        SVR Admin
-                    </a>
-
-                    <a href="{{ url_for('verification.admin') }}"
-                       class="{% if request.endpoint == 'verification.admin' %}active{% endif %}">
-                        Verification Admin
-                    </a>
-
-                    <a href="{{ url_for('nightly_numbers.admin') }}"
-                       class="{% if request.endpoint == 'nightly_numbers.admin' or request.endpoint == 'nightly_numbers.edit_report' %}active{% endif %}">
-                        Nightly Numbers Admin
-                    </a>
-
-
-                    <a href="{{ url_for('forms.admin') }}"
-                       class="{% if request.endpoint == 'forms.admin' or request.endpoint == 'forms.edit_template' %}active{% endif %}">
-                        Forms Admin
-                    </a>
-
-                    <a href="{{ url_for('store_admin.index') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('store_admin') %}active{% endif %}">
-                        Store Admin
-                    </a>
-
-                    <a href="{{ url_for('auth.manage_users') }}"
-                       class="{% if request.endpoint == 'auth.manage_users' %}active{% endif %}">
-                        Users
+                    <a href="{{ url_for('dashboard.admin_center') }}"
+                       class="{% if request.endpoint == 'dashboard.admin_center'
+                                  or request.endpoint in [
+                                      'checklist.admin',
+                                      'prep.manage',
+                                      'svr.admin',
+                                      'verification.admin',
+                                      'nightly_numbers.admin',
+                                      'nightly_numbers.edit_report',
+                                      'forms.admin',
+                                      'forms.edit_template',
+                                      'auth.users',
+                                      'store_admin.index'
+                                  ] %}active{% endif %}">
+                        <span class="nav-icon">✦</span>
+                        <span>Admin Center</span>
                     </a>
                 </div>
                 {% endif %}
 
-                <div class="nav-section nav-section-bottom">
-                    <a href="{{ url_for('auth.logout') }}" class="logout-link">Logout</a>
+                <div class="nav-section nav-logout-section">
+                    <a href="{{ url_for('auth.logout') }}" class="logout-link">
+                        <span class="nav-icon">↩</span>
+                        <span>Log Out</span>
+                    </a>
                 </div>
 
             </nav>

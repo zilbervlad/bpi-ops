@@ -264,6 +264,24 @@
         </div>
         <div class="command-chip" id="last-refresh-chip">Refreshing...</div>
         <div class="command-chip">{{ role_label }}</div>
+
+        {% if access_role in ['admin', 'supervisor'] %}
+        <div class="admin-gear-wrap">
+            <button class="admin-gear-btn" type="button">⚙ Admin</button>
+            <div class="admin-gear-menu">
+                <div class="muted">Admin Tools</div>
+                <a href="{{ url_for('dashboard.admin_center') }}">Admin Center <span>→</span></a>
+                <a href="{{ url_for('prep.manage') }}">Prep Admin <span>→</span></a>
+                {% if access_role == 'admin' %}
+                <a href="{{ url_for('checklist.admin') }}">Checklist Admin <span>→</span></a>
+                <a href="{{ url_for('forms.admin') }}">Forms Admin <span>→</span></a>
+                <a href="{{ url_for('svr.admin') }}">SVR Admin <span>→</span></a>
+                <a href="{{ url_for('verification.admin') }}">Verification Admin <span>→</span></a>
+                <a href="{{ url_for('nightly_numbers.admin') }}">Nightly Numbers <span>→</span></a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 

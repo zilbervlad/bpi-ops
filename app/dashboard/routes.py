@@ -512,6 +512,103 @@ def home():
     )
 
 
+
+@dashboard_bp.route("/admin-center")
+def admin_center():
+    raw_roles = [
+        session.get("access_role"),
+        session.get("role"),
+        session.get("account_role"),
+        session.get("user_role"),
+    ]
+
+    roles = {
+        str(role).strip().lower()
+        for role in raw_roles
+        if role
+    }
+
+    is_admin = "admin" in roles
+    is_supervisor = "supervisor" in roles
+
+    if not (is_admin or is_supervisor):
+        flash("You do not have access to Admin Center.", "error")
+        return redirect(url_for("dashboard.home"))
+
+    tools = []
+
+    if is_admin:
+        tools.extend([
+            {
+                "title": "Checklist Admin",
+                "eyebrow": "Daily Ops",
+                "description": "Manage checklist items, settings, integrity, and summary controls.",
+                "url": url_for("checklist.admin"),
+                "status": "Admin",
+                "icon": "☑",
+            },
+            {
+                "title": "Forms Admin",
+                "eyebrow": "Inspections",
+                "description": "Manage morning inspection templates and form setup.",
+                "url": url_for("forms.admin"),
+                "status": "Admin",
+                "icon": "📝",
+            },
+            {
+                "title": "SVR Admin",
+                "eyebrow": "Supervisor Visits",
+                "description": "Edit SVR templates, sections, and report controls.",
+                "url": url_for("svr.admin"),
+                "status": "Admin",
+                "icon": "📋",
+            },
+            {
+                "title": "Verification Admin",
+                "eyebrow": "Compliance",
+                "description": "Manage verification questions and weekly submission flow.",
+                "url": url_for("verification.admin"),
+                "status": "Admin",
+                "icon": "🛡",
+            },
+            {
+                "title": "Nightly Numbers Admin",
+                "eyebrow": "Closeout",
+                "description": "Review and edit nightly numbers submissions.",
+                "url": url_for("nightly_numbers.admin"),
+                "status": "Admin",
+                "icon": "🌙",
+            },
+            {
+                "title": "Users & Roles",
+                "eyebrow": "Access",
+                "description": "Manage user accounts, roles, and access levels.",
+                "url": url_for("auth.manage_users"),
+                "status": "Admin",
+                "icon": "👥",
+            },
+            {
+                "title": "Store Admin",
+                "eyebrow": "Company Setup",
+                "description": "Manage store setup and company configuration.",
+                "url": url_for("store_admin.index"),
+                "status": "Admin",
+                "icon": "🏪",
+            },
+        ])
+
+    # Supervisors are allowed here specifically for Prep Admin.
+    tools.append({
+        "title": "Prep Admin",
+        "eyebrow": "Prep System",
+        "description": "Manage prep items, par levels, and prep setup.",
+        "url": url_for("prep.manage"),
+        "status": "Admin" if is_admin else "Supervisor",
+        "icon": "🥫",
+    })
+
+    return render_template("admin_center.html", tools=tools)
+
 @dashboard_bp.route("/live-data")
 @login_required
 def live_data():

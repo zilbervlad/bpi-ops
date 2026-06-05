@@ -521,3 +521,168 @@
             width: 86vw !important;
         }
     }
+
+/* =========================================================
+   REAL layout scroll fix
+   Actual wrapper is .layout, not .app-shell
+   ========================================================= */
+
+@media (min-width: 861px) {
+    html,
+    body {
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
+    body {
+        margin: 0 !important;
+        background: #050b16 !important;
+    }
+
+    .layout {
+        height: 100vh !important;
+        min-height: 100vh !important;
+        display: grid !important;
+        grid-template-columns: 286px minmax(0, 1fr) !important;
+        overflow: hidden !important;
+        background: #050b16 !important;
+    }
+
+    .sidebar {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        width: 286px !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        border-right: 1px solid rgba(148, 163, 184, 0.10) !important;
+        background: #050b16 !important;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148, 163, 184, 0.26) transparent;
+    }
+
+    .sidebar::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.24);
+        border-radius: 999px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .main-content {
+        height: 100vh !important;
+        max-height: 100vh !important;
+        min-width: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        background: #050b16 !important;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148, 163, 184, 0.26) transparent;
+    }
+
+    .main-content::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .main-content::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.24);
+        border-radius: 999px;
+    }
+
+    .main-content::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .topbar {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 40 !important;
+        min-height: 58px !important;
+        height: 58px !important;
+        padding: 0 22px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        background: #050b16 !important;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.10) !important;
+        box-shadow: none !important;
+    }
+
+    .topbar-left {
+        display: none !important;
+    }
+
+    .mobile-nav-toggle {
+        display: none !important;
+    }
+
+    .topbar-right {
+        margin-left: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+    }
+
+    .nav-logout-section {
+        display: none !important;
+    }
+}
+
+/* Mobile keeps normal page scroll/drawer behavior */
+@media (max-width: 860px) {
+    html,
+    body {
+        height: auto !important;
+        overflow: auto !important;
+    }
+
+    .layout {
+        display: block !important;
+        min-height: 100vh !important;
+        overflow: visible !important;
+    }
+
+    .main-content {
+        height: auto !important;
+        min-height: 100vh !important;
+        overflow: visible !important;
+    }
+}
+
+/* Keep logout visible on mobile topbar */
+@media (max-width: 860px) {
+    .topbar-right {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        margin-left: auto !important;
+    }
+
+    .topbar-logout {
+        display: inline-flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-height: 36px !important;
+        padding: 0 10px !important;
+        font-size: 12px !important;
+        white-space: nowrap !important;
+    }
+
+    .topbar-user-pill {
+        display: inline-flex !important;
+        min-height: 36px !important;
+    }
+
+    .topbar-avatar {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 11px !important;
+    }
+}

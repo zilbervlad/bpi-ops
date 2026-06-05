@@ -77,7 +77,7 @@
             <span class="summary-pill">{{ existing_user_ids|length }} Existing Recipients</span>
         </div>
 
-        <form method="POST" class="login-form">
+        <form method="POST" class="login-form" id="hrDocumentRecipientForm">
             <div class="form-group">
                 <label>Send To</label>
                 <select name="target_mode" id="targetMode" required>
@@ -259,6 +259,32 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
+
+    const form = document.getElementById("hrDocumentRecipientForm");
+    if (form) {
+        form.addEventListener("submit", function (event) {
+            const recipients = selectedRecipientOptions();
+
+            if (!recipients.length) {
+                event.preventDefault();
+                alert("No matching recipients found. Please adjust your recipient selection.");
+                previewRecipients();
+                return;
+            }
+
+            const mode = document.getElementById("targetMode").value;
+            const actionText = form.querySelector("button[type='submit']")?.textContent?.trim() || "send";
+
+            const confirmed = confirm(
+                `${actionText} to ${recipients.length} recipient(s)?\n\nThis will send email notifications.`
+            );
+
+            if (!confirmed) {
+                event.preventDefault();
+                previewRecipients();
+            }
+        });
+    }
 
     updateTargetPanels();
 });

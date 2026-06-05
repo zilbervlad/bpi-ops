@@ -71,7 +71,7 @@
         <h2 style="margin:0 0 6px; color:#f8fafc;">Upload HR Document</h2>
         <p class="area-subtitle" style="margin-bottom:16px;">Max file size {{ max_mb }} MB. Email notifications will include a link to acknowledge the document.</p>
 
-        <form method="POST" enctype="multipart/form-data" class="login-form">
+        <form method="POST" enctype="multipart/form-data" class="login-form" id="hrDocumentRecipientForm">
             <div class="form-group">
                 <label>Document Title</label>
                 <input type="text" name="title" required>
@@ -267,6 +267,32 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
+
+    const form = document.getElementById("hrDocumentRecipientForm");
+    if (form) {
+        form.addEventListener("submit", function (event) {
+            const recipients = selectedRecipientOptions();
+
+            if (!recipients.length) {
+                event.preventDefault();
+                alert("No matching recipients found. Please adjust your recipient selection.");
+                previewRecipients();
+                return;
+            }
+
+            const mode = document.getElementById("targetMode").value;
+            const actionText = form.querySelector("button[type='submit']")?.textContent?.trim() || "send";
+
+            const confirmed = confirm(
+                `${actionText} to ${recipients.length} recipient(s)?\n\nThis will send email notifications.`
+            );
+
+            if (!confirmed) {
+                event.preventDefault();
+                previewRecipients();
+            }
+        });
+    }
 
     updateTargetPanels();
 });

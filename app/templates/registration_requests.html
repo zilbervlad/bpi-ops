@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Registration Requests · BPI Ops{% endblock %}
+{% block header %}Registration Requests{% endblock %}
+
+{% block content %}
+<style>
+    .request-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .request-title h2 {
+        margin: 0;
+        color: #f8fafc;
+        font-size: 22px;
+        letter-spacing: -0.04em;
+    }
+
+    .request-title p {
+        margin: 5px 0 0;
+        color: rgba(203, 213, 225, 0.64);
+        font-size: 12px;
+        font-weight: 750;
+    }
+
+    .request-chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .request-list {
+        display: grid;
+        gap: 8px;
+    }
+
+    .request-card {
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        background: rgba(15, 23, 42, 0.56);
+        border-radius: 15px;
+        padding: 12px;
+    }
+
+    .request-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: start;
+    }
+
+    .request-name {
+        color: #f8fafc;
+        font-weight: 950;
+        letter-spacing: -0.02em;
+    }
+
+    .request-meta {
+        margin-top: 6px;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .request-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .request-actions form {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .request-actions select,
+    .request-actions input {
+        min-height: 34px;
+        border-radius: 10px;
+        padding: 7px 9px;
+        background: rgba(2, 6, 23, 0.62);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        color: #e5eefb;
+    }
+
+    .request-actions button {
+        min-height: 34px;
+        padding: 7px 10px;
+        border-radius: 10px;
+        font-size: 12px;
+    }
+
+    @media (max-width: 860px) {
+        .request-toolbar,
+        .request-row {
+            grid-template-columns: 1fr;
+            display: grid;
+        }
+
+        .request-actions {
+            justify-content: flex-start;
+        }
+    }
+</style>
+
+<div class="request-toolbar">
+    <div class="request-title">
+        <h2>Pending Account Requests</h2>
+        <p>Review QR/self-registration requests before access is activated.</p>
+    </div>
+
+    <div class="request-chips">
+        <span class="summary-pill">{{ status_counts.pending }} Pending</span>
+        <span class="summary-pill success-pill">{{ status_counts.approved }} Approved</span>
+        <span class="summary-pill danger-pill">{{ status_counts.rejected }} Rejected</span>
+    </div>
+</div>
+
+<section class="request-list">
+    {% for registration in registrations %}
+    <div class="request-card">
+        <div class="request-row">
+            <div>
+                <div class="request-name">{{ registration.full_name }}</div>
+                <div class="request-meta">
+                    <span class="summary-pill">@{{ registration.username }}</span>
+                    <span class="summary-pill">Store {{ registration.store_number or '—' }}</span>
+                    <span class="summary-pill">{{ registration.requested_position or 'Position not selected' }}</span>
+                    <span class="summary-pill">{{ registration.status|title }}</span>
+                    {% if registration.email %}<span class="summary-pill">{{ registration.email }}</span>{% endif %}
+                    {% if registration.phone %}<span class="summary-pill">{{ registration.phone }}</span>{% endif %}
+                </div>
+            </div>
+
+            <div class="request-actions">
+                {% if registration.status == "pending" %}
+                <form method="POST" action="{{ url_for('auth.approve_registration_request', registration_id=registration.id) }}">
+                    <select name="final_role" required>
+                        {% for role in allowed_roles %}
+                        <option value="{{ role }}">{{ role|replace('_', ' ')|title }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn-primary">Approve</button>
+                </form>
+
+                <form method="POST" action="{{ url_for('auth.reject_registration_request', registration_id=registration.id) }}">
+                    <button type="submit" class="btn-danger" onclick="return confirm('Reject this request?');">Reject</button>
+                </form>
+                {% else %}
+                <span class="summary-pill neutral-pill">
+                    Reviewed{% if registration.reviewed_at %} {{ registration.reviewed_at.strftime('%m/%d %I:%M %p') }}{% endif %}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="summary-pill neutral-pill">No registration requests found.</div>
+    {% endfor %}
+</section>
+{% endblock %}

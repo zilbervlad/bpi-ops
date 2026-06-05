@@ -1,6 +1,7 @@
+from datetime import datetime
 from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from app.models import User
+from app.models import User, Store, PendingRegistrationRequest
 from app.extensions import db
 from app.services.email_service import send_email
 
@@ -64,6 +65,69 @@ def current_user_is_general_manager():
 
 def current_user_store():
     return session.get("user_store")
+
+
+def current_user_is_supervisor():
+    return get_current_account_role() == "supervisor"
+
+
+def current_user_can_review_registration_requests():
+    return get_current_account_role() in {"admin", "supervisor", "general_manager"}
+
+
+def registration_visible_store_numbers():
+    role = get_current_account_role()
+
+    if role == "admin":
+        return None
+
+    if role == "supervisor":
+        area_name = session.get("user_area")
+        if not area_name:
+            return set()
+        return {
+            store.store_number
+            for store in Store.query.filter_by(area_name=area_name, is_active=True).all()
+        }
+
+    if role == "general_manager":
+        store_number = current_user_store()
+        return {store_number} if store_number else set()
+
+    return set()
+
+
+def can_review_registration_request(registration):
+    visible_stores = registration_visible_store_numbers()
+    if visible_stores is None:
+        return True
+    return registration.store_number in visible_stores
+
+
+def allowed_registration_approval_roles():
+    role = get_current_account_role()
+
+    if role == "admin":
+        return ["tm", "manager", "general_manager", "supervisor", "maintenance", "hr"]
+
+    if role == "supervisor":
+        return ["tm", "manager", "general_manager"]
+
+    if role == "general_manager":
+        return ["tm"]
+
+    return []
+
+
+def registration_status_counts(registrations):
+    counts = {"pending": 0, "approved": 0, "rejected": 0}
+
+    for registration in registrations:
+        if registration.status in counts:
+            counts[registration.status] += 1
+
+    return counts
+
 
 
 def user_is_tm_in_current_gm_store(user):
@@ -521,3 +585,195 @@ def send_test_email_to_user(user_id):
         flash(f"Failed to send test email: {str(e)}", "error")
 
     return redirect(url_for("auth.manage_users"))
+
+
+@auth_bp.route("/public/register", methods=["GET", "POST"])
+def public_register():
+    store_number = (request.args.get("store") or request.form.get("store_number") or "").strip()
+
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        username = request.form.get("username", "").strip().lower()
+        email = request.form.get("email", "").strip() or None
+        phone = request.form.get("phone", "").strip() or None
+        requested_position = request.form.get("requested_position", "").strip() or None
+        password = request.form.get("password", "").strip()
+        confirm_password = request.form.get("confirm_password", "").strip()
+
+        if not full_name or not username or not store_number or not password:
+            flash("Please complete name, username, store, and password.", "error")
+            return render_template(
+                "public_register.html",
+                store_number=store_number,
+                requested_position=requested_position,
+            )
+
+        if len(password) < 6:
+            flash("Password must be at least 6 characters.", "error")
+            return render_template(
+                "public_register.html",
+                store_number=store_number,
+                requested_position=requested_position,
+            )
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "error")
+            return render_template(
+                "public_register.html",
+                store_number=store_number,
+                requested_position=requested_position,
+            )
+
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash("That username already exists. Please choose another username.", "error")
+            return render_template(
+                "public_register.html",
+                store_number=store_number,
+                requested_position=requested_position,
+            )
+
+        existing_pending = PendingRegistrationRequest.query.filter_by(
+            username=username,
+            status="pending",
+        ).first()
+        if existing_pending:
+            flash("A pending request already exists for that username.", "error")
+            return render_template(
+                "public_register.html",
+                store_number=store_number,
+                requested_position=requested_position,
+            )
+
+        registration = PendingRegistrationRequest(
+            full_name=full_name,
+            username=username,
+            email=email,
+            phone=phone,
+            requested_position=requested_position,
+            store_number=store_number,
+        )
+        registration.password_hash = generate_password_hash(password)
+
+        db.session.add(registration)
+        db.session.commit()
+
+        return render_template("public_register_success.html")
+
+    return render_template(
+        "public_register.html",
+        store_number=store_number,
+        requested_position="",
+    )
+
+
+@auth_bp.route("/users/registration-requests", methods=["GET"])
+@login_required
+@role_required("admin", "supervisor", "general_manager")
+def registration_requests():
+    if not current_user_can_review_registration_requests():
+        flash("You do not have permission to review registration requests.", "error")
+        return redirect(url_for("dashboard.home"))
+
+    visible_stores = registration_visible_store_numbers()
+
+    query = PendingRegistrationRequest.query
+
+    if visible_stores is not None:
+        if not visible_stores:
+            registrations = []
+        else:
+            query = query.filter(PendingRegistrationRequest.store_number.in_(visible_stores))
+            registrations = query.order_by(
+                PendingRegistrationRequest.status.asc(),
+                PendingRegistrationRequest.created_at.desc(),
+            ).all()
+    else:
+        registrations = query.order_by(
+            PendingRegistrationRequest.status.asc(),
+            PendingRegistrationRequest.created_at.desc(),
+        ).all()
+
+    return render_template(
+        "registration_requests.html",
+        registrations=registrations,
+        status_counts=registration_status_counts(registrations),
+        allowed_roles=allowed_registration_approval_roles(),
+    )
+
+
+@auth_bp.route("/users/registration-requests/<int:registration_id>/approve", methods=["POST"])
+@login_required
+@role_required("admin", "supervisor", "general_manager")
+def approve_registration_request(registration_id):
+    registration = PendingRegistrationRequest.query.get_or_404(registration_id)
+
+    if not can_review_registration_request(registration):
+        abort(403)
+
+    if registration.status != "pending":
+        flash("This request has already been reviewed.", "error")
+        return redirect(url_for("auth.registration_requests"))
+
+    final_role = request.form.get("final_role", "").strip()
+    allowed_roles = allowed_registration_approval_roles()
+
+    if final_role not in allowed_roles:
+        abort(403)
+
+    existing_user = User.query.filter_by(username=registration.username).first()
+    if existing_user:
+        flash("A user with that username already exists.", "error")
+        return redirect(url_for("auth.registration_requests"))
+
+    user = User(
+        name=registration.full_name,
+        username=registration.username,
+        password_hash=registration.password_hash,
+        role=final_role,
+        store_number=registration.store_number if final_role in ["tm", "manager", "general_manager"] else None,
+        email=registration.email,
+        notification_email=registration.email,
+        email_enabled=True,
+        is_active=True,
+    )
+
+    db.session.add(user)
+    db.session.flush()
+
+    registration.status = "approved"
+    registration.approved_role = final_role
+    registration.created_user_id = user.id
+    registration.reviewed_by_user_id = session.get("user_id")
+    registration.reviewed_at = datetime.utcnow()
+    registration.review_notes = request.form.get("review_notes", "").strip() or None
+
+    db.session.commit()
+
+    flash(f"Approved {registration.full_name} as {final_role.replace('_', ' ').title()}.", "success")
+    return redirect(url_for("auth.registration_requests"))
+
+
+@auth_bp.route("/users/registration-requests/<int:registration_id>/reject", methods=["POST"])
+@login_required
+@role_required("admin", "supervisor", "general_manager")
+def reject_registration_request(registration_id):
+    registration = PendingRegistrationRequest.query.get_or_404(registration_id)
+
+    if not can_review_registration_request(registration):
+        abort(403)
+
+    if registration.status != "pending":
+        flash("This request has already been reviewed.", "error")
+        return redirect(url_for("auth.registration_requests"))
+
+    registration.status = "rejected"
+    registration.reviewed_by_user_id = session.get("user_id")
+    registration.reviewed_at = datetime.utcnow()
+    registration.review_notes = request.form.get("review_notes", "").strip() or None
+
+    db.session.commit()
+
+    flash(f"Rejected request for {registration.full_name}.", "success")
+    return redirect(url_for("auth.registration_requests"))
+

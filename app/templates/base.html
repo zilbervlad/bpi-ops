@@ -48,6 +48,14 @@
                         <span>Dashboard</span>
                     </a>
 
+                    {% if access_role in ['admin', 'supervisor'] or account_role == 'general_manager' %}
+                    <a href="{{ url_for('auth.registration_requests') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('auth.registration') %}active{% endif %}">
+                        <span class="nav-icon">＋</span>
+                        <span>Registrations</span>
+                    </a>
+                    {% endif %}
+
                     {% if access_role in ['admin', 'supervisor', 'manager'] %}
                     <a href="{{ url_for('store_dashboard.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('store_dashboard') %}active{% endif %}">

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Request Submitted · BPI Ops{% endblock %}
+
+{% block login_content %}
+<div class="login-card" style="max-width: 520px; text-align:center;">
+    <img src="{{ url_for('static', filename='bpi-logo.png') }}" alt="BPI Ops" style="height:54px; width:54px; border-radius:14px; object-fit:cover;">
+    <h1 style="margin:14px 0 8px;">Request Submitted</h1>
+    <p class="subtitle" style="margin:0 0 18px;">Your account request was sent for approval. You’ll be able to log in after it is approved.</p>
+    <a href="{{ url_for('auth.login') }}" class="btn-primary" style="display:inline-flex; text-decoration:none;">Back to Login</a>
+</div>
+{% endblock %}

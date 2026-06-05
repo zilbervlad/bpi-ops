@@ -46,6 +46,9 @@ class User(db.Model):
     def is_maintenance(self):
         return self.role == "maintenance"
 
+    def is_hr(self):
+        return self.role == "hr"
+
     def get_notification_email(self):
         if not self.email_enabled:
             return None

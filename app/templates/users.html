@@ -80,7 +80,7 @@
                 </h3>
                 <div class="area-subtitle">
                     {% if can_manage_all %}
-                        Add a new General Manager, Manager, TM, Supervisor, Maintenance user, or Admin
+                        Add a new General Manager, Manager, TM, Supervisor, Maintenance, HR, or Admin
                     {% else %}
                         Add a new Driver or CSR login for store {{ gm_store }}
                     {% endif %}
@@ -125,6 +125,7 @@
                             <option value="tm">TM</option>
                             <option value="supervisor">Supervisor</option>
                             <option value="maintenance">Maintenance</option>
+                            <option value="hr">HR</option>
                             <option value="admin">Admin</option>
                         </select>
                     </div>
@@ -467,6 +468,7 @@
                                 <option value="tm" {% if user.role == 'tm' %}selected{% endif %}>TM</option>
                                 <option value="supervisor" {% if user.role == 'supervisor' %}selected{% endif %}>Supervisor</option>
                                 <option value="maintenance" {% if user.role == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                                <option value="hr" {% if user.role == 'hr' %}selected{% endif %}>HR</option>
                                 <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
                             </select>
                             {% else %}

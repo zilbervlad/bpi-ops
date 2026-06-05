@@ -33,6 +33,7 @@ ROLE_LABELS = {
     "manager": "Manager",
     "tm": "TM",
     "maintenance": "Maintenance",
+    "hr": "HR",
 }
 
 

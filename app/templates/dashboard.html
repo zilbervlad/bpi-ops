@@ -23,6 +23,7 @@
 {% set is_manager = user_role == 'manager' %}
 {% set is_tm = user_role == 'tm' %}
 {% set is_maintenance = user_role == 'maintenance' %}
+{% set is_hr = user_role == 'hr' %}
 {% set is_ops_view = user_role in ['admin', 'supervisor'] %}
 
 <style>
@@ -488,6 +489,8 @@
                 TM VIEW
             {% elif is_maintenance %}
                 MAINTENANCE VIEW
+            {% elif is_hr %}
+                HR VIEW
             {% else %}
                 LIVE OPERATIONS
             {% endif %}
@@ -502,6 +505,8 @@
                 BPI Ops TM Home
             {% elif is_maintenance %}
                 BPI Ops Maintenance Command Center
+            {% elif is_hr %}
+                BPI Ops HR Dashboard
             {% else %}
                 BPI Ops Command Center
             {% endif %}
@@ -514,6 +519,8 @@
                 Training, standards, announcements, and store information for frontline team members.
             {% elif is_maintenance %}
                 Open maintenance workload, task visibility, and fast access to repair tracking.
+            {% elif is_hr %}
+                HR account created. Module access has not been enabled yet.
             {% else %}
                 Real-time checklist execution, opening integrity, SVR compliance, maintenance visibility, and shift execution progress.
             {% endif %}

@@ -227,7 +227,7 @@
 
             <div class="qr-actions">
                 <a href="{{ selected_store_url }}" target="_blank" class="btn-primary" style="text-decoration:none;">Open Link</a>
-                <button type="button" class="btn-primary" onclick="window.print()">Print</button>
+                <a href="{{ url_for('auth.registration_qr_print', store=selected_store) }}" target="_blank" class="btn-primary" style="text-decoration:none;">Print Flyer</a>
             </div>
             {% else %}
             <div class="summary-pill neutral-pill">No active stores available for your account.</div>

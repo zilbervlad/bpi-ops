@@ -624,6 +624,40 @@ def send_test_email_to_user(user_id):
 
 
 
+
+@auth_bp.route("/users/registration-qr/print")
+@login_required
+@role_required("admin", "supervisor", "general_manager")
+def registration_qr_print():
+    if not current_user_can_review_registration_requests():
+        flash("You do not have permission to print registration QR codes.", "error")
+        return redirect(url_for("dashboard.home"))
+
+    stores = visible_registration_qr_stores()
+    allowed_store_numbers = {store.store_number for store in stores}
+
+    selected_store = (request.args.get("store") or "").strip()
+
+    if selected_store not in allowed_store_numbers:
+        flash("You do not have access to that store QR.", "error")
+        return redirect(url_for("auth.registration_qr_center"))
+
+    selected_store_obj = next(
+        (store for store in stores if store.store_number == selected_store),
+        None,
+    )
+
+    register_url = url_for("auth.public_register", store=selected_store, _external=True)
+
+    return render_template(
+        "registration_qr_print.html",
+        selected_store=selected_store,
+        selected_store_name=selected_store_obj.store_name if selected_store_obj else "",
+        register_url=register_url,
+        qr_data_uri=make_registration_qr_data_uri(register_url),
+    )
+
+
 @auth_bp.route("/users/registration-qr")
 @login_required
 @role_required("admin", "supervisor", "general_manager")

@@ -25,6 +25,10 @@
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
             <a href="{{ url_for('hr_documents.download_document', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Download</a>
+            <a href="{{ url_for('hr_documents.export_document_tracking', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Export CSV</a>
+            <form method="POST" action="{{ url_for('hr_documents.resend_pending_document_emails', document_id=document.id) }}" style="display:inline;">
+                <button type="submit" class="btn-primary" onclick="return confirm('Resend email to everyone still pending?');">Resend Pending</button>
+            </form>
             <a href="{{ url_for('hr_documents.index') }}" class="btn-primary" style="text-decoration:none;">Back</a>
         </div>
     </section>
@@ -39,6 +43,8 @@
                     <th>Store</th>
                     <th>Status</th>
                     <th>Email</th>
+                    <th>Email Error</th>
+                    <th>Actions</th>
                     <th>Acknowledged</th>
                 </tr>
             </thead>
@@ -59,6 +65,22 @@
                             —
                         {% endif %}
                     </td>
+                    <td style="max-width:260px;">
+                        {% if recipient.email_error %}
+                            <span class="summary-pill danger-pill">{{ recipient.email_error[:80] }}{% if recipient.email_error|length > 80 %}...{% endif %}</span>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if recipient.status != 'acknowledged' %}
+                        <form method="POST" action="{{ url_for('hr_documents.resend_document_email', document_id=document.id, recipient_id=recipient.id) }}">
+                            <button type="submit" class="btn-primary" style="min-height:30px; padding:6px 10px; font-size:11px;">Resend</button>
+                        </form>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
                     <td>
                         {% if recipient.acknowledged_at %}
                             {{ recipient.acknowledged_at.strftime('%m/%d/%Y %I:%M %p') }}
@@ -68,7 +90,7 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="7">No recipients.</td></tr>
+                <tr><td colspan="9">No recipients.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

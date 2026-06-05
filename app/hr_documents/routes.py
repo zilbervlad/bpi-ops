@@ -1,8 +1,9 @@
+import csv
 from datetime import datetime
 from collections import Counter
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, abort
-from io import BytesIO
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, abort, Response
+from io import BytesIO, StringIO
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
@@ -311,6 +312,115 @@ def detail(document_id):
     ).all()
 
     return render_template("hr_documents/detail.html", document=document, recipients=recipients)
+
+
+
+@hr_documents_bp.route("/<int:document_id>/resend/<int:recipient_id>", methods=["POST"])
+@login_required
+@role_required("admin", "hr")
+def resend_document_email(document_id, recipient_id):
+    document = HRDocument.query.get_or_404(document_id)
+    recipient = HRDocumentRecipient.query.get_or_404(recipient_id)
+
+    if recipient.document_id != document.id:
+        abort(404)
+
+    if recipient.status == "acknowledged":
+        flash("This user already acknowledged the document.", "error")
+        return redirect(url_for("hr_documents.detail", document_id=document.id))
+
+    if send_hr_document_email(document, recipient):
+        flash(f"Email resent to {recipient.user.name}.", "success")
+    else:
+        flash(f"Email failed for {recipient.user.name}: {recipient.email_error}", "error")
+
+    db.session.commit()
+    return redirect(url_for("hr_documents.detail", document_id=document.id))
+
+
+@hr_documents_bp.route("/<int:document_id>/resend-pending", methods=["POST"])
+@login_required
+@role_required("admin", "hr")
+def resend_pending_document_emails(document_id):
+    document = HRDocument.query.get_or_404(document_id)
+
+    recipients = HRDocumentRecipient.query.filter(
+        HRDocumentRecipient.document_id == document.id,
+        HRDocumentRecipient.status != "acknowledged",
+    ).all()
+
+    sent_count = 0
+    failed_count = 0
+
+    for recipient in recipients:
+        if send_hr_document_email(document, recipient):
+            sent_count += 1
+        else:
+            failed_count += 1
+
+    db.session.commit()
+
+    flash(f"Resent pending notifications. Sent: {sent_count}. Failed: {failed_count}.", "success")
+    return redirect(url_for("hr_documents.detail", document_id=document.id))
+
+
+@hr_documents_bp.route("/<int:document_id>/export")
+@login_required
+@role_required("admin", "hr")
+def export_document_tracking(document_id):
+    document = HRDocument.query.get_or_404(document_id)
+
+    recipients = HRDocumentRecipient.query.filter_by(
+        document_id=document.id,
+    ).join(User).order_by(
+        User.store_number.asc(),
+        User.name.asc(),
+    ).all()
+
+    output = StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "Document",
+        "Name",
+        "Username",
+        "Role",
+        "Position",
+        "Store",
+        "Email",
+        "Status",
+        "Assigned At",
+        "Email Sent At",
+        "Email Error",
+        "Acknowledged At",
+        "Acknowledged Name",
+    ])
+
+    for recipient in recipients:
+        user = recipient.user
+        writer.writerow([
+            document.title,
+            user.name,
+            user.username,
+            user.role,
+            user.position or "",
+            user.store_number or "",
+            user.get_notification_email() or "",
+            recipient.status,
+            recipient.assigned_at.strftime("%Y-%m-%d %H:%M:%S") if recipient.assigned_at else "",
+            recipient.email_sent_at.strftime("%Y-%m-%d %H:%M:%S") if recipient.email_sent_at else "",
+            recipient.email_error or "",
+            recipient.acknowledged_at.strftime("%Y-%m-%d %H:%M:%S") if recipient.acknowledged_at else "",
+            recipient.acknowledged_name or "",
+        ])
+
+    filename = f"hr_document_{document.id}_tracking.csv"
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @hr_documents_bp.route("/<int:document_id>/download")

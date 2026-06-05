@@ -303,15 +303,61 @@ def my_documents():
 def detail(document_id):
     document = HRDocument.query.get_or_404(document_id)
 
-    recipients = HRDocumentRecipient.query.filter_by(
+    status_filter = request.args.get("status", "all").strip()
+    store_filter = request.args.get("store", "all").strip()
+
+    base_query = HRDocumentRecipient.query.filter_by(
         document_id=document.id,
-    ).join(User).order_by(
+    ).join(User)
+
+    all_recipients = base_query.order_by(
+        User.store_number.asc(),
+        User.name.asc(),
+    ).all()
+
+    query = HRDocumentRecipient.query.filter_by(
+        document_id=document.id,
+    ).join(User)
+
+    if status_filter == "pending":
+        query = query.filter(HRDocumentRecipient.status != "acknowledged")
+    elif status_filter == "acknowledged":
+        query = query.filter(HRDocumentRecipient.status == "acknowledged")
+    elif status_filter == "email_failed":
+        query = query.filter(HRDocumentRecipient.email_error.isnot(None))
+
+    if store_filter != "all":
+        query = query.filter(User.store_number == store_filter)
+
+    recipients = query.order_by(
         HRDocumentRecipient.status.asc(),
         User.store_number.asc(),
         User.name.asc(),
     ).all()
 
-    return render_template("hr_documents/detail.html", document=document, recipients=recipients)
+    store_options = sorted({
+        recipient.user.store_number
+        for recipient in all_recipients
+        if recipient.user and recipient.user.store_number
+    })
+
+    total_count = len(all_recipients)
+    acknowledged_count = sum(1 for recipient in all_recipients if recipient.status == "acknowledged")
+    pending_count = total_count - acknowledged_count
+    email_failed_count = sum(1 for recipient in all_recipients if recipient.email_error)
+
+    return render_template(
+        "hr_documents/detail.html",
+        document=document,
+        recipients=recipients,
+        store_options=store_options,
+        status_filter=status_filter,
+        store_filter=store_filter,
+        total_count=total_count,
+        acknowledged_count=acknowledged_count,
+        pending_count=pending_count,
+        email_failed_count=email_failed_count,
+    )
 
 
 

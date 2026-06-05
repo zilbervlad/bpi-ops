@@ -13,6 +13,54 @@
     .recipient-table th { color:rgba(148,163,184,.8); font-size:10px; font-weight:950; text-transform:uppercase; letter-spacing:.12em; }
     .recipient-table td { color:#e5eefb; font-size:13px; }
     .table-wrap { overflow-x:auto; border:1px solid rgba(148,163,184,.12); border-radius:16px; background:rgba(15,23,42,.50); }
+
+    .tracking-filters {
+        border: 1px solid rgba(148,163,184,.12);
+        background: rgba(15,23,42,.50);
+        border-radius: 16px;
+        padding: 12px;
+        display: flex;
+        gap: 10px;
+        align-items: end;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .tracking-filter-form {
+        display: flex;
+        gap: 8px;
+        align-items: end;
+        flex-wrap: wrap;
+    }
+
+    .tracking-filter-group {
+        display: grid;
+        gap: 5px;
+    }
+
+    .tracking-filter-group label {
+        color: rgba(148,163,184,.82);
+        font-size: 10px;
+        font-weight: 950;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+    }
+
+    .tracking-filter-group select {
+        min-height: 36px;
+        border-radius: 12px;
+        padding: 7px 10px;
+        background: rgba(2,6,23,.62);
+        border: 1px solid rgba(148,163,184,.16);
+        color: #e5eefb;
+        font-weight: 850;
+    }
+
+    .tracking-counts {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
 </style>
 
 <div class="tracking-shell">
@@ -30,6 +78,41 @@
                 <button type="submit" class="btn-primary" onclick="return confirm('Resend email to everyone still pending?');">Resend Pending</button>
             </form>
             <a href="{{ url_for('hr_documents.index') }}" class="btn-primary" style="text-decoration:none;">Back</a>
+        </div>
+    </section>
+
+    <section class="tracking-filters">
+        <form method="GET" class="tracking-filter-form">
+            <div class="tracking-filter-group">
+                <label>Status</label>
+                <select name="status" onchange="this.form.submit()">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="acknowledged" {% if status_filter == 'acknowledged' %}selected{% endif %}>Acknowledged</option>
+                    <option value="email_failed" {% if status_filter == 'email_failed' %}selected{% endif %}>Email Failed</option>
+                </select>
+            </div>
+
+            <div class="tracking-filter-group">
+                <label>Store</label>
+                <select name="store" onchange="this.form.submit()">
+                    <option value="all" {% if store_filter == 'all' %}selected{% endif %}>All Stores</option>
+                    {% for store_number in store_options %}
+                    <option value="{{ store_number }}" {% if store_filter == store_number %}selected{% endif %}>Store {{ store_number }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn-primary" style="min-height:36px; padding:7px 12px;">Apply</button>
+            <a href="{{ url_for('hr_documents.detail', document_id=document.id) }}" class="btn-primary" style="min-height:36px; padding:7px 12px; text-decoration:none;">Reset</a>
+        </form>
+
+        <div class="tracking-counts">
+            <span class="summary-pill">{{ total_count }} Total</span>
+            <span class="summary-pill">{{ pending_count }} Pending</span>
+            <span class="summary-pill success-pill">{{ acknowledged_count }} Acknowledged</span>
+            <span class="summary-pill danger-pill">{{ email_failed_count }} Email Failed</span>
+            <span class="summary-pill">{{ recipients|length }} Showing</span>
         </div>
     </section>
 

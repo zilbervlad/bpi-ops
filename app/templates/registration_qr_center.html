@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Registration QR Center · BPI Ops{% endblock %}
+{% block header %}Registration QR Center{% endblock %}
+
+{% block content %}
+<style>
+    .qr-shell {
+        display: grid;
+        gap: 16px;
+        max-width: 1180px;
+    }
+
+    .qr-toolbar {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .qr-toolbar h2 {
+        margin: 0;
+        color: #f8fafc;
+        font-size: 24px;
+        letter-spacing: -0.045em;
+    }
+
+    .qr-toolbar p {
+        margin: 6px 0 0;
+        color: rgba(203, 213, 225, 0.66);
+        font-size: 13px;
+        font-weight: 750;
+    }
+
+    .qr-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+        gap: 14px;
+    }
+
+    .qr-card {
+        border: 1px solid rgba(148, 163, 184, 0.13);
+        background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.84), rgba(2, 6, 23, 0.94));
+        border-radius: 22px;
+        padding: 18px;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.20);
+    }
+
+    .qr-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .qr-card h3 {
+        margin: 0;
+        color: #f8fafc;
+        font-size: 18px;
+        letter-spacing: -0.035em;
+    }
+
+    .qr-card .area-subtitle {
+        margin-top: 5px;
+    }
+
+    .qr-image-wrap {
+        display: grid;
+        place-items: center;
+        border-radius: 18px;
+        background: #ffffff;
+        padding: 16px;
+        margin: 12px 0;
+    }
+
+    .qr-image-wrap img {
+        width: min(280px, 100%);
+        height: auto;
+        display: block;
+    }
+
+    .qr-url {
+        overflow-wrap: anywhere;
+        color: rgba(219, 234, 254, 0.90);
+        background: rgba(2, 6, 23, 0.54);
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 14px;
+        padding: 10px 12px;
+        font-size: 12px;
+        line-height: 1.4;
+        margin-top: 10px;
+    }
+
+    .qr-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+
+    .qr-actions a,
+    .qr-actions button {
+        min-height: 36px;
+        border-radius: 12px;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 950;
+    }
+
+    .store-select-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .store-select-form select {
+        min-height: 38px;
+        border-radius: 999px;
+        padding: 0 12px;
+        background: rgba(2, 6, 23, 0.62);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        color: #e5eefb;
+        font-weight: 850;
+    }
+
+    @media print {
+        .sidebar,
+        .topbar,
+        .mobile-bottom-nav,
+        .qr-toolbar,
+        .qr-actions,
+        .store-select-form {
+            display: none !important;
+        }
+
+        .main-content,
+        .page-content {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .qr-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .qr-card {
+            box-shadow: none;
+            border: none;
+            background: white !important;
+            color: black !important;
+        }
+
+        .qr-card h3,
+        .qr-card .area-subtitle,
+        .qr-url {
+            color: black !important;
+        }
+    }
+</style>
+
+<div class="qr-shell">
+    <section class="qr-toolbar">
+        <div>
+            <h2>Employee Registration QR</h2>
+            <p>Print or display a QR code so employees can submit account requests for approval.</p>
+        </div>
+
+        <a href="{{ url_for('auth.registration_requests') }}" class="btn-primary" style="text-decoration:none;">View Requests</a>
+    </section>
+
+    <section class="qr-grid">
+        {% if show_company_qr %}
+        <div class="qr-card">
+            <div class="qr-card-head">
+                <div>
+                    <h3>Company QR</h3>
+                    <div class="area-subtitle">Does not pre-fill a store. Best for admin use only.</div>
+                </div>
+                <span class="summary-pill">Admin</span>
+            </div>
+
+            <div class="qr-image-wrap">
+                <img src="{{ company_qr }}" alt="Company registration QR">
+            </div>
+
+            <div class="qr-url">{{ company_register_url }}</div>
+
+            <div class="qr-actions">
+                <a href="{{ company_register_url }}" target="_blank" class="btn-primary" style="text-decoration:none;">Open Link</a>
+                <button type="button" class="btn-primary" onclick="window.print()">Print</button>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="qr-card">
+            <div class="qr-card-head">
+                <div>
+                    <h3>Store QR</h3>
+                    <div class="area-subtitle">Pre-fills the selected store number on the registration request.</div>
+                </div>
+                <span class="summary-pill">Store</span>
+            </div>
+
+            {% if stores %}
+            <form method="GET" class="store-select-form">
+                <label class="area-subtitle" for="store">Store</label>
+                <select id="store" name="store" onchange="this.form.submit()">
+                    {% for store in stores %}
+                    <option value="{{ store.store_number }}" {% if store.store_number == selected_store %}selected{% endif %}>
+                        {{ store.store_number }}{% if store.store_name %} · {{ store.store_name }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            <div class="qr-image-wrap">
+                <img src="{{ selected_store_qr }}" alt="Store registration QR">
+            </div>
+
+            <div class="qr-url">{{ selected_store_url }}</div>
+
+            <div class="qr-actions">
+                <a href="{{ selected_store_url }}" target="_blank" class="btn-primary" style="text-decoration:none;">Open Link</a>
+                <button type="button" class="btn-primary" onclick="window.print()">Print</button>
+            </div>
+            {% else %}
+            <div class="summary-pill neutral-pill">No active stores available for your account.</div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

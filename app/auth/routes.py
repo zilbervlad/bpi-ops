@@ -1,4 +1,8 @@
 from datetime import datetime
+import base64
+from io import BytesIO
+
+import qrcode
 from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from app.models import User, Store, PendingRegistrationRequest
@@ -127,6 +131,38 @@ def registration_status_counts(registrations):
             counts[registration.status] += 1
 
     return counts
+
+
+
+def make_registration_qr_data_uri(target_url):
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=10,
+        border=3,
+    )
+    qr.add_data(target_url)
+    qr.make(fit=True)
+
+    image = qr.make_image(fill_color="black", back_color="white")
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
+
+
+def visible_registration_qr_stores():
+    visible_stores = registration_visible_store_numbers()
+
+    query = Store.query.filter_by(is_active=True)
+
+    if visible_stores is not None:
+        if not visible_stores:
+            return []
+        query = query.filter(Store.store_number.in_(visible_stores))
+
+    return query.order_by(Store.store_number.asc()).all()
 
 
 
@@ -585,6 +621,43 @@ def send_test_email_to_user(user_id):
         flash(f"Failed to send test email: {str(e)}", "error")
 
     return redirect(url_for("auth.manage_users"))
+
+
+
+@auth_bp.route("/users/registration-qr")
+@login_required
+@role_required("admin", "supervisor", "general_manager")
+def registration_qr_center():
+    if not current_user_can_review_registration_requests():
+        flash("You do not have permission to access registration QR codes.", "error")
+        return redirect(url_for("dashboard.home"))
+
+    stores = visible_registration_qr_stores()
+    account_role = get_current_account_role()
+
+    selected_store = (request.args.get("store") or "").strip()
+
+    allowed_store_numbers = {store.store_number for store in stores}
+    if selected_store not in allowed_store_numbers:
+        selected_store = stores[0].store_number if stores else ""
+
+    company_register_url = url_for("auth.public_register", _external=True)
+    selected_store_url = (
+        url_for("auth.public_register", store=selected_store, _external=True)
+        if selected_store
+        else company_register_url
+    )
+
+    return render_template(
+        "registration_qr_center.html",
+        stores=stores,
+        selected_store=selected_store,
+        company_register_url=company_register_url,
+        company_qr=make_registration_qr_data_uri(company_register_url),
+        selected_store_url=selected_store_url,
+        selected_store_qr=make_registration_qr_data_uri(selected_store_url),
+        show_company_qr=(account_role == "admin"),
+    )
 
 
 @auth_bp.route("/public/register", methods=["GET", "POST"])

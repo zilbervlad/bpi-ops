@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Add Recipients · BPI Ops{% endblock %}
+{% block header %}Add Recipients{% endblock %}
+
+{% block content %}
+<style>
+    .hr-form-shell { max-width: 980px; display:grid; gap:16px; }
+    .hr-form-card { border:1px solid rgba(148,163,184,.12); background:rgba(15,23,42,.58); border-radius:18px; padding:18px; }
+    .target-panel { display:none; margin-top:12px; }
+    .target-panel.is-active { display:block; }
+    .multi-user-select { min-height: 260px !important; }
+    .doc-summary { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 16px; }
+</style>
+
+<div class="hr-form-shell">
+    <section class="hr-form-card">
+        <h2 style="margin:0 0 6px; color:#f8fafc;">Add Recipients</h2>
+        <p class="area-subtitle">Add more people to this existing HR document. Existing recipients will be skipped automatically.</p>
+
+        <div class="doc-summary">
+            <span class="summary-pill">{{ document.title }}</span>
+            <span class="summary-pill">{{ document.original_filename }}</span>
+            <span class="summary-pill">{{ existing_user_ids|length }} Existing Recipients</span>
+        </div>
+
+        <form method="POST" class="login-form">
+            <div class="form-group">
+                <label>Send To</label>
+                <select name="target_mode" id="targetMode" required>
+                    <option value="all">All Active Users</option>
+                    <option value="role">By Account Role</option>
+                    <option value="position">By Position</option>
+                    <option value="store">By Store</option>
+                    <option value="individual">Individual Users</option>
+                </select>
+            </div>
+
+            <div id="target-role" class="target-panel">
+                <div class="form-group">
+                    <label>Account Role</label>
+                    <select name="target_role">
+                        {% for role_key, role_label in roles %}
+                        <option value="{{ role_key }}">{{ role_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="target-position" class="target-panel">
+                <div class="form-group">
+                    <label>Position</label>
+                    <select name="target_position">
+                        {% for position in positions %}
+                        <option value="{{ position }}">{{ position }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="target-store" class="target-panel">
+                <div class="form-group">
+                    <label>Store</label>
+                    <select name="target_store">
+                        {% for store in stores %}
+                        <option value="{{ store.store_number }}">{{ store.store_number }}{% if store.store_name %} · {{ store.store_name }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="target-individual" class="target-panel">
+                <div class="form-group">
+                    <label>Individual Users</label>
+                    <select name="target_user_ids" multiple class="multi-user-select">
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if user.id in existing_user_ids %}disabled{% endif %}>
+                            {{ user.name }} · {{ user.role|replace('_',' ')|title }}{% if user.position %} · {{ user.position }}{% endif %}{% if user.store_number %} · Store {{ user.store_number }}{% endif %}{% if user.id in existing_user_ids %} · Already Assigned{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="area-subtitle">Hold Command/Ctrl to select multiple users. Existing recipients are disabled.</p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Add & Notify</button>
+            <a href="{{ url_for('hr_documents.detail', document_id=document.id) }}" class="btn-secondary" style="text-decoration:none;">Cancel</a>
+        </form>
+    </section>
+</div>
+
+<script>
+function updateTargetPanels() {
+    const mode = document.getElementById("targetMode").value;
+    document.querySelectorAll(".target-panel").forEach(panel => panel.classList.remove("is-active"));
+    const active = document.getElementById("target-" + mode);
+    if (active) active.classList.add("is-active");
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("targetMode").addEventListener("change", updateTargetPanels);
+    updateTargetPanels();
+});
+</script>
+{% endblock %}

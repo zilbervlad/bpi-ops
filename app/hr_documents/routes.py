@@ -105,6 +105,43 @@ def recipient_query_for_target(target_mode, form):
     return None
 
 
+
+def add_recipients_to_document(document, selected_users):
+    existing_user_ids = {
+        row.user_id
+        for row in HRDocumentRecipient.query.filter_by(document_id=document.id).all()
+    }
+
+    added_recipients = []
+    skipped_count = 0
+
+    for user in selected_users:
+        if user.id in existing_user_ids:
+            skipped_count += 1
+            continue
+
+        recipient = HRDocumentRecipient(
+            document_id=document.id,
+            user_id=user.id,
+            status="pending",
+        )
+        db.session.add(recipient)
+        added_recipients.append(recipient)
+
+    db.session.flush()
+
+    sent_count = 0
+    failed_count = 0
+
+    for recipient in added_recipients:
+        if send_hr_document_email(document, recipient):
+            sent_count += 1
+        else:
+            failed_count += 1
+
+    return added_recipients, skipped_count, sent_count, failed_count
+
+
 def send_hr_document_email(document, recipient):
     to_email = recipient.user.get_notification_email()
     if not to_email:
@@ -243,30 +280,12 @@ def new_document():
         db.session.add(document)
         db.session.flush()
 
-        recipients = []
-        for user in selected_users:
-            recipient = HRDocumentRecipient(
-                document_id=document.id,
-                user_id=user.id,
-                status="pending",
-            )
-            db.session.add(recipient)
-            recipients.append(recipient)
-
-        db.session.flush()
-
-        sent_count = 0
-        failed_count = 0
-        for recipient in recipients:
-            if send_hr_document_email(document, recipient):
-                sent_count += 1
-            else:
-                failed_count += 1
+        recipients, skipped_count, sent_count, failed_count = add_recipients_to_document(document, selected_users)
 
         db.session.commit()
 
         flash(
-            f"Document assigned to {len(recipients)} user(s). Emails sent: {sent_count}. Failed: {failed_count}.",
+            f"Document assigned to {len(recipients)} user(s). Emails sent: {sent_count}. Failed: {failed_count}. Skipped existing: {skipped_count}.",
             "success",
         )
         return redirect(url_for("hr_documents.detail", document_id=document.id))
@@ -359,6 +378,76 @@ def detail(document_id):
         email_failed_count=email_failed_count,
     )
 
+
+
+
+@hr_documents_bp.route("/<int:document_id>/add-recipients", methods=["GET", "POST"])
+@login_required
+@role_required("admin", "hr")
+def add_recipients(document_id):
+    document = HRDocument.query.get_or_404(document_id)
+
+    users = User.query.filter_by(is_active=True).order_by(User.name.asc()).all()
+    stores = Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
+
+    roles = [
+        ("admin", "Admin"),
+        ("supervisor", "Supervisor"),
+        ("general_manager", "General Manager"),
+        ("manager", "Manager / Shift Runner"),
+        ("tm", "TM"),
+        ("maintenance", "Maintenance"),
+        ("hr", "HR"),
+    ]
+
+    positions = [
+        "CSR",
+        "Driver",
+        "MIT / Shift Runner",
+        "Manager",
+        "General Manager",
+        "Supervisor",
+        "Maintenance",
+        "HR",
+    ]
+
+    existing_user_ids = {
+        row.user_id
+        for row in HRDocumentRecipient.query.filter_by(document_id=document.id).all()
+    }
+
+    if request.method == "POST":
+        target_mode = request.form.get("target_mode", "").strip()
+
+        recipient_query = recipient_query_for_target(target_mode, request.form)
+        if recipient_query is None:
+            flash("Please choose valid recipients.", "error")
+            return redirect(url_for("hr_documents.add_recipients", document_id=document.id))
+
+        selected_users = recipient_query.order_by(User.name.asc()).all()
+        if not selected_users:
+            flash("No active users matched that recipient selection.", "error")
+            return redirect(url_for("hr_documents.add_recipients", document_id=document.id))
+
+        recipients, skipped_count, sent_count, failed_count = add_recipients_to_document(document, selected_users)
+
+        db.session.commit()
+
+        flash(
+            f"Added {len(recipients)} new recipient(s). Emails sent: {sent_count}. Failed: {failed_count}. Skipped existing: {skipped_count}.",
+            "success",
+        )
+        return redirect(url_for("hr_documents.detail", document_id=document.id))
+
+    return render_template(
+        "hr_documents/add_recipients.html",
+        document=document,
+        users=users,
+        stores=stores,
+        roles=roles,
+        positions=positions,
+        existing_user_ids=existing_user_ids,
+    )
 
 
 @hr_documents_bp.route("/<int:document_id>/resend/<int:recipient_id>", methods=["POST"])

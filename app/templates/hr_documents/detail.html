@@ -73,6 +73,7 @@
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
             <a href="{{ url_for('hr_documents.download_document', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Download</a>
+            <a href="{{ url_for('hr_documents.add_recipients', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Add Recipients</a>
             <a href="{{ url_for('hr_documents.export_document_tracking', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Export CSV</a>
             <form method="POST" action="{{ url_for('hr_documents.resend_pending_document_emails', document_id=document.id) }}" style="display:inline;">
                 <button type="submit" class="btn-primary" onclick="return confirm('Resend email to everyone still pending?');">Resend Pending</button>

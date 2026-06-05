@@ -213,23 +213,55 @@ def index():
 
     documents = query.order_by(HRDocument.created_at.desc()).all()
 
+    all_documents = HRDocument.query.all()
+    active_count = HRDocument.query.filter(HRDocument.is_active == True).count()
+    archived_count = HRDocument.query.filter(HRDocument.is_active == False).count()
+
+    company_pending_count = 0
+    company_overdue_count = 0
+    company_email_failed_count = 0
+
+    for document in all_documents:
+        due_date = getattr(document, "due_date", None)
+
+        for recipient in document.recipients:
+            if recipient.status != "acknowledged":
+                company_pending_count += 1
+
+                if due_date and due_date < date.today():
+                    company_overdue_count += 1
+
+            if recipient.email_error:
+                company_email_failed_count += 1
+
     document_cards = []
     for document in documents:
         counts = Counter(recipient.status for recipient in document.recipients)
         total = len(document.recipients)
         acknowledged = counts.get("acknowledged", 0)
-        overdue = sum(1 for recipient in document.recipients if is_recipient_overdue(recipient))
+        pending = total - acknowledged
+        due_date = getattr(document, "due_date", None)
+
+        overdue = 0
+        if due_date:
+            overdue = sum(
+                1
+                for recipient in document.recipients
+                if recipient.status != "acknowledged" and due_date < date.today()
+            )
+
+        email_failed = sum(1 for recipient in document.recipients if recipient.email_error)
 
         document_cards.append({
             "document": document,
             "total": total,
             "acknowledged": acknowledged,
-            "pending": total - acknowledged,
+            "pending": pending,
             "overdue": overdue,
+            "email_failed": email_failed,
+            "due_date": due_date,
+            "progress_percent": round((acknowledged / total) * 100) if total else 0,
         })
-
-    active_count = HRDocument.query.filter(HRDocument.is_active == True).count()
-    archived_count = HRDocument.query.filter(HRDocument.is_active == False).count()
 
     return render_template(
         "hr_documents/index.html",
@@ -237,6 +269,9 @@ def index():
         status_filter=status_filter,
         active_count=active_count,
         archived_count=archived_count,
+        company_pending_count=company_pending_count,
+        company_overdue_count=company_overdue_count,
+        company_email_failed_count=company_email_failed_count,
     )
 
 

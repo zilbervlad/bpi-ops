@@ -5,114 +5,579 @@
 
 {% block content %}
 <style>
-    .hr-doc-shell { display: grid; gap: 16px; }
-    .hr-doc-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-end; padding-bottom:14px; border-bottom:1px solid rgba(148,163,184,.12); }
-    .hr-doc-head h2 { margin:0; color:#f8fafc; font-size:24px; letter-spacing:-.045em; }
-    .hr-doc-head p { margin:6px 0 0; color:rgba(203,213,225,.66); font-size:13px; font-weight:750; }
-    .doc-grid { display:grid; gap:10px; }
-    .doc-card { border:1px solid rgba(148,163,184,.12); background:rgba(15,23,42,.58); border-radius:16px; padding:14px; display:grid; gap:10px; }
-    .doc-card-row { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
-    .doc-title { color:#f8fafc; font-weight:950; font-size:15px; }
-    .doc-meta { margin-top:5px; color:rgba(203,213,225,.66); font-size:12px; font-weight:750; }
-    .doc-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .hr-doc-page {
+        display: grid;
+        gap: 18px;
+    }
 
-    .doc-filter-bar {
+    .hr-doc-hero {
         display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        align-items: center;
         justify-content: space-between;
-        padding: 12px;
-        border: 1px solid rgba(148,163,184,.12);
-        background: rgba(15,23,42,.46);
-        border-radius: 16px;
+        align-items: flex-end;
+        gap: 18px;
+        padding: 4px 0 12px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
     }
 
-    .doc-filter-links {
+    .hr-doc-kicker {
+        color: #7dd3fc;
+        font-size: 11px;
+        font-weight: 950;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .hr-doc-hero h2 {
+        margin: 0;
+        color: #f8fafc;
+        font-size: clamp(28px, 3vw, 42px);
+        line-height: 0.96;
+        letter-spacing: -0.065em;
+    }
+
+    .hr-doc-hero p {
+        margin: 10px 0 0;
+        color: rgba(203, 213, 225, 0.70);
+        font-size: 14px;
+        font-weight: 750;
+    }
+
+    .hr-doc-primary-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 44px;
+        padding: 0 18px;
+        border-radius: 14px;
+        text-decoration: none;
+        color: white;
+        font-weight: 950;
+        background: linear-gradient(135deg, #38bdf8, #2563eb);
+        box-shadow: 0 16px 34px rgba(37, 99, 235, 0.26);
+        white-space: nowrap;
+    }
+
+    .hr-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .hr-stat-card {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.13);
+        background:
+            radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 32%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.74));
+        border-radius: 20px;
+        padding: 16px;
+        min-height: 118px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: 0 18px 46px rgba(0, 0, 0, 0.18);
+    }
+
+    .hr-stat-icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        font-size: 23px;
+        flex: 0 0 auto;
+        background: rgba(14, 165, 233, 0.14);
+        border: 1px solid rgba(56, 189, 248, 0.24);
+        box-shadow: inset 0 0 22px rgba(56, 189, 248, 0.08);
+    }
+
+    .hr-stat-card.warning .hr-stat-icon {
+        background: rgba(245, 158, 11, 0.12);
+        border-color: rgba(245, 158, 11, 0.22);
+    }
+
+    .hr-stat-card.danger .hr-stat-icon {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.22);
+    }
+
+    .hr-stat-card.purple .hr-stat-icon {
+        background: rgba(139, 92, 246, 0.13);
+        border-color: rgba(139, 92, 246, 0.24);
+    }
+
+    .hr-stat-label {
+        color: rgba(203, 213, 225, 0.74);
+        font-size: 12px;
+        font-weight: 850;
+    }
+
+    .hr-stat-value {
+        margin-top: 6px;
+        color: #f8fafc;
+        font-size: 30px;
+        line-height: 1;
+        font-weight: 950;
+        letter-spacing: -0.05em;
+    }
+
+    .hr-doc-table-shell {
+        border: 1px solid rgba(148, 163, 184, 0.13);
+        background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.70), rgba(2, 6, 23, 0.70));
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 24px 58px rgba(0, 0, 0, 0.20);
+    }
+
+    .hr-doc-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 14px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.10);
+        flex-wrap: wrap;
+    }
+
+    .hr-doc-filter-links {
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
     }
 
-    .doc-filter-links a {
+    .hr-doc-filter-links a {
         text-decoration: none;
-        opacity: .72;
+        opacity: 0.76;
     }
 
-    .doc-filter-links a.is-active {
+    .hr-doc-filter-links a.is-active {
         opacity: 1;
-        box-shadow: 0 0 0 1px rgba(56,189,248,.20) inset;
+        box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.24) inset;
+    }
+
+    .hr-doc-tools {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .hr-doc-search {
+        min-width: min(440px, 70vw);
+        min-height: 40px;
+        border-radius: 14px;
+        padding: 9px 12px;
+        background: rgba(2, 6, 23, 0.54);
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        color: #e5eefb;
+        outline: none;
+        font-weight: 850;
+    }
+
+    .hr-doc-search::placeholder {
+        color: rgba(148, 163, 184, 0.62);
+    }
+
+    .hr-doc-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .hr-doc-table th,
+    .hr-doc-table td {
+        padding: 16px 18px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+        vertical-align: middle;
+    }
+
+    .hr-doc-table th {
+        color: rgba(148, 163, 184, 0.82);
+        font-size: 10px;
+        font-weight: 950;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        text-align: left;
+        background: rgba(2, 6, 23, 0.24);
+    }
+
+    .hr-doc-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .hr-doc-title-cell {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 360px;
+    }
+
+    .file-badge {
+        width: 46px;
+        height: 54px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        color: white;
+        font-size: 12px;
+        font-weight: 950;
+        background: linear-gradient(160deg, #ef4444, #b91c1c);
+        box-shadow: 0 12px 24px rgba(239, 68, 68, 0.16);
+        flex: 0 0 auto;
+    }
+
+    .doc-name {
+        color: #f8fafc;
+        font-size: 15px;
+        font-weight: 950;
+        letter-spacing: -0.025em;
+    }
+
+    .doc-meta {
+        margin-top: 5px;
+        color: rgba(203, 213, 225, 0.60);
+        font-size: 12px;
+        font-weight: 750;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .progress-mini {
+        display: grid;
+        gap: 6px;
+        min-width: 130px;
+    }
+
+    .progress-mini strong {
+        color: #f8fafc;
+        font-size: 15px;
+    }
+
+    .progress-mini span {
+        color: rgba(203, 213, 225, 0.62);
+        font-size: 12px;
+        font-weight: 750;
+    }
+
+    .progress-bar-mini {
+        width: 100%;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.14);
+        overflow: hidden;
+    }
+
+    .progress-bar-mini > i {
+        display: block;
+        height: 100%;
+        width: var(--progress-width);
+        border-radius: inherit;
+        background: linear-gradient(90deg, #38bdf8, #2563eb);
+    }
+
+    .pending-count {
+        color: #f8fafc;
+        font-size: 15px;
+        font-weight: 950;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 32px;
+        padding: 0 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 950;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        background: rgba(15, 23, 42, 0.62);
+        color: #dbeafe;
+        white-space: nowrap;
+    }
+
+    .status-pill.active {
+        color: #bbf7d0;
+        background: rgba(34, 197, 94, 0.13);
+        border-color: rgba(34, 197, 94, 0.25);
+    }
+
+    .status-pill.archived {
+        color: #cbd5e1;
+        background: rgba(148, 163, 184, 0.10);
+    }
+
+    .status-pill.danger {
+        color: #fecaca;
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.22);
+    }
+
+    .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: currentColor;
+    }
+
+    .doc-action-row {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .doc-action-row .btn-primary,
+    .doc-action-row .btn-danger {
+        min-height: 34px;
+        padding: 7px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+    }
+
+    .hr-doc-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        padding: 14px 18px;
+        color: rgba(203, 213, 225, 0.62);
+        font-size: 12px;
+        font-weight: 800;
+        border-top: 1px solid rgba(148, 163, 184, 0.08);
+    }
+
+    .doc-row.is-hidden-by-search {
+        display: none;
+    }
+
+    @media (max-width: 1050px) {
+        .hr-stat-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .hr-doc-table-wrap {
+            overflow-x: auto;
+        }
+
+        .hr-doc-table {
+            min-width: 980px;
+        }
+    }
+
+    @media (max-width: 700px) {
+        .hr-doc-hero {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .hr-stat-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hr-doc-search {
+            min-width: 100%;
+        }
     }
 </style>
 
-<div class="hr-doc-shell">
-    <section class="hr-doc-head">
+<div class="hr-doc-page">
+    <section class="hr-doc-hero">
         <div>
+            <div class="hr-doc-kicker">HR Workspace</div>
             <h2>HR Documents</h2>
             <p>Upload documents, assign recipients, and track acknowledgments.</p>
         </div>
-        <div class="doc-actions">
-            <a href="{{ url_for('hr_documents.my_documents') }}" class="btn-primary" style="text-decoration:none;">My Documents</a>
-            <a href="{{ url_for('hr_documents.new_document') }}" class="btn-primary" style="text-decoration:none;">Upload Document</a>
-        </div>
+
+        <a href="{{ url_for('hr_documents.new_document') }}" class="hr-doc-primary-action">
+            ↑ Upload Document
+        </a>
     </section>
 
-    <section class="doc-filter-bar">
-        <div class="doc-filter-links">
-            <a href="{{ url_for('hr_documents.index', status='active') }}" class="summary-pill {% if status_filter == 'active' %}is-active{% endif %}">
-                Active · {{ active_count }}
-            </a>
-            <a href="{{ url_for('hr_documents.index', status='archived') }}" class="summary-pill {% if status_filter == 'archived' %}is-active{% endif %}">
-                Archived · {{ archived_count }}
-            </a>
-            <a href="{{ url_for('hr_documents.index', status='all') }}" class="summary-pill {% if status_filter == 'all' %}is-active{% endif %}">
-                All
-            </a>
-        </div>
-
-        <span class="summary-pill">{{ document_cards|length }} Showing</span>
-    </section>
-
-    <section class="doc-grid">
-        {% for card in document_cards %}
-        {% set document = card.document %}
-        <div class="doc-card">
-            <div class="doc-card-row">
-                <div>
-                    <div class="doc-title">{{ document.title }}</div>
-                    <div class="doc-meta">
-                        {{ document.original_filename }} · {{ (document.file_size / 1024)|round(1) }} KB ·
-                        Created {{ document.created_at.strftime('%m/%d/%Y') if document.created_at else '' }}
-                        {% if document.due_date %} · Due {{ document.due_date.strftime('%m/%d/%Y') }}{% endif %}
-                    </div>
-                </div>
-                <div class="doc-actions">
-                    <span class="summary-pill">{{ card.acknowledged }}/{{ card.total }} Acknowledged</span>
-                    <span class="summary-pill">{{ card.pending }} Pending</span>
-                    {% if card.overdue %}
-                    <span class="summary-pill danger-pill">{{ card.overdue }} Overdue</span>
-                    {% endif %}
-                    {% if document.is_active %}
-                    <span class="summary-pill success-pill">Active</span>
-                    {% else %}
-                    <span class="summary-pill neutral-pill">Archived</span>
-                    {% endif %}
-                    <a href="{{ url_for('hr_documents.detail', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">View</a>
-                    {% if document.is_active %}
-                    <form method="POST" action="{{ url_for('hr_documents.archive_document', document_id=document.id) }}" style="display:inline;">
-                        <button type="submit" class="btn-danger" onclick="return confirm('Archive this document? Acknowledgment history will be kept.');">Archive</button>
-                    </form>
-                    {% else %}
-                    <form method="POST" action="{{ url_for('hr_documents.restore_document', document_id=document.id) }}" style="display:inline;">
-                        <button type="submit" class="btn-primary">Restore</button>
-                    </form>
-                    {% endif %}
-                </div>
+    <section class="hr-stat-grid">
+        <div class="hr-stat-card">
+            <div class="hr-stat-icon">□</div>
+            <div>
+                <div class="hr-stat-label">Active Documents</div>
+                <div class="hr-stat-value">{{ active_count }}</div>
             </div>
         </div>
-        {% else %}
-        <div class="summary-pill neutral-pill">No HR documents uploaded yet.</div>
-        {% endfor %}
+
+        <div class="hr-stat-card warning">
+            <div class="hr-stat-icon">◷</div>
+            <div>
+                <div class="hr-stat-label">Pending Acknowledgments</div>
+                <div class="hr-stat-value">{{ company_pending_count }}</div>
+            </div>
+        </div>
+
+        <div class="hr-stat-card danger">
+            <div class="hr-stat-icon">!</div>
+            <div>
+                <div class="hr-stat-label">Overdue</div>
+                <div class="hr-stat-value">{{ company_overdue_count }}</div>
+            </div>
+        </div>
+
+        <div class="hr-stat-card purple">
+            <div class="hr-stat-icon">✉</div>
+            <div>
+                <div class="hr-stat-label">Email Failed</div>
+                <div class="hr-stat-value">{{ company_email_failed_count }}</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="hr-doc-table-shell">
+        <div class="hr-doc-toolbar">
+            <div class="hr-doc-filter-links">
+                <a href="{{ url_for('hr_documents.index', status='active') }}" class="summary-pill {% if status_filter == 'active' %}is-active{% endif %}">
+                    Active · {{ active_count }}
+                </a>
+                <a href="{{ url_for('hr_documents.index', status='archived') }}" class="summary-pill {% if status_filter == 'archived' %}is-active{% endif %}">
+                    Archived · {{ archived_count }}
+                </a>
+                <a href="{{ url_for('hr_documents.index', status='all') }}" class="summary-pill {% if status_filter == 'all' %}is-active{% endif %}">
+                    All
+                </a>
+            </div>
+
+            <div class="hr-doc-tools">
+                <input
+                    id="hrDocSearch"
+                    class="hr-doc-search"
+                    type="search"
+                    placeholder="Search documents by title or file name..."
+                    autocomplete="off"
+                >
+                <span class="summary-pill"><span id="hrDocVisibleCount">{{ document_cards|length }}</span> Showing</span>
+            </div>
+        </div>
+
+        <div class="hr-doc-table-wrap">
+            <table class="hr-doc-table">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Acknowledgments</th>
+                        <th>Pending</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for card in document_cards %}
+                    {% set document = card.document %}
+                    <tr class="doc-row"
+                        data-search="{{ (document.title ~ ' ' ~ document.original_filename ~ ' ' ~ ('active' if document.is_active else 'archived'))|lower }}">
+                        <td>
+                            <div class="hr-doc-title-cell">
+                                <div class="file-badge">PDF</div>
+                                <div>
+                                    <div class="doc-name">{{ document.title }}</div>
+                                    <div class="doc-meta">
+                                        {{ document.original_filename }} · {{ (document.file_size / 1024)|round(1) }} KB ·
+                                        Created {{ document.created_at.strftime('%m/%d/%Y') if document.created_at else '' }}
+                                        {% if card.due_date %} · Due {{ card.due_date.strftime('%m/%d/%Y') }}{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="progress-mini">
+                                <strong>{{ card.acknowledged }}/{{ card.total }}</strong>
+                                <span>Acknowledged</span>
+                                <div class="progress-bar-mini" style="--progress-width: {{ card.progress_percent }}%;">
+                                    <i></i>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            {% if card.overdue %}
+                                <span class="status-pill danger">
+                                    <span class="status-dot"></span>
+                                    {{ card.overdue }} Overdue
+                                </span>
+                            {% else %}
+                                <div class="pending-count">{{ card.pending }}</div>
+                                <div class="doc-meta" style="margin-top:2px;">Pending</div>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if document.is_active %}
+                            <span class="status-pill active"><span class="status-dot"></span>Active</span>
+                            {% else %}
+                            <span class="status-pill archived"><span class="status-dot"></span>Archived</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <div class="doc-action-row">
+                                <a href="{{ url_for('hr_documents.detail', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">View</a>
+
+                                {% if document.is_active %}
+                                <form method="POST" action="{{ url_for('hr_documents.archive_document', document_id=document.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn-danger" onclick="return confirm('Archive this document? Acknowledgment history will be kept.');">Archive</button>
+                                </form>
+                                {% else %}
+                                <form method="POST" action="{{ url_for('hr_documents.restore_document', document_id=document.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn-primary">Restore</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">
+                            <span class="summary-pill neutral-pill">No HR documents found.</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="hr-doc-footer">
+            <span>Showing <span id="hrDocFooterCount">{{ document_cards|length }}</span> document(s)</span>
+            <span>BPI Ops · HR Documents</span>
+        </div>
     </section>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const search = document.getElementById("hrDocSearch");
+    const visibleCount = document.getElementById("hrDocVisibleCount");
+    const footerCount = document.getElementById("hrDocFooterCount");
+    const rows = Array.from(document.querySelectorAll(".doc-row"));
+
+    if (!search || !visibleCount || !footerCount) return;
+
+    function applySearch() {
+        const query = search.value.trim().toLowerCase();
+        let shown = 0;
+
+        rows.forEach(row => {
+            const haystack = row.dataset.search || "";
+            const match = !query || haystack.includes(query);
+
+            row.classList.toggle("is-hidden-by-search", !match);
+
+            if (match) shown += 1;
+        });
+
+        visibleCount.textContent = shown;
+        footerCount.textContent = shown;
+    }
+
+    search.addEventListener("input", applySearch);
+});
+</script>
 {% endblock %}

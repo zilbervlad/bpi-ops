@@ -19,6 +19,7 @@ VALID_ROLES = {
     "manager",
     "tm",
     "maintenance",
+    "hr",
 }
 
 STORE_REQUIRED_ROLES = {

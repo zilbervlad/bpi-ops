@@ -11,6 +11,59 @@
     .target-panel { display:none; margin-top:12px; }
     .target-panel.is-active { display:block; }
     .multi-user-select { min-height: 220px !important; }
+
+    .recipient-preview-box {
+        margin-top: 14px;
+        border: 1px solid rgba(148,163,184,.12);
+        background: rgba(2,6,23,.34);
+        border-radius: 16px;
+        padding: 12px;
+        display: none;
+    }
+
+    .recipient-preview-box.is-visible {
+        display: block;
+    }
+
+    .recipient-preview-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .recipient-preview-title {
+        color: #f8fafc;
+        font-size: 14px;
+        font-weight: 950;
+    }
+
+    .recipient-preview-list {
+        display: grid;
+        gap: 6px;
+        max-height: 260px;
+        overflow: auto;
+    }
+
+    .recipient-preview-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        border: 1px solid rgba(148,163,184,.08);
+        border-radius: 12px;
+        padding: 8px 10px;
+        background: rgba(15,23,42,.42);
+        color: #dbeafe;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .recipient-preview-muted {
+        color: rgba(148,163,184,.72);
+        font-weight: 750;
+    }
 </style>
 
 <div class="hr-form-shell">
@@ -83,7 +136,14 @@
                     <label>Individual Users</label>
                     <select name="target_user_ids" multiple class="multi-user-select">
                         {% for user in users %}
-                        <option value="{{ user.id }}">
+                        <option
+                            value="{{ user.id }}"
+                            data-name="{{ user.name }}"
+                            data-role="{{ user.role }}"
+                            data-role-label="{{ user.role|replace('_',' ')|title }}"
+                            data-position="{{ user.position or '' }}"
+                            data-store="{{ user.store_number or '' }}"
+                        >
                             {{ user.name }} · {{ user.role|replace('_',' ')|title }}{% if user.position %} · {{ user.position }}{% endif %}{% if user.store_number %} · Store {{ user.store_number }}{% endif %}
                         </option>
                         {% endfor %}
@@ -92,6 +152,15 @@
                 </div>
             </div>
 
+            <div id="recipientPreviewBox" class="recipient-preview-box">
+                <div class="recipient-preview-head">
+                    <div class="recipient-preview-title">Recipient Preview</div>
+                    <span class="summary-pill"><span id="recipientPreviewCount">0</span> selected</span>
+                </div>
+                <div id="recipientPreviewList" class="recipient-preview-list"></div>
+            </div>
+
+            <button type="button" class="btn-primary" onclick="previewRecipients()">Preview Recipients</button>
             <button type="submit" class="btn-primary">Upload & Notify</button>
             <a href="{{ url_for('hr_documents.index') }}" class="btn-secondary" style="text-decoration:none;">Cancel</a>
         </form>
@@ -104,10 +173,101 @@ function updateTargetPanels() {
     document.querySelectorAll(".target-panel").forEach(panel => panel.classList.remove("is-active"));
     const active = document.getElementById("target-" + mode);
     if (active) active.classList.add("is-active");
+
+    const previewBox = document.getElementById("recipientPreviewBox");
+    if (previewBox) previewBox.classList.remove("is-visible");
+}
+
+function allAvailableUserOptions() {
+    return Array.from(document.querySelectorAll("select[name='target_user_ids'] option"))
+        .filter(option => !option.disabled);
+}
+
+function selectedRecipientOptions() {
+    const mode = document.getElementById("targetMode").value;
+    const options = allAvailableUserOptions();
+
+    if (mode === "all") {
+        return options;
+    }
+
+    if (mode === "role") {
+        const selectedRole = document.querySelector("select[name='target_role']").value;
+        return options.filter(option => option.dataset.role === selectedRole);
+    }
+
+    if (mode === "position") {
+        const selectedPosition = document.querySelector("select[name='target_position']").value;
+        return options.filter(option => option.dataset.position === selectedPosition);
+    }
+
+    if (mode === "store") {
+        const selectedStore = document.querySelector("select[name='target_store']").value;
+        return options.filter(option => option.dataset.store === selectedStore);
+    }
+
+    if (mode === "individual") {
+        return options.filter(option => option.selected);
+    }
+
+    return [];
+}
+
+function previewRecipients() {
+    const previewBox = document.getElementById("recipientPreviewBox");
+    const previewList = document.getElementById("recipientPreviewList");
+    const previewCount = document.getElementById("recipientPreviewCount");
+
+    if (!previewBox || !previewList || !previewCount) return;
+
+    const recipients = selectedRecipientOptions();
+
+    previewCount.textContent = recipients.length;
+    previewList.innerHTML = "";
+
+    if (!recipients.length) {
+        previewList.innerHTML = `<div class="recipient-preview-row"><span>No matching recipients.</span><span class="recipient-preview-muted">Check your selection</span></div>`;
+        previewBox.classList.add("is-visible");
+        return;
+    }
+
+    recipients.slice(0, 100).forEach(option => {
+        const name = option.dataset.name || option.textContent.trim();
+        const role = option.dataset.roleLabel || option.dataset.role || "";
+        const position = option.dataset.position || "No position";
+        const store = option.dataset.store ? `Store ${option.dataset.store}` : "No store";
+
+        const row = document.createElement("div");
+        row.className = "recipient-preview-row";
+        row.innerHTML = `
+            <span>${name}</span>
+            <span class="recipient-preview-muted">${role} · ${position} · ${store}</span>
+        `;
+        previewList.appendChild(row);
+    });
+
+    if (recipients.length > 100) {
+        const row = document.createElement("div");
+        row.className = "recipient-preview-row";
+        row.innerHTML = `<span>+ ${recipients.length - 100} more</span><span class="recipient-preview-muted">Preview limited to first 100</span>`;
+        previewList.appendChild(row);
+    }
+
+    previewBox.classList.add("is-visible");
 }
 
 document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("targetMode").addEventListener("change", updateTargetPanels);
+
+    ["target_role", "target_position", "target_store", "target_user_ids"].forEach(name => {
+        document.querySelectorAll(`[name='${name}']`).forEach(field => {
+            field.addEventListener("change", () => {
+                const previewBox = document.getElementById("recipientPreviewBox");
+                if (previewBox) previewBox.classList.remove("is-visible");
+            });
+        });
+    });
+
     updateTargetPanels();
 });
 </script>

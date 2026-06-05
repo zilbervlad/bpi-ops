@@ -86,6 +86,22 @@ class PendingRegistrationRequest(db.Model):
     reviewed_by = db.relationship("User", foreign_keys=[reviewed_by_user_id])
 
 
+
+class ModuleAccessSetting(db.Model):
+    __tablename__ = "module_access_settings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    module_key = db.Column(db.String(80), nullable=False, unique=True)
+    module_label = db.Column(db.String(120), nullable=False)
+    module_group = db.Column(db.String(80), nullable=False, default="General")
+    allowed_roles_json = db.Column(db.Text, nullable=False, default="[]")
+    is_enabled = db.Column(db.Boolean, nullable=False, default=True)
+    sort_order = db.Column(db.Integer, nullable=False, default=100)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class Store(db.Model):
     __tablename__ = "stores"
 

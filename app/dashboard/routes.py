@@ -1,4 +1,5 @@
 from collections import defaultdict
+import json
 from datetime import timedelta, datetime
 from zoneinfo import ZoneInfo
 
@@ -10,7 +11,7 @@ from app.models import (
     DailyChecklist,
     SVRReport,
     MaintenanceTicket,
-    WeeklyFocusItem,
+    WeeklyFocusItem, ModuleAccessSetting,
     ChecklistException,
     CashLog,
 )
@@ -442,6 +443,219 @@ def build_dashboard_data():
     }
 
 
+
+ACCOUNT_ROLE_OPTIONS = [
+    ("admin", "Admin"),
+    ("supervisor", "Supervisor"),
+    ("general_manager", "General Manager"),
+    ("manager", "Manager / Shift Runner"),
+    ("tm", "TM"),
+    ("maintenance", "Maintenance"),
+    ("hr", "HR"),
+]
+
+
+DEFAULT_MODULE_ACCESS = [
+    {
+        "module_key": "dashboard",
+        "module_label": "Dashboard",
+        "module_group": "Command",
+        "allowed_roles": ["admin", "supervisor", "general_manager", "manager", "tm", "maintenance", "hr"],
+        "sort_order": 10,
+    },
+    {
+        "module_key": "store_dashboard",
+        "module_label": "Store Dashboard",
+        "module_group": "Command",
+        "allowed_roles": ["admin", "supervisor", "general_manager", "manager", "tm"],
+        "sort_order": 20,
+    },
+    {
+        "module_key": "registration_requests",
+        "module_label": "Registration Requests",
+        "module_group": "People",
+        "allowed_roles": ["admin", "supervisor", "general_manager"],
+        "sort_order": 30,
+    },
+    {
+        "module_key": "registration_qr",
+        "module_label": "Registration QR Center",
+        "module_group": "People",
+        "allowed_roles": ["admin", "supervisor", "general_manager"],
+        "sort_order": 40,
+    },
+    {
+        "module_key": "users",
+        "module_label": "User Management",
+        "module_group": "People",
+        "allowed_roles": ["admin", "general_manager"],
+        "sort_order": 50,
+    },
+    {
+        "module_key": "checklist",
+        "module_label": "Checklist",
+        "module_group": "Daily Ops",
+        "allowed_roles": ["admin", "supervisor", "general_manager", "manager"],
+        "sort_order": 60,
+    },
+    {
+        "module_key": "forms",
+        "module_label": "Forms",
+        "module_group": "Daily Ops",
+        "allowed_roles": ["admin", "supervisor", "general_manager", "manager"],
+        "sort_order": 70,
+    },
+    {
+        "module_key": "prep",
+        "module_label": "Prep",
+        "module_group": "Daily Ops",
+        "allowed_roles": ["admin", "supervisor", "general_manager", "manager"],
+        "sort_order": 80,
+    },
+    {
+        "module_key": "cash_review",
+        "module_label": "Cash Review",
+        "module_group": "Daily Ops",
+        "allowed_roles": ["admin", "supervisor"],
+        "sort_order": 90,
+    },
+    {
+        "module_key": "shift_todos",
+        "module_label": "Shift To-Dos",
+        "module_group": "Daily Ops",
+        "allowed_roles": ["admin", "supervisor", "general_manager", "manager", "tm"],
+        "sort_order": 100,
+    },
+    {
+        "module_key": "reports",
+        "module_label": "Reports",
+        "module_group": "Review",
+        "allowed_roles": ["admin", "supervisor"],
+        "sort_order": 110,
+    },
+    {
+        "module_key": "svr",
+        "module_label": "SVR",
+        "module_group": "Review",
+        "allowed_roles": ["admin", "supervisor"],
+        "sort_order": 120,
+    },
+    {
+        "module_key": "verification",
+        "module_label": "Verification",
+        "module_group": "Review",
+        "allowed_roles": ["admin", "supervisor"],
+        "sort_order": 130,
+    },
+    {
+        "module_key": "maintenance",
+        "module_label": "Maintenance",
+        "module_group": "Review",
+        "allowed_roles": ["admin", "supervisor", "general_manager", "maintenance"],
+        "sort_order": 140,
+    },
+    {
+        "module_key": "maintenance_time_cards",
+        "module_label": "Maintenance Time Cards",
+        "module_group": "Review",
+        "allowed_roles": ["admin", "supervisor", "maintenance"],
+        "sort_order": 150,
+    },
+    {
+        "module_key": "nightly_numbers",
+        "module_label": "Nightly Numbers",
+        "module_group": "Closeout",
+        "allowed_roles": ["admin", "supervisor", "general_manager", "manager"],
+        "sort_order": 160,
+    },
+    {
+        "module_key": "admin_center",
+        "module_label": "Admin Center",
+        "module_group": "Admin",
+        "allowed_roles": ["admin", "supervisor"],
+        "sort_order": 170,
+    },
+    {
+        "module_key": "module_access",
+        "module_label": "Module Access",
+        "module_group": "Admin",
+        "allowed_roles": ["admin"],
+        "sort_order": 180,
+    },
+    {
+        "module_key": "store_admin",
+        "module_label": "Store Admin",
+        "module_group": "Admin",
+        "allowed_roles": ["admin"],
+        "sort_order": 190,
+    },
+]
+
+
+def seed_module_access_settings():
+    changed = False
+
+    for item in DEFAULT_MODULE_ACCESS:
+        setting = ModuleAccessSetting.query.filter_by(module_key=item["module_key"]).first()
+
+        if not setting:
+            setting = ModuleAccessSetting(
+                module_key=item["module_key"],
+                module_label=item["module_label"],
+                module_group=item["module_group"],
+                allowed_roles_json=json.dumps(item["allowed_roles"]),
+                is_enabled=True,
+                sort_order=item["sort_order"],
+            )
+            db.session.add(setting)
+            changed = True
+        else:
+            # Keep labels/groups/order fresh, but do not overwrite custom role choices.
+            setting.module_label = item["module_label"]
+            setting.module_group = item["module_group"]
+            setting.sort_order = item["sort_order"]
+
+    if changed:
+        db.session.commit()
+
+
+def module_access_allowed_roles(setting):
+    try:
+        roles = json.loads(setting.allowed_roles_json or "[]")
+    except Exception:
+        roles = []
+
+    return roles if isinstance(roles, list) else []
+
+
+def grouped_module_access_settings():
+    seed_module_access_settings()
+
+    settings = ModuleAccessSetting.query.order_by(
+        ModuleAccessSetting.module_group.asc(),
+        ModuleAccessSetting.sort_order.asc(),
+        ModuleAccessSetting.module_label.asc(),
+    ).all()
+
+    grouped = defaultdict(list)
+
+    for setting in settings:
+        grouped[setting.module_group].append(setting)
+
+    preferred_order = ["Command", "People", "Daily Ops", "Review", "Closeout", "Admin"]
+    ordered_groups = []
+
+    for group in preferred_order:
+        if group in grouped:
+            ordered_groups.append((group, grouped.pop(group)))
+
+    for group in sorted(grouped.keys()):
+        ordered_groups.append((group, grouped[group]))
+
+    return ordered_groups
+
+
+
 @dashboard_bp.route("/")
 @login_required
 def home():
@@ -595,6 +809,14 @@ def admin_center():
                 "status": "Admin",
                 "icon": "🏪",
             },
+            {
+                "title": "Module Access",
+                "eyebrow": "Permissions",
+                "description": "Choose which account roles can see and use each module.",
+                "url": url_for("dashboard.module_access_admin"),
+                "status": "Admin",
+                "icon": "🔐",
+            },
         ])
 
     # Supervisors are allowed here specifically for Prep Admin.
@@ -608,6 +830,48 @@ def admin_center():
     })
 
     return render_template("admin_center.html", tools=tools)
+
+
+@dashboard_bp.route("/admin-center/module-access", methods=["GET", "POST"])
+@login_required
+@role_required("admin")
+def module_access_admin():
+    seed_module_access_settings()
+
+    if request.method == "POST":
+        settings = ModuleAccessSetting.query.all()
+
+        for setting in settings:
+            setting.is_enabled = request.form.get(f"enabled_{setting.module_key}") == "on"
+
+            selected_roles = []
+            for role_key, _role_label in ACCOUNT_ROLE_OPTIONS:
+                if request.form.get(f"role_{setting.module_key}_{role_key}") == "on":
+                    selected_roles.append(role_key)
+
+            # Guardrail: do not allow Module Access page to become non-admin.
+            if setting.module_key == "module_access":
+                selected_roles = ["admin"]
+                setting.is_enabled = True
+
+            # Guardrail: dashboard must always have admin.
+            if setting.module_key == "dashboard" and "admin" not in selected_roles:
+                selected_roles.append("admin")
+
+            setting.allowed_roles_json = json.dumps(selected_roles)
+
+        db.session.commit()
+        flash("Module access settings updated.", "success")
+        return redirect(url_for("dashboard.module_access_admin"))
+
+    return render_template(
+        "module_access_admin.html",
+        grouped_settings=grouped_module_access_settings(),
+        role_options=ACCOUNT_ROLE_OPTIONS,
+        module_access_allowed_roles=module_access_allowed_roles,
+    )
+
+
 
 @dashboard_bp.route("/live-data")
 @login_required

@@ -5,6 +5,7 @@ from io import BytesIO
 import qrcode
 from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from werkzeug.security import generate_password_hash
 from app.models import User, Store, PendingRegistrationRequest
 from app.extensions import db
 from app.services.email_service import send_email

@@ -403,7 +403,7 @@ def export_document_tracking(document_id):
             user.name,
             user.username,
             user.role,
-            user.position or "",
+            getattr(user, "position", None) or "",
             user.store_number or "",
             user.get_notification_email() or "",
             recipient.status,

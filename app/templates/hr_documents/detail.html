@@ -1,13 +1,580 @@
 {% extends "base.html" %}
 
-{% block title %}Document Tracking · BPI Ops
+{% block title %}Document Tracking · BPI Ops{% endblock %}
+{% block header %}Document Tracking{% endblock %}
+
+{% block content %}
+<style>
+    .doc-track-page {
+        display: grid;
+        gap: 18px;
+    }
+
+    .doc-track-hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 18px;
+        padding: 6px 0 14px;
+        border-bottom: 1px solid rgba(148,163,184,.10);
+    }
+
+    .doc-track-kicker {
+        color: #7dd3fc;
+        font-size: 11px;
+        font-weight: 950;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .doc-track-hero h2 {
+        margin: 0;
+        color: #f8fafc;
+        font-size: clamp(30px, 3vw, 46px);
+        line-height: .96;
+        letter-spacing: -.065em;
+    }
+
+    .doc-track-meta {
+        margin-top: 10px;
+        color: rgba(203,213,225,.70);
+        font-size: 14px;
+        font-weight: 750;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }
+
+    .doc-track-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .doc-track-actions .btn-primary,
+    .doc-track-actions .btn-danger {
+        min-height: 40px;
+        padding: 9px 14px;
+        border-radius: 14px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .metric-card {
+        border: 1px solid rgba(148,163,184,.12);
+        background:
+            radial-gradient(circle at top left, rgba(56,189,248,.10), transparent 32%),
+            linear-gradient(180deg, rgba(15,23,42,.76), rgba(2,6,23,.72));
+        border-radius: 18px;
+        padding: 14px 16px;
+        min-height: 96px;
+        box-shadow: 0 18px 42px rgba(0,0,0,.16);
+    }
+
+    .metric-label {
+        color: rgba(203,213,225,.72);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+    }
+
+    .metric-value {
+        margin-top: 10px;
+        color: #f8fafc;
+        font-size: 30px;
+        line-height: 1;
+        font-weight: 950;
+        letter-spacing: -.05em;
+    }
+
+    .metric-sub {
+        margin-top: 6px;
+        color: rgba(148,163,184,.70);
+        font-size: 12px;
+        font-weight: 750;
+    }
+
+    .filter-shell {
+        border: 1px solid rgba(148,163,184,.12);
+        background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(2,6,23,.70));
+        border-radius: 20px;
+        padding: 14px;
+        display: grid;
+        gap: 14px;
+        box-shadow: 0 18px 42px rgba(0,0,0,.16);
+    }
+
+    .filter-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .filter-form {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        display: grid;
+        gap: 5px;
+    }
+
+    .filter-group label {
+        color: rgba(148,163,184,.82);
+        font-size: 10px;
+        font-weight: 950;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+    }
+
+    .filter-group select {
+        min-height: 40px;
+        min-width: 170px;
+        border-radius: 12px;
+        padding: 8px 10px;
+        background: rgba(2,6,23,.62);
+        border: 1px solid rgba(148,163,184,.16);
+        color: #e5eefb;
+        font-weight: 850;
+        outline: none;
+    }
+
+    .filter-counts {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .search-wrap {
+        width: 100%;
+    }
+
+    .search-input {
+        width: 100%;
+        min-height: 42px;
+        border-radius: 14px;
+        padding: 10px 12px;
+        background: rgba(2,6,23,.62);
+        border: 1px solid rgba(148,163,184,.16);
+        color: #e5eefb;
+        font-weight: 850;
+        outline: none;
+    }
+
+    .search-input::placeholder {
+        color: rgba(148,163,184,.66);
+    }
+
+    .table-shell {
+        border: 1px solid rgba(148,163,184,.12);
+        background: linear-gradient(180deg, rgba(15,23,42,.74), rgba(2,6,23,.70));
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 18px 42px rgba(0,0,0,.16);
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    .recipient-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1120px;
+    }
+
+    .recipient-table th,
+    .recipient-table td {
+        padding: 14px 14px;
+        border-bottom: 1px solid rgba(148,163,184,.08);
+        vertical-align: middle;
+        text-align: left;
+    }
+
+    .recipient-table th {
+        color: rgba(148,163,184,.82);
+        font-size: 10px;
+        font-weight: 950;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        background: rgba(2,6,23,.24);
+    }
+
+    .recipient-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .recipient-name {
+        color: #f8fafc;
+        font-size: 14px;
+        font-weight: 900;
+    }
+
+    .recipient-sub {
+        margin-top: 4px;
+        color: rgba(148,163,184,.68);
+        font-size: 12px;
+        font-weight: 750;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 30px;
+        padding: 0 11px;
+        border-radius: 999px;
+        background: rgba(15,23,42,.60);
+        border: 1px solid rgba(148,163,184,.14);
+        color: #dbeafe;
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .status-pill.success {
+        color: #bbf7d0;
+        background: rgba(34,197,94,.13);
+        border-color: rgba(34,197,94,.25);
+    }
+
+    .status-pill.warning {
+        color: #fde68a;
+        background: rgba(245,158,11,.12);
+        border-color: rgba(245,158,11,.22);
+    }
+
+    .status-pill.danger {
+        color: #fecaca;
+        background: rgba(239,68,68,.12);
+        border-color: rgba(239,68,68,.22);
+    }
+
+    .status-pill.neutral {
+        color: #cbd5e1;
+        background: rgba(148,163,184,.10);
+    }
+
+    .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: currentColor;
+    }
+
+    .row-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        padding: 0 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(148,163,184,.14);
+        background: rgba(15,23,42,.56);
+        color: #dbeafe;
+        font-size: 12px;
+        font-weight: 850;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .table-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-top: 1px solid rgba(148,163,184,.08);
+        color: rgba(203,213,225,.64);
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    tr.is-hidden-by-search {
+        display: none;
+    }
+
+    @media (max-width: 1150px) {
+        .metric-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 760px) {
+        .doc-track-hero {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .doc-track-actions {
+            justify-content: flex-start;
+        }
+
+        .metric-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-top {
+            align-items: stretch;
+        }
+
+        .filter-form {
+            width: 100%;
+        }
+
+        .filter-group,
+        .filter-group select {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="doc-track-page">
+    <section class="doc-track-hero">
+        <div>
+            <div class="doc-track-kicker">HR Documents</div>
+            <h2>{{ document.title }}</h2>
+            <div class="doc-track-meta">
+                {{ document.original_filename }} · {{ (document.file_size / 1024)|round(1) }} KB
+                · {% if document.is_active %}Active{% else %}Archived{% endif %}
+                {% if document.due_date %} · Due {{ document.due_date.strftime('%m/%d/%Y') }}{% endif %}
+            </div>
+        </div>
+
+        <div class="doc-track-actions">
+            <a href="{{ url_for('hr_documents.download_document', document_id=document.id) }}" class="btn-primary">Download</a>
+
+            {% if document.is_active %}
+            <a href="{{ url_for('hr_documents.add_recipients', document_id=document.id) }}" class="btn-primary">Add Recipients</a>
+            {% endif %}
+
+            <a href="{{ url_for('hr_documents.export_document_tracking', document_id=document.id) }}" class="btn-primary">Export CSV</a>
+
+            {# If your route name differs, just swap this endpoint name. #}
+            {% if document.is_active %}
+            <form method="POST" action="{{ url_for('hr_documents.resend_pending_document_emails', document_id=document.id) }}" style="display:inline;">
+                <button type="submit" class="btn-primary">Resend Pending</button>
+            </form>
+            {% endif %}
+
+            {% if document.is_active %}
+            <form method="POST" action="{{ url_for('hr_documents.archive_document', document_id=document.id) }}" style="display:inline;">
+                <button type="submit" class="btn-danger" onclick="return confirm('Archive this document? Acknowledgment history will be kept.');">Archive</button>
+            </form>
+            {% else %}
+            <form method="POST" action="{{ url_for('hr_documents.restore_document', document_id=document.id) }}" style="display:inline;">
+                <button type="submit" class="btn-primary">Restore</button>
+            </form>
+            {% endif %}
+
+            <a href="{{ url_for('hr_documents.index') }}" class="btn-primary">Back</a>
+        </div>
+    </section>
+
+    <section class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-label">Total Recipients</div>
+            <div class="metric-value">{{ total_count }}</div>
+            <div class="metric-sub">Assigned to this document</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">Acknowledged</div>
+            <div class="metric-value">{{ acknowledged_count }}</div>
+            <div class="metric-sub">Completed acknowledgments</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">Pending</div>
+            <div class="metric-value">{{ pending_count }}</div>
+            <div class="metric-sub">Still awaiting response</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">Email Failed</div>
+            <div class="metric-value">{{ email_failed_count }}</div>
+            <div class="metric-sub">Notification delivery issues</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">Overdue</div>
+            <div class="metric-value">{{ overdue_count }}</div>
+            <div class="metric-sub">Past due and not signed</div>
+        </div>
+    </section>
+
+    <section class="filter-shell">
+        <div class="filter-top">
+            <form method="GET" class="filter-form">
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select name="status">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="acknowledged" {% if status_filter == 'acknowledged' %}selected{% endif %}>Acknowledged</option>
+                        <option value="email_failed" {% if status_filter == 'email_failed' %}selected{% endif %}>Email Failed</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Store</label>
+                    <select name="store">
+                        <option value="all" {% if store_filter == 'all' %}selected{% endif %}>All Stores</option>
+                        {% for store_number in store_options %}
+                        <option value="{{ store_number }}" {% if store_filter == store_number %}selected{% endif %}>Store {{ store_number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary" style="min-height:40px; padding:8px 14px;">Apply</button>
+                <a href="{{ url_for('hr_documents.detail', document_id=document.id) }}" class="btn-primary" style="min-height:40px; padding:8px 14px; text-decoration:none;">Reset</a>
+            </form>
+
+            <div class="filter-counts">
+                <span class="summary-pill">{{ total_count }} Total</span>
+                <span class="summary-pill">{{ pending_count }} Pending</span>
+                <span class="summary-pill success-pill">{{ acknowledged_count }} Acknowledged</span>
+                <span class="summary-pill danger-pill">{{ email_failed_count }} Email Failed</span>
+                <span class="summary-pill danger-pill">{{ overdue_count }} Overdue</span>
+                <span class="summary-pill"><span id="trackingVisibleCount">{{ recipients|length }}</span> Showing</span>
+            </div>
+        </div>
+
+        <div class="search-wrap">
+            <input
+                id="trackingSearchInput"
+                class="search-input"
+                type="search"
+                placeholder="Search name, username, role, position, store, status, or email error..."
+                autocomplete="off"
+            >
+        </div>
+    </section>
+
+    <section class="table-shell">
+        <div class="table-wrap">
+            <table class="recipient-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Role</th>
+                        <th>Position</th>
+                        <th>Store</th>
+                        <th>Status</th>
+                        <th>Email</th>
+                        <th>Due</th>
+                        <th>Email Error</th>
+                        <th>Actions</th>
+                        <th>Acknowledged</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for recipient in recipients %}
+                    <tr class="recipient-row"
+                        data-search="{{ (
+                            recipient.user.name ~ ' ' ~
+                            recipient.user.username ~ ' ' ~
+                            recipient.user.role ~ ' ' ~
+                            (recipient.user.position or '') ~ ' ' ~
+                            (recipient.user.store_number or '') ~ ' ' ~
+                            recipient.status ~ ' ' ~
+                            (recipient.email_error or '')
+                        )|lower }}">
+                        <td>
+                            <div class="recipient-name">{{ recipient.user.name }}</div>
+                            <div class="recipient-sub">@{{ recipient.user.username }}</div>
+                        </td>
+                        <td>{{ recipient.user.role|replace('_', ' ')|title }}</td>
+                        <td>{{ recipient.user.position or '—' }}</td>
+                        <td>{{ recipient.user.store_number or '—' }}</td>
+                        <td>
+                            {% if recipient.status == 'acknowledged' %}
+                                <span class="status-pill success"><span class="status-dot"></span>Acknowledged</span>
+                            {% elif document.due_date and recipient.status != 'acknowledged' and document.due_date < today %}
+                                <span class="status-pill danger"><span class="status-dot"></span>Overdue</span>
+                            {% else %}
+                                <span class="status-pill warning"><span class="status-dot"></span>Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if recipient.email_sent_at %}
+                                <span class="status-pill success"><span class="status-dot"></span>Sent</span>
+                            {% elif recipient.email_error %}
+                                <span class="status-pill danger"><span class="status-dot"></span>Failed</span>
+                            {% else %}
+                                <span class="status-pill neutral">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if document.due_date %}
+                                {% if recipient.status != 'acknowledged' and document.due_date < today %}
+                                    <span class="status-pill danger">{{ document.due_date.strftime('%m/%d/%Y') }}</span>
+                                {% else %}
+                                    {{ document.due_date.strftime('%m/%d/%Y') }}
+                                {% endif %}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td style="max-width:240px;">
+                            {{ recipient.email_error or '—' }}
+                        </td>
+                        <td>
+                            {% if recipient.status != 'acknowledged' %}
+                                <span class="row-action">Pending</span>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if recipient.acknowledged_at %}
+                                {{ recipient.acknowledged_at.strftime('%m/%d/%Y %I:%M %p') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10">No recipients found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer">
+            <span>Showing <span id="trackingFooterCount">{{ recipients|length }}</span> recipient(s)</span>
+            <span>BPI Ops · Document Tracking</span>
+        </div>
+    </section>
+</div>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.getElementById("trackingSearchInput");
     const visibleCount = document.getElementById("trackingVisibleCount");
+    const footerCount = document.getElementById("trackingFooterCount");
     const rows = Array.from(document.querySelectorAll(".recipient-row"));
 
-    if (!searchInput || !visibleCount || !rows.length) return;
+    if (!searchInput || !visibleCount || !footerCount || !rows.length) return;
 
     function applyTrackingSearch() {
         const query = searchInput.value.trim().toLowerCase();
@@ -23,260 +590,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         visibleCount.textContent = shown;
+        footerCount.textContent = shown;
     }
 
     searchInput.addEventListener("input", applyTrackingSearch);
 });
 </script>
-
-{% endblock %}
-{% block header %}Document Tracking{% endblock %}
-
-{% block content %}
-<style>
-    .tracking-shell { display:grid; gap:16px; }
-    .tracking-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; padding-bottom:14px; border-bottom:1px solid rgba(148,163,184,.12); }
-    .tracking-head h2 { margin:0; color:#f8fafc; font-size:24px; letter-spacing:-.045em; }
-    .recipient-table { width:100%; border-collapse:collapse; }
-    .recipient-table th, .recipient-table td { padding:9px 10px; border-bottom:1px solid rgba(148,163,184,.08); text-align:left; }
-    .recipient-table th { color:rgba(148,163,184,.8); font-size:10px; font-weight:950; text-transform:uppercase; letter-spacing:.12em; }
-    .recipient-table td { color:#e5eefb; font-size:13px; }
-    .table-wrap { overflow-x:auto; border:1px solid rgba(148,163,184,.12); border-radius:16px; background:rgba(15,23,42,.50); }
-
-    .tracking-filters {
-        border: 1px solid rgba(148,163,184,.12);
-        background: rgba(15,23,42,.50);
-        border-radius: 16px;
-        padding: 12px;
-        display: flex;
-        gap: 10px;
-        align-items: end;
-        justify-content: space-between;
-        flex-wrap: wrap;
-    }
-
-    .tracking-filter-form {
-        display: flex;
-        gap: 8px;
-        align-items: end;
-        flex-wrap: wrap;
-    }
-
-    .tracking-filter-group {
-        display: grid;
-        gap: 5px;
-    }
-
-    .tracking-filter-group label {
-        color: rgba(148,163,184,.82);
-        font-size: 10px;
-        font-weight: 950;
-        letter-spacing: .12em;
-        text-transform: uppercase;
-    }
-
-    .tracking-filter-group select {
-        min-height: 36px;
-        border-radius: 12px;
-        padding: 7px 10px;
-        background: rgba(2,6,23,.62);
-        border: 1px solid rgba(148,163,184,.16);
-        color: #e5eefb;
-        font-weight: 850;
-    }
-
-    .tracking-counts {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .tracking-search-wrap {
-        margin-top: 10px;
-        width: 100%;
-    }
-
-    .tracking-search-input {
-        width: 100%;
-        min-height: 40px;
-        border-radius: 14px;
-        padding: 9px 12px;
-        background: rgba(2,6,23,.62);
-        border: 1px solid rgba(148,163,184,.16);
-        color: #e5eefb;
-        font-weight: 850;
-        outline: none;
-    }
-
-    .tracking-search-input::placeholder {
-        color: rgba(148,163,184,.68);
-    }
-
-    tr.is-hidden-by-search {
-        display: none;
-    }
-</style>
-
-<div class="tracking-shell">
-    <section class="tracking-head">
-        <div>
-            <h2>{{ document.title }}</h2>
-            <p class="area-subtitle">
-                {{ document.original_filename }} · {{ (document.file_size / 1024)|round(1) }} KB
-                · {% if document.is_active %}Active{% else %}Archived{% endif %}
-                {% if document.due_date %} · Due {{ document.due_date.strftime('%m/%d/%Y') }}{% endif %}
-            </p>
-        </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-            <a href="{{ url_for('hr_documents.download_document', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Download</a>
-            {% if document.is_active %}
-            <a href="{{ url_for('hr_documents.add_recipients', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Add Recipients</a>
-            {% endif %}
-            <a href="{{ url_for('hr_documents.export_document_tracking', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Export CSV</a>
-            {% if document.is_active %}
-            <form method="POST" action="{{ url_for('hr_documents.archive_document', document_id=document.id) }}" style="display:inline;">
-                <button type="submit" class="btn-danger" onclick="return confirm('Archive this document? Acknowledgment history will be kept.');">Archive</button>
-            </form>
-            {% else %}
-            <form method="POST" action="{{ url_for('hr_documents.restore_document', document_id=document.id) }}" style="display:inline;">
-                <button type="submit" class="btn-primary">Restore</button>
-            </form>
-            {% endif %}
-            <form method="POST" action="{{ url_for('hr_documents.resend_pending_document_emails', document_id=document.id) }}" style="display:inline;">
-                <button type="submit" class="btn-primary" onclick="return confirm('Resend email to everyone still pending?');">Resend Pending</button>
-            </form>
-            <a href="{{ url_for('hr_documents.index') }}" class="btn-primary" style="text-decoration:none;">Back</a>
-        </div>
-    </section>
-
-    <section class="tracking-filters">
-        <form method="GET" class="tracking-filter-form">
-            <div class="tracking-filter-group">
-                <label>Status</label>
-                <select name="status" onchange="this.form.submit()">
-                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
-                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
-                    <option value="acknowledged" {% if status_filter == 'acknowledged' %}selected{% endif %}>Acknowledged</option>
-                    <option value="email_failed" {% if status_filter == 'email_failed' %}selected{% endif %}>Email Failed</option>
-                </select>
-            </div>
-
-            <div class="tracking-filter-group">
-                <label>Store</label>
-                <select name="store" onchange="this.form.submit()">
-                    <option value="all" {% if store_filter == 'all' %}selected{% endif %}>All Stores</option>
-                    {% for store_number in store_options %}
-                    <option value="{{ store_number }}" {% if store_filter == store_number %}selected{% endif %}>Store {{ store_number }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <button type="submit" class="btn-primary" style="min-height:36px; padding:7px 12px;">Apply</button>
-            <a href="{{ url_for('hr_documents.detail', document_id=document.id) }}" class="btn-primary" style="min-height:36px; padding:7px 12px; text-decoration:none;">Reset</a>
-        </form>
-
-        <div class="tracking-counts">
-            <span class="summary-pill">{{ total_count }} Total</span>
-            <span class="summary-pill">{{ pending_count }} Pending</span>
-            <span class="summary-pill success-pill">{{ acknowledged_count }} Acknowledged</span>
-            <span class="summary-pill danger-pill">{{ email_failed_count }} Email Failed</span>
-            <span class="summary-pill danger-pill">{{ overdue_count }} Overdue</span>
-            <span class="summary-pill"><span id="trackingVisibleCount">{{ recipients|length }}</span> Showing</span>
-        </div>
-
-        <div class="tracking-search-wrap">
-            <input
-                id="trackingSearchInput"
-                class="tracking-search-input"
-                type="search"
-                placeholder="Search name, username, role, position, store, status, or email error..."
-                autocomplete="off"
-            >
-        </div>
-    </section>
-
-    <section class="table-wrap">
-        <table class="recipient-table">
-            <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Role</th>
-                    <th>Position</th>
-                    <th>Store</th>
-                    <th>Status</th>
-                    <th>Email</th>
-                    <th>Due</th>
-                    <th>Email Error</th>
-                    <th>Actions</th>
-                    <th>Acknowledged</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for recipient in recipients %}
-                <tr class="recipient-row"
-                    data-search="{{ (
-                        recipient.user.name ~ ' ' ~
-                        recipient.user.username ~ ' ' ~
-                        recipient.user.role ~ ' ' ~
-                        (recipient.user.position or '') ~ ' ' ~
-                        (recipient.user.store_number or '') ~ ' ' ~
-                        recipient.status ~ ' ' ~
-                        (recipient.email_error or '')
-                    )|lower }}">
-                    <td>{{ recipient.user.name }}</td>
-                    <td>{{ recipient.user.role|replace('_',' ')|title }}</td>
-                    <td>{{ recipient.user.position or '—' }}</td>
-                    <td>{{ recipient.user.store_number or '—' }}</td>
-                    <td>{{ recipient.status|title }}</td>
-                    <td>
-                        {% if recipient.email_sent_at %}
-                            Sent
-                        {% elif recipient.email_error %}
-                            Failed
-                        {% else %}
-                            —
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if document.due_date %}
-                            {% if recipient.status != 'acknowledged' and document.due_date < today %}
-                                <span class="summary-pill danger-pill">{{ document.due_date.strftime('%m/%d/%Y') }}</span>
-                            {% else %}
-                                {{ document.due_date.strftime('%m/%d/%Y') }}
-                            {% endif %}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </td>
-                    <td style="max-width:260px;">
-                        {% if recipient.email_error %}
-                            <span class="summary-pill danger-pill">{{ recipient.email_error[:80] }}{% if recipient.email_error|length > 80 %}...{% endif %}</span>
-                        {% else %}
-                            —
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if recipient.status != 'acknowledged' %}
-                        <form method="POST" action="{{ url_for('hr_documents.resend_document_email', document_id=document.id, recipient_id=recipient.id) }}">
-                            <button type="submit" class="btn-primary" style="min-height:30px; padding:6px 10px; font-size:11px;">Resend</button>
-                        </form>
-                        {% else %}
-                            —
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if recipient.acknowledged_at %}
-                            {{ recipient.acknowledged_at.strftime('%m/%d/%Y %I:%M %p') }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="10">No recipients.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </section>
-</div>
 {% endblock %}

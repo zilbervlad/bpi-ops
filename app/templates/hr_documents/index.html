@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}HR Documents · BPI Ops{% endblock %}
+{% block header %}HR Documents{% endblock %}
+
+{% block content %}
+<style>
+    .hr-doc-shell { display: grid; gap: 16px; }
+    .hr-doc-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-end; padding-bottom:14px; border-bottom:1px solid rgba(148,163,184,.12); }
+    .hr-doc-head h2 { margin:0; color:#f8fafc; font-size:24px; letter-spacing:-.045em; }
+    .hr-doc-head p { margin:6px 0 0; color:rgba(203,213,225,.66); font-size:13px; font-weight:750; }
+    .doc-grid { display:grid; gap:10px; }
+    .doc-card { border:1px solid rgba(148,163,184,.12); background:rgba(15,23,42,.58); border-radius:16px; padding:14px; display:grid; gap:10px; }
+    .doc-card-row { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+    .doc-title { color:#f8fafc; font-weight:950; font-size:15px; }
+    .doc-meta { margin-top:5px; color:rgba(203,213,225,.66); font-size:12px; font-weight:750; }
+    .doc-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+</style>
+
+<div class="hr-doc-shell">
+    <section class="hr-doc-head">
+        <div>
+            <h2>HR Documents</h2>
+            <p>Upload documents, assign recipients, and track acknowledgments.</p>
+        </div>
+        <div class="doc-actions">
+            <a href="{{ url_for('hr_documents.my_documents') }}" class="btn-primary" style="text-decoration:none;">My Documents</a>
+            <a href="{{ url_for('hr_documents.new_document') }}" class="btn-primary" style="text-decoration:none;">Upload Document</a>
+        </div>
+    </section>
+
+    <section class="doc-grid">
+        {% for card in document_cards %}
+        {% set document = card.document %}
+        <div class="doc-card">
+            <div class="doc-card-row">
+                <div>
+                    <div class="doc-title">{{ document.title }}</div>
+                    <div class="doc-meta">
+                        {{ document.original_filename }} · {{ (document.file_size / 1024)|round(1) }} KB ·
+                        Created {{ document.created_at.strftime('%m/%d/%Y') if document.created_at else '' }}
+                    </div>
+                </div>
+                <div class="doc-actions">
+                    <span class="summary-pill">{{ card.acknowledged }}/{{ card.total }} Acknowledged</span>
+                    <span class="summary-pill">{{ card.pending }} Pending</span>
+                    <a href="{{ url_for('hr_documents.detail', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">View</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="summary-pill neutral-pill">No HR documents uploaded yet.</div>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}

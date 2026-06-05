@@ -102,6 +102,54 @@ class ModuleAccessSetting(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+
+class HRDocument(db.Model):
+    __tablename__ = "hr_documents"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(db.String(160), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+
+    original_filename = db.Column(db.String(255), nullable=False)
+    content_type = db.Column(db.String(120), nullable=True)
+    file_size = db.Column(db.Integer, nullable=False, default=0)
+    file_data = db.Column(db.LargeBinary, nullable=False)
+
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+
+    created_by = db.relationship("User", foreign_keys=[created_by_user_id])
+    recipients = db.relationship("HRDocumentRecipient", back_populates="document", cascade="all, delete-orphan")
+
+
+class HRDocumentRecipient(db.Model):
+    __tablename__ = "hr_document_recipients"
+    __table_args__ = (
+        db.UniqueConstraint("document_id", "user_id", name="uq_hr_document_recipient_user"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    document_id = db.Column(db.Integer, db.ForeignKey("hr_documents.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+
+    status = db.Column(db.String(30), nullable=False, default="pending")
+    assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    email_sent_at = db.Column(db.DateTime, nullable=True)
+    email_error = db.Column(db.Text, nullable=True)
+
+    acknowledged_at = db.Column(db.DateTime, nullable=True)
+    acknowledged_name = db.Column(db.String(160), nullable=True)
+    acknowledged_ip = db.Column(db.String(80), nullable=True)
+    acknowledged_user_agent = db.Column(db.String(255), nullable=True)
+
+    document = db.relationship("HRDocument", back_populates="recipients")
+    user = db.relationship("User", foreign_keys=[user_id])
+
+
 class Store(db.Model):
     __tablename__ = "stores"
 

@@ -1,0 +1,374 @@
+from datetime import datetime
+from collections import Counter
+
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, abort
+from io import BytesIO
+from werkzeug.utils import secure_filename
+
+from app.extensions import db
+from app.models import User, Store, HRDocument, HRDocumentRecipient
+from app.auth.routes import login_required, role_required
+from app.services.email_service import send_email
+
+
+hr_documents_bp = Blueprint("hr_documents", __name__, url_prefix="/hr-documents")
+
+MAX_HR_DOCUMENT_BYTES = 10 * 1024 * 1024
+
+ALLOWED_DOCUMENT_EXTENSIONS = {
+    "pdf",
+    "doc",
+    "docx",
+    "png",
+    "jpg",
+    "jpeg",
+    "txt",
+}
+
+
+def current_user_id():
+    return session.get("user_id")
+
+
+def current_account_role():
+    return session.get("account_role") or session.get("user_role")
+
+
+def can_manage_hr_documents():
+    return current_account_role() in {"admin", "hr"}
+
+
+def allowed_file(filename):
+    if "." not in filename:
+        return False
+    ext = filename.rsplit(".", 1)[1].lower()
+    return ext in ALLOWED_DOCUMENT_EXTENSIONS
+
+
+def get_user_or_404():
+    user_id = current_user_id()
+    user = User.query.get(user_id)
+    if not user:
+        abort(403)
+    return user
+
+
+def user_can_access_document(document):
+    if can_manage_hr_documents():
+        return True
+
+    user_id = current_user_id()
+    if not user_id:
+        return False
+
+    return HRDocumentRecipient.query.filter_by(
+        document_id=document.id,
+        user_id=user_id,
+    ).first() is not None
+
+
+def recipient_query_for_target(target_mode, form):
+    query = User.query.filter_by(is_active=True)
+
+    if target_mode == "all":
+        return query
+
+    if target_mode == "role":
+        role = form.get("target_role", "").strip()
+        if not role:
+            return None
+        return query.filter(User.role == role)
+
+    if target_mode == "position":
+        position = form.get("target_position", "").strip()
+        if not position:
+            return None
+        return query.filter(User.position == position)
+
+    if target_mode == "store":
+        store_number = form.get("target_store", "").strip()
+        if not store_number:
+            return None
+        return query.filter(User.store_number == store_number)
+
+    if target_mode == "individual":
+        user_ids = [
+            int(value)
+            for value in form.getlist("target_user_ids")
+            if value.isdigit()
+        ]
+        if not user_ids:
+            return None
+        return query.filter(User.id.in_(user_ids))
+
+    return None
+
+
+def send_hr_document_email(document, recipient):
+    to_email = recipient.user.get_notification_email()
+    if not to_email:
+        recipient.email_error = "No notification email configured."
+        return False
+
+    document_url = url_for("hr_documents.acknowledge_document", document_id=document.id, _external=True)
+
+    body = f"""Hello {recipient.user.name},
+
+You have a new BPI Ops document to review and acknowledge.
+
+Document: {document.title}
+
+Open it here:
+{document_url}
+
+Please log in and complete the acknowledgment.
+
+Boston Pie, Inc.
+"""
+
+    try:
+        send_email(
+            to_email=to_email,
+            subject=f"BPI Ops Document Acknowledgment Required: {document.title}",
+            body=body,
+        )
+        recipient.email_sent_at = datetime.utcnow()
+        recipient.email_error = None
+        return True
+    except Exception as exc:
+        recipient.email_error = str(exc)
+        return False
+
+
+@hr_documents_bp.route("/")
+@login_required
+@role_required("admin", "hr")
+def index():
+    documents = HRDocument.query.order_by(HRDocument.created_at.desc()).all()
+
+    document_cards = []
+    for document in documents:
+        counts = Counter(recipient.status for recipient in document.recipients)
+        total = len(document.recipients)
+        acknowledged = counts.get("acknowledged", 0)
+
+        document_cards.append({
+            "document": document,
+            "total": total,
+            "acknowledged": acknowledged,
+            "pending": total - acknowledged,
+        })
+
+    return render_template("hr_documents/index.html", document_cards=document_cards)
+
+
+@hr_documents_bp.route("/new", methods=["GET", "POST"])
+@login_required
+@role_required("admin", "hr")
+def new_document():
+    users = User.query.filter_by(is_active=True).order_by(User.name.asc()).all()
+    stores = Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
+
+    roles = [
+        ("admin", "Admin"),
+        ("supervisor", "Supervisor"),
+        ("general_manager", "General Manager"),
+        ("manager", "Manager / Shift Runner"),
+        ("tm", "TM"),
+        ("maintenance", "Maintenance"),
+        ("hr", "HR"),
+    ]
+
+    positions = [
+        "CSR",
+        "Driver",
+        "MIT / Shift Runner",
+        "Manager",
+        "General Manager",
+        "Supervisor",
+        "Maintenance",
+        "HR",
+    ]
+
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        description = request.form.get("description", "").strip() or None
+        target_mode = request.form.get("target_mode", "").strip()
+        upload = request.files.get("document_file")
+
+        if not title:
+            flash("Please enter a document title.", "error")
+            return redirect(url_for("hr_documents.new_document"))
+
+        if not upload or not upload.filename:
+            flash("Please upload a document.", "error")
+            return redirect(url_for("hr_documents.new_document"))
+
+        filename = secure_filename(upload.filename)
+        if not allowed_file(filename):
+            flash("Allowed files: PDF, Word, image, or text documents.", "error")
+            return redirect(url_for("hr_documents.new_document"))
+
+        file_data = upload.read()
+        if not file_data:
+            flash("Uploaded file was empty.", "error")
+            return redirect(url_for("hr_documents.new_document"))
+
+        if len(file_data) > MAX_HR_DOCUMENT_BYTES:
+            flash("File is too large. Maximum size is 10 MB.", "error")
+            return redirect(url_for("hr_documents.new_document"))
+
+        recipient_query = recipient_query_for_target(target_mode, request.form)
+        if recipient_query is None:
+            flash("Please choose valid recipients.", "error")
+            return redirect(url_for("hr_documents.new_document"))
+
+        selected_users = recipient_query.order_by(User.name.asc()).all()
+        if not selected_users:
+            flash("No active users matched that recipient selection.", "error")
+            return redirect(url_for("hr_documents.new_document"))
+
+        document = HRDocument(
+            title=title,
+            description=description,
+            original_filename=filename,
+            content_type=upload.mimetype,
+            file_size=len(file_data),
+            file_data=file_data,
+            created_by_user_id=current_user_id(),
+            is_active=True,
+        )
+
+        db.session.add(document)
+        db.session.flush()
+
+        recipients = []
+        for user in selected_users:
+            recipient = HRDocumentRecipient(
+                document_id=document.id,
+                user_id=user.id,
+                status="pending",
+            )
+            db.session.add(recipient)
+            recipients.append(recipient)
+
+        db.session.flush()
+
+        sent_count = 0
+        failed_count = 0
+        for recipient in recipients:
+            if send_hr_document_email(document, recipient):
+                sent_count += 1
+            else:
+                failed_count += 1
+
+        db.session.commit()
+
+        flash(
+            f"Document assigned to {len(recipients)} user(s). Emails sent: {sent_count}. Failed: {failed_count}.",
+            "success",
+        )
+        return redirect(url_for("hr_documents.detail", document_id=document.id))
+
+    return render_template(
+        "hr_documents/new.html",
+        users=users,
+        stores=stores,
+        roles=roles,
+        positions=positions,
+        max_mb=MAX_HR_DOCUMENT_BYTES // (1024 * 1024),
+    )
+
+
+@hr_documents_bp.route("/my")
+@login_required
+def my_documents():
+    user = get_user_or_404()
+
+    recipients = HRDocumentRecipient.query.join(HRDocument).filter(
+        HRDocumentRecipient.user_id == user.id,
+        HRDocument.is_active == True,
+    ).order_by(
+        HRDocumentRecipient.status.asc(),
+        HRDocumentRecipient.assigned_at.desc(),
+    ).all()
+
+    return render_template("hr_documents/my.html", recipients=recipients)
+
+
+@hr_documents_bp.route("/<int:document_id>")
+@login_required
+@role_required("admin", "hr")
+def detail(document_id):
+    document = HRDocument.query.get_or_404(document_id)
+
+    recipients = HRDocumentRecipient.query.filter_by(
+        document_id=document.id,
+    ).join(User).order_by(
+        HRDocumentRecipient.status.asc(),
+        User.store_number.asc(),
+        User.name.asc(),
+    ).all()
+
+    return render_template("hr_documents/detail.html", document=document, recipients=recipients)
+
+
+@hr_documents_bp.route("/<int:document_id>/download")
+@login_required
+def download_document(document_id):
+    document = HRDocument.query.get_or_404(document_id)
+
+    if not user_can_access_document(document):
+        abort(403)
+
+    return send_file(
+        BytesIO(document.file_data),
+        mimetype=document.content_type or "application/octet-stream",
+        as_attachment=True,
+        download_name=document.original_filename,
+    )
+
+
+@hr_documents_bp.route("/<int:document_id>/acknowledge", methods=["GET", "POST"])
+@login_required
+def acknowledge_document(document_id):
+    document = HRDocument.query.get_or_404(document_id)
+    user = get_user_or_404()
+
+    recipient = HRDocumentRecipient.query.filter_by(
+        document_id=document.id,
+        user_id=user.id,
+    ).first()
+
+    if not recipient and not can_manage_hr_documents():
+        abort(403)
+
+    if request.method == "POST":
+        if not recipient:
+            flash("This document is not assigned to your account.", "error")
+            return redirect(url_for("hr_documents.my_documents"))
+
+        acknowledged_name = request.form.get("acknowledged_name", "").strip()
+        confirmed = request.form.get("confirmed") == "on"
+
+        if not acknowledged_name or not confirmed:
+            flash("Please type your name and check the acknowledgment box.", "error")
+            return redirect(url_for("hr_documents.acknowledge_document", document_id=document.id))
+
+        recipient.status = "acknowledged"
+        recipient.acknowledged_at = datetime.utcnow()
+        recipient.acknowledged_name = acknowledged_name
+        recipient.acknowledged_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+        recipient.acknowledged_user_agent = (request.user_agent.string or "")[:255]
+
+        db.session.commit()
+
+        flash("Document acknowledged. Thank you.", "success")
+        return redirect(url_for("hr_documents.my_documents"))
+
+    return render_template(
+        "hr_documents/acknowledge.html",
+        document=document,
+        recipient=recipient,
+        user=user,
+    )

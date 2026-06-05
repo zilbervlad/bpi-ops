@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Upload HR Document · BPI Ops{% endblock %}
+{% block header %}Upload HR Document{% endblock %}
+
+{% block content %}
+<style>
+    .hr-form-shell { max-width: 980px; display:grid; gap:16px; }
+    .hr-form-card { border:1px solid rgba(148,163,184,.12); background:rgba(15,23,42,.58); border-radius:18px; padding:18px; }
+    .hr-form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+    .target-panel { display:none; margin-top:12px; }
+    .target-panel.is-active { display:block; }
+    .multi-user-select { min-height: 220px !important; }
+</style>
+
+<div class="hr-form-shell">
+    <section class="hr-form-card">
+        <h2 style="margin:0 0 6px; color:#f8fafc;">Upload HR Document</h2>
+        <p class="area-subtitle" style="margin-bottom:16px;">Max file size {{ max_mb }} MB. Email notifications will include a link to acknowledge the document.</p>
+
+        <form method="POST" enctype="multipart/form-data" class="login-form">
+            <div class="form-group">
+                <label>Document Title</label>
+                <input type="text" name="title" required>
+            </div>
+
+            <div class="form-group">
+                <label>Description / Instructions</label>
+                <textarea name="description" rows="3" placeholder="Optional instructions for the team..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Upload File</label>
+                <input type="file" name="document_file" required accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt">
+            </div>
+
+            <div class="form-group">
+                <label>Send To</label>
+                <select name="target_mode" id="targetMode" required>
+                    <option value="all">All Active Users</option>
+                    <option value="role">By Account Role</option>
+                    <option value="position">By Position</option>
+                    <option value="store">By Store</option>
+                    <option value="individual">Individual Users</option>
+                </select>
+            </div>
+
+            <div id="target-role" class="target-panel">
+                <div class="form-group">
+                    <label>Account Role</label>
+                    <select name="target_role">
+                        {% for role_key, role_label in roles %}
+                        <option value="{{ role_key }}">{{ role_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="target-position" class="target-panel">
+                <div class="form-group">
+                    <label>Position</label>
+                    <select name="target_position">
+                        {% for position in positions %}
+                        <option value="{{ position }}">{{ position }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="target-store" class="target-panel">
+                <div class="form-group">
+                    <label>Store</label>
+                    <select name="target_store">
+                        {% for store in stores %}
+                        <option value="{{ store.store_number }}">{{ store.store_number }}{% if store.store_name %} · {{ store.store_name }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="target-individual" class="target-panel">
+                <div class="form-group">
+                    <label>Individual Users</label>
+                    <select name="target_user_ids" multiple class="multi-user-select">
+                        {% for user in users %}
+                        <option value="{{ user.id }}">
+                            {{ user.name }} · {{ user.role|replace('_',' ')|title }}{% if user.position %} · {{ user.position }}{% endif %}{% if user.store_number %} · Store {{ user.store_number }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="area-subtitle">Hold Command/Ctrl to select multiple users.</p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Upload & Notify</button>
+            <a href="{{ url_for('hr_documents.index') }}" class="btn-secondary" style="text-decoration:none;">Cancel</a>
+        </form>
+    </section>
+</div>
+
+<script>
+function updateTargetPanels() {
+    const mode = document.getElementById("targetMode").value;
+    document.querySelectorAll(".target-panel").forEach(panel => panel.classList.remove("is-active"));
+    const active = document.getElementById("target-" + mode);
+    if (active) active.classList.add("is-active");
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("targetMode").addEventListener("change", updateTargetPanels);
+    updateTargetPanels();
+});
+</script>
+{% endblock %}

@@ -50,6 +50,7 @@ def create_app():
     from app.prep.routes import prep_bp
     from app.shift_todos.routes import shift_todos_bp
     from app.forms.routes import forms_bp
+    from app.hr_documents.routes import hr_documents_bp
 
     # Register blueprints
     app.register_blueprint(auth_bp)
@@ -67,6 +68,7 @@ def create_app():
     app.register_blueprint(prep_bp)
     app.register_blueprint(shift_todos_bp)
     app.register_blueprint(forms_bp)
+    app.register_blueprint(hr_documents_bp)
 
     @app.route("/create-db")
     def create_db():

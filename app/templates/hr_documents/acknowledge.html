@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Acknowledge Document · BPI Ops{% endblock %}
+{% block header %}Acknowledge Document{% endblock %}
+
+{% block content %}
+<style>
+    .ack-shell { max-width: 820px; display:grid; gap:16px; }
+    .ack-card { border:1px solid rgba(148,163,184,.12); background:rgba(15,23,42,.58); border-radius:18px; padding:18px; }
+    .ack-title { color:#f8fafc; font-size:22px; font-weight:950; letter-spacing:-.04em; margin:0 0 8px; }
+    .ack-check { display:flex; gap:10px; align-items:flex-start; padding:12px; border:1px solid rgba(148,163,184,.14); border-radius:14px; background:rgba(2,6,23,.32); }
+</style>
+
+<div class="ack-shell">
+    <section class="ack-card">
+        <h2 class="ack-title">{{ document.title }}</h2>
+        {% if document.description %}
+        <p class="area-subtitle">{{ document.description }}</p>
+        {% endif %}
+
+        <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+            <a href="{{ url_for('hr_documents.download_document', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Download Document</a>
+            <span class="summary-pill">{{ document.original_filename }}</span>
+        </div>
+    </section>
+
+    <section class="ack-card">
+        {% if recipient and recipient.status == 'acknowledged' %}
+            <h3 style="margin:0 0 8px; color:#f8fafc;">Already Acknowledged</h3>
+            <p class="area-subtitle">
+                Acknowledged by {{ recipient.acknowledged_name }} on
+                {{ recipient.acknowledged_at.strftime('%m/%d/%Y %I:%M %p') if recipient.acknowledged_at else '' }}.
+            </p>
+            <a href="{{ url_for('hr_documents.my_documents') }}" class="btn-primary" style="text-decoration:none;">Back to My Documents</a>
+        {% elif recipient %}
+            <h3 style="margin:0 0 8px; color:#f8fafc;">Electronic Acknowledgment</h3>
+            <p class="area-subtitle">By submitting, you confirm you received and reviewed this document.</p>
+
+            <form method="POST" class="login-form" style="margin-top:14px;">
+                <label class="ack-check">
+                    <input type="checkbox" name="confirmed" style="margin-top:3px;">
+                    <span>I acknowledge that I have received, reviewed, and understand this document.</span>
+                </label>
+
+                <div class="form-group" style="margin-top:14px;">
+                    <label>Type Your Name</label>
+                    <input type="text" name="acknowledged_name" value="{{ user.name }}" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Submit Acknowledgment</button>
+            </form>
+        {% else %}
+            <p class="area-subtitle">You are viewing this as HR/Admin. This document is not assigned to your account.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Document Tracking · BPI Ops{% endblock %}
+{% block header %}Document Tracking{% endblock %}
+
+{% block content %}
+<style>
+    .tracking-shell { display:grid; gap:16px; }
+    .tracking-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; padding-bottom:14px; border-bottom:1px solid rgba(148,163,184,.12); }
+    .tracking-head h2 { margin:0; color:#f8fafc; font-size:24px; letter-spacing:-.045em; }
+    .recipient-table { width:100%; border-collapse:collapse; }
+    .recipient-table th, .recipient-table td { padding:9px 10px; border-bottom:1px solid rgba(148,163,184,.08); text-align:left; }
+    .recipient-table th { color:rgba(148,163,184,.8); font-size:10px; font-weight:950; text-transform:uppercase; letter-spacing:.12em; }
+    .recipient-table td { color:#e5eefb; font-size:13px; }
+    .table-wrap { overflow-x:auto; border:1px solid rgba(148,163,184,.12); border-radius:16px; background:rgba(15,23,42,.50); }
+</style>
+
+<div class="tracking-shell">
+    <section class="tracking-head">
+        <div>
+            <h2>{{ document.title }}</h2>
+            <p class="area-subtitle">
+                {{ document.original_filename }} · {{ (document.file_size / 1024)|round(1) }} KB
+            </p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+            <a href="{{ url_for('hr_documents.download_document', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">Download</a>
+            <a href="{{ url_for('hr_documents.index') }}" class="btn-primary" style="text-decoration:none;">Back</a>
+        </div>
+    </section>
+
+    <section class="table-wrap">
+        <table class="recipient-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Position</th>
+                    <th>Store</th>
+                    <th>Status</th>
+                    <th>Email</th>
+                    <th>Acknowledged</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for recipient in recipients %}
+                <tr>
+                    <td>{{ recipient.user.name }}</td>
+                    <td>{{ recipient.user.role|replace('_',' ')|title }}</td>
+                    <td>{{ recipient.user.position or '—' }}</td>
+                    <td>{{ recipient.user.store_number or '—' }}</td>
+                    <td>{{ recipient.status|title }}</td>
+                    <td>
+                        {% if recipient.email_sent_at %}
+                            Sent
+                        {% elif recipient.email_error %}
+                            Failed
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if recipient.acknowledged_at %}
+                            {{ recipient.acknowledged_at.strftime('%m/%d/%Y %I:%M %p') }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7">No recipients.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+{% endblock %}

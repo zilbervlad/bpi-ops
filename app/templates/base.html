@@ -48,6 +48,12 @@
                         <span>Dashboard</span>
                     </a>
 
+                    <a href="{{ url_for('hr_documents.my_documents') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('hr_documents') and request.endpoint != 'hr_documents.index' and request.endpoint != 'hr_documents.new_document' and request.endpoint != 'hr_documents.detail' %}active{% endif %}">
+                        <span class="nav-icon">◨</span>
+                        <span>My Documents</span>
+                    </a>
+
                     {% if access_role in ['admin', 'supervisor'] or account_role == 'general_manager' %}
                     <a href="{{ url_for('auth.registration_requests') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('auth.registration') %}active{% endif %}">
@@ -168,6 +174,18 @@
                         <span>Time Cards</span>
                     </a>
                     {% endif %}
+                </div>
+                {% endif %}
+
+                {% if account_role in ['admin', 'hr'] %}
+                <div class="nav-section">
+                    <div class="nav-section-label">HR</div>
+
+                    <a href="{{ url_for('hr_documents.index') }}"
+                       class="{% if request.endpoint in ['hr_documents.index', 'hr_documents.new_document', 'hr_documents.detail'] %}active{% endif %}">
+                        <span class="nav-icon">◆</span>
+                        <span>HR Documents</span>
+                    </a>
                 </div>
                 {% endif %}
 

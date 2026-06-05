@@ -21,3 +21,11 @@ class Config:
         SQLALCHEMY_DATABASE_URI = f"sqlite:///{INSTANCE_DIR / 'bpi_ops.db'}"
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Render/Postgres can occasionally recycle or drop SSL connections.
+    # pool_pre_ping checks connections before using them.
+    # pool_recycle prevents long-lived stale DB connections.
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    }

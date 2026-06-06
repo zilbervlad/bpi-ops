@@ -382,6 +382,343 @@
             min-width: 100%;
         }
     }
+
+/* Compact HR Documents sizing pass */
+.hr-doc-page {
+    gap: 14px !important;
+}
+
+.hr-doc-hero {
+    padding: 0 0 10px !important;
+    align-items: center !important;
+}
+
+.hr-doc-kicker {
+    font-size: 10px !important;
+    margin-bottom: 6px !important;
+}
+
+.hr-doc-hero h2 {
+    font-size: clamp(28px, 2.4vw, 36px) !important;
+    line-height: 1 !important;
+}
+
+.hr-doc-hero p {
+    margin-top: 7px !important;
+    font-size: 13px !important;
+}
+
+.hr-doc-primary-action {
+    min-height: 38px !important;
+    padding: 0 15px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+}
+
+.hr-stat-grid {
+    gap: 10px !important;
+}
+
+.hr-stat-card {
+    min-height: 84px !important;
+    padding: 12px 14px !important;
+    border-radius: 16px !important;
+    gap: 12px !important;
+}
+
+.hr-stat-icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 14px !important;
+    font-size: 18px !important;
+}
+
+.hr-stat-label {
+    font-size: 11px !important;
+}
+
+.hr-stat-value {
+    margin-top: 4px !important;
+    font-size: 25px !important;
+}
+
+.hr-doc-table-shell {
+    border-radius: 18px !important;
+}
+
+.hr-doc-toolbar {
+    padding: 11px 12px !important;
+}
+
+.hr-doc-search {
+    min-height: 36px !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+}
+
+.hr-doc-table th,
+.hr-doc-table td {
+    padding: 12px 14px !important;
+}
+
+.hr-doc-table th {
+    font-size: 9px !important;
+}
+
+.hr-doc-title-cell {
+    gap: 11px !important;
+    min-width: 320px !important;
+}
+
+.file-badge {
+    width: 38px !important;
+    height: 46px !important;
+    border-radius: 10px !important;
+    font-size: 11px !important;
+}
+
+.doc-name {
+    font-size: 14px !important;
+}
+
+.doc-meta {
+    margin-top: 4px !important;
+    font-size: 11px !important;
+}
+
+.progress-mini {
+    gap: 4px !important;
+    min-width: 110px !important;
+}
+
+.progress-mini strong {
+    font-size: 14px !important;
+}
+
+.progress-mini span {
+    font-size: 11px !important;
+}
+
+.status-pill {
+    min-height: 28px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+}
+
+.doc-action-row .btn-primary,
+.doc-action-row .btn-danger {
+    min-height: 31px !important;
+    padding: 6px 10px !important;
+    border-radius: 10px !important;
+    font-size: 11px !important;
+}
+
+.hr-doc-footer {
+    padding: 11px 14px !important;
+    font-size: 11px !important;
+}
+
+@media (max-width: 700px) {
+    .hr-doc-hero {
+        align-items: flex-start !important;
+    }
+
+    .hr-stat-card {
+        min-height: 76px !important;
+    }
+}
+
+
+/* Extra-tight HR Documents pass */
+.hr-doc-page {
+    gap: 10px !important;
+}
+
+.hr-doc-hero {
+    padding-bottom: 8px !important;
+}
+
+.hr-doc-kicker {
+    font-size: 9px !important;
+    letter-spacing: 0.14em !important;
+    margin-bottom: 5px !important;
+}
+
+.hr-doc-hero h2 {
+    font-size: clamp(24px, 2vw, 31px) !important;
+}
+
+.hr-doc-hero p {
+    margin-top: 5px !important;
+    font-size: 12px !important;
+}
+
+.hr-doc-primary-action {
+    min-height: 34px !important;
+    padding: 0 12px !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+}
+
+.hr-stat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+}
+
+.hr-stat-card {
+    min-height: 68px !important;
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+    gap: 10px !important;
+}
+
+.hr-stat-icon {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 11px !important;
+    font-size: 15px !important;
+}
+
+.hr-stat-label {
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+}
+
+.hr-stat-value {
+    margin-top: 3px !important;
+    font-size: 21px !important;
+}
+
+.hr-doc-table-shell {
+    border-radius: 16px !important;
+}
+
+.hr-doc-toolbar {
+    padding: 9px 10px !important;
+}
+
+.hr-doc-filter-links {
+    gap: 6px !important;
+}
+
+.hr-doc-filter-links .summary-pill,
+.hr-doc-tools .summary-pill {
+    min-height: 30px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+}
+
+.hr-doc-search {
+    min-height: 32px !important;
+    min-width: min(360px, 60vw) !important;
+    border-radius: 10px !important;
+    padding: 7px 10px !important;
+    font-size: 11px !important;
+}
+
+.hr-doc-table th,
+.hr-doc-table td {
+    padding: 9px 12px !important;
+}
+
+.hr-doc-title-cell {
+    gap: 9px !important;
+}
+
+.file-badge {
+    width: 32px !important;
+    height: 38px !important;
+    border-radius: 9px !important;
+    font-size: 9px !important;
+}
+
+.doc-name {
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+}
+
+.doc-meta {
+    margin-top: 3px !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+}
+
+.progress-mini strong {
+    font-size: 13px !important;
+}
+
+.progress-mini span {
+    font-size: 10px !important;
+}
+
+.progress-bar-mini {
+    height: 3px !important;
+}
+
+.pending-count {
+    font-size: 13px !important;
+}
+
+.status-pill {
+    min-height: 24px !important;
+    padding: 0 8px !important;
+    font-size: 10px !important;
+    gap: 5px !important;
+}
+
+.status-dot {
+    width: 6px !important;
+    height: 6px !important;
+}
+
+.doc-action-row {
+    gap: 6px !important;
+}
+
+.doc-action-row .btn-primary,
+.doc-action-row .btn-danger {
+    min-height: 28px !important;
+    padding: 5px 9px !important;
+    border-radius: 9px !important;
+    font-size: 10px !important;
+}
+
+.hr-doc-footer {
+    padding: 9px 12px !important;
+    font-size: 10px !important;
+}
+
+@media (max-width: 1050px) {
+    .hr-stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 700px) {
+    .hr-stat-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .hr-doc-primary-action {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+
+/* Remove large HR document stat cards */
+.hr-stat-grid {
+    display: none !important;
+}
+
+.hr-doc-hero {
+    margin-bottom: 0 !important;
+}
+
+.hr-doc-table-shell {
+    margin-top: 0 !important;
+}
+
 </style>
 
 <div class="hr-doc-page">
@@ -446,6 +783,10 @@
             </div>
 
             <div class="hr-doc-tools">
+                <span class="summary-pill">{{ company_pending_count }} Pending</span>
+                <span class="summary-pill danger-pill">{{ company_overdue_count }} Overdue</span>
+                <span class="summary-pill danger-pill">{{ company_email_failed_count }} Email Failed</span>
+
                 <input
                     id="hrDocSearch"
                     class="hr-doc-search"

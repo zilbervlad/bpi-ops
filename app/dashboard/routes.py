@@ -2,6 +2,7 @@ from collections import defaultdict
 import json
 from datetime import timedelta, datetime
 from zoneinfo import ZoneInfo
+from sqlalchemy.exc import OperationalError
 
 from flask import Blueprint, render_template, session, jsonify, request, redirect, url_for, flash
 from app.auth.routes import login_required, role_required
@@ -883,8 +884,17 @@ def module_access_admin():
 @dashboard_bp.route("/live-data")
 @login_required
 def live_data():
-    data = build_dashboard_data()
-    return jsonify(data)
+    try:
+        data = build_dashboard_data()
+        return jsonify(data)
+    except OperationalError:
+        # Render/Postgres can occasionally hand us a stale connection.
+        # Clear the bad session and retry once so dashboard auto-refresh does not 500.
+        db.session.rollback()
+        db.session.remove()
+
+        data = build_dashboard_data()
+        return jsonify(data)
 
 
 @dashboard_bp.route("/complete-weekly-focus", methods=["POST"])

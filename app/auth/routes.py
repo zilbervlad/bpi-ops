@@ -95,7 +95,9 @@ def sync_registration_user_to_bpi_connect(user, registration, final_role):
     payload = {
         "bpi_ops_user_id": user.id,
         "name": user.name,
+        "username": user.username,
         "email": user.email,
+        "password_hash": user.password_hash,
         "role": final_role,
         "position": registration.requested_position,
         "store_number": user.store_number or registration.store_number,

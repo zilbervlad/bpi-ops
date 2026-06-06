@@ -24,7 +24,7 @@
     </form>
 
     <div class="login-note">
-        Contact your administrator if you need login help or a password reset.
+        <a href="{{ url_for('auth.forgot_password') }}">Forgot password?</a>
     </div>
 </div>
 {% endblock %}

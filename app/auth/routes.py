@@ -4,7 +4,8 @@ from io import BytesIO
 
 import qrcode
 from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from werkzeug.security import generate_password_hash
 from app.models import User, Store, PendingRegistrationRequest
 from app.extensions import db
@@ -187,6 +188,75 @@ def current_user_can_manage_target_user(user):
     return False
 
 
+
+def get_password_reset_serializer():
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+
+
+def make_password_reset_token(user):
+    serializer = get_password_reset_serializer()
+    return serializer.dumps(
+        {"user_id": user.id},
+        salt="bpi-ops-password-reset",
+    )
+
+
+def load_password_reset_user(token, max_age=3600):
+    serializer = get_password_reset_serializer()
+    data = serializer.loads(
+        token,
+        salt="bpi-ops-password-reset",
+        max_age=max_age,
+    )
+
+    user_id = data.get("user_id")
+    if not user_id:
+        return None
+
+    return User.query.filter_by(id=user_id, is_active=True).first()
+
+
+def find_password_reset_user(identifier):
+    identifier = (identifier or "").strip()
+
+    if not identifier:
+        return None
+
+    query = User.query.filter(User.is_active == True)
+
+    return query.filter(
+        db.or_(
+            User.username.ilike(identifier),
+            User.email.ilike(identifier),
+            User.notification_email.ilike(identifier),
+        )
+    ).first()
+
+
+def send_password_reset_email(user):
+    to_email = user.get_notification_email()
+
+    if not to_email:
+        return False
+
+    token = make_password_reset_token(user)
+    reset_url = url_for("auth.reset_password", token=token, _external=True)
+
+    send_email(
+        to_email=to_email,
+        subject="Reset your BPI Ops password",
+        body=(
+            f"Hello {user.name},\n\n"
+            "We received a request to reset your BPI Ops password.\n\n"
+            f"Reset your password here:\n{reset_url}\n\n"
+            "This link expires in 1 hour.\n\n"
+            "If you did not request this, you can ignore this email."
+        ),
+    )
+
+    return True
+
+
 def login_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
@@ -251,6 +321,61 @@ def validate_user_access(role, area_name, store_number):
         return False, "General Managers, Managers, and TM accounts must have a store assigned."
 
     return True, None
+
+
+@auth_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        identifier = request.form.get("identifier", "").strip()
+        user = find_password_reset_user(identifier)
+
+        if user:
+            try:
+                send_password_reset_email(user)
+            except Exception:
+                # Do not expose account/email configuration details publicly.
+                pass
+
+        flash("If we found that account, we sent a password reset link.", "success")
+        return redirect(url_for("auth.login"))
+
+    return render_template("forgot_password.html")
+
+
+@auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    try:
+        user = load_password_reset_user(token)
+    except SignatureExpired:
+        flash("That password reset link expired. Please request a new one.", "error")
+        return redirect(url_for("auth.forgot_password"))
+    except BadSignature:
+        flash("That password reset link is invalid. Please request a new one.", "error")
+        return redirect(url_for("auth.forgot_password"))
+
+    if not user:
+        flash("That password reset link is invalid. Please request a new one.", "error")
+        return redirect(url_for("auth.forgot_password"))
+
+    if request.method == "POST":
+        password = request.form.get("password", "").strip()
+        confirm_password = request.form.get("confirm_password", "").strip()
+
+        if not password:
+            flash("Please enter a new password.", "error")
+            return render_template("reset_password.html", token=token)
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "error")
+            return render_template("reset_password.html", token=token)
+
+        user.set_password(password)
+        db.session.commit()
+
+        flash("Your password has been reset. Please log in.", "success")
+        return redirect(url_for("auth.login"))
+
+    return render_template("reset_password.html", token=token)
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])

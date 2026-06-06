@@ -1,8 +1,10 @@
 from datetime import datetime
+import os
 import base64
 from io import BytesIO
 
 import qrcode
+import requests
 from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
@@ -76,6 +78,59 @@ def current_user_store():
 
 def current_user_is_supervisor():
     return get_current_account_role() == "supervisor"
+
+
+
+def sync_registration_user_to_bpi_connect(user, registration, final_role):
+    api_base = os.getenv("BPI_CONNECT_API_BASE", "").strip().rstrip("/")
+    integration_secret = os.getenv("BPI_CONNECT_INTEGRATION_SECRET", "").strip()
+
+    if not api_base or not integration_secret:
+        return {
+            "success": False,
+            "skipped": True,
+            "error": "BPI Connect integration is not configured.",
+        }
+
+    payload = {
+        "bpi_ops_user_id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "role": final_role,
+        "position": registration.requested_position,
+        "store_number": user.store_number or registration.store_number,
+        "area": getattr(user, "area_name", None),
+        "is_active": bool(user.is_active),
+        "send_invite": True,
+    }
+
+    try:
+        response = requests.post(
+            f"{api_base}/api/integrations/bpi-ops/users/sync",
+            json=payload,
+            headers={
+                "X-BPI-Ops-Secret": integration_secret,
+            },
+            timeout=5,
+        )
+
+        try:
+            data = response.json()
+        except Exception:
+            data = {"raw_response": response.text}
+
+        return {
+            "success": response.status_code < 400 and bool(data.get("success")),
+            "status_code": response.status_code,
+            "data": data,
+            "error": None if response.status_code < 400 else data,
+        }
+
+    except Exception as error:
+        return {
+            "success": False,
+            "error": str(error),
+        }
 
 
 def current_user_can_review_registration_requests():
@@ -985,7 +1040,24 @@ def approve_registration_request(registration_id):
 
     db.session.commit()
 
-    flash(f"Approved {registration.full_name} as {final_role.replace('_', ' ').title()}.", "success")
+    connect_result = sync_registration_user_to_bpi_connect(user, registration, final_role)
+
+    if connect_result.get("success"):
+        flash(
+            f"Approved {registration.full_name} as {final_role.replace('_', ' ').title()} and sent BPI Connect invite.",
+            "success",
+        )
+    elif connect_result.get("skipped"):
+        flash(
+            f"Approved {registration.full_name} as {final_role.replace('_', ' ').title()}. BPI Connect sync skipped because integration is not configured.",
+            "warning",
+        )
+    else:
+        flash(
+            f"Approved {registration.full_name} as {final_role.replace('_', ' ').title()}, but BPI Connect sync failed: {connect_result.get('error')}",
+            "warning",
+        )
+
     return redirect(url_for("auth.registration_requests"))
 
 

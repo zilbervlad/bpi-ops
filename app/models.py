@@ -583,6 +583,19 @@ class FormTemplate(db.Model):
     submit_roles_json = db.Column(db.Text, nullable=True)
     view_roles_json = db.Column(db.Text, nullable=True)
 
+    # Workflow / routing settings
+    notify_gm = db.Column(db.Boolean, nullable=False, default=True)
+    notify_supervisor = db.Column(db.Boolean, nullable=False, default=True)
+    notify_admin = db.Column(db.Boolean, nullable=False, default=True)
+    notify_hr = db.Column(db.Boolean, nullable=False, default=False)
+    notify_payroll = db.Column(db.Boolean, nullable=False, default=False)
+
+    requires_gm_approval = db.Column(db.Boolean, nullable=False, default=False)
+    requires_supervisor_approval = db.Column(db.Boolean, nullable=False, default=False)
+    requires_hr_approval = db.Column(db.Boolean, nullable=False, default=False)
+    requires_payroll_processing = db.Column(db.Boolean, nullable=False, default=False)
+    notify_employee_when_complete = db.Column(db.Boolean, nullable=False, default=False)
+
     created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -649,6 +662,10 @@ class FormSubmission(db.Model):
     submitted_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
 
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    workflow_status = db.Column(db.String(50), nullable=False, default="submitted")
+    workflow_completed_at = db.Column(db.DateTime, nullable=True)
+    workflow_notes = db.Column(db.Text, nullable=True)
 
     # Scoring fields are generic so any Yes/No form can become a scored form later.
     score_earned = db.Column(db.Integer, nullable=False, default=0)

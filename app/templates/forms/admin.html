@@ -37,6 +37,29 @@
                     </div>
                 </div>
 
+
+                <div class="forms-card" style="margin-top:14px;">
+                    <h4 style="margin:0 0 10px;">Routing</h4>
+                    <div class="forms-check-grid">
+                        <label class="check-row"><input type="checkbox" name="notify_gm" value="1" checked> Send to GM</label>
+                        <label class="check-row"><input type="checkbox" name="notify_supervisor" value="1" checked> Send to Supervisor</label>
+                        <label class="check-row"><input type="checkbox" name="notify_admin" value="1" checked> Send to Admin</label>
+                        <label class="check-row"><input type="checkbox" name="notify_hr" value="1"> Send to HR</label>
+                        <label class="check-row"><input type="checkbox" name="notify_payroll" value="1"> Send to Payroll</label>
+                    </div>
+                </div>
+
+                <div class="forms-card" style="margin-top:14px;">
+                    <h4 style="margin:0 0 10px;">Workflow</h4>
+                    <div class="forms-check-grid">
+                        <label class="check-row"><input type="checkbox" name="requires_gm_approval" value="1"> Requires GM Approval</label>
+                        <label class="check-row"><input type="checkbox" name="requires_supervisor_approval" value="1"> Requires Supervisor Approval</label>
+                        <label class="check-row"><input type="checkbox" name="requires_hr_approval" value="1"> Requires HR Approval</label>
+                        <label class="check-row"><input type="checkbox" name="requires_payroll_processing" value="1"> Requires Payroll Processing</label>
+                        <label class="check-row"><input type="checkbox" name="notify_employee_when_complete" value="1"> Notify Employee When Complete</label>
+                    </div>
+                </div>
+
                 <button class="forms-btn" type="submit">Create Form</button>
             </form>
         </section>

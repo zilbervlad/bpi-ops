@@ -1,3 +1,4 @@
+import sys
 from datetime import timedelta
 
 from app.config import Config
@@ -112,7 +113,11 @@ def create_app():
         seed_stores()
         seed_checklist_template()
         seed_svr_template()
-        seed_morning_inspection_form()
+        # Flask-Alembic loads the app before migrations run.
+    # Skip seed queries during `flask db ...` so new columns can be created first.
+    if "db" not in sys.argv:
+        with app.app_context():
+            seed_morning_inspection_form()
 
     return app
 

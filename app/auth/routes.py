@@ -24,6 +24,7 @@ VALID_ROLES = {
     "tm",
     "maintenance",
     "hr",
+    "payroll",
 }
 
 STORE_REQUIRED_ROLES = {

@@ -22,6 +22,26 @@ FIELD_TYPES = [
 ]
 
 
+
+def truthy_template_flag(template, field_name, default=False):
+    value = getattr(template, field_name, default)
+    if value is None:
+        return default
+    return bool(value)
+
+
+def initial_workflow_status(template):
+    if truthy_template_flag(template, "requires_gm_approval"):
+        return "pending_gm"
+    if truthy_template_flag(template, "requires_supervisor_approval"):
+        return "pending_supervisor"
+    if truthy_template_flag(template, "requires_hr_approval"):
+        return "pending_hr"
+    if truthy_template_flag(template, "requires_payroll_processing"):
+        return "pending_payroll"
+    return "submitted"
+
+
 def current_access_role():
     return session.get("user_role")
 
@@ -189,12 +209,13 @@ def grade_from_score(percent, critical_failed_count=0):
 
 
 def send_form_submission_email(submission: FormSubmission):
+    template = submission.template
+
     manager_user = User.query.filter_by(
         store_number=submission.store_number,
         role="manager",
         is_active=True
     ).first()
-
     manager_email = manager_user.get_notification_email() if manager_user else None
 
     store = Store.query.filter_by(store_number=submission.store_number).first()
@@ -206,25 +227,49 @@ def send_form_submission_email(submission: FormSubmission):
             role="supervisor",
             is_active=True
         ).first()
-
     supervisor_email = supervisor.get_notification_email() if supervisor else None
 
-    admin_users = User.query.filter_by(role="admin", is_active=True).all()
     admin_emails = []
-    for admin in admin_users:
-        email = admin.get_notification_email()
-        if email:
-            admin_emails.append(email)
+    if truthy_template_flag(template, "notify_admin", True):
+        admin_users = User.query.filter_by(role="admin", is_active=True).all()
+        for admin in admin_users:
+            email = admin.get_notification_email()
+            if email:
+                admin_emails.append(email)
 
-    cc_emails = []
-    if supervisor_email:
-        cc_emails.append(supervisor_email)
-    cc_emails.extend(admin_emails)
+    hr_emails = []
+    if truthy_template_flag(template, "notify_hr", False):
+        hr_users = User.query.filter_by(role="hr", is_active=True).all()
+        for hr_user in hr_users:
+            email = hr_user.get_notification_email()
+            if email:
+                hr_emails.append(email)
 
-    cc_emails = [email for email in dict.fromkeys(cc_emails) if email and email != manager_email]
+    payroll_emails = []
+    if truthy_template_flag(template, "notify_payroll", False):
+        payroll_users = User.query.filter_by(role="payroll", is_active=True).all()
+        for payroll_user in payroll_users:
+            email = payroll_user.get_notification_email()
+            if email:
+                payroll_emails.append(email)
 
-    if not manager_email:
-        raise ValueError(f"No manager notification email configured for store {submission.store_number}.")
+    recipients = []
+    if truthy_template_flag(template, "notify_gm", True) and manager_email:
+        recipients.append(manager_email)
+    if truthy_template_flag(template, "notify_supervisor", True) and supervisor_email:
+        recipients.append(supervisor_email)
+
+    recipients.extend(admin_emails)
+    recipients.extend(hr_emails)
+    recipients.extend(payroll_emails)
+
+    recipients = [email for email in dict.fromkeys(recipients) if email]
+
+    if not recipients:
+        raise ValueError("No email recipients configured for this form template.")
+
+    to_email = recipients[0]
+    cc_emails = recipients[1:]
 
     answers = (
         FormAnswer.query
@@ -248,10 +293,11 @@ def send_form_submission_email(submission: FormSubmission):
         score_text = f"{submission.score_percent}% - {submission.grade}"
 
     body = (
-        f"{submission.template.title}\n"
+        f"{template.title}\n"
         f"Store: {submission.store_number}\n"
         f"Submitted By: {submitted_by}\n"
-        f"Submitted At: {submission.submitted_at.strftime('%B %d, %Y %I:%M %p')}\n\n"
+        f"Submitted At: {submission.submitted_at.strftime('%B %d, %Y %I:%M %p')}\n"
+        f"Workflow Status: {submission.workflow_status.replace('_', ' ').title()}\n\n"
         f"Score: {score_text}\n"
         f"Failed Items: {submission.failed_count}\n"
         f"Critical Failures: {submission.critical_failed_count}\n\n"
@@ -261,17 +307,21 @@ def send_form_submission_email(submission: FormSubmission):
     )
 
     send_email(
-        to_email=manager_email,
-        subject=f"Store {submission.store_number} {submission.template.title}",
+        to_email=to_email,
+        subject=f"Store {submission.store_number} {template.title}",
         body=body,
         cc_emails=cc_emails if cc_emails else None
     )
 
     return {
+        "to_email": to_email,
         "manager_email": manager_email,
         "supervisor_email": supervisor_email,
         "admin_emails": admin_emails,
+        "hr_emails": hr_emails,
+        "payroll_emails": payroll_emails,
         "cc_emails": cc_emails,
+        "recipients": recipients,
     }
 
 
@@ -416,6 +466,7 @@ def submit_form(template_id):
             grade=grade,
             failed_count=failed_count,
             critical_failed_count=critical_failed_count,
+            workflow_status=initial_workflow_status(template),
         )
         db.session.add(submission)
         db.session.flush()
@@ -442,7 +493,7 @@ def submit_form(template_id):
         try:
             email_result = send_form_submission_email(submission)
             flash(
-                f"Form submitted and emailed to {email_result['manager_email']}.",
+                f"Form submitted and emailed to {email_result['to_email']}.",
                 "success"
             )
         except Exception as e:
@@ -534,6 +585,16 @@ def admin():
             is_active=True,
             submit_roles_json=json.dumps(request.form.getlist("submit_roles")),
             view_roles_json=json.dumps(request.form.getlist("view_roles")),
+            notify_gm=bool(request.form.get("notify_gm")),
+            notify_supervisor=bool(request.form.get("notify_supervisor")),
+            notify_admin=bool(request.form.get("notify_admin")),
+            notify_hr=bool(request.form.get("notify_hr")),
+            notify_payroll=bool(request.form.get("notify_payroll")),
+            requires_gm_approval=bool(request.form.get("requires_gm_approval")),
+            requires_supervisor_approval=bool(request.form.get("requires_supervisor_approval")),
+            requires_hr_approval=bool(request.form.get("requires_hr_approval")),
+            requires_payroll_processing=bool(request.form.get("requires_payroll_processing")),
+            notify_employee_when_complete=bool(request.form.get("notify_employee_when_complete")),
             created_by_user_id=current_user_id(),
         )
         db.session.add(template)
@@ -547,7 +608,7 @@ def admin():
     return render_template(
         "forms/admin.html",
         templates=templates,
-        role_options=["admin", "supervisor", "general_manager", "manager", "tm"],
+        role_options=["admin", "supervisor", "general_manager", "manager", "tm", "payroll"],
         load_roles=load_roles,
     )
 
@@ -577,6 +638,16 @@ def edit_template(template_id):
             template.is_active = bool(request.form.get("is_active"))
             template.submit_roles_json = json.dumps(request.form.getlist("submit_roles"))
             template.view_roles_json = json.dumps(request.form.getlist("view_roles"))
+            template.notify_gm = bool(request.form.get("notify_gm"))
+            template.notify_supervisor = bool(request.form.get("notify_supervisor"))
+            template.notify_admin = bool(request.form.get("notify_admin"))
+            template.notify_hr = bool(request.form.get("notify_hr"))
+            template.notify_payroll = bool(request.form.get("notify_payroll"))
+            template.requires_gm_approval = bool(request.form.get("requires_gm_approval"))
+            template.requires_supervisor_approval = bool(request.form.get("requires_supervisor_approval"))
+            template.requires_hr_approval = bool(request.form.get("requires_hr_approval"))
+            template.requires_payroll_processing = bool(request.form.get("requires_payroll_processing"))
+            template.notify_employee_when_complete = bool(request.form.get("notify_employee_when_complete"))
             db.session.commit()
 
             flash("Form settings saved.", "success")
@@ -631,7 +702,7 @@ def edit_template(template_id):
     return render_template(
         "forms/edit_template.html",
         template=template,
-        role_options=["admin", "supervisor", "general_manager", "manager", "tm"],
+        role_options=["admin", "supervisor", "general_manager", "manager", "tm", "payroll"],
         field_types=FIELD_TYPES,
         load_roles=load_roles,
     )

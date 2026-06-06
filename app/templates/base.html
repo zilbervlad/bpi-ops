@@ -123,11 +123,27 @@
                         <span>Prep</span>
                     </a>
 
+                    {% if access_role == 'manager' %}
+                    <a href="{{ url_for('cash.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('cash') and not request.endpoint.startswith('cash_review') %}active{% endif %}">
+                        <span class="nav-icon">$</span>
+                        <span>Cash</span>
+                    </a>
+
+                    <a href="{{ url_for('nightly_numbers.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('nightly_numbers') and request.endpoint != 'nightly_numbers.admin' %}active{% endif %}">
+                        <span class="nav-icon">#</span>
+                        <span>Nightly #s</span>
+                    </a>
+                    {% endif %}
+
+                    {% if access_role in ['admin', 'supervisor', 'general_manager'] %}
                     <a href="{{ url_for('cash_review.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('cash_review') %}active{% endif %}">
                         <span class="nav-icon">$</span>
                         <span>Cash Review</span>
                     </a>
+                    {% endif %}
 
                     {% if access_role in ['admin', 'supervisor', 'manager'] %}
                     <a href="{{ url_for('shift_todos.index') }}"
@@ -286,6 +302,12 @@
                        class="{% if request.endpoint and request.endpoint.startswith('nightly_numbers') and request.endpoint != 'nightly_numbers.admin' %}active{% endif %}">
                         <span>#</span>
                         <small>Nightly</small>
+                    </a>
+
+                    <a href="{{ url_for('shift_todos.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
+                        <span>✓</span>
+                        <small>To-Dos</small>
                     </a>
 
                 {% elif account_role == 'tm' %}

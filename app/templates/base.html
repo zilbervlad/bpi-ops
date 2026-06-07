@@ -155,7 +155,7 @@
                 </div>
                 {% endif %}
 
-                {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager', 'maintenance'] %}
+                {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager', 'maintenance', 'hr'] %}
                 <div class="nav-section">
                     <div class="nav-section-label">Review</div>
 
@@ -179,13 +179,15 @@
                     </a>
                     {% endif %}
 
+                    {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager', 'maintenance'] %}
                     <a href="{{ url_for('maintenance.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('maintenance') and request.endpoint not in ['maintenance.time_card', 'maintenance.time_cards', 'maintenance.time_cards_pdf'] %}active{% endif %}">
                         <span class="nav-icon">⚙</span>
                         <span>Maintenance</span>
                     </a>
+                    {% endif %}
 
-                    {% if access_role == 'maintenance' %}
+                    {% if access_role in ['admin', 'maintenance', 'hr'] %}
                     <a href="{{ url_for('maintenance.time_cards') }}"
                        class="{% if request.endpoint in ['maintenance.time_card', 'maintenance.time_cards', 'maintenance.time_cards_pdf'] %}active{% endif %}">
                         <span class="nav-icon">◷</span>
@@ -365,6 +367,19 @@
                        class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
                         <span>🔧</span>
                         <small>Fix</small>
+                    </a>
+
+                {% elif access_role == 'hr' %}
+                    <a href="{{ url_for('forms.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('forms') and request.endpoint != 'forms.admin' and request.endpoint != 'forms.edit_template' %}active{% endif %}">
+                        <span>📝</span>
+                        <small>Forms</small>
+                    </a>
+
+                    <a href="{{ url_for('maintenance.time_cards') }}"
+                       class="{% if request.endpoint in ['maintenance.time_card', 'maintenance.time_cards', 'maintenance.time_cards_pdf'] %}active{% endif %}">
+                        <span>◷</span>
+                        <small>Time</small>
                     </a>
 
                 {% elif access_role == 'maintenance' %}

@@ -1093,7 +1093,7 @@ def move_calendar_ticket():
 
 @maintenance_bp.route("/time-card", methods=["GET", "POST"])
 @login_required
-@role_required("maintenance", "admin", "supervisor")
+@role_required("maintenance", "admin", "hr")
 def time_card():
     role = get_current_role()
 
@@ -1162,7 +1162,7 @@ def time_card():
 
 @maintenance_bp.route("/time-cards", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "supervisor", "maintenance")
+@role_required("admin", "maintenance", "hr")
 def time_cards():
     role = get_current_role()
     current_user = get_current_user_record()
@@ -1287,7 +1287,7 @@ def time_cards():
 
 @maintenance_bp.route("/time-cards/pdf")
 @login_required
-@role_required("admin", "supervisor", "maintenance")
+@role_required("admin", "maintenance", "hr")
 def time_cards_pdf():
     role = get_current_role()
     current_user = get_current_user_record()

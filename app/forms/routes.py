@@ -72,7 +72,7 @@ def is_admin():
 
 
 def can_manage_forms():
-    return current_access_role() == "admin"
+    return current_access_role() in {"admin", "hr", "supervisor"}
 
 
 def load_roles(json_text, default_roles=None):
@@ -771,7 +771,7 @@ def submission_detail(submission_id):
 @forms_bp.route("/admin", methods=["GET", "POST"])
 def admin():
     if not can_manage_forms():
-        flash("Forms Admin is admin-only.", "error")
+        flash("Forms Admin is available to Admin, HR, and Supervisors only.", "error")
         return redirect(url_for("forms.index"))
 
     if request.method == "POST":
@@ -820,7 +820,7 @@ def admin():
 @forms_bp.route("/admin/<int:template_id>", methods=["GET", "POST"])
 def edit_template(template_id):
     if not can_manage_forms():
-        flash("Forms Admin is admin-only.", "error")
+        flash("Forms Admin is available to Admin, HR, and Supervisors only.", "error")
         return redirect(url_for("forms.index"))
 
     template = FormTemplate.query.get_or_404(template_id)

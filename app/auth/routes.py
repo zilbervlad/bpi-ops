@@ -143,7 +143,7 @@ def current_user_can_review_registration_requests():
 def registration_visible_store_numbers():
     role = get_current_account_role()
 
-    if role == "admin":
+    if role in {"admin", "hr"}:
         return None
 
     if role == "supervisor":
@@ -172,8 +172,8 @@ def can_review_registration_request(registration):
 def allowed_registration_approval_roles():
     role = get_current_account_role()
 
-    if role == "admin":
-        return ["tm", "manager", "general_manager", "supervisor", "maintenance", "hr"]
+    if role in {"admin", "hr"}:
+        return ["tm", "manager", "general_manager", "supervisor", "maintenance", "hr", "payroll"]
 
     if role == "supervisor":
         return ["tm", "manager", "general_manager"]
@@ -961,7 +961,7 @@ def public_register():
 
 @auth_bp.route("/users/registration-requests", methods=["GET"])
 @login_required
-@role_required("admin", "supervisor", "general_manager")
+@role_required("admin", "supervisor", "general_manager", "hr")
 def registration_requests():
     if not current_user_can_review_registration_requests():
         flash("You do not have permission to review registration requests.", "error")

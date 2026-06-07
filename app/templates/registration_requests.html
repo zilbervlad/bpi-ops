@@ -5,506 +5,488 @@
 
 {% block content %}
 <style>
-    .reg-page {
-        display: grid;
-        gap: 18px;
-    }
-.reg-stat-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
+.registration-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.registration-hero {
+    background: linear-gradient(135deg, #101827 0%, #172033 55%, #202b42 100%);
+    border-radius: 16px;
+    padding: 12px 16px;
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 68px;
+}
+
+.registration-hero h2 {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: -0.03em;
+}
+
+.registration-hero p {
+    margin: 2px 0 0;
+    color: rgba(255,255,255,.72);
+    font-size: 12px;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.reg-mini-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.reg-stat {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 13px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 42px;
+}
+
+.reg-stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #64748b;
+    font-weight: 850;
+}
+
+.reg-stat-value {
+    font-size: 22px;
+    font-weight: 950;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.registration-panel {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.registration-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #edf0f4;
+    background: #fbfcfe;
+}
+
+.reg-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.reg-tab {
+    border: 1px solid #d8dee8;
+    background: #fff;
+    color: #334155;
+    border-radius: 999px;
+    padding: 6px 9px;
+    font-size: 12px;
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.reg-tab.active {
+    background: #0f172a;
+    color: #fff;
+    border-color: #0f172a;
+}
+
+.registration-search {
+    width: min(340px, 100%);
+    border: 1px solid #d8dee8;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 13px;
+    outline: none;
+}
+
+.registration-search:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+}
+
+.registration-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.registration-table th {
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #64748b;
+    background: #f8fafc;
+    padding: 8px 10px;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.registration-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    font-size: 13px;
+}
+
+.registration-table tr:hover td {
+    background: #fbfdff;
+}
+
+.person-cell {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 210px;
+}
+
+.request-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    background: #111827;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 950;
+    flex: 0 0 auto;
+}
+
+.request-name {
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.15;
+}
+
+.request-sub {
+    color: #64748b;
+    font-size: 12px;
+    margin-top: 1px;
+}
+
+.compact-muted {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    font-size: 11px;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.status-pill.pending {
+    background: #fff7ed;
+    color: #9a3412;
+    border-color: #fed7aa;
+}
+
+.status-pill.approved {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #bbf7d0;
+}
+
+.status-pill.rejected {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.action-cell {
+    min-width: 250px;
+}
+
+.approve-form {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.approve-form select {
+    height: 30px;
+    min-width: 128px;
+    border: 1px solid #d8dee8;
+    border-radius: 9px;
+    background: #fff;
+    font-size: 12px;
+    padding: 0 8px;
+}
+
+.btn-mini {
+    height: 30px;
+    border: 0;
+    border-radius: 9px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-approve {
+    background: #16a34a;
+    color: #fff;
+}
+
+.btn-reject {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.reviewed-note {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.empty-row {
+    padding: 14px !important;
+    text-align: center;
+    color: #64748b;
+    font-weight: 800;
+}
+
+.registration-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 10px;
+    color: #64748b;
+    font-size: 12px;
+    background: #fbfcfe;
+}
+
+@media (max-width: 980px) {
+    .registration-hero {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
-    .reg-stat-card {
-        border: 1px solid rgba(148, 163, 184, 0.13);
-        background:
-            radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 35%),
-            linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.74));
-        border-radius: 20px;
-        padding: 16px;
-        min-height: 104px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        box-shadow: 0 18px 46px rgba(0, 0, 0, 0.18);
+    .hero-actions {
+        justify-content: flex-start;
     }
 
-    .reg-stat-icon {
-        width: 52px;
-        height: 52px;
-        border-radius: 18px;
-        display: grid;
-        place-items: center;
-        font-size: 22px;
-        flex: 0 0 auto;
-        background: rgba(14, 165, 233, 0.14);
-        border: 1px solid rgba(56, 189, 248, 0.24);
+    .reg-mini-stats {
+        grid-template-columns: 1fr;
     }
 
-    .reg-stat-card.success .reg-stat-icon {
-        background: rgba(34, 197, 94, 0.13);
-        border-color: rgba(34, 197, 94, 0.25);
+    .registration-toolbar {
+        flex-direction: column;
+        align-items: stretch;
     }
 
-    .reg-stat-card.danger .reg-stat-icon {
-        background: rgba(239, 68, 68, 0.12);
-        border-color: rgba(239, 68, 68, 0.22);
+    .registration-search {
+        width: 100%;
     }
 
-    .reg-stat-label {
-        color: rgba(203, 213, 225, 0.74);
-        font-size: 12px;
-        font-weight: 850;
+    .registration-table {
+        min-width: 900px;
     }
 
-    .reg-stat-value {
-        margin-top: 6px;
-        color: #f8fafc;
-        font-size: 30px;
-        line-height: 1;
-        font-weight: 950;
-        letter-spacing: -0.05em;
-    }
-
-    .reg-shell {
-        border: 1px solid rgba(148, 163, 184, 0.13);
-        background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.70));
-        border-radius: 22px;
-        overflow: hidden;
-        box-shadow: 0 24px 58px rgba(0, 0, 0, 0.20);
-    }
-
-    .reg-toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 14px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.10);
-        flex-wrap: wrap;
-    }
-
-    .reg-filter-links {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .reg-filter-chip {
-        cursor: pointer;
-        opacity: 0.72;
-        border: none;
-    }
-
-    .reg-filter-chip.is-active {
-        opacity: 1;
-        box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.24) inset;
-    }
-
-    .reg-tools {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .reg-search {
-        min-width: min(480px, 70vw);
-        min-height: 40px;
-        border-radius: 14px;
-        padding: 9px 12px;
-        background: rgba(2, 6, 23, 0.54);
-        border: 1px solid rgba(148, 163, 184, 0.15);
-        color: #e5eefb;
-        outline: none;
-        font-weight: 850;
-    }
-
-    .reg-search::placeholder {
-        color: rgba(148, 163, 184, 0.62);
-    }
-
-    .reg-table-wrap {
+    .registration-panel {
         overflow-x: auto;
     }
-
-    .reg-table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 1080px;
-    }
-
-    .reg-table th,
-    .reg-table td {
-        padding: 15px 16px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.08);
-        vertical-align: middle;
-        text-align: left;
-    }
-
-    .reg-table th {
-        color: rgba(148, 163, 184, 0.82);
-        font-size: 10px;
-        font-weight: 950;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        background: rgba(2, 6, 23, 0.24);
-    }
-
-    .reg-table tr:last-child td {
-        border-bottom: none;
-    }
-
-    .request-person {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-width: 220px;
-    }
-
-    .request-avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        display: grid;
-        place-items: center;
-        color: #e0f2fe;
-        font-size: 14px;
-        font-weight: 950;
-        background: rgba(14, 165, 233, 0.16);
-        border: 1px solid rgba(56, 189, 248, 0.24);
-        flex: 0 0 auto;
-    }
-
-    .request-name {
-        color: #f8fafc;
-        font-size: 15px;
-        font-weight: 950;
-        letter-spacing: -0.025em;
-    }
-
-    .request-sub {
-        margin-top: 4px;
-        color: rgba(203, 213, 225, 0.60);
-        font-size: 12px;
-        font-weight: 750;
-    }
-
-    .status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        min-height: 30px;
-        padding: 0 11px;
-        border-radius: 999px;
-        background: rgba(15, 23, 42, 0.60);
-        border: 1px solid rgba(148, 163, 184, 0.14);
-        color: #dbeafe;
-        font-size: 12px;
-        font-weight: 900;
-        white-space: nowrap;
-    }
-
-    .status-pill.pending {
-        color: #fde68a;
-        background: rgba(245, 158, 11, 0.12);
-        border-color: rgba(245, 158, 11, 0.22);
-    }
-
-    .status-pill.approved {
-        color: #bbf7d0;
-        background: rgba(34, 197, 94, 0.13);
-        border-color: rgba(34, 197, 94, 0.25);
-    }
-
-    .status-pill.rejected {
-        color: #fecaca;
-        background: rgba(239, 68, 68, 0.12);
-        border-color: rgba(239, 68, 68, 0.22);
-    }
-
-    .status-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 999px;
-        background: currentColor;
-    }
-
-    .request-actions {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        min-width: 300px;
-    }
-
-    .request-actions form {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .request-actions select {
-        min-height: 34px;
-        border-radius: 10px;
-        padding: 7px 9px;
-        background: rgba(2, 6, 23, 0.62);
-        border: 1px solid rgba(148, 163, 184, 0.16);
-        color: #e5eefb;
-        font-weight: 850;
-    }
-
-    .request-actions button {
-        min-height: 34px;
-        padding: 7px 11px;
-        border-radius: 10px;
-        font-size: 12px;
-        font-weight: 900;
-    }
-
-    .reviewed-pill {
-        display: inline-flex;
-        align-items: center;
-        min-height: 34px;
-        padding: 0 12px;
-        border-radius: 999px;
-        color: rgba(203, 213, 225, 0.78);
-        background: rgba(148, 163, 184, 0.08);
-        border: 1px solid rgba(148, 163, 184, 0.12);
-        font-size: 12px;
-        font-weight: 850;
-        white-space: nowrap;
-    }
-
-    .reg-footer {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        align-items: center;
-        padding: 14px 16px;
-        border-top: 1px solid rgba(148, 163, 184, 0.08);
-        color: rgba(203, 213, 225, 0.62);
-        font-size: 12px;
-        font-weight: 800;
-    }
-
-    .request-row.is-hidden {
-        display: none;
-    }
-
-    @media (max-width: 900px) {
-        .reg-stat-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .reg-search {
-            min-width: 100%;
-        }
-    }
+}
 </style>
 
-<div class="reg-page">
-<section class="reg-stat-grid">
-        <div class="reg-stat-card">
-            <div class="reg-stat-icon">◷</div>
-            <div>
-                <div class="reg-stat-label">Pending Requests</div>
-                <div class="reg-stat-value">{{ status_counts.pending }}</div>
+<div class="registration-page">
+    <div class="registration-hero">
+        <div>
+            <h2>Registration Queue</h2>
+            <p>Approve new accounts, assign final roles, and keep store access clean.</p>
+        </div>
+        <div class="hero-actions">
+            <a href="{{ url_for('auth.registration_qr_center') }}" class="btn-primary" style="text-decoration:none;">QR Center</a>
+        </div>
+    </div>
+
+    <div class="reg-mini-stats">
+        <div class="reg-stat">
+            <div class="reg-stat-label">Pending</div>
+            <div class="reg-stat-value">{{ status_counts.pending }}</div>
+        </div>
+        <div class="reg-stat">
+            <div class="reg-stat-label">Approved</div>
+            <div class="reg-stat-value">{{ status_counts.approved }}</div>
+        </div>
+        <div class="reg-stat">
+            <div class="reg-stat-label">Rejected</div>
+            <div class="reg-stat-value">{{ status_counts.rejected }}</div>
+        </div>
+    </div>
+
+    <div class="registration-panel">
+        <div class="registration-toolbar">
+            <div class="reg-tabs">
+                <button type="button" class="reg-tab active" data-filter="all">All · {{ registrations|length }}</button>
+                <button type="button" class="reg-tab" data-filter="pending">Pending · {{ status_counts.pending }}</button>
+                <button type="button" class="reg-tab" data-filter="approved">Approved · {{ status_counts.approved }}</button>
+                <button type="button" class="reg-tab" data-filter="rejected">Rejected · {{ status_counts.rejected }}</button>
             </div>
+            <input
+                type="search"
+                class="registration-search"
+                id="registrationSearch"
+                placeholder="Search name, username, store, email..."
+            >
         </div>
 
-        <div class="reg-stat-card success">
-            <div class="reg-stat-icon">✓</div>
-            <div>
-                <div class="reg-stat-label">Approved</div>
-                <div class="reg-stat-value">{{ status_counts.approved }}</div>
-            </div>
-        </div>
-
-        <div class="reg-stat-card danger">
-            <div class="reg-stat-icon">×</div>
-            <div>
-                <div class="reg-stat-label">Rejected</div>
-                <div class="reg-stat-value">{{ status_counts.rejected }}</div>
-            </div>
-        </div>
-    </section>
-
-    <section class="reg-shell">
-        <div class="reg-toolbar">
-            <div class="reg-filter-links">
-                <button type="button" class="summary-pill reg-filter-chip is-active" data-filter="all">
-                    All · {{ registrations|length }}
-                </button>
-                <button type="button" class="summary-pill reg-filter-chip" data-filter="pending">
-                    Pending · {{ status_counts.pending }}
-                </button>
-                <button type="button" class="summary-pill reg-filter-chip" data-filter="approved">
-                    Approved · {{ status_counts.approved }}
-                </button>
-                <button type="button" class="summary-pill reg-filter-chip" data-filter="rejected">
-                    Rejected · {{ status_counts.rejected }}
-                </button>
-            </div>
-
-            <div class="reg-tools">
-                <input
-                    id="registrationSearch"
-                    class="reg-search"
-                    type="search"
-                    placeholder="Search name, username, store, position, email, or phone..."
-                    autocomplete="off"
+        <table class="registration-table">
+            <thead>
+                <tr>
+                    <th>Person</th>
+                    <th>Store</th>
+                    <th>Requested</th>
+                    <th>Contact</th>
+                    <th>Status</th>
+                    <th>Approve As / Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registration in registrations %}
+                <tr
+                    class="registration-row"
+                    data-status="{{ registration.status }}"
+                    data-search="{{ (
+                        registration.full_name ~ ' ' ~
+                        registration.username ~ ' ' ~
+                        (registration.store_number or '') ~ ' ' ~
+                        (registration.requested_position or '') ~ ' ' ~
+                        (registration.email or '') ~ ' ' ~
+                        (registration.phone or '') ~ ' ' ~
+                        registration.status
+                    )|lower }}"
                 >
-                <span class="summary-pill"><span id="registrationVisibleCount">{{ registrations|length }}</span> Showing</span>
-            </div>
+                    <td>
+                        <div class="person-cell">
+                            <div class="request-avatar">{{ registration.full_name[:1]|upper }}</div>
+                            <div>
+                                <div class="request-name">{{ registration.full_name }}</div>
+                                <div class="request-sub">@{{ registration.username }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-pill">Store {{ registration.store_number or '—' }}</span>
+                    </td>
+                    <td>
+                        <span class="status-pill">{{ registration.requested_position or 'Not selected' }}</span>
+                    </td>
+                    <td>
+                        <div>{{ registration.email or 'No email' }}</div>
+                        <div class="compact-muted">{{ registration.phone or 'No phone' }}</div>
+                    </td>
+                    <td>
+                        <span class="status-pill {{ registration.status }}">{{ registration.status|title }}</span>
+                    </td>
+                    <td class="action-cell">
+                        {% if registration.status == "pending" %}
+                        <div class="approve-form">
+                            <form method="POST" action="{{ url_for('auth.approve_registration_request', registration_id=registration.id) }}" class="approve-form">
+                                <select name="approved_role">
+                                    {% for role in allowed_roles %}
+                                    <option value="{{ role }}"
+                                        {% if registration.requested_position in ['Driver', 'CSR'] and role == 'tm' %}selected{% endif %}
+                                        {% if registration.requested_position == 'MIT / Shift Runner' and role == 'manager' %}selected{% endif %}
+                                    >
+                                        {{ role.replace('_', ' ')|title }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn-mini btn-approve">Approve</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('auth.reject_registration_request', registration_id=registration.id) }}">
+                                <button type="submit" class="btn-mini btn-reject" onclick="return confirm('Reject this request?');">Reject</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="reviewed-note">
+                            Reviewed{% if registration.reviewed_at %} {{ registration.reviewed_at.strftime('%m/%d %I:%M %p') }}{% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="empty-row">No registration requests found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="registration-footer">
+            <span>Showing <span id="registrationVisibleCount">{{ registrations|length }}</span> request(s)</span>
+            <span>BPI Ops · Registration</span>
         </div>
-
-        <div class="reg-table-wrap">
-            <table class="reg-table">
-                <thead>
-                    <tr>
-                        <th>Request</th>
-                        <th>Store</th>
-                        <th>Position</th>
-                        <th>Contact</th>
-                        <th>Status</th>
-                        <th style="text-align:right;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for registration in registrations %}
-                    <tr
-                        class="request-row"
-                        data-status="{{ registration.status }}"
-                        data-search="{{ (
-                            registration.full_name ~ ' ' ~
-                            registration.username ~ ' ' ~
-                            (registration.store_number or '') ~ ' ' ~
-                            (registration.requested_position or '') ~ ' ' ~
-                            (registration.email or '') ~ ' ' ~
-                            (registration.phone or '') ~ ' ' ~
-                            registration.status
-                        )|lower }}"
-                    >
-                        <td>
-                            <div class="request-person">
-                                <div class="request-avatar">{{ registration.full_name[:1]|upper }}</div>
-                                <div>
-                                    <div class="request-name">{{ registration.full_name }}</div>
-                                    <div class="request-sub">@{{ registration.username }}</div>
-                                </div>
-                            </div>
-                        </td>
-
-                        <td>
-                            <span class="status-pill">Store {{ registration.store_number or '—' }}</span>
-                        </td>
-
-                        <td>
-                            <span class="status-pill">{{ registration.requested_position or 'Not selected' }}</span>
-                        </td>
-
-                        <td>
-                            <div class="request-sub">
-                                {% if registration.email %}{{ registration.email }}{% else %}No email{% endif %}
-                            </div>
-                            <div class="request-sub">
-                                {% if registration.phone %}{{ registration.phone }}{% else %}No phone{% endif %}
-                            </div>
-                        </td>
-
-                        <td>
-                            <span class="status-pill {{ registration.status }}">
-                                <span class="status-dot"></span>
-                                {{ registration.status|title }}
-                            </span>
-                        </td>
-
-                        <td>
-                            <div class="request-actions">
-                                {% if registration.status == "pending" %}
-                                <form method="POST" action="{{ url_for('auth.approve_registration_request', registration_id=registration.id) }}">
-                                    <select name="final_role" required>
-                                        {% for role in allowed_roles %}
-                                        <option value="{{ role }}"
-                                            {% if registration.requested_position in ['Driver', 'CSR'] and role == 'tm' %}selected{% endif %}
-                                            {% if registration.requested_position == 'MIT / Shift Runner' and role == 'manager' %}selected{% endif %}
-                                        >
-                                            {{ role|replace('_', ' ')|title }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                    <button type="submit" class="btn-primary">Approve</button>
-                                </form>
-
-                                <form method="POST" action="{{ url_for('auth.reject_registration_request', registration_id=registration.id) }}">
-                                    <button type="submit" class="btn-danger" onclick="return confirm('Reject this request?');">Reject</button>
-                                </form>
-                                {% else %}
-                                <span class="reviewed-pill">
-                                    Reviewed{% if registration.reviewed_at %} {{ registration.reviewed_at.strftime('%m/%d %I:%M %p') }}{% endif %}
-                                </span>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6">
-                            <span class="summary-pill neutral-pill">No registration requests found.</span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="reg-footer">
-            <span>Showing <span id="registrationFooterCount">{{ registrations|length }}</span> request(s)</span>
-            <span>BPI Ops · Registration Queue</span>
-        </div>
-    </section>
+    </div>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+(function () {
     const search = document.getElementById("registrationSearch");
+    const rows = Array.from(document.querySelectorAll(".registration-row"));
+    const tabs = Array.from(document.querySelectorAll(".reg-tab"));
     const visibleCount = document.getElementById("registrationVisibleCount");
-    const footerCount = document.getElementById("registrationFooterCount");
-    const rows = Array.from(document.querySelectorAll(".request-row"));
-    const filterButtons = Array.from(document.querySelectorAll(".reg-filter-chip"));
-
     let activeFilter = "all";
 
     function applyFilters() {
         const query = (search?.value || "").trim().toLowerCase();
-        let shown = 0;
+        let count = 0;
 
         rows.forEach(row => {
-            const matchesStatus = activeFilter === "all" || row.dataset.status === activeFilter;
-            const matchesSearch = !query || (row.dataset.search || "").includes(query);
-            const isVisible = matchesStatus && matchesSearch;
+            const status = row.dataset.status || "";
+            const haystack = row.dataset.search || "";
+            const statusMatch = activeFilter === "all" || status === activeFilter;
+            const searchMatch = !query || haystack.includes(query);
+            const show = statusMatch && searchMatch;
 
-            row.classList.toggle("is-hidden", !isVisible);
-
-            if (isVisible) shown += 1;
+            row.style.display = show ? "" : "none";
+            if (show) count += 1;
         });
 
-        if (visibleCount) visibleCount.textContent = shown;
-        if (footerCount) footerCount.textContent = shown;
+        if (visibleCount) visibleCount.textContent = count;
     }
 
-    filterButtons.forEach(button => {
-        button.addEventListener("click", function () {
-            activeFilter = this.dataset.filter || "all";
-
-            filterButtons.forEach(btn => btn.classList.remove("is-active"));
-            this.classList.add("is-active");
-
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            activeFilter = tab.dataset.filter || "all";
+            tabs.forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
             applyFilters();
         });
     });
@@ -512,6 +494,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (search) {
         search.addEventListener("input", applyFilters);
     }
-});
+})();
 </script>
 {% endblock %}

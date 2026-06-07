@@ -686,3 +686,354 @@
         font-size: 11px !important;
     }
 }
+
+/* ==========================================================
+   Premium sidebar + topbar polish
+   Scoped shell-only cleanup
+   ========================================================== */
+
+.sidebar {
+    box-shadow: 18px 0 40px rgba(2, 6, 23, 0.22);
+}
+
+.brand {
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 14px;
+    margin-bottom: 8px;
+}
+
+.nav {
+    gap: 14px;
+}
+
+.nav-section {
+    padding-top: 2px;
+}
+
+.nav-section + .nav-section {
+    margin-top: 6px;
+}
+
+.nav-section-label {
+    font-size: 10px !important;
+    letter-spacing: .13em !important;
+    font-weight: 850 !important;
+    color: rgba(226, 232, 240, 0.48) !important;
+    padding: 0 10px 6px !important;
+}
+
+.nav a {
+    position: relative;
+    min-height: 38px;
+    border-radius: 12px;
+    padding: 9px 10px;
+    color: rgba(226, 232, 240, 0.78);
+    transition: background .16s ease, color .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+
+.nav a:hover {
+    background: rgba(255,255,255,0.075);
+    color: #ffffff;
+    transform: translateX(1px);
+}
+
+.nav a.active {
+    background: linear-gradient(135deg, rgba(47,140,255,.24), rgba(37,99,235,.14)) !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 0 0 1px rgba(96,165,250,.22), 0 10px 22px rgba(2,6,23,.16);
+}
+
+.nav a.active::before {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 9px;
+    bottom: 9px;
+    width: 3px;
+    border-radius: 999px;
+    background: #60a5fa;
+}
+
+.nav-icon {
+    width: 22px !important;
+    height: 22px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.055);
+    color: rgba(226,232,240,.82);
+    font-size: 13px;
+}
+
+.nav a.active .nav-icon {
+    background: rgba(96,165,250,.18);
+    color: #bfdbfe;
+}
+
+.nav-utility-section {
+    margin-top: auto !important;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.admin-center-link {
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.075);
+}
+
+.admin-center-link .nav-icon {
+    background: rgba(255,255,255,0.08);
+}
+
+.nav-logout-section {
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 10px;
+}
+
+.topbar {
+    backdrop-filter: blur(14px);
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.topbar-command-search {
+    height: 38px;
+    min-width: 320px;
+    max-width: 520px;
+    width: min(44vw, 520px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 999px;
+    padding: 0 10px 0 12px;
+    box-shadow: 0 8px 18px rgba(15,23,42,0.05);
+}
+
+.topbar-command-search input {
+    border: 0;
+    outline: 0;
+    background: transparent;
+    width: 100%;
+    min-width: 0;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.topbar-command-search input::placeholder {
+    color: #94a3b8;
+}
+
+.topbar-search-icon {
+    color: #64748b;
+    font-size: 15px;
+}
+
+.topbar-command-search kbd {
+    border: 1px solid #d8dee8;
+    background: #f8fafc;
+    color: #64748b;
+    border-radius: 7px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.topbar-context-pill {
+    height: 34px;
+    display: flex;
+    align-items: center;
+    padding: 0 11px;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .topbar-command-search {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .topbar-context-pill {
+        display: none;
+    }
+}
+
+@media (max-width: 720px) {
+    .topbar-command-search {
+        display: none;
+    }
+}
+
+/* Topbar admin gear */
+.topbar-admin-gear {
+    width: 36px;
+    height: 36px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 999px;
+    text-decoration: none;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    color: #e2e8f0;
+    font-size: 15px;
+    transition: background .16s ease, transform .16s ease, box-shadow .16s ease, color .16s ease;
+}
+
+.topbar-admin-gear:hover {
+    background: rgba(59,130,246,0.18);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(2,6,23,.18);
+}
+
+.topbar-admin-gear.active {
+    background: linear-gradient(135deg, rgba(47,140,255,.28), rgba(37,99,235,.18));
+    color: #ffffff;
+    border-color: rgba(96,165,250,.35);
+}
+
+/* ==========================================================
+   Sharp UI polish — clearer font, less cartoon, better contrast
+   ========================================================== */
+
+html,
+body,
+button,
+input,
+select,
+textarea {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: geometricPrecision;
+}
+
+/* Brand: sharper, less fuzzy */
+.brand h1 {
+    font-weight: 900 !important;
+    letter-spacing: -0.035em !important;
+    color: #f8fafc !important;
+}
+
+.brand p {
+    font-weight: 800 !important;
+    letter-spacing: .14em !important;
+    color: rgba(226, 232, 240, 0.58) !important;
+}
+
+/* Sidebar labels: clearer but still premium */
+.nav-section-label {
+    color: rgba(226, 232, 240, 0.62) !important;
+    font-weight: 900 !important;
+    letter-spacing: .16em !important;
+}
+
+/* Sidebar links: make readable, not gray mush */
+.nav a {
+    color: rgba(241, 245, 249, 0.86) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.015em !important;
+}
+
+.nav a span:not(.nav-icon) {
+    color: inherit !important;
+}
+
+.nav a:hover {
+    color: #ffffff !important;
+}
+
+/* Active state: crisp, not bubbly */
+.nav a.active {
+    background: rgba(37, 99, 235, 0.22) !important;
+    border: 1px solid rgba(96, 165, 250, 0.34) !important;
+    box-shadow: inset 3px 0 0 #38bdf8, 0 8px 18px rgba(2, 6, 23, 0.18) !important;
+}
+
+/* Remove cartoon icon bubbles */
+.nav-icon {
+    background: transparent !important;
+    border: 0 !important;
+    color: rgba(203, 213, 225, 0.82) !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI Symbol", "Segoe UI", Arial, sans-serif !important;
+}
+
+.nav a.active .nav-icon,
+.nav a:hover .nav-icon {
+    color: #93c5fd !important;
+    background: transparent !important;
+}
+
+/* Topbar user pill: sharper text */
+.topbar-user-pill strong {
+    font-weight: 900 !important;
+    letter-spacing: -0.025em !important;
+    color: #f8fafc !important;
+}
+
+.topbar-user-pill span {
+    font-weight: 850 !important;
+    letter-spacing: .12em !important;
+    color: rgba(226, 232, 240, 0.62) !important;
+}
+
+/* Admin gear: no emoji/cartoon rendering */
+.topbar-admin-gear {
+    font-family: Arial, "Helvetica Neue", sans-serif !important;
+    font-weight: 900 !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    border-radius: 8px !important;
+    background: rgba(15, 23, 42, 0.84) !important;
+    color: rgba(226, 232, 240, 0.88) !important;
+}
+
+/* Buttons/chips: sharper text */
+.command-chip,
+.summary-pill,
+.btn-primary,
+button,
+a.btn-primary {
+    font-weight: 850 !important;
+    letter-spacing: -0.015em;
+}
+
+/* Dashboard headings: cleaner and more legible */
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.panel h1,
+.panel h2,
+.panel h3,
+.premium-panel h1,
+.premium-panel h2,
+.premium-panel h3 {
+    font-weight: 900 !important;
+    letter-spacing: -0.04em !important;
+}
+
+/* Small helper text should still be visible */
+.main-content p,
+.panel p,
+.premium-panel p,
+.stat-label,
+.metric-label {
+    color: rgba(203, 213, 225, 0.78);
+    font-weight: 650;
+}

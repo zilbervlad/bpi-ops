@@ -56,22 +56,6 @@
                     </a>
                     {% endif %}
 
-                    {% if access_role in ['admin', 'supervisor'] or account_role == 'general_manager' %}
-                    <a href="{{ url_for('auth.registration_requests') }}"
-                       class="{% if request.endpoint and request.endpoint.startswith('auth.registration') %}active{% endif %}">
-                        <span class="nav-icon">＋</span>
-                        <span>Registrations</span>
-                    </a>
-                    {% endif %}
-
-                    {% if access_role in ['admin', 'supervisor'] or account_role == 'general_manager' %}
-                    <a href="{{ url_for('auth.registration_qr_center') }}"
-                       class="{% if request.endpoint == 'auth.registration_qr_center' %}active{% endif %}">
-                        <span class="nav-icon">▣</span>
-                        <span>QR Center</span>
-                    </a>
-                    {% endif %}
-
                     {% if access_role in ['admin', 'supervisor', 'manager'] %}
                     <a href="{{ url_for('store_dashboard.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('store_dashboard') %}active{% endif %}">
@@ -199,7 +183,7 @@
 
                 {% if account_role in ['admin', 'hr'] %}
                 <div class="nav-section">
-                    <div class="nav-section-label">HR</div>
+                    <div class="nav-section-label">People & HR</div>
 
                     <a href="{{ url_for('hr_documents.index') }}"
                        class="{% if request.endpoint in ['hr_documents.index', 'hr_documents.new_document', 'hr_documents.detail'] %}active{% endif %}">
@@ -210,7 +194,7 @@
                     <a href="{{ url_for('forms.admin') }}"
                        class="{% if request.endpoint in ['forms.admin', 'forms.edit_template'] %}active{% endif %}">
                         <span class="nav-icon">📝</span>
-                        <span>Forms Admin</span>
+                        <span>Forms</span>
                     </a>
 
                     <a href="{{ url_for('auth.registration_requests') }}"
@@ -230,27 +214,7 @@
                 {% set can_access_admin_center = access_role in ['admin', 'supervisor'] %}
 
                 {% if can_access_admin_center %}
-                <div class="nav-section nav-admin-section">
-                    <div class="nav-section-label">Admin</div>
 
-                    <a href="{{ url_for('dashboard.admin_center') }}"
-                       class="{% if request.endpoint == 'dashboard.admin_center'
-                                  or request.endpoint in [
-                                      'checklist.admin',
-                                      'prep.manage',
-                                      'svr.admin',
-                                      'verification.admin',
-                                      'nightly_numbers.admin',
-                                      'nightly_numbers.edit_report',
-                                      'forms.admin',
-                                      'forms.edit_template',
-                                      'auth.manage_users',
-                                      'store_admin.index'
-                                  ] %}active{% endif %}">
-                        <span class="nav-icon">✦</span>
-                        <span>Admin Center</span>
-                    </a>
-                </div>
                 {% endif %}
 
                 <div class="nav-section nav-logout-section">
@@ -270,9 +234,35 @@
                         ☰
                     </button>
 
+                    <div class="topbar-command-search">
+                        <span class="topbar-search-icon">⌕</span>
+                        <input id="topbarCommandSearch" type="search" placeholder="Search stores, users, reports..." autocomplete="off">
+                        <kbd>⌘K</kbd>
+                    </div>
                 </div>
 
                 <div class="topbar-right">
+                    {% if access_role in ['admin', 'supervisor'] %}
+                    <a href="{{ url_for('dashboard.admin_center') }}"
+                       class="topbar-admin-gear {% if request.endpoint == 'dashboard.admin_center'
+                                  or request.endpoint in [
+                                      'checklist.admin',
+                                      'prep.manage',
+                                      'svr.admin',
+                                      'verification.admin',
+                                      'nightly_numbers.admin',
+                                      'nightly_numbers.edit_report',
+                                      'forms.admin',
+                                      'forms.edit_template',
+                                      'auth.manage_users',
+                                      'store_admin.index'
+                                  ] %}active{% endif %}"
+                       title="Admin Center"
+                       aria-label="Admin Center">
+                        ⚙
+                    </a>
+                    {% endif %}
+
                     <div class="topbar-user-pill">
                         <div class="topbar-avatar">{{ session.get('user_name', 'U')[:1] }}</div>
                         <div class="topbar-user-meta">
@@ -468,5 +458,58 @@
         {% block login_content %}{% endblock %}
     </div>
     {% endif %}
+
+<script>
+(function () {
+    const search = document.getElementById("topbarCommandSearch");
+    if (!search) return;
+
+    document.addEventListener("keydown", function (event) {
+        const isMacShortcut = event.metaKey && event.key.toLowerCase() === "k";
+        const isWinShortcut = event.ctrlKey && event.key.toLowerCase() === "k";
+        if (isMacShortcut || isWinShortcut) {
+            event.preventDefault();
+            search.focus();
+            search.select();
+        }
+    });
+
+    search.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter") return;
+
+        const q = search.value.trim();
+        if (!q) return;
+
+        if (/^\d{4}$/.test(q)) {
+            window.location.href = "/store-dashboard/?store=" + encodeURIComponent(q);
+            return;
+        }
+
+        const lower = q.toLowerCase();
+
+        const shortcuts = {
+            "registration": "/users/registration-requests",
+            "qr": "/users/registration-qr",
+            "forms": "/forms/",
+            "hr": "/hr-documents/",
+            "maintenance": "/maintenance/",
+            "checklist": "/checklist/",
+            "svr": "/svr/",
+            "verification": "/verification/new",
+            "reports": "/reports/",
+            "cash": "/cash-review/",
+            "nightly": "/nightly-numbers/admin"
+        };
+
+        for (const key in shortcuts) {
+            if (lower.includes(key)) {
+                window.location.href = shortcuts[key];
+                return;
+            }
+        }
+    });
+})();
+</script>
+
 </body>
 </html>

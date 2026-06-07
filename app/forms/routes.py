@@ -325,6 +325,105 @@ def send_form_submission_email(submission: FormSubmission):
     }
 
 
+
+WORKFLOW_STATUS_LABELS = {
+    "submitted": "Submitted",
+    "pending_gm": "Pending GM",
+    "pending_supervisor": "Pending Supervisor",
+    "pending_hr": "Pending HR",
+    "pending_payroll": "Pending Payroll",
+    "complete": "Complete",
+    "rejected": "Rejected",
+    "sent_back": "Sent Back",
+}
+
+
+def workflow_status_label(status):
+    return WORKFLOW_STATUS_LABELS.get(status or "submitted", (status or "submitted").replace("_", " ").title())
+
+
+def next_workflow_status(template, current_status):
+    steps = []
+
+    if truthy_template_flag(template, "requires_gm_approval"):
+        steps.append("pending_gm")
+    if truthy_template_flag(template, "requires_supervisor_approval"):
+        steps.append("pending_supervisor")
+    if truthy_template_flag(template, "requires_hr_approval"):
+        steps.append("pending_hr")
+    if truthy_template_flag(template, "requires_payroll_processing"):
+        steps.append("pending_payroll")
+
+    if not steps:
+        return "complete"
+
+    if current_status in ["submitted", None, ""]:
+        return steps[0]
+
+    if current_status not in steps:
+        return "complete"
+
+    index = steps.index(current_status)
+    if index + 1 < len(steps):
+        return steps[index + 1]
+
+    return "complete"
+
+
+def store_area_for_submission(submission):
+    store = Store.query.filter_by(store_number=submission.store_number).first()
+    return store.area_name if store else None
+
+
+def can_act_on_workflow_submission(submission):
+    role = current_access_role()
+
+    if role == "admin":
+        return True
+
+    status = submission.workflow_status or "submitted"
+
+    if status == "pending_gm":
+        return role in {"general_manager", "manager"} and submission.store_number == user_store_number()
+
+    if status == "pending_supervisor":
+        return role == "supervisor" and store_area_for_submission(submission) == user_area_name()
+
+    if status == "pending_hr":
+        return role == "hr"
+
+    if status == "pending_payroll":
+        return role == "payroll"
+
+    return False
+
+
+def visible_workflow_query():
+    query = FormSubmission.query.join(FormTemplate)
+
+    if not is_admin():
+        role = current_access_role()
+
+        if role in {"manager", "general_manager"}:
+            store_number = user_store_number()
+            query = query.filter(FormSubmission.store_number == (store_number or "__none__"))
+
+        elif role == "supervisor":
+            allowed_stores = visible_store_numbers()
+            query = query.filter(FormSubmission.store_number.in_(allowed_stores or ["__none__"]))
+
+        elif role == "hr":
+            query = query.filter(FormSubmission.workflow_status == "pending_hr")
+
+        elif role == "payroll":
+            query = query.filter(FormSubmission.workflow_status == "pending_payroll")
+
+        else:
+            query = query.filter(FormSubmission.id == -1)
+
+    return query
+
+
 def accessible_template_or_redirect(template_id, submit=False):
     template = FormTemplate.query.get_or_404(template_id)
 
@@ -511,6 +610,111 @@ def submit_form(template_id):
         today=today_et(),
     )
 
+
+
+@forms_bp.route("/workflow")
+def workflow_inbox():
+    selected_status = request.args.get("status", "").strip()
+
+    status_order = [
+        "pending_gm",
+        "pending_supervisor",
+        "pending_hr",
+        "pending_payroll",
+        "submitted",
+        "sent_back",
+        "rejected",
+        "complete",
+    ]
+
+    query = visible_workflow_query()
+
+    if selected_status:
+        query = query.filter(FormSubmission.workflow_status == selected_status)
+    else:
+        query = query.filter(FormSubmission.workflow_status.in_([
+            "pending_gm",
+            "pending_supervisor",
+            "pending_hr",
+            "pending_payroll",
+            "submitted",
+            "sent_back",
+        ]))
+
+    submissions = (
+        query
+        .order_by(FormSubmission.submitted_at.desc())
+        .limit(250)
+        .all()
+    )
+
+    status_counts = {}
+    count_query = visible_workflow_query()
+    for status in status_order:
+        status_counts[status] = count_query.filter(FormSubmission.workflow_status == status).count()
+
+    return render_template(
+        "forms/workflow.html",
+        submissions=submissions,
+        selected_status=selected_status,
+        status_order=status_order,
+        status_counts=status_counts,
+        workflow_status_label=workflow_status_label,
+        can_act_on_workflow_submission=can_act_on_workflow_submission,
+    )
+
+
+@forms_bp.route("/submissions/<int:submission_id>/workflow-action", methods=["POST"])
+def workflow_action(submission_id):
+    submission = FormSubmission.query.get_or_404(submission_id)
+
+    if not can_act_on_workflow_submission(submission):
+        flash("You do not have permission to update this workflow item.", "error")
+        return redirect(url_for("forms.submission_detail", submission_id=submission.id))
+
+    action = request.form.get("action", "").strip()
+    note = request.form.get("workflow_notes", "").strip()
+
+    if action == "approve":
+        submission.workflow_status = next_workflow_status(submission.template, submission.workflow_status)
+
+        if submission.workflow_status == "complete":
+            submission.workflow_completed_at = datetime.utcnow()
+
+        flash("Workflow item approved.", "success")
+
+    elif action == "mark_processed":
+        if submission.workflow_status != "pending_payroll":
+            flash("Only payroll items can be marked processed.", "error")
+            return redirect(url_for("forms.submission_detail", submission_id=submission.id))
+
+        submission.workflow_status = "complete"
+        submission.workflow_completed_at = datetime.utcnow()
+        flash("Payroll item marked processed.", "success")
+
+    elif action == "reject":
+        submission.workflow_status = "rejected"
+        submission.workflow_completed_at = datetime.utcnow()
+        flash("Workflow item rejected.", "success")
+
+    elif action == "send_back":
+        submission.workflow_status = "sent_back"
+        flash("Workflow item sent back.", "success")
+
+    else:
+        flash("Unknown workflow action.", "error")
+        return redirect(url_for("forms.submission_detail", submission_id=submission.id))
+
+    if note:
+        existing_notes = submission.workflow_notes or ""
+        timestamp = datetime.utcnow().strftime("%m/%d/%Y %I:%M %p")
+        actor = session.get("user_name") or "Unknown"
+        line = f"[{timestamp}] {actor}: {note}"
+        submission.workflow_notes = (existing_notes + "\n" + line).strip() if existing_notes else line
+
+    db.session.commit()
+
+    return redirect(url_for("forms.workflow_inbox"))
 
 @forms_bp.route("/submissions")
 def submissions():

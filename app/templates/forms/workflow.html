@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Workflow Inbox | BPI Ops{% endblock %}
+{% block header %}Workflow Inbox{% endblock %}
+
+{% block content %}
+<div class="forms-shell">
+    <section class="forms-panel">
+        <div class="forms-hero">
+            <div>
+                <span class="forms-kicker">Forms Workflow</span>
+                <h3 class="forms-title">Workflow Inbox</h3>
+                <p class="forms-subtitle">Review items waiting on GM, Supervisor, HR, or Payroll action.</p>
+            </div>
+            <div class="forms-hero-actions">
+                <a class="forms-btn secondary" href="{{ url_for('forms.index') }}">Forms</a>
+                <a class="forms-btn secondary" href="{{ url_for('forms.submissions') }}">All Submissions</a>
+            </div>
+        </div>
+
+        <div class="forms-filter-row" style="margin-bottom:16px;">
+            <a class="forms-chip {% if not selected_status %}active{% endif %}" href="{{ url_for('forms.workflow_inbox') }}">
+                Open · {{ status_counts.pending_gm + status_counts.pending_supervisor + status_counts.pending_hr + status_counts.pending_payroll + status_counts.submitted + status_counts.sent_back }}
+            </a>
+
+            {% for status in status_order %}
+                <a class="forms-chip {% if selected_status == status %}active{% endif %}"
+                   href="{{ url_for('forms.workflow_inbox', status=status) }}">
+                    {{ workflow_status_label(status) }} · {{ status_counts[status] }}
+                </a>
+            {% endfor %}
+        </div>
+
+        {% if submissions %}
+        <div class="forms-table-wrap">
+            <table class="forms-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Form</th>
+                        <th>Store</th>
+                        <th>Submitted By</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for submission in submissions %}
+                    <tr>
+                        <td>{{ submission.submitted_at.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                        <td>{{ submission.template.title }}</td>
+                        <td>{{ submission.store_number }}</td>
+                        <td>{{ submission.submitted_by.name if submission.submitted_by else "Unknown" }}</td>
+                        <td>
+                            <span class="forms-chip">{{ workflow_status_label(submission.workflow_status) }}</span>
+                        </td>
+                        <td>
+                            {% if submission.score_possible %}
+                                {{ submission.score_percent }}% · {{ submission.grade }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a class="forms-link" href="{{ url_for('forms.submission_detail', submission_id=submission.id) }}">Open</a>
+
+                            {% if can_act_on_workflow_submission(submission) %}
+                            <form method="post"
+                                  action="{{ url_for('forms.workflow_action', submission_id=submission.id) }}"
+                                  style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+                                {% if submission.workflow_status == 'pending_payroll' %}
+                                    <button class="forms-btn small" type="submit" name="action" value="mark_processed">Mark Processed</button>
+                                {% else %}
+                                    <button class="forms-btn small" type="submit" name="action" value="approve">Approve</button>
+                                {% endif %}
+                                <button class="forms-btn secondary small" type="submit" name="action" value="send_back">Send Back</button>
+                                <button class="forms-btn danger small" type="submit" name="action" value="reject">Reject</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="forms-empty">
+                <h4>No workflow items found.</h4>
+                <p>When forms require approval or payroll processing, they will appear here.</p>
+            </div>
+        {% endif %}
+    </section>
+</div>
+
+<style>
+.forms-chip.active {
+    background:#e91f3f;
+    color:white;
+    border-color:#e91f3f;
+}
+.forms-btn.small {
+    padding:7px 10px;
+    font-size:12px;
+    border-radius:10px;
+}
+.forms-btn.danger {
+    background:#fee2e2;
+    color:#991b1b;
+}
+</style>
+{% endblock %}

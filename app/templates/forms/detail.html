@@ -1,6 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}{{ submission.template.title }} Submission | BPI Ops{% endblock %}
+{% block title %}{{ submission.template.title }} Submission | BPI Ops
+        <section class="forms-card" style="margin-top:16px;">
+            <h4 style="margin:0 0 10px;">Workflow</h4>
+            <p><strong>Status:</strong> {{ submission.workflow_status|replace('_',' ')|title }}</p>
+
+            {% if submission.workflow_notes %}
+                <pre style="white-space:pre-wrap; background:#f7fafc; border-radius:14px; padding:12px;">{{ submission.workflow_notes }}</pre>
+            {% endif %}
+
+            <form method="post"
+                  action="{{ url_for('forms.workflow_action', submission_id=submission.id) }}"
+                  style="display:grid; gap:10px; margin-top:12px;">
+                <textarea class="forms-textarea" name="workflow_notes" rows="2" placeholder="Optional note"></textarea>
+
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    {% if submission.workflow_status == 'pending_payroll' %}
+                        <button class="forms-btn" type="submit" name="action" value="mark_processed">Mark Processed</button>
+                    {% else %}
+                        <button class="forms-btn" type="submit" name="action" value="approve">Approve</button>
+                    {% endif %}
+                    <button class="forms-btn secondary" type="submit" name="action" value="send_back">Send Back</button>
+                    <button class="forms-btn secondary" type="submit" name="action" value="reject">Reject</button>
+                </div>
+            </form>
+        </section>
+
+{% endblock %}
 {% block header %}{{ submission.template.title }}{% endblock %}
 
 {% block content %}

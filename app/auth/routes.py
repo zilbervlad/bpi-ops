@@ -137,7 +137,7 @@ def sync_registration_user_to_bpi_connect(user, registration, final_role):
 
 
 def current_user_can_review_registration_requests():
-    return get_current_account_role() in {"admin", "supervisor", "general_manager"}
+    return get_current_account_role() in {"admin", "supervisor", "general_manager", "hr"}
 
 
 def registration_visible_store_numbers():
@@ -820,7 +820,7 @@ def send_test_email_to_user(user_id):
 
 @auth_bp.route("/users/registration-qr/print")
 @login_required
-@role_required("admin", "supervisor", "general_manager")
+@role_required("admin", "supervisor", "general_manager", "hr")
 def registration_qr_print():
     if not current_user_can_review_registration_requests():
         flash("You do not have permission to print registration QR codes.", "error")
@@ -853,7 +853,7 @@ def registration_qr_print():
 
 @auth_bp.route("/users/registration-qr")
 @login_required
-@role_required("admin", "supervisor", "general_manager")
+@role_required("admin", "supervisor", "general_manager", "hr")
 def registration_qr_center():
     if not current_user_can_review_registration_requests():
         flash("You do not have permission to access registration QR codes.", "error")
@@ -996,7 +996,7 @@ def registration_requests():
 
 @auth_bp.route("/users/registration-requests/<int:registration_id>/approve", methods=["POST"])
 @login_required
-@role_required("admin", "supervisor", "general_manager")
+@role_required("admin", "supervisor", "general_manager", "hr")
 def approve_registration_request(registration_id):
     registration = PendingRegistrationRequest.query.get_or_404(registration_id)
 
@@ -1066,7 +1066,7 @@ def approve_registration_request(registration_id):
 
 @auth_bp.route("/users/registration-requests/<int:registration_id>/reject", methods=["POST"])
 @login_required
-@role_required("admin", "supervisor", "general_manager")
+@role_required("admin", "supervisor", "general_manager", "hr")
 def reject_registration_request(registration_id):
     registration = PendingRegistrationRequest.query.get_or_404(registration_id)
 

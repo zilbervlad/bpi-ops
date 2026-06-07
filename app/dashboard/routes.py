@@ -475,14 +475,14 @@ DEFAULT_MODULE_ACCESS = [
         "module_key": "registration_requests",
         "module_label": "Registration Requests",
         "module_group": "People",
-        "allowed_roles": ["admin", "supervisor", "general_manager"],
+        "allowed_roles": ["admin", "supervisor", "general_manager", "hr"],
         "sort_order": 30,
     },
     {
         "module_key": "registration_qr",
         "module_label": "Registration QR Center",
         "module_group": "People",
-        "allowed_roles": ["admin", "supervisor", "general_manager"],
+        "allowed_roles": ["admin", "supervisor", "general_manager", "hr"],
         "sort_order": 40,
     },
     {
@@ -668,8 +668,10 @@ def home():
         quick_actions = [
             {"label": "HR Documents", "url": "/hr-documents/"},
             {"label": "Upload Document", "url": "/hr-documents/new"},
+            {"label": "Forms Admin", "url": "/forms/admin"},
             {"label": "Registration Requests", "url": "/users/registration-requests"},
             {"label": "QR Center", "url": "/users/registration-qr"},
+            {"label": "Time Cards", "url": "/maintenance/time-cards"},
         ]
     elif user_role == "tm":
         quick_actions = [

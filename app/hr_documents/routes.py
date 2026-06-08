@@ -104,6 +104,23 @@ def recipient_query_for_target(target_mode, form):
         position = form.get("target_position", "").strip()
         if not position:
             return None
+
+        position_role_fallbacks = {
+            "Maintenance": "maintenance",
+            "HR": "hr",
+            "Supervisor": "supervisor",
+            "General Manager": "general_manager",
+        }
+
+        fallback_role = position_role_fallbacks.get(position)
+        if fallback_role:
+            return query.filter(
+                db.or_(
+                    User.position == position,
+                    User.role == fallback_role,
+                )
+            )
+
         return query.filter(User.position == position)
 
     if target_mode == "store":

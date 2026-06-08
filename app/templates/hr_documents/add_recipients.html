@@ -190,7 +190,20 @@ function selectedRecipientOptions() {
 
     if (mode === "position") {
         const selectedPosition = document.querySelector("select[name='target_position']").value;
-        return options.filter(option => option.dataset.position === selectedPosition);
+
+        const roleFallbacks = {
+            "Maintenance": "maintenance",
+            "HR": "hr",
+            "Supervisor": "supervisor",
+            "General Manager": "general_manager"
+        };
+
+        return options.filter(option => {
+            if (option.dataset.position === selectedPosition) return true;
+
+            const fallbackRole = roleFallbacks[selectedPosition];
+            return fallbackRole && option.dataset.role === fallbackRole;
+        });
     }
 
     if (mode === "store") {

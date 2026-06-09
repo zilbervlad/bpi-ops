@@ -244,6 +244,17 @@
                 </div>
 
                 <div class="topbar-right">
+                    {% set notification_count = session.get('notification_count', 0) %}
+                    <a href="{{ url_for('hr_documents.my_documents') }}"
+                       class="topbar-notification-bell {% if request.endpoint == 'hr_documents.my_documents' %}active{% endif %}"
+                       title="Notifications"
+                       aria-label="Notifications">
+                        <span class="topbar-bell-icon">🔔</span>
+                        {% if notification_count and notification_count|int > 0 %}
+                        <span class="topbar-notification-badge">{{ notification_count }}</span>
+                        {% endif %}
+                    </a>
+
                     {% if access_role in ['admin', 'supervisor'] %}
                     <a href="{{ url_for('dashboard.admin_center') }}"
                        class="topbar-admin-gear {% if request.endpoint == 'dashboard.admin_center'

@@ -761,6 +761,8 @@ def admin_center():
 
     tools = []
 
+    account_role = session.get("access_role") or session.get("user_role") or session.get("role")
+
     if account_role == "supervisor":
         tools.extend([
             {

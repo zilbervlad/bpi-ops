@@ -5,41 +5,465 @@
 
 {% block content %}
 <style>
-    .my-doc-list { display:grid; gap:10px; }
-    .my-doc-card { border:1px solid rgba(148,163,184,.12); background:rgba(15,23,42,.58); border-radius:16px; padding:14px; display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
-    .my-doc-title { color:#f8fafc; font-weight:950; font-size:15px; }
-    .my-doc-meta { margin-top:5px; color:rgba(203,213,225,.66); font-size:12px; font-weight:750; }
-    .my-doc-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.my-doc-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.my-doc-hero {
+    background: linear-gradient(135deg, #101827 0%, #172033 55%, #202b42 100%);
+    border-radius: 16px;
+    padding: 12px 16px;
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 68px;
+}
+
+.my-doc-hero h2 {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: -0.03em;
+}
+
+.my-doc-hero p {
+    margin: 2px 0 0;
+    color: rgba(255,255,255,.72);
+    font-size: 12px;
+}
+
+.my-doc-mini-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.my-doc-stat {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 13px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 42px;
+}
+
+.my-doc-stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #64748b;
+    font-weight: 850;
+}
+
+.my-doc-stat-value {
+    font-size: 22px;
+    font-weight: 950;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.my-doc-panel {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.my-doc-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #edf0f4;
+    background: #fbfcfe;
+}
+
+.my-doc-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.my-doc-tab {
+    border: 1px solid #d8dee8;
+    background: #fff;
+    color: #334155;
+    border-radius: 999px;
+    padding: 6px 9px;
+    font-size: 12px;
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.my-doc-tab.active {
+    background: #0f172a;
+    color: #fff;
+    border-color: #0f172a;
+}
+
+.my-doc-search {
+    width: min(340px, 100%);
+    border: 1px solid #d8dee8;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 13px;
+    outline: none;
+}
+
+.my-doc-search:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+}
+
+.my-doc-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.my-doc-table th {
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #64748b;
+    background: #f8fafc;
+    padding: 8px 10px;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.my-doc-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.my-doc-table tr:hover td {
+    background: #fbfdff;
+}
+
+.document-cell {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 260px;
+}
+
+.document-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    background: #111827;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 950;
+    flex: 0 0 auto;
+}
+
+.document-name {
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.15;
+}
+
+.document-sub {
+    color: #64748b;
+    font-size: 12px;
+    margin-top: 1px;
+}
+
+.compact-muted {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    font-size: 11px;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.status-pill.acknowledged {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #bbf7d0;
+}
+
+.status-pill.pending {
+    background: #fff7ed;
+    color: #9a3412;
+    border-color: #fed7aa;
+}
+
+.status-pill.overdue {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.action-cell {
+    min-width: 120px;
+    text-align: right;
+}
+
+.btn-mini {
+    height: 30px;
+    border: 0;
+    border-radius: 9px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.btn-view {
+    background: #2563eb;
+    color: #fff;
+}
+
+.btn-review {
+    background: #16a34a;
+    color: #fff;
+}
+
+.empty-row {
+    padding: 14px !important;
+    text-align: center;
+    color: #64748b !important;
+    font-weight: 800;
+}
+
+.my-doc-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 10px;
+    color: #64748b;
+    font-size: 12px;
+    background: #fbfcfe;
+}
+
+@media (max-width: 980px) {
+    .my-doc-hero {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .my-doc-mini-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .my-doc-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .my-doc-search {
+        width: 100%;
+    }
+
+    .my-doc-table {
+        min-width: 820px;
+    }
+
+    .my-doc-panel {
+        overflow-x: auto;
+    }
+}
 </style>
 
-<div class="my-doc-list">
-    {% for recipient in recipients %}
-    {% set document = recipient.document %}
-    <div class="my-doc-card">
+{% set pending_count = recipients|selectattr('status', 'ne', 'acknowledged')|list|length %}
+{% set acknowledged_count = recipients|selectattr('status', 'equalto', 'acknowledged')|list|length %}
+
+<div class="my-doc-page">
+    <div class="my-doc-hero">
         <div>
-            <div class="my-doc-title">{{ document.title }}</div>
-            <div class="my-doc-meta">
-                Assigned {{ recipient.assigned_at.strftime('%m/%d/%Y') if recipient.assigned_at else '' }}
-                {% if document.due_date %} · Due {{ document.due_date.strftime('%m/%d/%Y') }}{% endif %}
-                {% if recipient.status != 'acknowledged' and document.due_date and document.due_date < today_et() %}
-                · Overdue
-                {% endif %}
-                {% if recipient.status == 'acknowledged' %}
-                · Acknowledged {{ recipient.acknowledged_at.strftime('%m/%d/%Y %I:%M %p') if recipient.acknowledged_at else '' }}
-                {% endif %}
-            </div>
-        </div>
-        <div class="my-doc-actions">
-            <span class="summary-pill {% if recipient.status == 'acknowledged' %}success-pill{% endif %}">
-                {{ recipient.status|title }}
-            </span>
-            <a href="{{ url_for('hr_documents.acknowledge_document', document_id=document.id) }}" class="btn-primary" style="text-decoration:none;">
-                {% if recipient.status == 'acknowledged' %}View{% else %}Review{% endif %}
-            </a>
+            <h2>Document Queue</h2>
+            <p>Review assigned documents, acknowledgments, and required notices.</p>
         </div>
     </div>
-    {% else %}
-    <div class="summary-pill neutral-pill">No documents assigned to you.</div>
-    {% endfor %}
+
+    <div class="my-doc-mini-stats">
+        <div class="my-doc-stat">
+            <div class="my-doc-stat-label">Pending</div>
+            <div class="my-doc-stat-value">{{ pending_count }}</div>
+        </div>
+        <div class="my-doc-stat">
+            <div class="my-doc-stat-label">Acknowledged</div>
+            <div class="my-doc-stat-value">{{ acknowledged_count }}</div>
+        </div>
+        <div class="my-doc-stat">
+            <div class="my-doc-stat-label">Assigned</div>
+            <div class="my-doc-stat-value">{{ recipients|length }}</div>
+        </div>
+    </div>
+
+    <div class="my-doc-panel">
+        <div class="my-doc-toolbar">
+            <div class="my-doc-tabs">
+                <button type="button" class="my-doc-tab active" data-filter="all">All · {{ recipients|length }}</button>
+                <button type="button" class="my-doc-tab" data-filter="pending">Pending · {{ pending_count }}</button>
+                <button type="button" class="my-doc-tab" data-filter="acknowledged">Acknowledged · {{ acknowledged_count }}</button>
+            </div>
+            <input
+                type="search"
+                class="my-doc-search"
+                id="myDocSearch"
+                placeholder="Search document, status, date..."
+            >
+        </div>
+
+        <table class="my-doc-table">
+            <thead>
+                <tr>
+                    <th>Document</th>
+                    <th>Assigned</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                    <th>Acknowledged</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for recipient in recipients %}
+                {% set document = recipient.document %}
+                {% set is_acknowledged = recipient.status == 'acknowledged' %}
+                {% set is_overdue = recipient.status != 'acknowledged' and document.due_date and document.due_date < today_et() %}
+                {% set filter_status = 'acknowledged' if is_acknowledged else 'pending' %}
+                <tr
+                    class="my-doc-row"
+                    data-status="{{ filter_status }}"
+                    data-search="{{ (
+                        document.title ~ ' ' ~
+                        recipient.status ~ ' ' ~
+                        (recipient.assigned_at.strftime('%m/%d/%Y') if recipient.assigned_at else '') ~ ' ' ~
+                        (document.due_date.strftime('%m/%d/%Y') if document.due_date else '') ~ ' ' ~
+                        (recipient.acknowledged_at.strftime('%m/%d/%Y %I:%M %p') if recipient.acknowledged_at else '')
+                    )|lower }}"
+                >
+                    <td>
+                        <div class="document-cell">
+                            <div class="document-avatar">D</div>
+                            <div>
+                                <div class="document-name">{{ document.title }}</div>
+                                <div class="document-sub">HR Document</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-pill">
+                            {{ recipient.assigned_at.strftime('%m/%d/%Y') if recipient.assigned_at else '—' }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if document.due_date %}
+                            {% if is_overdue %}
+                            <span class="status-pill overdue">{{ document.due_date.strftime('%m/%d/%Y') }} · Overdue</span>
+                            {% else %}
+                            <span class="status-pill">{{ document.due_date.strftime('%m/%d/%Y') }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="compact-muted">No due date</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="status-pill {% if is_acknowledged %}acknowledged{% else %}pending{% endif %}">
+                            {{ recipient.status|title }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if is_acknowledged %}
+                            <div>{{ recipient.acknowledged_at.strftime('%m/%d/%Y') if recipient.acknowledged_at else '—' }}</div>
+                            <div class="compact-muted">{{ recipient.acknowledged_at.strftime('%I:%M %p') if recipient.acknowledged_at else '' }}</div>
+                        {% else %}
+                            <span class="compact-muted">Not yet</span>
+                        {% endif %}
+                    </td>
+                    <td class="action-cell">
+                        <a href="{{ url_for('hr_documents.acknowledge_document', document_id=document.id) }}"
+                           class="btn-mini {% if is_acknowledged %}btn-view{% else %}btn-review{% endif %}">
+                            {% if is_acknowledged %}View{% else %}Review{% endif %}
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="empty-row">No documents assigned to you.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="my-doc-footer">
+            <span>Showing <span id="myDocVisibleCount">{{ recipients|length }}</span> document(s)</span>
+            <span>BPI Ops · Documents</span>
+        </div>
+    </div>
 </div>
+
+<script>
+(function () {
+    const search = document.getElementById("myDocSearch");
+    const rows = Array.from(document.querySelectorAll(".my-doc-row"));
+    const tabs = Array.from(document.querySelectorAll(".my-doc-tab"));
+    const visibleCount = document.getElementById("myDocVisibleCount");
+    let activeFilter = "all";
+
+    function applyFilters() {
+        const query = (search?.value || "").trim().toLowerCase();
+        let count = 0;
+
+        rows.forEach(row => {
+            const status = row.dataset.status || "";
+            const haystack = row.dataset.search || "";
+            const statusMatch = activeFilter === "all" || status === activeFilter;
+            const searchMatch = !query || haystack.includes(query);
+            const show = statusMatch && searchMatch;
+
+            row.style.display = show ? "" : "none";
+            if (show) count += 1;
+        });
+
+        if (visibleCount) visibleCount.textContent = count;
+    }
+
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            activeFilter = tab.dataset.filter || "all";
+            tabs.forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            applyFilters();
+        });
+    });
+
+    if (search) {
+        search.addEventListener("input", applyFilters);
+    }
+})();
+</script>
 {% endblock %}

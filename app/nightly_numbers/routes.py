@@ -434,14 +434,32 @@ def admin():
             flash("Only admins can update nightly form settings.", "error")
             return redirect(url_for("nightly_numbers.admin"))
 
-        for field in fields:
-            field.field_label = request.form.get(
-                f"label_{field.id}",
-                field.field_label
-            ).strip() or field.field_label
+        field_id = request.form.get("field_id", type=int)
 
-            field.is_enabled = request.form.get(f"enabled_{field.id}") == "on"
-            field.is_required = request.form.get(f"required_{field.id}") == "on"
+        if field_id:
+            field = NightlyNumbersFieldConfig.query.get_or_404(field_id)
+
+            field.field_label = (
+                request.form.get("field_label", field.field_label).strip()
+                or field.field_label
+            )
+
+            field_type = request.form.get("field_type", field.field_type).strip()
+            if field_type in {"text", "textarea", "yesno"}:
+                field.field_type = field_type
+
+            field.is_enabled = request.form.get("is_enabled") == "on"
+            field.is_required = request.form.get("is_required") == "on"
+
+        else:
+            for field in fields:
+                field.field_label = request.form.get(
+                    f"label_{field.id}",
+                    field.field_label
+                ).strip() or field.field_label
+
+                field.is_enabled = request.form.get(f"enabled_{field.id}") == "on"
+                field.is_required = request.form.get(f"required_{field.id}") == "on"
 
         db.session.commit()
         flash("Nightly form settings updated.", "success")

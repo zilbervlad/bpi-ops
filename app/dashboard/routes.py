@@ -761,6 +761,34 @@ def admin_center():
 
     tools = []
 
+    if account_role == "supervisor":
+        tools.extend([
+            {
+                "title": "Forms Admin",
+                "eyebrow": "Forms",
+                "description": "Manage forms and review submissions for assigned stores.",
+                "url": url_for("forms.admin"),
+                "status": "Supervisor",
+                "icon": "📝",
+            },
+            {
+                "title": "Registration Requests",
+                "eyebrow": "People",
+                "description": "Approve or reject account requests for assigned stores.",
+                "url": url_for("auth.registration_requests"),
+                "status": "Supervisor",
+                "icon": "＋",
+            },
+            {
+                "title": "QR Center",
+                "eyebrow": "People",
+                "description": "Print registration QR codes for assigned stores.",
+                "url": url_for("auth.registration_qr_center"),
+                "status": "Supervisor",
+                "icon": "▣",
+            },
+        ])
+
     if is_admin:
         tools.extend([
             {

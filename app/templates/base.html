@@ -181,15 +181,17 @@
                 </div>
                 {% endif %}
 
-                {% if account_role in ['admin', 'hr'] %}
+                {% if account_role in ['admin', 'hr', 'supervisor'] %}
                 <div class="nav-section">
                     <div class="nav-section-label">People & HR</div>
 
+                    {% if account_role in ['admin', 'hr'] %}
                     <a href="{{ url_for('hr_documents.index') }}"
                        class="{% if request.endpoint in ['hr_documents.index', 'hr_documents.new_document', 'hr_documents.detail'] %}active{% endif %}">
                         <span class="nav-icon">◆</span>
                         <span>HR Documents</span>
                     </a>
+                    {% endif %}
 
                     <a href="{{ url_for('forms.admin') }}"
                        class="{% if request.endpoint in ['forms.admin', 'forms.edit_template'] %}active{% endif %}">

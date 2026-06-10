@@ -338,10 +338,6 @@ def send_nightly_numbers_email(report: NightlyNumbersReport):
     }
 
 
-@nightly_numbers_bp.route("/", methods=["GET", "POST"])
-@login_required
-@role_required("manager", "admin", "supervisor")
-
 def parse_form_bool_value(field_key):
     """
     Dynamic Yes/No fields submit values like yes/no.
@@ -350,6 +346,10 @@ def parse_form_bool_value(field_key):
     value = (request.form.get(field_key) or "").strip().lower()
     return value in ("1", "true", "yes", "y", "on", "checked")
 
+
+@nightly_numbers_bp.route("/", methods=["GET", "POST"])
+@login_required
+@role_required("manager", "admin", "supervisor")
 
 def index():
     role = session.get("user_role")

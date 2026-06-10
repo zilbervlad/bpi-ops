@@ -341,6 +341,16 @@ def send_nightly_numbers_email(report: NightlyNumbersReport):
 @nightly_numbers_bp.route("/", methods=["GET", "POST"])
 @login_required
 @role_required("manager", "admin", "supervisor")
+
+def parse_form_bool_value(field_key):
+    """
+    Dynamic Yes/No fields submit values like yes/no.
+    SQLAlchemy Boolean columns need real True/False.
+    """
+    value = (request.form.get(field_key) or "").strip().lower()
+    return value in ("1", "true", "yes", "y", "on", "checked")
+
+
 def index():
     role = session.get("user_role")
     user_store = session.get("user_store")
@@ -380,6 +390,10 @@ def index():
 
         for field in fields:
             apply_form_value_to_report(report, field)
+
+        # Dynamic yes/no fields post values like "yes"; model columns are Boolean.
+        report.invoices_transfers_checked = parse_form_bool_value("invoices_transfers_checked")
+        report.food_order_placed = parse_form_bool_value("food_order_placed")
 
         db.session.commit()
 
@@ -519,7 +533,7 @@ def edit_report(report_id):
         report.royalty_sales = parse_float(request.form.get("royalty_sales"))
         report.variable_labor = parse_float(request.form.get("variable_labor"))
         report.labor_goal = parse_float(request.form.get("labor_goal"))
-        report.invoices_transfers_checked = request.form.get("invoices_transfers_checked") == "on"
+        report.invoices_transfers_checked = parse_form_bool_value("invoices_transfers_checked")
         report.food_variance = parse_float(request.form.get("food_variance"))
         report.food_variance_details = request.form.get("food_variance_details", "").strip() or None
         report.adt = parse_float(request.form.get("adt"))
@@ -527,7 +541,7 @@ def edit_report(report_id):
         report.load_time = request.form.get("load_time", "").strip() or None
         report.bad_orders = request.form.get("bad_orders", "").strip() or None
         report.cash_diff = parse_float(request.form.get("cash_diff"))
-        report.food_order_placed = request.form.get("food_order_placed") == "on"
+        report.food_order_placed = parse_form_bool_value("food_order_placed")
 
         db.session.commit()
         flash("Nightly numbers report updated.", "success")

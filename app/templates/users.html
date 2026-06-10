@@ -293,6 +293,84 @@
         background: rgba(255, 255, 255, 0.09);
     }
 
+    .dwp-profile-panel {
+        margin-top: 18px;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        background: #f8fafc;
+        padding: 14px;
+    }
+
+    .dwp-profile-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .dwp-profile-title {
+        font-weight: 950;
+        color: #111827;
+        letter-spacing: -.02em;
+    }
+
+    .dwp-profile-link {
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 900;
+        font-size: 13px;
+    }
+
+    .dwp-profile-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .dwp-mini-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 10px;
+    }
+
+    .dwp-mini-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: #6b7280;
+        font-weight: 950;
+    }
+
+    .dwp-mini-value {
+        margin-top: 4px;
+        font-size: 20px;
+        font-weight: 950;
+        color: #111827;
+    }
+
+    .dwp-latest {
+        margin-top: 10px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 10px;
+        color: #374151;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    .dwp-pending {
+        color: #9a3412;
+    }
+
+    @media (max-width: 900px) {
+        .dwp-profile-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
     .user-search-empty {
         display: none;
         margin-top: 14px;
@@ -446,6 +524,61 @@
                                    {% if user.role == 'admin' %}disabled{% endif %}
                                    required>
                         </div>
+                    </div>
+
+
+                    {% set dwp = dwp_stats.get(user.id) if dwp_stats is defined else None %}
+                    <div class="dwp-profile-panel">
+                        <div class="dwp-profile-head">
+                            <div class="dwp-profile-title">DWP</div>
+                            <a class="dwp-profile-link" href="{{ url_for('dwp.team_member_file', user_id=user.id) }}">
+                                Open TM File →
+                            </a>
+                        </div>
+
+                        <div class="dwp-profile-grid">
+                            <div class="dwp-mini-card">
+                                <div class="dwp-mini-label">Total</div>
+                                <div class="dwp-mini-value">{{ dwp.total if dwp else 0 }}</div>
+                            </div>
+                            <div class="dwp-mini-card">
+                                <div class="dwp-mini-label">Pending Ack</div>
+                                <div class="dwp-mini-value {% if dwp and dwp.pending %}dwp-pending{% endif %}">
+                                    {{ dwp.pending if dwp else 0 }}
+                                </div>
+                            </div>
+                            <div class="dwp-mini-card">
+                                <div class="dwp-mini-label">Coaching</div>
+                                <div class="dwp-mini-value">{{ dwp.coaching if dwp else 0 }}</div>
+                            </div>
+                            <div class="dwp-mini-card">
+                                <div class="dwp-mini-label">Oral</div>
+                                <div class="dwp-mini-value">{{ dwp.oral if dwp else 0 }}</div>
+                            </div>
+                            <div class="dwp-mini-card">
+                                <div class="dwp-mini-label">Written</div>
+                                <div class="dwp-mini-value">{{ dwp.written if dwp else 0 }}</div>
+                            </div>
+                            <div class="dwp-mini-card">
+                                <div class="dwp-mini-label">DML</div>
+                                <div class="dwp-mini-value">{{ dwp.dml if dwp else 0 }}</div>
+                            </div>
+                        </div>
+
+                        {% if dwp and dwp.latest %}
+                            <div class="dwp-latest">
+                                <strong>Latest:</strong>
+                                {{ dwp.latest.conversation_date.strftime('%m/%d/%y') }}
+                                · {{ dwp.latest.discussion_type }}
+                                · {{ dwp.latest.category }}
+                                {% if not dwp.latest.acknowledged_at %}
+                                    · <span class="dwp-pending"><strong>Pending acknowledgement</strong></span>
+                                {% endif %}
+                                · <a class="dwp-profile-link" href="{{ url_for('dwp.detail', record_id=dwp.latest.id) }}">View</a>
+                            </div>
+                        {% else %}
+                            <div class="dwp-latest">No DWP records for this team member.</div>
+                        {% endif %}
                     </div>
 
                     <div class="user-section-label">Access</div>

@@ -9,7 +9,7 @@ from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from werkzeug.security import generate_password_hash
-from app.models import User, Store, PendingRegistrationRequest
+from app.models import User, Store, PendingRegistrationRequest, DWPRecord
 from app.extensions import db
 from app.services.email_service import send_email
 
@@ -470,6 +470,63 @@ def logout():
     return redirect(url_for("auth.login"))
 
 
+
+def build_dwp_stats_for_users(users):
+    user_ids = [u.id for u in users]
+    stats = {}
+
+    for user in users:
+        stats[user.id] = {
+            "total": 0,
+            "pending": 0,
+            "coaching": 0,
+            "oral": 0,
+            "written": 0,
+            "dml": 0,
+            "latest": None,
+        }
+
+    if not user_ids:
+        return stats
+
+    records = (
+        DWPRecord.query
+        .filter(DWPRecord.team_member_id.in_(user_ids))
+        .order_by(DWPRecord.conversation_date.desc(), DWPRecord.created_at.desc())
+        .all()
+    )
+
+    for record in records:
+        item = stats.setdefault(record.team_member_id, {
+            "total": 0,
+            "pending": 0,
+            "coaching": 0,
+            "oral": 0,
+            "written": 0,
+            "dml": 0,
+            "latest": None,
+        })
+
+        item["total"] += 1
+
+        if not record.acknowledged_at:
+            item["pending"] += 1
+
+        if record.discussion_type == "Coaching":
+            item["coaching"] += 1
+        elif record.discussion_type == "Oral Reminder":
+            item["oral"] += 1
+        elif record.discussion_type == "Written Reminder":
+            item["written"] += 1
+        elif record.discussion_type == "DML - Decision Making Leave":
+            item["dml"] += 1
+
+        if item["latest"] is None:
+            item["latest"] = record
+
+    return stats
+
+
 @auth_bp.route("/users", methods=["GET", "POST"])
 @login_required
 @role_required("admin", "general_manager")
@@ -775,9 +832,12 @@ def manage_users():
     else:
         users = User.query.order_by(User.name.asc()).all()
 
+    dwp_stats = build_dwp_stats_for_users(users)
+
     return render_template(
         "users.html",
         users=users,
+        dwp_stats=dwp_stats,
         role_labels=ROLE_LABELS,
         can_manage_all_users=can_manage_all_users,
         gm_store=gm_store,

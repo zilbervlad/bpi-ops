@@ -1,0 +1,626 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.dwp-page {
+    max-width: 1480px;
+    margin: 0 auto;
+    padding: 10px 12px 40px;
+}
+
+.dwp-hero {
+    background: linear-gradient(135deg, #111827, #1f2937);
+    color: #fff;
+    border-radius: 22px;
+    padding: 26px;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: center;
+    box-shadow: 0 18px 45px rgba(0,0,0,.18);
+}
+
+.dwp-hero h1 {
+    margin: 0;
+    font-size: 30px;
+    letter-spacing: -0.05em;
+}
+
+.dwp-hero p {
+    margin: 8px 0 0;
+    color: #d1d5db;
+    font-weight: 700;
+}
+
+.dwp-btn {
+    border: 0;
+    background: #2563eb;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 999px;
+    font-weight: 900;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    box-shadow: 0 12px 24px rgba(37,99,235,.25);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.stat-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 16px;
+    text-decoration: none;
+    display: block;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px rgba(15, 23, 42, .10);
+    border-color: #bfdbfe;
+}
+
+.stat-card.active {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+.stat-label {
+    color: #6b7280;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 900;
+}
+
+.stat-value {
+    margin-top: 6px;
+    font-size: 26px;
+    font-weight: 950;
+    color: #111827;
+    letter-spacing: -.04em;
+}
+
+.filter-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.filter-field label {
+    display: block;
+    font-size: 11px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 900;
+    margin-bottom: 6px;
+}
+
+.filter-field input,
+.filter-field select {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 10px 11px;
+    font: inherit;
+    box-sizing: border-box;
+    background: #fff;
+    color: #111827;
+    font-weight: 700;
+}
+
+.filter-field input::placeholder {
+    color: #6b7280;
+    opacity: 1;
+}
+
+.filter-field select option {
+    color: #111827;
+    background: #fff;
+}
+
+.filter-field input[type="date"] {
+    color: #111827;
+}
+
+.date-presets {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 9px;
+}
+
+.date-preset-btn {
+    border: 1px solid #d1d5db;
+    background: #f8fafc;
+    color: #111827;
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.date-preset-btn:hover {
+    background: #e5e7eb;
+}
+
+.date-preset-btn.active {
+    background: #111827;
+    color: #ffffff;
+    border-color: #111827;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-small {
+    border: 0;
+    border-radius: 12px;
+    padding: 11px 14px;
+    font-weight: 900;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-search {
+    background: #111827;
+    color: white;
+}
+
+.btn-clear {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.dwp-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.table-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.table-title {
+    font-size: 15px;
+    font-weight: 950;
+    color: #111827;
+}
+
+.table-subtitle {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+.dwp-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dwp-table th {
+    background: #f9fafb;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.dwp-table td {
+    padding: 14px;
+    border-top: 1px solid #f3f4f6;
+    vertical-align: top;
+    color: #111827;
+}
+
+.dwp-table tr:hover td {
+    background: #f9fafb;
+}
+
+.person-name {
+    font-weight: 950;
+}
+
+.person-link {
+    color: #111827;
+    text-decoration: none;
+}
+
+.person-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+.muted {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.pill {
+    display: inline-flex;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #3730a3;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.pill-store {
+    background: #ecfeff;
+    color: #155e75;
+}
+
+.pill-coaching {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.pill-oral {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.pill-written {
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.pill-dml {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.pill-letter {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.view-link {
+    color: #2563eb;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.empty-state {
+    padding: 44px 20px;
+    text-align: center;
+    color: #6b7280;
+    background: #fff;
+}
+
+.empty-state h3 {
+    margin: 0;
+    color: #111827;
+    font-size: 20px;
+}
+
+.empty-state p {
+    margin: 8px auto 0;
+    max-width: 520px;
+    line-height: 1.5;
+}
+
+@media (max-width: 1200px) {
+    .filter-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 800px) {
+    .dwp-hero {
+        display: block;
+    }
+
+    .dwp-hero .dwp-btn {
+        margin-top: 16px;
+    }
+
+    .filter-grid,
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dwp-card {
+        overflow-x: auto;
+    }
+
+    .dwp-table {
+        min-width: 900px;
+    }
+}
+</style>
+
+<div class="dwp-page">
+    <div class="dwp-hero">
+        <div>
+            <h1>DWP</h1>
+            <p>Discipline Without Punishment records, reminders, and decision-making leave documentation.</p>
+        </div>
+        <a class="dwp-btn" href="{{ url_for('dwp.new') }}">+ New DWP Record</a>
+    </div>
+
+    <div class="stats-grid">
+        <a class="stat-card {% if not type_filter %}active{% endif %}"
+           href="{{ url_for('dwp.index', search=search, store=store_filter, category=category_filter, date_from=date_from, date_to=date_to) }}">
+            <div class="stat-label">Showing Records</div>
+            <div class="stat-value">{{ stats.total }}</div>
+        </a>
+
+        <a class="stat-card {% if type_filter == 'Coaching' %}active{% endif %}"
+           href="{{ url_for('dwp.index', search=search, store=store_filter, type='Coaching', category=category_filter, date_from=date_from, date_to=date_to) }}">
+            <div class="stat-label">Coaching</div>
+            <div class="stat-value">{{ stats.coaching }}</div>
+        </a>
+
+        <a class="stat-card {% if type_filter == 'Oral Reminder' %}active{% endif %}"
+           href="{{ url_for('dwp.index', search=search, store=store_filter, type='Oral Reminder', category=category_filter, date_from=date_from, date_to=date_to) }}">
+            <div class="stat-label">Oral Reminders</div>
+            <div class="stat-value">{{ stats.oral }}</div>
+        </a>
+
+        <a class="stat-card {% if type_filter == 'Written Reminder' %}active{% endif %}"
+           href="{{ url_for('dwp.index', search=search, store=store_filter, type='Written Reminder', category=category_filter, date_from=date_from, date_to=date_to) }}">
+            <div class="stat-label">Written Reminders</div>
+            <div class="stat-value">{{ stats.written }}</div>
+        </a>
+
+        <a class="stat-card {% if type_filter == 'DML - Decision Making Leave' %}active{% endif %}"
+           href="{{ url_for('dwp.index', search=search, store=store_filter, type='DML - Decision Making Leave', category=category_filter, date_from=date_from, date_to=date_to) }}">
+            <div class="stat-label">DML</div>
+            <div class="stat-value">{{ stats.dml }}</div>
+        </a>
+    </div>
+
+    <form class="filter-card" method="GET" action="{{ url_for('dwp.index') }}">
+        <div class="filter-grid">
+            <div class="filter-field">
+                <label>Search</label>
+                <input type="text" name="search" value="{{ search }}" placeholder="Team member, store, submitted by, notes...">
+            </div>
+
+            <div class="filter-field">
+                <label>Store</label>
+                <select name="store">
+                    <option value="">All stores</option>
+                    {% for store in store_options %}
+                        <option value="{{ store }}" {% if store_filter == store %}selected{% endif %}>{{ store }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-field">
+                <label>Type</label>
+                <select name="type">
+                    <option value="">All types</option>
+                    {% for discussion_type in discussion_types %}
+                        <option value="{{ discussion_type }}" {% if type_filter == discussion_type %}selected{% endif %}>{{ discussion_type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-field">
+                <label>Category</label>
+                <select name="category">
+                    <option value="">All categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category }}" {% if category_filter == category %}selected{% endif %}>{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-field">
+                <label>From</label>
+                <input type="date" name="date_from" value="{{ date_from }}">
+            </div>
+
+            <div class="filter-field">
+                <label>To</label>
+                <input type="date" name="date_to" value="{{ date_to }}">
+            </div>
+
+                <div class="filter-field" style="min-width: 360px;">
+                    <label>Quick Dates</label>
+                    <div class="date-presets">
+                        <button type="button" class="date-preset-btn" data-date-preset="today">Today</button>
+                        <button type="button" class="date-preset-btn" data-date-preset="mtd">MTD</button>
+                        <button type="button" class="date-preset-btn" data-date-preset="last90">Last 90</button>
+                        <button type="button" class="date-preset-btn" data-date-preset="ytd">YTD</button>
+                        <button type="button" class="date-preset-btn" data-date-preset="clear">Clear Dates</button>
+                    </div>
+                </div>
+
+            <div class="filter-actions">
+                <button class="btn-small btn-search" type="submit">Search</button>
+                <a class="btn-small btn-clear" href="{{ url_for('dwp.index') }}">Clear</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="dwp-card">
+        <div class="table-header">
+            <div>
+                <div class="table-title">DWP Records</div>
+                <div class="table-subtitle">Searchable by store, team member, discussion type, category, date, and submitted by.</div>
+            </div>
+        </div>
+
+        {% if records %}
+        <table class="dwp-table">
+            <thead>
+                <tr>
+                    <th>Conversation</th>
+                    <th>Store</th>
+                    <th>Team Member</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Submitted By</th>
+                    <th>Letter</th>
+                    <th>Acknowledgement</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>
+                        <strong>{{ record.conversation_date.strftime('%m/%d/%y') }}</strong>
+                        <div class="muted">Infraction {{ record.infraction_date.strftime('%m/%d/%y') }}</div>
+                    </td>
+                    <td>
+                        <span class="pill pill-store">Store {{ record.store_number }}</span>
+                    </td>
+                    <td>
+                        <a class="person-name person-link" href="{{ url_for('dwp.team_member_file', user_id=record.team_member_id) }}">
+                            {{ record.team_member_name_snapshot }}
+                        </a>
+                    </td>
+                    <td>
+                        {% set type_class = 'pill-coaching' %}
+                        {% if record.discussion_type == 'Oral Reminder' %}
+                            {% set type_class = 'pill-oral' %}
+                        {% elif record.discussion_type == 'Written Reminder' %}
+                            {% set type_class = 'pill-written' %}
+                        {% elif record.discussion_type == 'DML - Decision Making Leave' %}
+                            {% set type_class = 'pill-dml' %}
+                        {% endif %}
+                        <span class="pill {{ type_class }}">{{ record.discussion_type }}</span>
+                    </td>
+                    <td>{{ record.category }}</td>
+                    <td>
+                        <div>{{ record.submitted_by_name_snapshot }}</div>
+                        <div class="muted">{{ record.created_at.strftime('%m/%d/%y %I:%M %p') }}</div>
+                    </td>
+                    <td>
+                        {% if record.letter_data %}
+                            <span class="pill pill-letter">Attached</span>
+                        {% elif record.requires_letter %}
+                            <span class="pill pill-dml">Missing</span>
+                        {% else %}
+                            <span class="muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if record.acknowledged_at %}
+                            <span class="pill pill-coaching">Acknowledged</span>
+                            <div class="muted">{{ record.acknowledged_at.strftime('%m/%d/%y %I:%M %p') }}</div>
+                        {% else %}
+                            <span class="pill pill-written">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a class="view-link" href="{{ url_for('dwp.detail', record_id=record.id) }}">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <h3>No DWP records found</h3>
+            <p>Create a new DWP record or adjust your search filters. Once records are submitted, this dashboard will organize them by store, team member, type, category, and date.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+(function () {
+    const fromInput = document.querySelector('input[name="date_from"]');
+    const toInput = document.querySelector('input[name="date_to"]');
+    const buttons = Array.from(document.querySelectorAll("[data-date-preset]"));
+
+    function toISODate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    function setDates(from, to) {
+        if (fromInput) fromInput.value = from || "";
+        if (toInput) toInput.value = to || "";
+    }
+
+    buttons.forEach(button => {
+        button.addEventListener("click", () => {
+            const preset = button.dataset.datePreset;
+            const today = new Date();
+
+            let from = "";
+            let to = toISODate(today);
+
+            if (preset === "today") {
+                from = toISODate(today);
+            }
+
+            if (preset === "mtd") {
+                from = toISODate(new Date(today.getFullYear(), today.getMonth(), 1));
+            }
+
+            if (preset === "last90") {
+                const start = new Date(today);
+                start.setDate(start.getDate() - 89);
+                from = toISODate(start);
+            }
+
+            if (preset === "ytd") {
+                from = toISODate(new Date(today.getFullYear(), 0, 1));
+            }
+
+            if (preset === "clear") {
+                from = "";
+                to = "";
+            }
+
+            setDates(from, to);
+
+            buttons.forEach(btn => btn.classList.remove("active"));
+            if (preset !== "clear") button.classList.add("active");
+        });
+    });
+})();
+</script>
+
+{% endblock %}

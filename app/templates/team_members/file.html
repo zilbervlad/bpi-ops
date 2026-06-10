@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.tm-file {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 10px 12px 40px;
+}
+
+.tm-hero {
+    background: linear-gradient(135deg, #111827, #1f2937);
+    color: #fff;
+    border-radius: 24px;
+    padding: 26px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: center;
+}
+
+.tm-title {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.tm-avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 20px;
+    background: #2563eb;
+    color: white;
+    display: grid;
+    place-items: center;
+    font-size: 24px;
+    font-weight: 950;
+}
+
+.tm-hero h1 {
+    margin: 0;
+    font-size: 30px;
+    letter-spacing: -.05em;
+}
+
+.tm-hero p {
+    margin: 7px 0 0;
+    color: #d1d5db;
+    font-weight: 800;
+}
+
+.tm-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    border-radius: 999px;
+    padding: 11px 15px;
+    font-weight: 950;
+    text-decoration: none;
+    border: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+.btn-muted {
+    background: rgba(255,255,255,.10);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.18);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.stat-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.stat-label {
+    color: #6b7280;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 900;
+}
+
+.stat-value {
+    margin-top: 6px;
+    font-size: 26px;
+    font-weight: 950;
+    color: #111827;
+    letter-spacing: -.04em;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 330px 1fr;
+    gap: 14px;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-title {
+    font-weight: 950;
+    color: #111827;
+}
+
+.info-list {
+    padding: 14px 16px;
+}
+
+.info-row {
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.info-row:last-child {
+    border-bottom: 0;
+}
+
+.info-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #6b7280;
+    font-weight: 950;
+}
+
+.info-value {
+    margin-top: 4px;
+    color: #111827;
+    font-weight: 850;
+}
+
+.timeline {
+    padding: 8px 16px 16px;
+}
+
+.timeline-item {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 14px;
+    padding: 16px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.timeline-item:last-child {
+    border-bottom: 0;
+}
+
+.timeline-date {
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.timeline-main {
+    min-width: 0;
+}
+
+.timeline-title {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.timeline-title strong {
+    color: #111827;
+}
+
+.pill {
+    display: inline-flex;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #3730a3;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.pill-coaching { background: #ecfdf5; color: #065f46; }
+.pill-oral { background: #eff6ff; color: #1d4ed8; }
+.pill-written { background: #fff7ed; color: #9a3412; }
+.pill-dml { background: #fef2f2; color: #991b1b; }
+
+.timeline-text {
+    color: #374151;
+    line-height: 1.45;
+    margin: 0 0 8px;
+}
+
+.view-link {
+    color: #2563eb;
+    font-weight: 950;
+    text-decoration: none;
+}
+
+.empty {
+    padding: 34px 18px;
+    color: #6b7280;
+    text-align: center;
+}
+
+.future-box {
+    padding: 14px 16px 16px;
+    color: #6b7280;
+    line-height: 1.45;
+}
+
+.future-list {
+    margin: 10px 0 0;
+    padding-left: 18px;
+}
+
+@media (max-width: 1000px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tm-hero {
+        display: block;
+    }
+
+    .tm-actions {
+        margin-top: 16px;
+    }
+}
+
+@media (max-width: 650px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .timeline-item {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="tm-file">
+    <div class="tm-hero">
+        <div class="tm-title">
+            <div class="tm-avatar">{{ team_member_name[:1]|upper }}</div>
+            <div>
+                <h1>{{ team_member_name }}</h1>
+                <p>Team Member File · Store {{ team_member.store_number or '—' }} · {{ team_member.role|title }}</p>
+            </div>
+        </div>
+
+        <div class="tm-actions">
+            <a class="btn btn-muted" href="{{ url_for('dwp.index') }}">Back to DWP</a>
+            <a class="btn btn-primary" href="{{ url_for('dwp.new') }}">+ New DWP Record</a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total DWP</div>
+            <div class="stat-value">{{ stats.total }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Coaching</div>
+            <div class="stat-value">{{ stats.coaching }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Oral</div>
+            <div class="stat-value">{{ stats.oral }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Written</div>
+            <div class="stat-value">{{ stats.written }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">DML</div>
+            <div class="stat-value">{{ stats.dml }}</div>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Profile</div>
+                </div>
+                <div class="info-list">
+                    <div class="info-row">
+                        <div class="info-label">Name</div>
+                        <div class="info-value">{{ team_member_name }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Username</div>
+                        <div class="info-value">{{ team_member.username or '—' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Email</div>
+                        <div class="info-value">{{ team_member.email or '—' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Store</div>
+                        <div class="info-value">{{ team_member.store_number or '—' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Role</div>
+                        <div class="info-value">{{ team_member.role|title }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:14px;">
+                <div class="card-header">
+                    <div class="card-title">Coming Later</div>
+                </div>
+                <div class="future-box">
+                    This file can become the full employee record.
+                    <ul class="future-list">
+                        <li>HR documents</li>
+                        <li>Forms</li>
+                        <li>Training</li>
+                        <li>Attendance</li>
+                        <li>Time cards</li>
+                        <li>Manager notes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">DWP History</div>
+            </div>
+
+            {% if records %}
+            <div class="timeline">
+                {% for record in records %}
+                    {% set type_class = 'pill-coaching' %}
+                    {% if record.discussion_type == 'Oral Reminder' %}
+                        {% set type_class = 'pill-oral' %}
+                    {% elif record.discussion_type == 'Written Reminder' %}
+                        {% set type_class = 'pill-written' %}
+                    {% elif record.discussion_type == 'DML - Decision Making Leave' %}
+                        {% set type_class = 'pill-dml' %}
+                    {% endif %}
+
+                    <div class="timeline-item">
+                        <div class="timeline-date">
+                            {{ record.conversation_date.strftime('%m/%d/%y') }}
+                            <div>Store {{ record.store_number }}</div>
+                        </div>
+                        <div class="timeline-main">
+                            <div class="timeline-title">
+                                <span class="pill {{ type_class }}">{{ record.discussion_type }}</span>
+                                <span class="pill">{{ record.category }}</span>
+                                <strong>Submitted by {{ record.submitted_by_name_snapshot }}</strong>
+                            </div>
+                            <p class="timeline-text">
+                                <strong>Actual:</strong> {{ record.actual_performance }}
+                            </p>
+                            <p class="timeline-text">
+                                <strong>Agreed To:</strong> {{ record.team_member_agrees_to }}
+                            </p>
+                            <a class="view-link" href="{{ url_for('dwp.detail', record_id=record.id) }}">View full record</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty">
+                No DWP history for this team member yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

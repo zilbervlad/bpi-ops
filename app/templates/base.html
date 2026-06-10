@@ -69,6 +69,12 @@
                 <div class="nav-section">
                     <div class="nav-section-label">My Shift</div>
 
+                    <a href="{{ url_for('dwp.my_dwp') }}"
+                       class="{% if request.endpoint == 'dwp.my_dwp' or request.endpoint == 'dwp.detail' %}active{% endif %}">
+                        <span class="nav-icon">◇</span>
+                        <span>My DWP</span>
+                    </a>
+
                     <a href="{{ url_for('shift_todos.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
                         <span class="nav-icon">✓</span>
@@ -191,11 +197,17 @@
                         <span class="nav-icon">◆</span>
                         <span>HR Documents</span>
                     </a>
+
+                    <a href="{{ url_for('dwp.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('dwp') %}active{% endif %}">
+                        <span>◇</span>
+                        <span>DWP</span>
+                    </a>
                     {% endif %}
 
                     <a href="{{ url_for('forms.admin') }}"
                        class="{% if request.endpoint in ['forms.admin', 'forms.edit_template'] %}active{% endif %}">
-                        <span class="nav-icon">📝</span>
+                        <span class="nav-icon">□</span>
                         <span>Forms</span>
                     </a>
 
@@ -361,7 +373,7 @@
 
                     <a href="{{ url_for('forms.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('forms') and request.endpoint != 'forms.admin' and request.endpoint != 'forms.edit_template' %}active{% endif %}">
-                        <span>📝</span>
+                        <span>▣</span>
                         <small>Forms</small>
                     </a>
 
@@ -393,7 +405,7 @@
                 {% elif access_role == 'hr' %}
                     <a href="{{ url_for('forms.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('forms') and request.endpoint != 'forms.admin' and request.endpoint != 'forms.edit_template' %}active{% endif %}">
-                        <span>📝</span>
+                        <span>▣</span>
                         <small>Forms</small>
                     </a>
 
@@ -504,6 +516,8 @@
             "registration": "/users/registration-requests",
             "qr": "/users/registration-qr",
             "forms": "/forms/",
+            "dwp": "/dwp/",
+            "my dwp": "/dwp/my",
             "hr": "/hr-documents/",
             "maintenance": "/maintenance/",
             "checklist": "/checklist/",

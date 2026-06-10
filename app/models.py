@@ -815,3 +815,55 @@ class DailyPrepItem(db.Model):
     completed_at = db.Column(db.DateTime, nullable=True)
 
     template_item = db.relationship("PrepTemplateItem")
+
+class DWPRecord(db.Model):
+    __tablename__ = "dwp_records"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    conversation_date = db.Column(db.Date, nullable=False)
+    infraction_date = db.Column(db.Date, nullable=False)
+
+    store_number = db.Column(db.String(10), nullable=False)
+
+    team_member_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    team_member_name_snapshot = db.Column(db.String(150), nullable=False)
+
+    submitted_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    submitted_by_name_snapshot = db.Column(db.String(150), nullable=False)
+
+    discussion_type = db.Column(db.String(80), nullable=False)
+    category = db.Column(db.String(80), nullable=False)
+
+    previous_conversations = db.Column(db.Text, nullable=True)
+    expected_performance = db.Column(db.Text, nullable=False)
+    actual_performance = db.Column(db.Text, nullable=False)
+    team_member_statement = db.Column(db.Text, nullable=True)
+    business_reason = db.Column(db.Text, nullable=False)
+    logical_consequence = db.Column(db.Text, nullable=False)
+    team_member_agrees_to = db.Column(db.Text, nullable=False)
+    additional_comments = db.Column(db.Text, nullable=True)
+
+    letter_filename = db.Column(db.String(255), nullable=True)
+    letter_original_filename = db.Column(db.String(255), nullable=True)
+    letter_content_type = db.Column(db.String(120), nullable=True)
+    letter_data = db.Column(db.LargeBinary, nullable=True)
+    letter_uploaded_at = db.Column(db.DateTime, nullable=True)
+
+    status = db.Column(db.String(40), nullable=False, default="filed")
+
+    acknowledged_at = db.Column(db.DateTime, nullable=True)
+    acknowledged_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    acknowledged_name = db.Column(db.String(150), nullable=True)
+    acknowledgement_note = db.Column(db.Text, nullable=True)
+
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    team_member = db.relationship("User", foreign_keys=[team_member_id])
+    submitted_by = db.relationship("User", foreign_keys=[submitted_by_id])
+    acknowledged_by = db.relationship("User", foreign_keys=[acknowledged_by_id])
+
+    @property
+    def requires_letter(self):
+        return self.discussion_type in ["Written Reminder", "DML - Decision Making Leave"]

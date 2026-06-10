@@ -573,8 +573,20 @@
 
         <div class="metric-card premium-card" id="tm-acknowledgements">
             <span class="metric-label">Acknowledgements</span>
-            <h3>Coming Soon</h3>
-            <div class="metric-footnote">Policy and task sign-offs will live here.</div>
+            <h3>DWP Records</h3>
+            {% if tm_dwp_pending_count|default(0) > 0 %}
+                <div class="metric-footnote">
+                    <strong>{{ tm_dwp_pending_count }}</strong> DWP record(s) need your acknowledgement.
+                </div>
+            {% elif tm_dwp_total_count|default(0) > 0 %}
+                <div class="metric-footnote">You have no pending DWP acknowledgements.</div>
+            {% else %}
+                <div class="metric-footnote">No DWP records assigned to you.</div>
+            {% endif %}
+            <a href="{{ url_for('dwp.my_dwp') }}"
+               style="display:inline-flex;margin-top:10px;color:#93c5fd;font-weight:900;text-decoration:none;">
+                Review DWP →
+            </a>
         </div>
     </div>
 

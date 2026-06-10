@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.dwp-detail-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 12px 28px;
+}
+
+.dwp-sheet-header {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #fff;
+    border-radius: 22px;
+    padding: 22px 26px;
+    margin-bottom: 14px;
+}
+
+.dwp-sheet-header h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 950;
+    letter-spacing: -0.05em;
+}
+
+.dwp-sheet-header .sub {
+    margin-top: 8px;
+    font-size: 14px;
+    color: #d1d5db;
+    font-weight: 700;
+}
+
+.dwp-sheet {
+    background: #ffffff;
+    border: 1px solid #dbe2ea;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, .05);
+}
+
+.form-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+}
+
+.form-title h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 950;
+    color: #111827;
+    letter-spacing: -0.04em;
+}
+
+.form-title p {
+    margin: 4px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.form-badge {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 12px;
+    padding: 10px 12px;
+    min-width: 140px;
+    text-align: center;
+}
+
+.form-badge-label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 900;
+    color: #64748b;
+}
+
+.form-badge-value {
+    display: block;
+    margin-top: 4px;
+    font-size: 15px;
+    font-weight: 950;
+    color: #0f172a;
+}
+
+.meta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.meta-box {
+    background: #f8fafc;
+    border: 1px solid #dbe2ea;
+    border-radius: 14px;
+    padding: 12px 14px;
+}
+
+.meta-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 900;
+    color: #6b7280;
+    margin-bottom: 6px;
+}
+
+.meta-value {
+    font-size: 14px;
+    font-weight: 900;
+    color: #111827;
+    line-height: 1.25;
+}
+
+.section-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.form-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.form-section.full {
+    grid-column: 1 / -1;
+}
+
+.section-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 950;
+    color: #374151;
+}
+
+.answer-box {
+    border: 1px solid #cfd8e3;
+    background: #fbfdff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    min-height: 54px;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+
+.answer-box.tall {
+    min-height: 76px;
+}
+
+.answer-box.short {
+    min-height: 46px;
+}
+
+.answer-box.empty {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.letter-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.letter-link {
+    color: #2563eb;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.letter-link:hover {
+    text-decoration: underline;
+}
+
+.actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    border-radius: 999px;
+    padding: 10px 15px;
+    font-weight: 900;
+    text-decoration: none;
+    border: 0;
+    cursor: pointer;
+}
+
+.btn-muted {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+@media (max-width: 900px) {
+    .meta-grid,
+    .section-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-title-row {
+        display: block;
+    }
+
+    .form-badge {
+        margin-top: 12px;
+        max-width: 180px;
+    }
+}
+
+@media print {
+    body {
+        background: white !important;
+    }
+
+    .sidebar,
+    .topbar,
+    .actions,
+    nav,
+    .flash-messages {
+        display: none !important;
+    }
+
+    .main-content,
+    .content,
+    .page-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .dwp-detail-page {
+        max-width: 100%;
+        padding: 0;
+    }
+
+    .dwp-sheet-header {
+        margin-bottom: 8px;
+        padding: 14px 16px;
+        border-radius: 0;
+    }
+
+    .dwp-sheet {
+        box-shadow: none;
+        border: 1px solid #cbd5e1;
+        border-radius: 0;
+        padding: 12px;
+    }
+
+    .meta-grid {
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .meta-box {
+        padding: 8px 10px;
+    }
+
+    .section-grid {
+        gap: 8px;
+    }
+
+    .section-label {
+        margin-bottom: 4px;
+        font-size: 10px;
+    }
+
+    .answer-box {
+        min-height: 38px;
+        padding: 7px 9px;
+        font-size: 12px;
+        line-height: 1.35;
+    }
+
+    .answer-box.tall {
+        min-height: 52px;
+    }
+
+    .form-title-row {
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+    }
+
+    .form-title h2 {
+        font-size: 18px;
+    }
+
+    .form-title p,
+    .dwp-sheet-header .sub {
+        font-size: 11px;
+    }
+}
+</style>
+
+<div class="dwp-detail-page">
+    <div class="dwp-sheet-header">
+        <h1>DWP Record</h1>
+        <div class="sub">{{ record.team_member_name_snapshot }} · Store {{ record.store_number }} · {{ record.discussion_type }}</div>
+    </div>
+
+    <div class="dwp-sheet">
+        <div class="form-title-row">
+            <div class="form-title">
+                <h2>Boston Pie, Inc. · Discipline Without Punishment</h2>
+                <p>Official discussion record for coaching, reminders, and decision-making leave documentation.</p>
+            </div>
+            <div class="form-badge">
+                <span class="form-badge-label">Record ID</span>
+                <span class="form-badge-value">DWP-{{ record.id }}</span>
+            </div>
+        </div>
+
+        <div class="meta-grid">
+            <div class="meta-box">
+                <div class="meta-label">Date of Conversation</div>
+                <div class="meta-value">{{ record.conversation_date.strftime('%m/%d/%Y') }}</div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">Date of Infraction</div>
+                <div class="meta-value">{{ record.infraction_date.strftime('%m/%d/%Y') }}</div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">Store</div>
+                <div class="meta-value">{{ record.store_number }}</div>
+            </div>
+
+            <div class="meta-box">
+                <div class="meta-label">Team Member</div>
+                <div class="meta-value">{{ record.team_member_name_snapshot }}</div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">Submitted By</div>
+                <div class="meta-value">{{ record.submitted_by_name_snapshot }}</div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">Category</div>
+                <div class="meta-value">{{ record.category }}</div>
+            </div>
+        </div>
+
+        <div class="section-grid">
+            <div class="form-section full">
+                <div class="section-label">Type of Discussion</div>
+                <div class="answer-box short">{{ record.discussion_type }}</div>
+            </div>
+
+            <div class="form-section full">
+                <div class="section-label">Information on Previous Conversations</div>
+                <div class="answer-box {% if record.previous_conversations %}short{% else %}short empty{% endif %}">{{ record.previous_conversations or 'None listed.' }}</div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-label">Expected Performance</div>
+                <div class="answer-box tall">{{ record.expected_performance }}</div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-label">Actual Performance</div>
+                <div class="answer-box tall">{{ record.actual_performance }}</div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-label">Team Member Statement / Response</div>
+                <div class="answer-box tall {% if not record.team_member_statement %}empty{% endif %}">{{ record.team_member_statement or 'None listed.' }}</div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-label">Good Business Reason Why the Problem Needs to Be Solved</div>
+                <div class="answer-box tall">{{ record.business_reason }}</div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-label">Logical Consequences if Not Corrected</div>
+                <div class="answer-box tall">{{ record.logical_consequence }}</div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-label">Team Member Agrees To</div>
+                <div class="answer-box tall">{{ record.team_member_agrees_to }}</div>
+            </div>
+
+            <div class="form-section full">
+                <div class="section-label">Additional Comments</div>
+                <div class="answer-box {% if record.additional_comments %}short{% else %}short empty{% endif %}">{{ record.additional_comments or 'None.' }}</div>
+            </div>
+
+            <div class="form-section full">
+                <div class="section-label">Letter Attachment</div>
+                <div class="answer-box short letter-box {% if not record.letter_data %}empty{% endif %}">
+                    {% if record.letter_data %}
+                        <span>{{ record.letter_original_filename or 'Attached Letter' }}</span>
+                        <a class="letter-link" href="{{ url_for('dwp.download_letter', record_id=record.id) }}">Download</a>
+                    {% else %}
+                        <span>No letter attached.</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="ack-box {% if record.acknowledged_at %}ack-complete{% endif %}">
+            <div class="ack-title">Team Member Acknowledgement</div>
+
+            {% if record.acknowledged_at %}
+                <div class="ack-text">
+                    Acknowledged by <strong>{{ record.acknowledged_name or record.team_member_name_snapshot }}</strong>
+                    on <strong>{{ record.acknowledged_at.strftime('%m/%d/%Y %I:%M %p') }}</strong>.
+                </div>
+
+                {% if record.acknowledgement_note %}
+                    <div class="section-label">Team Member Note</div>
+                    <div class="answer-box short">{{ record.acknowledgement_note }}</div>
+                {% endif %}
+            {% elif user and (user.id == record.team_member_id or user.role in ['admin', 'hr']) %}
+                <div class="ack-text">
+                    I acknowledge that this DWP conversation record was reviewed with me. My acknowledgement does not necessarily mean I agree with all statements, but confirms I received and reviewed this record.
+                </div>
+
+                <form method="POST" action="{{ url_for('dwp.acknowledge', record_id=record.id) }}">
+                    <label class="ack-confirm">
+                        <input type="checkbox" name="acknowledge_confirm" value="1" required>
+                        <span>I acknowledge receipt and review of this DWP record.</span>
+                    </label>
+
+                    <div class="ack-row">
+                        <label>Type Your Name</label>
+                        <input type="text" name="acknowledged_name" required placeholder="Type your full name">
+                    </div>
+
+                    <div class="ack-row">
+                        <label>Optional Team Member Note</label>
+                        <textarea name="acknowledgement_note" placeholder="Optional note or response"></textarea>
+                    </div>
+
+                    <div class="actions" style="margin-top:12px;">
+                        <button class="btn btn-primary" type="submit">Acknowledge Record</button>
+                    </div>
+                </form>
+            {% else %}
+                <div class="ack-text">
+                    Pending team member acknowledgement.
+                </div>
+            {% endif %}
+        </div>
+
+
+        <div class="actions">
+            <a class="btn btn-muted" href="{{ url_for('dwp.index') }}">Back</a>
+            <a class="btn btn-primary" href="{{ url_for('dwp.download_pdf', record_id=record.id) }}">Download PDF</a>
+            <a class="btn btn-muted" href="#" onclick="window.print(); return false;">Print Page</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

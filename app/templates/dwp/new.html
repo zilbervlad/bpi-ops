@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.dwp-form-page { max-width: 1000px; margin: 0 auto; }
+.form-hero {
+    background: #111827;
+    color: #fff;
+    border-radius: 22px;
+    padding: 24px;
+    margin-bottom: 18px;
+}
+.form-hero h1 { margin: 0; letter-spacing: -0.04em; }
+.form-hero p { margin: 8px 0 0; color: #d1d5db; }
+.form-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 20px;
+}
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.field { margin-bottom: 16px; }
+label { display: block; font-weight: 800; margin-bottom: 7px; color: #111827; }
+input, select, textarea {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 11px 12px;
+    font: inherit;
+    box-sizing: border-box;
+}
+textarea { min-height: 92px; resize: vertical; }
+.help { color: #6b7280; font-size: 13px; margin-top: 5px; }
+.required-letter {
+    display: none;
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    color: #92400e;
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 16px;
+}
+.actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; }
+.btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 11px 18px;
+    font-weight: 900;
+    cursor: pointer;
+    text-decoration: none;
+}
+.btn-primary { background: #2563eb; color: white; }
+.btn-muted { background: #f3f4f6; color: #111827; }
+@media (max-width: 800px) {
+    .grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="dwp-form-page">
+    <div class="form-hero">
+        <h1>New DWP Record</h1>
+        <p>Select an existing team member account. Written Reminder and DML require an uploaded letter.</p>
+    </div>
+
+    <form class="form-card" method="POST" enctype="multipart/form-data">
+        <div class="grid">
+            <div class="field">
+                <label>Date of Conversation</label>
+                <input type="date" name="conversation_date" value="{{ today }}" required>
+            </div>
+            <div class="field">
+                <label>Date of Infraction</label>
+                <input type="date" name="infraction_date" value="{{ today }}" required>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Team Member</label>
+            <select name="team_member_id" required>
+                <option value="">Select employee...</option>
+                {% for employee in employees %}
+                    <option value="{{ employee.id }}">
+                        Store {{ employee.store_number or '—' }} · {{ employee.name or employee.username or employee.email or ('User ' ~ employee.id) }} · {{ employee.role|title }}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="help">Team member must have an active BPI Ops account before a DWP record can be created.</div>
+        </div>
+
+        <div class="grid">
+            <div class="field">
+                <label>Type of Discussion</label>
+                <select name="discussion_type" id="discussionType" required>
+                    <option value="">Select type...</option>
+                    {% for discussion_type in discussion_types %}
+                        <option value="{{ discussion_type }}">{{ discussion_type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label>Category of Infraction</label>
+                <select name="category" required>
+                    <option value="">Select category...</option>
+                    {% for category in categories %}
+                        <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="required-letter" id="requiredLetterNotice">
+            <strong>Letter required.</strong>
+            Written Reminder and DML - Decision Making Leave require an uploaded letter before submitting.
+        </div>
+
+        <div class="field">
+            <label>Letter Upload</label>
+            <input type="file" name="letter_file" id="letterFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+            <div class="help">Required for Written Reminder and DML only. Accepted: PDF, DOC, DOCX, JPG, PNG.</div>
+        </div>
+
+        <div class="field">
+            <label>Information on Previous Conversations</label>
+            <textarea name="previous_conversations"></textarea>
+        </div>
+
+        <div class="field">
+            <label>Expected Performance</label>
+            <textarea name="expected_performance" required></textarea>
+        </div>
+
+        <div class="field">
+            <label>Actual Performance</label>
+            <textarea name="actual_performance" required></textarea>
+        </div>
+
+        <div class="field">
+            <label>Team Member Statement / Response</label>
+            <textarea name="team_member_statement"></textarea>
+        </div>
+
+        <div class="field">
+            <label>Good Business Reason Why the Problem Needs to Be Solved</label>
+            <textarea name="business_reason" required></textarea>
+        </div>
+
+        <div class="field">
+            <label>Logical Consequences if Problem Is Not Corrected</label>
+            <textarea name="logical_consequence" required></textarea>
+        </div>
+
+        <div class="field">
+            <label>Team Member Agrees To</label>
+            <textarea name="team_member_agrees_to" required></textarea>
+        </div>
+
+        <div class="field">
+            <label>Additional Comments</label>
+            <textarea name="additional_comments"></textarea>
+        </div>
+
+        <div class="actions">
+            <a class="btn btn-muted" href="{{ url_for('dwp.index') }}">Cancel</a>
+            <button class="btn btn-primary" type="submit">Save DWP Record</button>
+        </div>
+    </form>
+</div>
+
+<script>
+(function() {
+    const discussionType = document.getElementById("discussionType");
+    const notice = document.getElementById("requiredLetterNotice");
+    const letterFile = document.getElementById("letterFile");
+
+    function syncLetterRequirement() {
+        const requires = ["Written Reminder", "DML - Decision Making Leave"].includes(discussionType.value);
+        notice.style.display = requires ? "block" : "none";
+        if (requires) {
+            letterFile.setAttribute("required", "required");
+        } else {
+            letterFile.removeAttribute("required");
+        }
+    }
+
+    discussionType.addEventListener("change", syncLetterRequirement);
+    syncLetterRequirement();
+})();
+</script>
+{% endblock %}

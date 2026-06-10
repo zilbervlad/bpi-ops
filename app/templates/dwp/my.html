@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.dwp-queue {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 8px 0 28px;
+}
+
+.queue-hero {
+    background: linear-gradient(135deg, #111827, #1f2937);
+    color: white;
+    border-radius: 0 0 18px 18px;
+    padding: 22px 26px;
+    margin-bottom: 18px;
+}
+
+.queue-hero h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 950;
+    letter-spacing: -0.05em;
+}
+
+.queue-hero p {
+    margin: 6px 0 0;
+    color: #d1d5db;
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.stat-tile {
+    background: #ffffff;
+    border: 1px solid #dbe2ea;
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-label {
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-size: 12px;
+    font-weight: 950;
+}
+
+.stat-value {
+    color: #111827;
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 950;
+}
+
+.queue-card {
+    background: #ffffff;
+    border: 1px solid #dbe2ea;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.queue-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+}
+
+.filter-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-pill {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    border-radius: 999px;
+    padding: 8px 13px;
+    font-weight: 950;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.filter-pill.active {
+    background: #111827;
+    color: #ffffff;
+    border-color: #111827;
+}
+
+.queue-search {
+    width: min(420px, 100%);
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+}
+
+.queue-search:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+.queue-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.queue-table th {
+    background: #f8fafc;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-size: 11px;
+    font-weight: 950;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.queue-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.queue-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.record-title {
+    color: #111827;
+    font-weight: 950;
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.record-sub {
+    color: #64748b;
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+.status-pill {
+    display: inline-flex;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 950;
+}
+
+.status-pending {
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.status-done {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.action-link {
+    color: #2563eb;
+    font-weight: 950;
+    text-decoration: none;
+}
+
+.action-link:hover {
+    text-decoration: underline;
+}
+
+.empty-row {
+    text-align: center;
+    padding: 32px 18px !important;
+    color: #64748b;
+    font-weight: 850;
+}
+
+.queue-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 13px;
+    border-top: 1px solid #e5e7eb;
+}
+
+@media (max-width: 900px) {
+    .stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .queue-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .queue-card {
+        overflow-x: auto;
+    }
+
+    .queue-table {
+        min-width: 860px;
+    }
+}
+</style>
+
+{% set pending_count = records|selectattr('acknowledged_at', 'none')|list|length %}
+{% set acknowledged_count = records|length - pending_count %}
+
+<div class="dwp-queue">
+    <div class="queue-hero">
+        <h1>DWP Queue</h1>
+        <p>Review assigned DWP records, acknowledgements, and required action items.</p>
+    </div>
+
+    <div class="stat-grid">
+        <div class="stat-tile">
+            <div class="stat-label">Pending</div>
+            <div class="stat-value">{{ pending_count }}</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-label">Acknowledged</div>
+            <div class="stat-value">{{ acknowledged_count }}</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-label">Assigned</div>
+            <div class="stat-value">{{ records|length }}</div>
+        </div>
+    </div>
+
+    <div class="queue-card">
+        <div class="queue-toolbar">
+            <div class="filter-pills">
+                <button type="button" class="filter-pill active" data-filter="all">All · {{ records|length }}</button>
+                <button type="button" class="filter-pill" data-filter="pending">Pending · {{ pending_count }}</button>
+                <button type="button" class="filter-pill" data-filter="acknowledged">Acknowledged · {{ acknowledged_count }}</button>
+            </div>
+
+            <input
+                id="dwpSearch"
+                class="queue-search"
+                type="search"
+                placeholder="Search DWP record, status, date..."
+                autocomplete="off"
+            >
+        </div>
+
+        <table class="queue-table">
+            <thead>
+                <tr>
+                    <th>Record</th>
+                    <th>Assigned</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Acknowledged</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="dwpRows">
+                {% if records %}
+                    {% for record in records %}
+                        {% set status_key = 'acknowledged' if record.acknowledged_at else 'pending' %}
+                        <tr
+                            data-dwp-row
+                            data-status="{{ status_key }}"
+                            data-search-text="{{ (
+                                record.conversation_date.strftime('%m/%d/%y') ~ ' ' ~
+                                record.store_number ~ ' ' ~
+                                record.discussion_type ~ ' ' ~
+                                record.category ~ ' ' ~
+                                record.submitted_by_name_snapshot ~ ' ' ~
+                                status_key
+                            )|lower }}"
+                        >
+                            <td>
+                                <div class="record-title">{{ record.discussion_type }} · {{ record.category }}</div>
+                                <div class="record-sub">Store {{ record.store_number }} · DWP-{{ record.id }}</div>
+                            </td>
+                            <td>
+                                <div class="record-title">{{ record.conversation_date.strftime('%m/%d/%y') }}</div>
+                                <div class="record-sub">By {{ record.submitted_by_name_snapshot }}</div>
+                            </td>
+                            <td>
+                                <div class="record-title">{{ record.discussion_type }}</div>
+                                <div class="record-sub">{{ record.category }}</div>
+                            </td>
+                            <td>
+                                {% if record.acknowledged_at %}
+                                    <span class="status-pill status-done">Acknowledged</span>
+                                {% else %}
+                                    <span class="status-pill status-pending">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.acknowledged_at %}
+                                    <div class="record-title">{{ record.acknowledged_at.strftime('%m/%d/%y') }}</div>
+                                    <div class="record-sub">{{ record.acknowledged_name or 'Acknowledged' }}</div>
+                                {% else %}
+                                    <div class="record-sub">Not yet acknowledged</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a class="action-link" href="{{ url_for('dwp.detail', record_id=record.id) }}">
+                                    {% if record.acknowledged_at %}View{% else %}Review / Sign{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="empty-row">No DWP records assigned to you.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <div class="queue-footer">
+            <span>Showing <span id="dwpVisibleCount">{{ records|length }}</span> DWP record(s)</span>
+            <span>BPI Ops · DWP</span>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const search = document.getElementById("dwpSearch");
+    const rows = Array.from(document.querySelectorAll("[data-dwp-row]"));
+    const pills = Array.from(document.querySelectorAll(".filter-pill"));
+    const visibleCount = document.getElementById("dwpVisibleCount");
+
+    let activeFilter = "all";
+
+    function applyFilters() {
+        const q = (search?.value || "").trim().toLowerCase();
+        let count = 0;
+
+        rows.forEach(row => {
+            const status = row.dataset.status || "";
+            const text = row.dataset.searchText || "";
+            const statusMatch = activeFilter === "all" || status === activeFilter;
+            const searchMatch = !q || text.includes(q);
+            const show = statusMatch && searchMatch;
+
+            row.style.display = show ? "" : "none";
+            if (show) count += 1;
+        });
+
+        if (visibleCount) visibleCount.textContent = count;
+    }
+
+    pills.forEach(pill => {
+        pill.addEventListener("click", () => {
+            pills.forEach(p => p.classList.remove("active"));
+            pill.classList.add("active");
+            activeFilter = pill.dataset.filter || "all";
+            applyFilters();
+        });
+    });
+
+    if (search) {
+        search.addEventListener("input", applyFilters);
+    }
+})();
+</script>
+{% endblock %}

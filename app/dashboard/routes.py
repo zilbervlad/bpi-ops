@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, session, jsonify, request, redirec
 from app.auth.routes import login_required, role_required
 from app.extensions import db
 from app.models import (
+    DWPRecord,
     Store,
     DailyChecklist,
     SVRReport,
@@ -708,6 +709,41 @@ def home():
             quick_actions.append({"label": "Manage Stores", "url": "/store-admin/"})
             quick_actions.append({"label": "SVR Admin", "url": "/svr/admin"})
 
+
+    tm_dwp_records = []
+    tm_dwp_pending_count = 0
+    tm_dwp_total_count = 0
+
+    if user_role == "tm" and session.get("user_id"):
+        tm_user_id = session.get("user_id")
+
+        tm_dwp_records = (
+            DWPRecord.query
+            .filter(DWPRecord.team_member_id == tm_user_id)
+            .order_by(
+                DWPRecord.acknowledged_at.isnot(None),
+                DWPRecord.conversation_date.desc(),
+                DWPRecord.created_at.desc(),
+            )
+            .limit(5)
+            .all()
+        )
+
+        tm_dwp_total_count = (
+            DWPRecord.query
+            .filter(DWPRecord.team_member_id == tm_user_id)
+            .count()
+        )
+
+        tm_dwp_pending_count = (
+            DWPRecord.query
+            .filter(
+                DWPRecord.team_member_id == tm_user_id,
+                DWPRecord.acknowledged_at.is_(None),
+            )
+            .count()
+        )
+
     return render_template(
         "dashboard.html",
         stats=data["stats"],
@@ -733,6 +769,9 @@ def home():
         restock_progress=data["restock_progress"],
         manager_walk_progress=data["manager_walk_progress"],
         manager_cash_summary=data["manager_cash_summary"],
+        tm_dwp_records=tm_dwp_records,
+        tm_dwp_pending_count=tm_dwp_pending_count,
+        tm_dwp_total_count=tm_dwp_total_count,
     )
 
 

@@ -6,6 +6,7 @@
     {% else %}
         Team Members | BPI Ops
     {% endif %}
+
 {% endblock %}
 
 {% block header %}
@@ -27,7 +28,7 @@
 {% set can_manage_all = can_manage_all_users|default(true) %}
 
 
-<div class="content-grid" style="margin-bottom: 24px;">
+<div class="users-create-wrap">
     <section class="panel premium-panel">
         <button
             type="button"
@@ -55,7 +56,7 @@
             <span id="create-user-chevron" class="summary-pill">Show ▼</span>
         </button>
 
-        <div id="create-user-body" style="display: none; margin-top: 16px;">
+        <div id="create-user-body" style="display: none; margin-top: 10px;">
             <form method="POST" class="login-form">
                 <input type="hidden" name="action" value="create">
 
@@ -392,6 +393,360 @@
             justify-content: flex-start;
         }
     }
+
+    /* Tight users page polish - UI only */
+    .users-create-wrap {
+        margin-bottom: 12px;
+    }
+
+    .users-create-wrap .premium-panel {
+        max-width: none;
+        padding: 14px 18px !important;
+        border-radius: 18px;
+    }
+
+    .users-create-wrap .panel-head h3 {
+        font-size: 17px;
+        margin-bottom: 2px !important;
+    }
+
+    .users-create-wrap .area-subtitle {
+        font-size: 12px;
+        line-height: 1.25;
+    }
+
+    #create-user-chevron {
+        padding: 7px 12px;
+        font-size: 12px;
+    }
+
+    .premium-panel > .panel-head {
+        padding-bottom: 10px;
+        align-items: center;
+    }
+
+    .premium-panel > .panel-head h3 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        letter-spacing: -0.02em;
+    }
+
+    .user-search-bar {
+        gap: 8px;
+        margin-top: 4px;
+        margin-bottom: 10px;
+    }
+
+    .user-search-input {
+        min-height: 38px;
+        padding: 8px 14px;
+        font-size: 14px;
+    }
+
+    #userSearchClear {
+        min-height: 38px;
+        padding: 0 16px;
+        border-radius: 12px;
+    }
+
+    #userSearchCount,
+    .panel-head .summary-pill {
+        min-height: 34px;
+        padding: 7px 12px;
+        font-size: 13px;
+    }
+
+    .user-directory-header {
+        grid-template-columns: 86px 88px 150px minmax(260px, 1fr) 110px;
+        padding: 0 14px 8px;
+        font-size: 11px;
+        letter-spacing: 0.16em;
+    }
+
+    .user-card-list {
+        gap: 6px;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .user-card {
+        border-radius: 14px;
+        background: rgba(15, 23, 42, 0.42);
+    }
+
+    .user-card-summary {
+        min-height: 46px;
+        padding: 8px 14px;
+        display: grid;
+        grid-template-columns: 1fr 108px;
+        gap: 10px;
+    }
+
+    .user-card-left {
+        display: grid;
+        grid-template-columns: 76px 86px 150px minmax(260px, 1fr);
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .user-card-left .summary-pill,
+    .user-card-left .status-badge,
+    .user-expand-chip {
+        min-height: 26px;
+        padding: 5px 10px;
+        font-size: 12px;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .user-card-left .summary-pill:nth-of-type(n+3) {
+        justify-self: start;
+    }
+
+    .user-name-main {
+        font-size: 14px;
+        line-height: 1.1;
+        margin-bottom: 1px;
+    }
+
+    .user-name-sub {
+        font-size: 11px;
+        line-height: 1.15;
+        opacity: 0.62;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .user-card-right {
+        justify-content: flex-end;
+    }
+
+    .user-expand-chip {
+        min-width: 86px;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .user-card-body {
+        padding: 10px 14px 14px 14px;
+    }
+
+    .user-card-body .login-form {
+        margin-top: 0 !important;
+    }
+
+    .user-section-label {
+        margin-top: 10px;
+        margin-bottom: 7px;
+        font-size: 10px;
+    }
+
+    .compact-grid {
+        gap: 10px;
+    }
+
+    .compact-group label {
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+
+    .compact-group input,
+    .compact-group select {
+        min-height: 36px;
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
+    @media (max-width: 1100px) {
+        .user-directory-header {
+            display: none;
+        }
+
+        .user-card-summary {
+            display: flex;
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .user-card-left {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .user-name-sub {
+            white-space: normal;
+        }
+    }
+
+
+    /* Clean row grid override */
+    .user-directory-header,
+    .user-row-grid {
+        display: grid;
+        grid-template-columns: 82px 96px 190px minmax(320px, 1fr) 112px;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .user-directory-header {
+        padding: 0 16px 8px;
+        color: rgba(203, 213, 225, 0.62);
+        font-size: 10px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .user-card-list {
+        gap: 0 !important;
+        margin-top: 0 !important;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 16px;
+        overflow: hidden;
+        background: rgba(15, 23, 42, 0.30);
+    }
+
+    .user-card {
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.14) !important;
+    }
+
+    .user-card:last-child {
+        border-bottom: 0 !important;
+    }
+
+    .user-card-summary {
+        display: block !important;
+        width: 100%;
+        min-height: 52px;
+        padding: 9px 16px !important;
+    }
+
+    .user-card-summary:hover {
+        background: rgba(59, 130, 246, 0.07);
+    }
+
+    .user-row-role {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+
+    .user-row-details {
+        min-width: 0;
+    }
+
+    .user-name-main {
+        font-size: 14px !important;
+        line-height: 1.1 !important;
+        font-weight: 900 !important;
+        color: rgba(248, 250, 252, 0.95);
+    }
+
+    .user-name-sub {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        min-width: 0;
+        margin-top: 3px;
+        font-size: 11px !important;
+        line-height: 1.1 !important;
+        color: rgba(148, 163, 184, 0.72);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .user-name-sub span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .user-row-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .user-id-pill,
+    .user-expand-chip,
+    .user-row-role .summary-pill,
+    .user-row-status .status-badge {
+        min-height: 27px !important;
+        padding: 5px 10px !important;
+        font-size: 12px !important;
+        line-height: 1 !important;
+        white-space: nowrap;
+    }
+
+    .subtle-pill {
+        opacity: 0.72;
+    }
+
+    .user-expand-chip {
+        min-width: 82px;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .user-card-body {
+        background: rgba(2, 6, 23, 0.22);
+        border-top: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .user-search-bar {
+        display: grid;
+        grid-template-columns: minmax(260px, 1fr) auto auto;
+        gap: 10px;
+        align-items: center;
+        margin: 8px 0 14px;
+    }
+
+    .user-search-input {
+        height: 42px;
+    }
+
+    @media (max-width: 1100px) {
+        .user-directory-header {
+            display: none;
+        }
+
+        .user-row-grid {
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+        }
+
+        .user-row-account,
+        .user-row-status,
+        .user-row-role {
+            display: inline-flex;
+            grid-column: 1 / 2;
+            margin-right: 6px;
+        }
+
+        .user-row-details {
+            grid-column: 1 / 2;
+        }
+
+        .user-row-actions {
+            grid-column: 2 / 3;
+            grid-row: 1 / 4;
+            align-self: center;
+        }
+
+        .user-name-sub {
+            white-space: normal;
+            flex-wrap: wrap;
+        }
+    }
+
 </style>
 
 <section class="panel premium-panel">
@@ -447,7 +802,7 @@
         <div>Actions</div>
     </div>
 
-    <div class="user-card-list" style="margin-top: 16px;">
+    <div class="user-card-list" style="margin-top: 8px;">
         {% for user in users %}
         <div class="user-card"
              data-user-card
@@ -458,41 +813,46 @@
                 data-user-toggle="{{ user.id }}"
                 aria-expanded="false"
             >
-                <div class="user-card-left">
-                    <span class="summary-pill">ID {{ user.id }}</span>
+                <div class="user-row-grid">
+                    <div class="user-row-account">
+                        <span class="summary-pill user-id-pill">ID {{ user.id }}</span>
+                    </div>
 
-                    <span class="status-badge {% if user.is_active %}status-completed{% else %}status-not-started{% endif %}">
-                        {{ "Active" if user.is_active else "Inactive" }}
-                    </span>
+                    <div class="user-row-status">
+                        <span class="status-badge {% if user.is_active %}status-completed{% else %}status-not-started{% endif %}">
+                            {{ "Active" if user.is_active else "Inactive" }}
+                        </span>
+                    </div>
 
-                    <span class="summary-pill">{{ account_role_label(user.role) }}</span>
-                    {% if user.position %}
-                    <span class="summary-pill">{{ user.position }}</span>
-                    {% endif %}
+                    <div class="user-row-role">
+                        <span class="summary-pill">{{ account_role_label(user.role) }}</span>
+                        {% if user.position %}
+                        <span class="summary-pill subtle-pill">{{ user.position }}</span>
+                        {% endif %}
+                        {% if user.role == 'admin' %}
+                        <span class="summary-pill protected-pill">Protected</span>
+                        {% endif %}
+                    </div>
 
-                    {% if user.role == 'admin' %}
-                    <span class="summary-pill protected-pill">Protected</span>
-                    {% endif %}
-
-                    <div class="user-name-wrap">
+                    <div class="user-row-details">
                         <div class="user-name-main">{{ user.name }}</div>
                         <div class="user-name-sub">
                             @{{ user.username }}
                             {% if user.area_name %}
-                            | Area: {{ user.area_name }}
+                            <span>Area: {{ user.area_name }}</span>
                             {% endif %}
                             {% if user.store_number %}
-                            | Store: {{ user.store_number }}
+                            <span>Store: {{ user.store_number }}</span>
                             {% endif %}
                             {% if user.email %}
-                            | {{ user.email }}
+                            <span>{{ user.email }}</span>
                             {% endif %}
                         </div>
                     </div>
-                </div>
 
-                <div class="user-card-right">
-                    <span class="summary-pill user-expand-chip" data-user-chevron="{{ user.id }}">Edit ▼</span>
+                    <div class="user-row-actions">
+                        <span class="summary-pill user-expand-chip" data-user-chevron="{{ user.id }}">Edit ▼</span>
+                    </div>
                 </div>
             </button>
 
@@ -1221,6 +1581,114 @@ document.addEventListener("DOMContentLoaded", function () {
     bindUserSearch();
 });
 
+</script>
+
+
+<script>
+(function () {
+    const SEARCH_KEY = "bpiUsersSearch";
+    const OPEN_USER_KEY = "bpiUsersOpenUserId";
+    const SCROLL_KEY = "bpiUsersScrollY";
+
+    function getSearchInput() {
+        return document.getElementById("userSearchInput");
+    }
+
+    function getOpenUserIdFromForm(form) {
+        const body = form.closest("[data-user-body]");
+        if (body && body.dataset.userBody) {
+            return body.dataset.userBody;
+        }
+
+        const userIdInput = form.querySelector('input[name="user_id"]');
+        return userIdInput ? userIdInput.value : "";
+    }
+
+    function rememberUsersPageState(form) {
+        const searchInput = getSearchInput();
+        const openUserId = form ? getOpenUserIdFromForm(form) : "";
+
+        if (searchInput) {
+            sessionStorage.setItem(SEARCH_KEY, searchInput.value || "");
+        }
+
+        if (openUserId) {
+            sessionStorage.setItem(OPEN_USER_KEY, openUserId);
+        }
+
+        sessionStorage.setItem(SCROLL_KEY, String(window.scrollY || 0));
+    }
+
+    function openUserCard(userId) {
+        if (!userId) return;
+
+        const body = document.querySelector(`[data-user-body="${userId}"]`);
+        const toggle = document.querySelector(`[data-user-toggle="${userId}"]`);
+        const chevron = document.querySelector(`[data-user-chevron="${userId}"]`);
+
+        if (!body) return;
+
+        body.style.display = "block";
+
+        if (toggle) {
+            toggle.setAttribute("aria-expanded", "true");
+        }
+
+        if (chevron) {
+            chevron.textContent = "Edit ▲";
+        }
+    }
+
+    function restoreUsersPageState() {
+        const searchInput = getSearchInput();
+        const savedSearch = sessionStorage.getItem(SEARCH_KEY);
+        const savedOpenUserId = sessionStorage.getItem(OPEN_USER_KEY);
+        const savedScrollY = sessionStorage.getItem(SCROLL_KEY);
+
+        if (searchInput && savedSearch !== null) {
+            searchInput.value = savedSearch;
+            searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+        if (savedOpenUserId) {
+            openUserCard(savedOpenUserId);
+        }
+
+        if (savedScrollY !== null) {
+            window.setTimeout(function () {
+                window.scrollTo(0, parseInt(savedScrollY, 10) || 0);
+            }, 120);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = getSearchInput();
+        const clearButton = document.getElementById("userSearchClear");
+
+        if (searchInput) {
+            searchInput.addEventListener("input", function () {
+                sessionStorage.setItem(SEARCH_KEY, searchInput.value || "");
+            });
+        }
+
+        if (clearButton) {
+            clearButton.addEventListener("click", function () {
+                sessionStorage.removeItem(SEARCH_KEY);
+                sessionStorage.removeItem(OPEN_USER_KEY);
+                sessionStorage.removeItem(SCROLL_KEY);
+            });
+        }
+
+        document.querySelectorAll("[data-user-body] form").forEach(function (form) {
+            form.addEventListener("submit", function () {
+                rememberUsersPageState(form);
+            });
+        });
+
+        // Run after the existing users-page script binds search/toggle behavior.
+        window.setTimeout(restoreUsersPageState, 150);
+    });
+})();
 </script>
 
 {% endblock %}

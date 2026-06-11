@@ -6,7 +6,7 @@ from io import BytesIO
 import qrcode
 import requests
 from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app, abort
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from werkzeug.security import generate_password_hash
 from app.models import User, Store, PendingRegistrationRequest, DWPRecord

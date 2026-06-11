@@ -418,7 +418,7 @@
                         {% if registration.status == "pending" %}
                         <div class="approve-form">
                             <form method="POST" action="{{ url_for('auth.approve_registration_request', registration_id=registration.id) }}" class="approve-form">
-                                <select name="approved_role">
+                                <select name="final_role">
                                     {% for role in allowed_roles %}
                                     <option value="{{ role }}"
                                         {% if registration.requested_position in ['Driver', 'CSR'] and role == 'tm' %}selected{% endif %}

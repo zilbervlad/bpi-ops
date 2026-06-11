@@ -2,7 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from io import BytesIO
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, current_app
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
@@ -478,7 +478,7 @@ def new_report():
             )
 
         except Exception as e:
-            print("Email failed:", e)
+            current_app.logger.exception("Verification email failed")
 
         flash("Verification submitted.", "success")
         return redirect(url_for("dashboard.home"))

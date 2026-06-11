@@ -42,7 +42,7 @@ def index():
 
         if action == "update":
             store_id = request.form.get("store_id", "").strip()
-            store = Store.query.get(store_id)
+            store = db.session.get(Store, store_id)
 
             if not store:
                 flash("Store not found.", "error")

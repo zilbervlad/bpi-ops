@@ -1054,6 +1054,41 @@ def registration_requests():
     )
 
 
+@auth_bp.route("/users/registration-requests/<int:registration_id>/update-store", methods=["POST"])
+@login_required
+@role_required("admin", "supervisor", "general_manager", "hr")
+def update_registration_request_store(registration_id):
+    registration = PendingRegistrationRequest.query.get_or_404(registration_id)
+
+    if not can_review_registration_request(registration):
+        abort(403)
+
+    if registration.status != "pending":
+        flash("Only pending registration requests can be updated.", "error")
+        return redirect(url_for("auth.registration_requests"))
+
+    new_store_number = request.form.get("store_number", "").strip()
+
+    if not new_store_number:
+        flash("Store number is required.", "error")
+        return redirect(url_for("auth.registration_requests"))
+
+    store = Store.query.filter_by(store_number=new_store_number, is_active=True).first()
+    if not store:
+        flash(f"Store {new_store_number} was not found or is inactive.", "error")
+        return redirect(url_for("auth.registration_requests"))
+
+    original_store_number = registration.store_number
+    registration.store_number = new_store_number
+    db.session.commit()
+
+    flash(
+        f"Updated {registration.full_name}'s registration from Store {original_store_number or '—'} to Store {new_store_number}.",
+        "success",
+    )
+    return redirect(url_for("auth.registration_requests"))
+
+
 @auth_bp.route("/users/registration-requests/<int:registration_id>/approve", methods=["POST"])
 @login_required
 @role_required("admin", "supervisor", "general_manager", "hr")

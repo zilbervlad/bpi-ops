@@ -247,6 +247,28 @@
     padding: 0 8px;
 }
 
+.store-edit-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.store-edit-form input {
+    width: 76px;
+    height: 30px;
+    border: 1px solid #d8dee8;
+    border-radius: 9px;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 0 8px;
+}
+
+.btn-store-save {
+    background: #e0f2fe;
+    color: #075985;
+}
+
 .btn-mini {
     height: 30px;
     border: 0;
@@ -402,7 +424,20 @@
                         </div>
                     </td>
                     <td>
+                        {% if registration.status == "pending" %}
+                        <form method="POST"
+                              action="{{ url_for('auth.update_registration_request_store', registration_id=registration.id) }}"
+                              class="store-edit-form">
+                            <input type="text"
+                                   name="store_number"
+                                   value="{{ registration.store_number or '' }}"
+                                   placeholder="Store #"
+                                   inputmode="numeric">
+                            <button type="submit" class="btn-mini btn-store-save">Save</button>
+                        </form>
+                        {% else %}
                         <span class="status-pill">Store {{ registration.store_number or '—' }}</span>
+                        {% endif %}
                     </td>
                     <td>
                         <span class="status-pill">{{ registration.requested_position or 'Not selected' }}</span>

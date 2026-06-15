@@ -529,8 +529,12 @@ def build_dwp_stats_for_users(users):
 
 @auth_bp.route("/users", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "general_manager")
+@role_required("admin", "general_manager", "supervisor")
 def manage_users():
+    if request.method == "POST" and get_current_account_role() == "supervisor":
+        flash("Supervisors can view users but cannot create new users.", "error")
+        return redirect(url_for("auth.manage_users"))
+
     can_manage_all_users = current_user_is_admin()
     gm_store = current_user_store()
 

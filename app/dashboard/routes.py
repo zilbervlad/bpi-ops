@@ -828,6 +828,14 @@ def admin_center():
                 "status": "Supervisor",
                 "icon": "▣",
             },
+            {
+                "title": "Users & Roles",
+                "eyebrow": "People",
+                "description": "View users for assigned stores.",
+                "url": url_for("auth.manage_users"),
+                "status": "View Only",
+                "icon": "👥",
+            },
         ])
 
     if is_admin:

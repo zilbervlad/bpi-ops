@@ -35,6 +35,10 @@ def current_account_role():
     return session.get("account_role") or session.get("user_role")
 
 
+def can_view_hr_documents():
+    return current_account_role() in {"admin", "hr", "supervisor"}
+
+
 def can_manage_hr_documents():
     return current_account_role() in {"admin", "hr"}
 
@@ -217,7 +221,7 @@ Boston Pie, Inc.
 
 @hr_documents_bp.route("/")
 @login_required
-@role_required("admin", "hr")
+@role_required("admin", "hr", "supervisor")
 def index():
     status_filter = request.args.get("status", "active").strip()
 
@@ -412,7 +416,7 @@ def my_documents():
 
 @hr_documents_bp.route("/<int:document_id>")
 @login_required
-@role_required("admin", "hr")
+@role_required("admin", "hr", "supervisor")
 def detail(document_id):
     document = HRDocument.query.get_or_404(document_id)
 
@@ -622,7 +626,7 @@ def resend_pending_document_emails(document_id):
 
 @hr_documents_bp.route("/<int:document_id>/export")
 @login_required
-@role_required("admin", "hr")
+@role_required("admin", "hr", "supervisor")
 def export_document_tracking(document_id):
     document = HRDocument.query.get_or_404(document_id)
 

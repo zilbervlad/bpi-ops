@@ -43,6 +43,45 @@ def can_manage_hr_documents():
     return current_account_role() in {"admin", "hr"}
 
 
+def current_user():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    return User.query.get(user_id)
+
+
+def supervisor_visible_store_numbers():
+    user = current_user()
+    if not user or current_account_role() != "supervisor":
+        return None
+
+    if not user.area_name:
+        return set()
+
+    return {
+        store.store_number
+        for store in Store.query.filter_by(
+            area_name=user.area_name,
+            is_active=True,
+        ).all()
+    }
+
+
+def scoped_recipient_query(document_id=None):
+    query = HRDocumentRecipient.query.join(User)
+
+    if document_id is not None:
+        query = query.filter(HRDocumentRecipient.document_id == document_id)
+
+    visible_stores = supervisor_visible_store_numbers()
+    if visible_stores is not None:
+        if not visible_stores:
+            return query.filter(False)
+        query = query.filter(User.store_number.in_(visible_stores))
+
+    return query
+
+
 
 def parse_due_date(value):
     value = (value or "").strip()
@@ -227,6 +266,12 @@ def index():
 
     query = HRDocument.query
 
+    visible_stores = supervisor_visible_store_numbers()
+    if visible_stores is not None:
+        query = query.join(HRDocumentRecipient).join(User).filter(
+            User.store_number.in_(visible_stores)
+        ).distinct()
+
     if status_filter == "active":
         query = query.filter(HRDocument.is_active == True)
     elif status_filter == "archived":
@@ -234,9 +279,15 @@ def index():
 
     documents = query.order_by(HRDocument.created_at.desc()).all()
 
-    all_documents = HRDocument.query.all()
-    active_count = HRDocument.query.filter(HRDocument.is_active == True).count()
-    archived_count = HRDocument.query.filter(HRDocument.is_active == False).count()
+    all_documents_query = HRDocument.query
+    if visible_stores is not None:
+        all_documents_query = all_documents_query.join(HRDocumentRecipient).join(User).filter(
+            User.store_number.in_(visible_stores)
+        ).distinct()
+
+    all_documents = all_documents_query.all()
+    active_count = all_documents_query.filter(HRDocument.is_active == True).count()
+    archived_count = all_documents_query.filter(HRDocument.is_active == False).count()
 
     company_pending_count = 0
     company_overdue_count = 0
@@ -245,7 +296,7 @@ def index():
     for document in all_documents:
         due_date = getattr(document, "due_date", None)
 
-        for recipient in document.recipients:
+        for recipient in scoped_recipient_query(document.id).all():
             if recipient.status != "acknowledged":
                 company_pending_count += 1
 
@@ -257,8 +308,9 @@ def index():
 
     document_cards = []
     for document in documents:
-        counts = Counter(recipient.status for recipient in document.recipients)
-        total = len(document.recipients)
+        visible_recipients = scoped_recipient_query(document.id).all()
+        counts = Counter(recipient.status for recipient in visible_recipients)
+        total = len(visible_recipients)
         acknowledged = counts.get("acknowledged", 0)
         pending = total - acknowledged
         due_date = getattr(document, "due_date", None)
@@ -267,11 +319,11 @@ def index():
         if due_date:
             overdue = sum(
                 1
-                for recipient in document.recipients
+                for recipient in visible_recipients
                 if recipient.status != "acknowledged" and due_date < date.today()
             )
 
-        email_failed = sum(1 for recipient in document.recipients if recipient.email_error)
+        email_failed = sum(1 for recipient in visible_recipients if recipient.email_error)
 
         document_cards.append({
             "document": document,
@@ -423,18 +475,14 @@ def detail(document_id):
     status_filter = request.args.get("status", "all").strip()
     store_filter = request.args.get("store", "all").strip()
 
-    base_query = HRDocumentRecipient.query.filter_by(
-        document_id=document.id,
-    ).join(User)
+    base_query = scoped_recipient_query(document.id)
 
     all_recipients = base_query.order_by(
         User.store_number.asc(),
         User.name.asc(),
     ).all()
 
-    query = HRDocumentRecipient.query.filter_by(
-        document_id=document.id,
-    ).join(User)
+    query = scoped_recipient_query(document.id)
 
     if status_filter == "pending":
         query = query.filter(HRDocumentRecipient.status != "acknowledged")
@@ -452,10 +500,19 @@ def detail(document_id):
         User.name.asc(),
     ).all()
 
+    visible_stores = supervisor_visible_store_numbers()
+    store_query = Store.query.filter_by(is_active=True)
+
+    if visible_stores is not None:
+        store_query = store_query.filter(Store.store_number.in_(visible_stores))
+
     store_options = [
         store.store_number
-        for store in Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
+        for store in store_query.order_by(Store.store_number.asc()).all()
     ]
+
+    if current_account_role() == "supervisor" and not all_recipients:
+        abort(403)
 
     total_count = len(all_recipients)
     acknowledged_count = sum(1 for recipient in all_recipients if recipient.status == "acknowledged")
@@ -630,12 +687,13 @@ def resend_pending_document_emails(document_id):
 def export_document_tracking(document_id):
     document = HRDocument.query.get_or_404(document_id)
 
-    recipients = HRDocumentRecipient.query.filter_by(
-        document_id=document.id,
-    ).join(User).order_by(
+    recipients = scoped_recipient_query(document.id).order_by(
         User.store_number.asc(),
         User.name.asc(),
     ).all()
+
+    if current_account_role() == "supervisor" and not recipients:
+        abort(403)
 
     output = StringIO()
     writer = csv.writer(output)

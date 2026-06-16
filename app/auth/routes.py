@@ -81,6 +81,25 @@ def current_user_is_supervisor():
     return get_current_account_role() == "supervisor"
 
 
+def supervisor_visible_user_store_numbers():
+    if not current_user_is_supervisor():
+        return None
+
+    area_name = session.get("user_area")
+    if not area_name:
+        user_id = session.get("user_id")
+        user = User.query.get(user_id) if user_id else None
+        area_name = getattr(user, "area_name", None)
+
+    if not area_name:
+        return set()
+
+    return {
+        store.store_number
+        for store in Store.query.filter_by(area_name=area_name, is_active=True).all()
+    }
+
+
 
 def sync_registration_user_to_bpi_connect(user, registration, final_role):
     api_base = os.getenv("BPI_CONNECT_API_BASE", "").strip().rstrip("/")
@@ -837,6 +856,14 @@ def manage_users():
             role="tm",
             store_number=gm_store
         ).order_by(User.name.asc()).all()
+    elif current_user_is_supervisor():
+        visible_stores = supervisor_visible_user_store_numbers()
+        if not visible_stores:
+            users = []
+        else:
+            users = User.query.filter(
+                User.store_number.in_(visible_stores)
+            ).order_by(User.store_number.asc(), User.name.asc()).all()
     else:
         users = User.query.order_by(User.name.asc()).all()
 

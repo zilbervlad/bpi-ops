@@ -920,14 +920,15 @@ def admin_center():
         ])
 
     # Supervisors are allowed here specifically for Prep Admin.
-    tools.append({
-        "title": "Prep Admin",
-        "eyebrow": "Prep System",
-        "description": "Manage prep items, par levels, and prep setup.",
-        "url": url_for("prep.manage"),
-        "status": "Admin" if is_admin else "Supervisor",
-        "icon": "🥫",
-    })
+    if is_admin or is_supervisor:
+        tools.append({
+            "title": "Prep Admin",
+            "eyebrow": "Prep System",
+            "description": "Manage prep items, par levels, and prep setup.",
+            "url": url_for("prep.manage"),
+            "status": "Admin" if is_admin else "Supervisor",
+            "icon": "🥫",
+        })
 
     return render_template("admin_center.html", tools=tools)
 

@@ -237,8 +237,11 @@ def send_hr_document_connect_notification(document, recipient, action="assigned"
             "error": "BPI Connect integration is not configured.",
         }
 
-    user = getattr(recipient, "user", None)
-    if not user or not getattr(user, "email", None):
+    with db.session.no_autoflush:
+        user = getattr(recipient, "user", None)
+        user_email = getattr(user, "email", None) if user else None
+
+    if not user_email:
         return {
             "success": False,
             "skipped": True,
@@ -252,7 +255,7 @@ def send_hr_document_connect_notification(document, recipient, action="assigned"
     )
 
     payload = {
-        "email": user.email,
+        "email": user_email,
         "document_title": document.title,
         "document_url": document_url,
         "due_date": document.due_date.isoformat() if getattr(document, "due_date", None) else None,

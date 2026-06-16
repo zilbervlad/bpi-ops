@@ -268,6 +268,8 @@ def send_hr_document_connect_notification(document, recipient, action="assigned"
             json=payload,
             headers={
                 "Authorization": f"Bearer {integration_secret}",
+                "X-BPI-Ops-Secret": integration_secret,
+                "X-Integration-Secret": integration_secret,
                 "X-BPI-Ops-Integration-Secret": integration_secret,
             },
             timeout=8,

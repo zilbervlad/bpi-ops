@@ -1,4 +1,6 @@
 import csv
+import os
+import requests
 from datetime import datetime, date
 from collections import Counter
 
@@ -216,10 +218,80 @@ def add_recipients_to_document(document, selected_users):
     for recipient in added_recipients:
         if send_hr_document_email(document, recipient):
             sent_count += 1
+            send_hr_document_connect_notification(document, recipient, action="assigned")
         else:
             failed_count += 1
 
     return added_recipients, skipped_count, sent_count, failed_count
+
+
+
+def send_hr_document_connect_notification(document, recipient, action="assigned"):
+    api_base = os.getenv("BPI_CONNECT_API_BASE", "").strip().rstrip("/")
+    integration_secret = os.getenv("BPI_CONNECT_INTEGRATION_SECRET", "").strip()
+
+    if not api_base or not integration_secret:
+        return {
+            "success": False,
+            "skipped": True,
+            "error": "BPI Connect integration is not configured.",
+        }
+
+    user = getattr(recipient, "user", None)
+    if not user or not getattr(user, "email", None):
+        return {
+            "success": False,
+            "skipped": True,
+            "error": "Recipient has no email.",
+        }
+
+    document_url = url_for(
+        "hr_documents.acknowledge_document",
+        document_id=document.id,
+        _external=True,
+    )
+
+    payload = {
+        "email": user.email,
+        "document_title": document.title,
+        "document_url": document_url,
+        "due_date": document.due_date.isoformat() if getattr(document, "due_date", None) else None,
+        "action": action,
+    }
+
+    try:
+        response = requests.post(
+            f"{api_base}/api/integrations/bpi-ops/hr-documents/notify",
+            json=payload,
+            headers={
+                "Authorization": f"Bearer {integration_secret}",
+                "X-BPI-Ops-Integration-Secret": integration_secret,
+            },
+            timeout=8,
+        )
+    except requests.RequestException as exc:
+        return {
+            "success": False,
+            "error": str(exc),
+        }
+
+    try:
+        result = response.json()
+    except ValueError:
+        result = {"raw": response.text[:500]}
+
+    if response.ok:
+        return {
+            "success": True,
+            "result": result,
+        }
+
+    return {
+        "success": False,
+        "status_code": response.status_code,
+        "error": result.get("error") if isinstance(result, dict) else "BPI Connect notification failed.",
+        "result": result,
+    }
 
 
 def send_hr_document_email(document, recipient):
@@ -672,6 +744,7 @@ def resend_pending_document_emails(document_id):
     for recipient in recipients:
         if send_hr_document_email(document, recipient):
             sent_count += 1
+            send_hr_document_connect_notification(document, recipient, action="assigned")
         else:
             failed_count += 1
 

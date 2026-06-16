@@ -225,7 +225,7 @@
                 </div>
                 {% endif %}
 
-                {% set can_access_admin_center = access_role in ['admin', 'supervisor'] %}
+                {% set can_access_admin_center = access_role in ['admin', 'supervisor', 'manager'] %}
 
                 {% if can_access_admin_center %}
 
@@ -267,7 +267,7 @@
                         {% endif %}
                     </a>
 
-                    {% if access_role in ['admin', 'supervisor'] %}
+                    {% if access_role in ['admin', 'supervisor', 'manager'] %}
                     <a href="{{ url_for('dashboard.admin_center') }}"
                        class="topbar-admin-gear {% if request.endpoint == 'dashboard.admin_center'
                                   or request.endpoint in [

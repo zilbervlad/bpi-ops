@@ -793,14 +793,27 @@ def admin_center():
 
     is_admin = "admin" in roles
     is_supervisor = "supervisor" in roles
+    is_manager = "manager" in roles
 
-    if not (is_admin or is_supervisor):
+    if not (is_admin or is_supervisor or is_manager):
         flash("You do not have access to Admin Center.", "error")
         return redirect(url_for("dashboard.home"))
 
     tools = []
 
     account_role = session.get("access_role") or session.get("user_role") or session.get("role")
+
+    if account_role == "manager":
+        tools.extend([
+            {
+                "title": "QR Center",
+                "eyebrow": "People",
+                "description": "Print registration QR codes for your store.",
+                "url": url_for("auth.registration_qr_center"),
+                "status": "Manager",
+                "icon": "▣",
+            },
+        ])
 
     if account_role == "supervisor":
         tools.extend([

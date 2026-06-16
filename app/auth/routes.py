@@ -140,6 +140,10 @@ def current_user_can_review_registration_requests():
     return get_current_account_role() in {"admin", "supervisor", "general_manager", "hr"}
 
 
+def current_user_can_access_registration_qr():
+    return get_current_account_role() in {"admin", "supervisor", "general_manager", "manager", "hr"}
+
+
 def registration_visible_store_numbers():
     role = get_current_account_role()
 
@@ -884,9 +888,9 @@ def send_test_email_to_user(user_id):
 
 @auth_bp.route("/users/registration-qr/print")
 @login_required
-@role_required("admin", "supervisor", "general_manager", "hr")
+@role_required("admin", "supervisor", "general_manager", "manager", "hr")
 def registration_qr_print():
-    if not current_user_can_review_registration_requests():
+    if not current_user_can_access_registration_qr():
         flash("You do not have permission to print registration QR codes.", "error")
         return redirect(url_for("dashboard.home"))
 
@@ -917,9 +921,9 @@ def registration_qr_print():
 
 @auth_bp.route("/users/registration-qr")
 @login_required
-@role_required("admin", "supervisor", "general_manager", "hr")
+@role_required("admin", "supervisor", "general_manager", "manager", "hr")
 def registration_qr_center():
-    if not current_user_can_review_registration_requests():
+    if not current_user_can_access_registration_qr():
         flash("You do not have permission to access registration QR codes.", "error")
         return redirect(url_for("dashboard.home"))
 

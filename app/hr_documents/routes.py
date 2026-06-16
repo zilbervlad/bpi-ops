@@ -283,6 +283,19 @@ def send_hr_document_connect_notification(document, recipient, action="assigned"
     except ValueError:
         result = {"raw": response.text[:500]}
 
+    print(
+        "BPI_CONNECT_HR_DOC_NOTIFY",
+        {
+            "email": user_email,
+            "document_id": document.id,
+            "action": action,
+            "status_code": response.status_code,
+            "ok": response.ok,
+            "result": result,
+        },
+        flush=True,
+    )
+
     if response.ok:
         return {
             "success": True,

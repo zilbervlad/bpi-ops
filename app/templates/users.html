@@ -7,6 +7,9 @@
         Team Members | BPI Ops
     {% endif %}
 
+
+
+
 {% endblock %}
 
 {% block header %}
@@ -713,6 +716,70 @@
         height: 42px;
     }
 
+    .user-filter-panel {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 12px;
+        margin: 0 0 14px;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 18px;
+        background: rgba(2, 6, 23, 0.18);
+    }
+
+    .user-filter-chips,
+    .user-filter-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .user-filter-chip {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(15, 23, 42, 0.58);
+        color: #cbd5e1;
+        border-radius: 999px;
+        padding: 9px 12px;
+        font-weight: 900;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: 0.16s ease;
+    }
+
+    .user-filter-chip:hover,
+    .user-filter-chip.active {
+        color: #fff;
+        border-color: rgba(233, 31, 63, 0.52);
+        background: rgba(233, 31, 63, 0.20);
+        box-shadow: 0 12px 24px rgba(2, 6, 23, 0.22);
+    }
+
+    .user-filter-select {
+        min-width: 155px;
+        height: 40px;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(15, 23, 42, 0.62);
+        color: #dbeafe;
+        padding: 0 12px;
+        font-weight: 800;
+        outline: none;
+    }
+
+    .user-filter-select option {
+        background: #0f172a;
+        color: #e5e7eb;
+    }
+
+    .user-filter-clear {
+        margin-left: auto;
+    }
+
+    .user-card.is-hidden-by-filter {
+        display: none !important;
+    }
+
     @media (max-width: 1100px) {
         .user-directory-header {
             display: none;
@@ -786,6 +853,58 @@
         <span id="userSearchCount" class="summary-pill">{{ users|length }} showing</span>
     </div>
 
+    <div class="user-filter-panel" data-user-filters>
+        <div class="user-filter-chips">
+            <button type="button" class="user-filter-chip active" data-user-chip="all">All</button>
+            <button type="button" class="user-filter-chip" data-user-chip="admin">Admins</button>
+            <button type="button" class="user-filter-chip" data-user-chip="hr">HR</button>
+            <button type="button" class="user-filter-chip" data-user-chip="supervisor">Supervisors</button>
+            <button type="button" class="user-filter-chip" data-user-chip="general_manager">GMs</button>
+            <button type="button" class="user-filter-chip" data-user-chip="manager">Managers</button>
+            <button type="button" class="user-filter-chip" data-user-chip="tm">TMs</button>
+            <button type="button" class="user-filter-chip" data-user-chip="csr">CSR</button>
+            <button type="button" class="user-filter-chip" data-user-chip="driver">Drivers</button>
+            <button type="button" class="user-filter-chip" data-user-chip="no_store">No Store</button>
+            <button type="button" class="user-filter-chip" data-user-chip="inactive">Inactive</button>
+        </div>
+
+        <div class="user-filter-controls">
+            <select id="userRoleFilter" class="user-filter-select">
+                <option value="">All roles</option>
+                <option value="admin">Admin</option>
+                <option value="hr">HR</option>
+                <option value="payroll">Payroll</option>
+                <option value="supervisor">Supervisor</option>
+                <option value="general_manager">General Manager</option>
+                <option value="manager">Manager</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="tm">TM</option>
+            </select>
+
+            <select id="userPositionFilter" class="user-filter-select">
+                <option value="">All positions</option>
+                <option value="csr">CSR</option>
+                <option value="driver">Driver</option>
+                <option value="manager">Manager</option>
+                <option value="mit">MIT / Shift Runner</option>
+            </select>
+
+            <select id="userStatusFilter" class="user-filter-select">
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+
+            <select id="userStoreFilter" class="user-filter-select">
+                <option value="">All stores</option>
+            </select>
+
+            <button type="button" id="userFilterClear" class="btn-primary user-filter-clear">
+                Clear Filters
+            </button>
+        </div>
+    </div>
+
     <div id="userSearchEmpty" class="user-search-empty">
         {% if can_manage_all %}
             No matching users found.
@@ -806,6 +925,10 @@
         {% for user in users %}
         <div class="user-card"
              data-user-card
+             data-role="{{ user.role or '' }}"
+             data-position="{{ (user.position or '')|lower }}"
+             data-store="{{ user.store_number or '' }}"
+             data-status="{{ 'active' if user.is_active else 'inactive' }}"
              data-search-text="{{ (user.name ~ ' ' ~ user.username ~ ' ' ~ user.role ~ ' ' ~ (user.position or '') ~ ' ' ~ account_role_label(user.role) ~ ' ' ~ (user.area_name or '') ~ ' ' ~ (user.store_number or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.notification_email or '') ~ ' ' ~ ('active' if user.is_active else 'inactive'))|lower }}">
             <button
                 type="button"
@@ -1523,7 +1646,18 @@ document.addEventListener("DOMContentLoaded", function () {
         const emptyMessage = document.getElementById("userSearchEmpty");
         const userCards = Array.from(document.querySelectorAll("[data-user-card]"));
 
-        if (!searchInput || !clearButton || !countBadge || !emptyMessage) return;
+        const roleFilter = document.getElementById("userRoleFilter");
+        const positionFilter = document.getElementById("userPositionFilter");
+        const statusFilter = document.getElementById("userStatusFilter");
+        const storeFilter = document.getElementById("userStoreFilter");
+        const filterClearButton = document.getElementById("userFilterClear");
+        const chips = Array.from(document.querySelectorAll("[data-user-chip]"));
+
+        if (!searchInput || !clearButton || !countBadge || !emptyMessage || !userCards.length) return;
+
+        function normalize(value) {
+            return String(value || "").trim().toLowerCase();
+        }
 
         function closeAllEditors() {
             document.querySelectorAll("[data-user-body]").forEach(body => {
@@ -1539,13 +1673,78 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
+        function setActiveChip(value) {
+            chips.forEach(chip => {
+                chip.classList.toggle("active", chip.dataset.userChip === value);
+            });
+        }
+
+        function getActiveChip() {
+            const activeChip = chips.find(chip => chip.classList.contains("active"));
+            return activeChip ? activeChip.dataset.userChip : "all";
+        }
+
+        function clearSelectFilters() {
+            if (roleFilter) roleFilter.value = "";
+            if (positionFilter) positionFilter.value = "";
+            if (statusFilter) statusFilter.value = "";
+            if (storeFilter) storeFilter.value = "";
+        }
+
+        function populateStoreFilter() {
+            if (!storeFilter || storeFilter.dataset.loaded === "true") return;
+
+            const stores = Array.from(new Set(
+                userCards
+                    .map(card => normalize(card.dataset.store))
+                    .filter(Boolean)
+            )).sort((a, b) => Number(a) - Number(b));
+
+            stores.forEach(store => {
+                const option = document.createElement("option");
+                option.value = store;
+                option.textContent = `Store ${store}`;
+                storeFilter.appendChild(option);
+            });
+
+            storeFilter.dataset.loaded = "true";
+        }
+
         function runSearch() {
-            const term = searchInput.value.trim().toLowerCase();
+            const term = normalize(searchInput.value);
+            const role = normalize(roleFilter ? roleFilter.value : "");
+            const position = normalize(positionFilter ? positionFilter.value : "");
+            const status = normalize(statusFilter ? statusFilter.value : "");
+            const store = normalize(storeFilter ? storeFilter.value : "");
+            const activeChip = getActiveChip();
+
             let visibleCount = 0;
 
             userCards.forEach(card => {
-                const haystack = card.getAttribute("data-search-text") || "";
-                const isMatch = !term || haystack.includes(term);
+                const haystack = normalize(card.getAttribute("data-search-text"));
+                const cardRole = normalize(card.dataset.role);
+                const cardPosition = normalize(card.dataset.position);
+                const cardStatus = normalize(card.dataset.status);
+                const cardStore = normalize(card.dataset.store);
+
+                let chipMatch = true;
+
+                if (activeChip === "no_store") {
+                    chipMatch = !cardStore;
+                } else if (activeChip !== "all") {
+                    chipMatch =
+                        cardRole === activeChip ||
+                        cardPosition.includes(activeChip) ||
+                        cardStatus === activeChip;
+                }
+
+                const isMatch =
+                    (!term || haystack.includes(term)) &&
+                    (!role || cardRole === role) &&
+                    (!position || cardPosition.includes(position)) &&
+                    (!status || cardStatus === status) &&
+                    (!store || cardStore === store) &&
+                    chipMatch;
 
                 card.style.display = isMatch ? "" : "none";
 
@@ -1561,13 +1760,52 @@ document.addEventListener("DOMContentLoaded", function () {
             closeAllEditors();
         }
 
-        searchInput.addEventListener("input", runSearch);
+        populateStoreFilter();
 
-        clearButton.addEventListener("click", function () {
+        chips.forEach(chip => {
+            chip.addEventListener("click", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const value = chip.dataset.userChip || "all";
+                clearSelectFilters();
+                setActiveChip(value);
+                runSearch();
+            });
+        });
+
+        [roleFilter, positionFilter, statusFilter, storeFilter].forEach(filter => {
+            if (!filter) return;
+
+            filter.addEventListener("change", function () {
+                setActiveChip("all");
+                runSearch();
+            });
+        });
+
+        searchInput.addEventListener("input", function () {
+            runSearch();
+        });
+
+        clearButton.addEventListener("click", function (event) {
+            event.preventDefault();
             searchInput.value = "";
             runSearch();
             searchInput.focus();
         });
+
+        if (filterClearButton) {
+            filterClearButton.addEventListener("click", function (event) {
+                event.preventDefault();
+                searchInput.value = "";
+                clearSelectFilters();
+                setActiveChip("all");
+                runSearch();
+                searchInput.focus();
+            });
+        }
+
+        runSearch();
     }
 
     toggleCreateFields();
@@ -1589,9 +1827,33 @@ document.addEventListener("DOMContentLoaded", function () {
     const SEARCH_KEY = "bpiUsersSearch";
     const OPEN_USER_KEY = "bpiUsersOpenUserId";
     const SCROLL_KEY = "bpiUsersScrollY";
+    const ROLE_KEY = "bpiUsersRoleFilter";
+    const POSITION_KEY = "bpiUsersPositionFilter";
+    const STATUS_KEY = "bpiUsersStatusFilter";
+    const STORE_KEY = "bpiUsersStoreFilter";
+    const CHIP_KEY = "bpiUsersActiveChip";
+
+    if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+    }
 
     function getSearchInput() {
         return document.getElementById("userSearchInput");
+    }
+
+    function getFilter(id) {
+        return document.getElementById(id);
+    }
+
+    function getActiveChipValue() {
+        const activeChip = document.querySelector("[data-user-chip].active");
+        return activeChip ? activeChip.dataset.userChip || "all" : "all";
+    }
+
+    function setActiveChipValue(value) {
+        document.querySelectorAll("[data-user-chip]").forEach(function (chip) {
+            chip.classList.toggle("active", chip.dataset.userChip === value);
+        });
     }
 
     function getOpenUserIdFromForm(form) {
@@ -1606,21 +1868,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function rememberUsersPageState(form) {
         const searchInput = getSearchInput();
+        const roleFilter = getFilter("userRoleFilter");
+        const positionFilter = getFilter("userPositionFilter");
+        const statusFilter = getFilter("userStatusFilter");
+        const storeFilter = getFilter("userStoreFilter");
         const openUserId = form ? getOpenUserIdFromForm(form) : "";
 
-        if (searchInput) {
-            sessionStorage.setItem(SEARCH_KEY, searchInput.value || "");
-        }
+        sessionStorage.setItem(SEARCH_KEY, searchInput ? searchInput.value || "" : "");
+        sessionStorage.setItem(ROLE_KEY, roleFilter ? roleFilter.value || "" : "");
+        sessionStorage.setItem(POSITION_KEY, positionFilter ? positionFilter.value || "" : "");
+        sessionStorage.setItem(STATUS_KEY, statusFilter ? statusFilter.value || "" : "");
+        sessionStorage.setItem(STORE_KEY, storeFilter ? storeFilter.value || "" : "");
+        sessionStorage.setItem(CHIP_KEY, getActiveChipValue());
+        sessionStorage.setItem(SCROLL_KEY, String(window.scrollY || 0));
 
         if (openUserId) {
             sessionStorage.setItem(OPEN_USER_KEY, openUserId);
         }
-
-        sessionStorage.setItem(SCROLL_KEY, String(window.scrollY || 0));
     }
 
     function openUserCard(userId) {
         if (!userId) return;
+
+        document.querySelectorAll("[data-user-body]").forEach(function (body) {
+            body.style.display = "none";
+        });
+
+        document.querySelectorAll("[data-user-chevron]").forEach(function (chevron) {
+            chevron.textContent = "Edit ▼";
+        });
+
+        document.querySelectorAll("[data-user-toggle]").forEach(function (toggle) {
+            toggle.setAttribute("aria-expanded", "false");
+        });
 
         const body = document.querySelector(`[data-user-body="${userId}"]`);
         const toggle = document.querySelector(`[data-user-toggle="${userId}"]`);
@@ -1635,39 +1915,97 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (chevron) {
-            chevron.textContent = "Edit ▲";
+            chevron.textContent = "Close ▲";
         }
     }
 
     function restoreUsersPageState() {
         const searchInput = getSearchInput();
+        const roleFilter = getFilter("userRoleFilter");
+        const positionFilter = getFilter("userPositionFilter");
+        const statusFilter = getFilter("userStatusFilter");
+        const storeFilter = getFilter("userStoreFilter");
+
         const savedSearch = sessionStorage.getItem(SEARCH_KEY);
+        const savedRole = sessionStorage.getItem(ROLE_KEY);
+        const savedPosition = sessionStorage.getItem(POSITION_KEY);
+        const savedStatus = sessionStorage.getItem(STATUS_KEY);
+        const savedStore = sessionStorage.getItem(STORE_KEY);
+        const savedChip = sessionStorage.getItem(CHIP_KEY) || "all";
         const savedOpenUserId = sessionStorage.getItem(OPEN_USER_KEY);
         const savedScrollY = sessionStorage.getItem(SCROLL_KEY);
 
-        if (searchInput && savedSearch !== null) {
-            searchInput.value = savedSearch;
+        if (searchInput && savedSearch !== null) searchInput.value = savedSearch;
+        if (roleFilter && savedRole !== null) roleFilter.value = savedRole;
+        if (positionFilter && savedPosition !== null) positionFilter.value = savedPosition;
+        if (statusFilter && savedStatus !== null) statusFilter.value = savedStatus;
+        if (storeFilter && savedStore !== null) storeFilter.value = savedStore;
+
+        setActiveChipValue(savedChip);
+
+        if (searchInput) {
             searchInput.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
         if (savedOpenUserId) {
-            openUserCard(savedOpenUserId);
+            window.setTimeout(function () {
+                openUserCard(savedOpenUserId);
+            }, 40);
         }
 
         if (savedScrollY !== null) {
+            const y = parseInt(savedScrollY, 10) || 0;
+
             window.setTimeout(function () {
-                window.scrollTo(0, parseInt(savedScrollY, 10) || 0);
-            }, 120);
+                window.scrollTo({ top: y, left: 0, behavior: "auto" });
+            }, 80);
+
+            window.setTimeout(function () {
+                window.scrollTo({ top: y, left: 0, behavior: "auto" });
+            }, 220);
         }
+    }
+
+    function clearUsersPageState() {
+        [
+            SEARCH_KEY,
+            OPEN_USER_KEY,
+            SCROLL_KEY,
+            ROLE_KEY,
+            POSITION_KEY,
+            STATUS_KEY,
+            STORE_KEY,
+            CHIP_KEY
+        ].forEach(function (key) {
+            sessionStorage.removeItem(key);
+        });
     }
 
     document.addEventListener("DOMContentLoaded", function () {
         const searchInput = getSearchInput();
         const clearButton = document.getElementById("userSearchClear");
+        const filterClearButton = document.getElementById("userFilterClear");
+
+        ["userRoleFilter", "userPositionFilter", "userStatusFilter", "userStoreFilter"].forEach(function (id) {
+            const filter = getFilter(id);
+            if (filter) {
+                filter.addEventListener("change", function () {
+                    rememberUsersPageState(null);
+                });
+            }
+        });
+
+        document.querySelectorAll("[data-user-chip]").forEach(function (chip) {
+            chip.addEventListener("click", function () {
+                window.setTimeout(function () {
+                    rememberUsersPageState(null);
+                }, 20);
+            });
+        });
 
         if (searchInput) {
             searchInput.addEventListener("input", function () {
-                sessionStorage.setItem(SEARCH_KEY, searchInput.value || "");
+                rememberUsersPageState(null);
             });
         }
 
@@ -1679,14 +2017,17 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
+        if (filterClearButton) {
+            filterClearButton.addEventListener("click", clearUsersPageState);
+        }
+
         document.querySelectorAll("[data-user-body] form").forEach(function (form) {
             form.addEventListener("submit", function () {
                 rememberUsersPageState(form);
             });
         });
 
-        // Run after the existing users-page script binds search/toggle behavior.
-        window.setTimeout(restoreUsersPageState, 150);
+        window.setTimeout(restoreUsersPageState, 180);
     });
 })();
 </script>

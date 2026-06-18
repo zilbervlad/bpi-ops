@@ -284,6 +284,29 @@
     </div>
 </div>
 
+
+{% if not is_read_only %}
+<div id="manager-name-modal" class="manager-name-modal" aria-hidden="true">
+    <div class="manager-name-card">
+        <div class="manager-name-icon">👤</div>
+        <h3>Who is completing this checklist?</h3>
+        <p>Enter the manager name or initials before starting.</p>
+
+        <input
+            type="text"
+            id="manager-name-modal-input"
+            class="manager-name-input"
+            placeholder="Name or initials"
+            autocomplete="name"
+        >
+
+        <button type="button" id="manager-name-modal-save" class="btn-primary manager-name-save">
+            Continue
+        </button>
+    </div>
+</div>
+{% endif %}
+
 <style>
 .burst-warning-modal {
     position: fixed;
@@ -369,6 +392,81 @@
 .burst-warning-secondary-button:hover {
     background: #d1d5db;
 }
+
+.manager-name-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.62);
+    backdrop-filter: blur(8px);
+}
+
+.manager-name-modal.is-open {
+    display: flex;
+}
+
+.manager-name-card {
+    width: min(420px, 100%);
+    border-radius: 24px;
+    padding: 24px;
+    background: #ffffff;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.32);
+    text-align: center;
+}
+
+.manager-name-icon {
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 12px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    background: #eff6ff;
+    font-size: 26px;
+}
+
+.manager-name-card h3 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.manager-name-card p {
+    margin: 0 0 18px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.manager-name-input {
+    width: 100%;
+    border: 1px solid #dbeafe;
+    border-radius: 16px;
+    padding: 14px 15px;
+    font-size: 17px;
+    font-weight: 800;
+    color: #0f172a;
+    background: #f8fafc;
+    outline: none;
+    text-align: center;
+}
+
+.manager-name-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    background: #ffffff;
+}
+
+.manager-name-save {
+    width: 100%;
+    margin-top: 14px;
+    justify-content: center;
+}
+
 </style>
 
 <script>
@@ -382,6 +480,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const autosaveStatusEl = document.getElementById("autosave-status");
     const openingManagerInput = document.getElementById("opening_manager");
     const closingManagerInput = document.getElementById("closing_manager");
+    const managerNameModal = document.getElementById("manager-name-modal");
+    const managerNameModalInput = document.getElementById("manager-name-modal-input");
+    const managerNameModalSave = document.getElementById("manager-name-modal-save");
     const burstWarningModal = document.getElementById("burst-warning-modal");
     const burstWarningMessage = document.getElementById("burst-warning-message");
     const burstWarningContinue = document.getElementById("burst-warning-continue");
@@ -393,6 +494,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const storeNumber = "{{ store_number }}";
     const selectedDate = "{{ selected_date }}";
+
+    function openManagerNameModalIfNeeded() {
+        if (!managerNameModal || !openingManagerInput) return;
+
+        const existingName = openingManagerInput.value.trim();
+        if (existingName) return;
+
+        managerNameModal.classList.add("is-open");
+        managerNameModal.setAttribute("aria-hidden", "false");
+
+        setTimeout(() => {
+            if (managerNameModalInput) {
+                managerNameModalInput.focus();
+            }
+        }, 100);
+    }
+
+    function saveManagerNameFromModal() {
+        if (!managerNameModal || !managerNameModalInput || !openingManagerInput) return;
+
+        const enteredName = managerNameModalInput.value.trim();
+        if (!enteredName) {
+            managerNameModalInput.focus();
+            return;
+        }
+
+        openingManagerInput.value = enteredName;
+
+        managerNameModal.classList.remove("is-open");
+        managerNameModal.setAttribute("aria-hidden", "true");
+
+        autosaveManagers();
+    }
 
     function setAutosaveStatus(text) {
         if (!autosaveStatusEl) return;
@@ -497,6 +631,19 @@ document.addEventListener("DOMContentLoaded", function () {
             closeOneWayProofReminder(false);
         }
     });
+
+    if (managerNameModalSave) {
+        managerNameModalSave.addEventListener("click", saveManagerNameFromModal);
+    }
+
+    if (managerNameModalInput) {
+        managerNameModalInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                saveManagerNameFromModal();
+            }
+        });
+    }
 
     function updateStatsFromServer(data) {
         if (!data) return;
@@ -623,6 +770,8 @@ document.addEventListener("DOMContentLoaded", function () {
             setAutosaveStatus("Save failed");
         }
     }
+
+    openManagerNameModalIfNeeded();
 
     noteToggleButtons.forEach(button => {
         button.addEventListener("click", function () {

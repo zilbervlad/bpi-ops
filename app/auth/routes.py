@@ -117,6 +117,7 @@ def sync_registration_user_to_bpi_connect(user, registration, final_role):
         "name": user.name,
         "username": user.username,
         "email": user.email,
+        "phone_number": registration.phone,
         "password_hash": user.password_hash,
         "role": final_role,
         "position": registration.requested_position,

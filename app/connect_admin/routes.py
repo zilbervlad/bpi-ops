@@ -165,7 +165,7 @@ def threads():
     if not session.get("user_id"):
         return redirect(url_for("auth.login"))
 
-    if not can_access_connect_admin():
+    if not require_connect_admin_access():
         flash("You do not have access to BPI Connect Admin.", "error")
         return redirect(url_for("dashboard.index"))
 

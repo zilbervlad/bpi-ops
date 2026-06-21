@@ -1,62 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Document Tracking · BPI Ops
-{% if recent_email_jobs is defined and recent_email_jobs %}
-<div class="hr-doc-card" style="margin-top: 18px;">
-    <div class="hr-doc-card-header">
-        <div>
-            <h3>Reminder Email Jobs</h3>
-            <p>Tracks background reminder sends for unsigned recipients.</p>
-        </div>
-    </div>
-
-    <div class="hr-doc-table-wrap">
-        <table class="hr-doc-table">
-            <thead>
-                <tr>
-                    <th>Job</th>
-                    <th>Status</th>
-                    <th>Unsigned</th>
-                    <th>Sendable</th>
-                    <th>Sent</th>
-                    <th>No Email</th>
-                    <th>Failed</th>
-                    <th>Processed</th>
-                    <th>Started</th>
-                    <th>Finished</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for job in recent_email_jobs %}
-                <tr>
-                    <td>#{{ job.id }}</td>
-                    <td>
-                        <span class="summary-pill {% if job.status == 'completed' %}success-pill{% elif job.status == 'failed' %}danger-pill{% else %}neutral-pill{% endif %}">
-                            {{ job.status|title }}
-                        </span>
-                    </td>
-                    <td>{{ job.total_unsigned }}</td>
-                    <td>{{ job.total_sendable }}</td>
-                    <td>{{ job.sent_count }}</td>
-                    <td>{{ job.no_email_count }}</td>
-                    <td>{{ job.failed_count }}</td>
-                    <td>{{ job.processed_count }}</td>
-                    <td>{{ job.started_at.strftime('%m/%d/%Y %I:%M %p') if job.started_at else '—' }}</td>
-                    <td>{{ job.finished_at.strftime('%m/%d/%Y %I:%M %p') if job.finished_at else '—' }}</td>
-                </tr>
-                {% if job.error_message %}
-                <tr>
-                    <td colspan="10" class="text-danger">{{ job.error_message }}</td>
-                </tr>
-                {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
-
-{% endblock %}
+{% block title %}Document Tracking · BPI Ops{% endblock %}
 {% block header %}Document Tracking{% endblock %}
 
 {% block content %}

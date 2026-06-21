@@ -40,7 +40,7 @@
 
     .users-subtitle {
         margin-top: 10px;
-        max-width: 820px;
+        max-width: 840px;
         color: rgba(255,255,255,.78);
         font-size: 15px;
         line-height: 1.5;
@@ -68,12 +68,15 @@
         margin-bottom: 16px;
     }
 
-    .tab-card {
+    .tab-card, .section, .filters-panel {
         background: white;
         border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+    }
+
+    .tab-card {
         border-radius: 18px;
         padding: 16px;
-        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
     }
 
     .tab-label {
@@ -100,11 +103,65 @@
         font-weight: 800;
     }
 
+    .filters-panel {
+        border-radius: 20px;
+        padding: 14px;
+        margin-bottom: 16px;
+    }
+
+    .filters-form {
+        display: grid;
+        grid-template-columns: 1.4fr repeat(3, minmax(150px, .7fr)) auto auto;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .filter-input,
+    .filter-select {
+        width: 100%;
+        border: 1px solid #dbe3ef;
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 12px 13px;
+        color: #0f172a;
+        font-size: 13px;
+        font-weight: 850;
+        outline: none;
+    }
+
+    .btn-dark, .btn-light, .store-view-btn {
+        border: 0;
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 13px;
+        font-weight: 950;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-dark {
+        background: #0f172a;
+        color: white;
+    }
+
+    .btn-light {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+
+    .active-filter-note {
+        margin-top: 10px;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 850;
+    }
+
     .section {
-        background: white;
-        border: 1px solid #e5e7eb;
         border-radius: 22px;
-        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
         margin-bottom: 16px;
         overflow: hidden;
     }
@@ -175,19 +232,6 @@
         vertical-align: middle;
     }
 
-    .users-table tr:last-child td {
-        border-bottom: 0;
-    }
-
-    .store-rollup-row {
-        cursor: pointer;
-        transition: background .12s ease;
-    }
-
-    .store-rollup-row:hover td {
-        background: #f8fafc;
-    }
-
     .person-name {
         font-size: 14px;
         font-weight: 950;
@@ -211,24 +255,18 @@
         white-space: nowrap;
     }
 
-    .badge-green {
-        background: #dcfce7;
-        color: #166534;
-    }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-blue { background: #dbeafe; color: #1d4ed8; }
+    .badge-gray { background: #f1f5f9; color: #334155; }
 
-    .badge-red {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .badge-blue {
-        background: #dbeafe;
-        color: #1d4ed8;
-    }
-
-    .badge-gray {
-        background: #f1f5f9;
-        color: #334155;
+    .store-view-btn {
+        margin-top: 8px;
+        background: #0f172a;
+        color: white;
+        border-radius: 999px;
+        padding: 7px 10px;
+        font-size: 11px;
     }
 
     .empty {
@@ -247,91 +285,13 @@
         font-weight: 850;
     }
 
-    .users-toolbar {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 20px;
-        padding: 14px;
-        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
-        margin-bottom: 16px;
-        display: grid;
-        grid-template-columns: 1.4fr repeat(3, minmax(150px, .7fr)) auto;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .filter-input,
-    .filter-select {
-        width: 100%;
-        border: 1px solid #dbe3ef;
-        background: #f8fafc;
-        border-radius: 14px;
-        padding: 12px 13px;
-        color: #0f172a;
-        font-size: 13px;
-        font-weight: 850;
-        outline: none;
-    }
-
-    .filter-input:focus,
-    .filter-select:focus {
-        border-color: #94a3b8;
-        background: white;
-    }
-
-    .export-btn {
-        border: 0;
-        background: #0f172a;
-        color: white;
-        border-radius: 14px;
-        padding: 12px 14px;
-        font-size: 13px;
-        font-weight: 950;
-        cursor: pointer;
-        white-space: nowrap;
-    }
-
-    .store-view-btn {
-        display: inline-flex;
-        margin-top: 8px;
-        border: 0;
-        background: #0f172a;
-        color: white;
-        border-radius: 999px;
-        padding: 7px 10px;
-        font-size: 11px;
-        font-weight: 950;
-        cursor: pointer;
-        white-space: nowrap;
-        text-decoration: none;
-    }
-
-    .store-view-btn:hover {
-        background: #1e293b;
-    }
-
-    .filtered-note {
-        color: #64748b;
-        font-size: 12px;
-        font-weight: 850;
-        margin: -6px 0 14px 2px;
-    }
-
-    @media (max-width: 1100px) {
-        .users-toolbar {
-            grid-template-columns: 1fr 1fr;
-        }
-    }
-
-    @media (max-width: 680px) {
-        .users-toolbar {
-            grid-template-columns: 1fr;
-        }
-    }
-
     @media (max-width: 1100px) {
         .users-tabs {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .filters-form {
+            grid-template-columns: 1fr 1fr;
         }
 
         .users-hero {
@@ -345,7 +305,8 @@
             padding: 12px;
         }
 
-        .users-tabs {
+        .users-tabs,
+        .filters-form {
             grid-template-columns: 1fr;
         }
 
@@ -355,7 +316,7 @@
     }
 </style>
 
-{% macro user_table(title, subtitle, users, status_type) %}
+{% macro user_table(title, subtitle, users) %}
 <div class="section">
     <div class="section-header">
         <div>
@@ -382,13 +343,7 @@
             </thead>
             <tbody>
                 {% for user in users %}
-                    <tr class="connect-user-row"
-                        data-name="{{ (user.get('name') or '')|lower }}"
-                        data-email="{{ (user.get('email') or '')|lower }}"
-                        data-phone="{{ (user.get('phone_number') or '')|lower }}"
-                        data-role="{{ (user.get('role') or 'unknown')|lower }}"
-                        data-store="{{ (user.get('store_number') or 'no-store')|lower }}"
-                        data-status="{% if not user.get('is_active') %}inactive{% elif user.get('pending_invite') %}pending{% elif user.get('has_logged_in') %}logged-in{% else %}not-logged-in{% endif %}">
+                    <tr>
                         <td>
                             <div class="person-name">{{ user.get("name") or "Unknown" }}</div>
                             <div class="person-sub">{{ user.get("email") or "No email" }}</div>
@@ -426,9 +381,7 @@
                                 <span class="badge badge-gray">—</span>
                             {% endif %}
                         </td>
-                        <td>
-                            <strong>{{ user.get("active_push_tokens", 0) }}</strong>
-                        </td>
+                        <td><strong>{{ user.get("active_push_tokens", 0) }}</strong></td>
                         <td>
                             <div>{{ user.get("phone_number") or "—" }}</div>
                             {% if not user.get("is_active") %}
@@ -485,44 +438,56 @@
             </div>
         </div>
 
-        <div class="users-toolbar">
-            <input id="userSearch" class="filter-input" type="search" placeholder="Search name, email, or phone">
+        <div class="filters-panel">
+            <form class="filters-form" method="get" action="{{ url_for('connect_admin.users') }}">
+                <input class="filter-input" type="search" name="q" value="{{ search_query }}" placeholder="Search name, email, or phone">
 
-            <select id="roleFilter" class="filter-select">
-                <option value="">All roles</option>
-                {% for role in role_options %}
-                    <option value="{{ role|lower }}">{{ role|replace("_", " ")|title }}</option>
-                {% endfor %}
-            </select>
+                <select class="filter-select" name="role">
+                    <option value="">All roles</option>
+                    {% for role in role_options %}
+                        <option value="{{ role|lower }}" {% if selected_role == role|lower %}selected{% endif %}>
+                            {{ role|replace("_", " ")|title }}
+                        </option>
+                    {% endfor %}
+                </select>
 
-            <select id="storeFilter" class="filter-select">
-                <option value="">All stores</option>
-                {% for store_number in store_options %}
-                    <option value="{{ store_number|lower }}">Store {{ store_number }}</option>
-                {% endfor %}
-                <option value="no-store">No store</option>
-            </select>
+                <select class="filter-select" name="store">
+                    <option value="">All stores</option>
+                    {% for store_number in store_options %}
+                        <option value="{{ store_number|lower }}" {% if selected_store == store_number|lower %}selected{% endif %}>
+                            Store {{ store_number }}
+                        </option>
+                    {% endfor %}
+                    <option value="no-store" {% if selected_store == "no-store" %}selected{% endif %}>No store</option>
+                </select>
 
-            <select id="statusFilter" class="filter-select">
-                <option value="">All statuses</option>
-                <option value="not-logged-in">Not logged in</option>
-                <option value="pending">Pending invite</option>
-                <option value="logged-in">Logged in</option>
-                <option value="inactive">Inactive</option>
-            </select>
+                <select class="filter-select" name="status">
+                    <option value="">All statuses</option>
+                    <option value="not-logged-in" {% if selected_status == "not-logged-in" %}selected{% endif %}>Not logged in</option>
+                    <option value="pending" {% if selected_status == "pending" %}selected{% endif %}>Pending invite</option>
+                    <option value="logged-in" {% if selected_status == "logged-in" %}selected{% endif %}>Logged in</option>
+                    <option value="inactive" {% if selected_status == "inactive" %}selected{% endif %}>Inactive</option>
+                </select>
 
-            <button type="button" class="export-btn" onclick="exportVisibleUsers()">Export CSV</button>
+                <button class="btn-dark" type="submit">Apply</button>
+                <a class="btn-light" href="{{ url_for('connect_admin.users') }}">Reset</a>
+            </form>
+
+            <div class="active-filter-note">
+                Showing {{ filtered_users|length }} matching users.
+                {% if selected_store or selected_status or selected_role or search_query %}
+                    Filters are active.
+                {% else %}
+                    No filters active.
+                {% endif %}
+            </div>
         </div>
-
-        <div id="filteredNote" class="filtered-note">Showing all visible rows.</div>
 
         <div class="section">
             <div class="section-header">
                 <div>
                     <h2 class="section-title">Store rollout summary</h2>
-                    <div class="section-subtitle">
-                        Stores with the most users not logged in are shown first.
-                    </div>
+                    <div class="section-subtitle">Open a focused not-logged-in list for any store in a new tab.</div>
                 </div>
                 <span class="count-pill">{{ store_rollup|length }} stores</span>
             </div>
@@ -543,10 +508,9 @@
                     </thead>
                     <tbody>
                         {% for store in store_rollup %}
-                            <tr class="store-rollup-row"
-                                data-store-filter="{{ 'no-store' if store.store_number == 'No Store' else store.store_number|lower }}">
+                            <tr>
                                 <td>
-                                    <div class="person-name" style="cursor:pointer;">
+                                    <div class="person-name">
                                         {% if store.store_number == "No Store" %}
                                             No Store
                                         {% else %}
@@ -595,30 +559,26 @@
 
         {{ user_table(
             "Not logged in yet",
-            "Active users who have not logged into BPI Connect yet. This is the main adoption follow-up list.",
-            not_logged_in_users,
-            "not_logged_in"
+            "Active users who have not logged into BPI Connect yet.",
+            not_logged_in_users
         ) }}
 
         {{ user_table(
             "Pending invites",
             "Users with an invite sent but not accepted yet.",
-            pending_invite_users,
-            "pending"
+            pending_invite_users
         ) }}
 
         {{ user_table(
             "Active users",
             "All active users currently available in BPI Connect.",
-            active_users,
-            "active"
+            active_users
         ) }}
 
         {{ user_table(
             "Inactive users",
             "Inactive BPI Connect users.",
-            inactive_users,
-            "inactive"
+            inactive_users
         ) }}
     {% else %}
         <div class="error-box">
@@ -632,130 +592,4 @@
         </div>
     {% endif %}
 </div>
-
-<script>
-(function () {
-    const search = document.getElementById("userSearch");
-    const role = document.getElementById("roleFilter");
-    const store = document.getElementById("storeFilter");
-    const status = document.getElementById("statusFilter");
-    const note = document.getElementById("filteredNote");
-
-    function rowMatches(row) {
-        const q = (search?.value || "").trim().toLowerCase();
-        const roleValue = role?.value || "";
-        const storeValue = store?.value || "";
-        const statusValue = status?.value || "";
-
-        const haystack = [
-            row.dataset.name || "",
-            row.dataset.email || "",
-            row.dataset.phone || ""
-        ].join(" ");
-
-        if (q && !haystack.includes(q)) return false;
-        if (roleValue && row.dataset.role !== roleValue) return false;
-        if (storeValue && row.dataset.store !== storeValue) return false;
-        if (statusValue && row.dataset.status !== statusValue) return false;
-
-        return true;
-    }
-
-    function applyFilters() {
-        const rows = Array.from(document.querySelectorAll(".connect-user-row"));
-        let visible = 0;
-
-        rows.forEach(row => {
-            const match = rowMatches(row);
-            row.style.display = match ? "" : "none";
-            if (match) visible += 1;
-        });
-
-        if (note) {
-            note.textContent = `Showing ${visible} matching rows across all sections.`;
-        }
-    }
-
-    function applyUrlFilters() {
-        const params = new URLSearchParams(window.location.search);
-
-        const initialStore = params.get("store");
-        const initialStatus = params.get("status");
-        const initialRole = params.get("role");
-        const initialSearch = params.get("q");
-
-        if (initialStore && store) store.value = initialStore;
-        if (initialStatus && status) status.value = initialStatus;
-        if (initialRole && role) role.value = initialRole;
-        if (initialSearch && search) search.value = initialSearch;
-    }
-
-    [search, role, store, status].forEach(input => {
-        if (input) input.addEventListener("input", applyFilters);
-        if (input) input.addEventListener("change", applyFilters);
-    });
-
-    document.querySelectorAll(".store-view-btn").forEach(button => {
-        button.addEventListener("click", event => {
-            const storeValue = button.dataset.storeFilter || "";
-
-            if (store) store.value = storeValue;
-            if (status) status.value = "not-logged-in";
-
-            applyFilters();
-
-            if (note) {
-                const label = storeValue === "no-store" ? "No Store" : `Store ${storeValue}`;
-                const visible = Array.from(document.querySelectorAll(".connect-user-row"))
-                    .filter(row => row.style.display !== "none").length;
-                note.textContent = `Filtered to ${label} · ${visible} not logged in users.`;
-            }
-
-            setTimeout(() => {
-                const firstVisibleUserRow = Array.from(document.querySelectorAll(".connect-user-row"))
-                    .find(row => row.style.display !== "none");
-
-                if (firstVisibleUserRow) {
-                    firstVisibleUserRow.scrollIntoView({ behavior: "smooth", block: "center" });
-                }
-            }, 80);
-        });
-    });
-
-    window.exportVisibleUsers = function () {
-        const rows = Array.from(document.querySelectorAll(".connect-user-row"))
-            .filter(row => row.style.display !== "none");
-
-        const lines = [["Name", "Email", "Phone", "Role", "Store", "Status"]];
-
-        rows.forEach(row => {
-            lines.push([
-                row.dataset.name || "",
-                row.dataset.email || "",
-                row.dataset.phone || "",
-                row.dataset.role || "",
-                row.dataset.store || "",
-                row.dataset.status || ""
-            ]);
-        });
-
-        const csv = lines.map(line =>
-            line.map(value => `"${String(value).replaceAll('"', '""')}"`).join(",")
-        ).join("\n");
-
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-
-        link.href = url;
-        link.download = "bpi-connect-users-visible.csv";
-        link.click();
-
-        URL.revokeObjectURL(url);
-    };
-
-    applyUrlFilters();
-    applyFilters();
-})();
-</script>
 {% endblock %}

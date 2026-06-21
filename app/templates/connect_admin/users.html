@@ -186,7 +186,6 @@
 
     .store-rollup-row:hover td {
         background: #f8fafc;
-        box-shadow: inset 4px 0 0 #0f172a;
     }
 
     .person-name {
@@ -290,6 +289,23 @@
         font-weight: 950;
         cursor: pointer;
         white-space: nowrap;
+    }
+
+    .store-view-btn {
+        margin-top: 8px;
+        border: 0;
+        background: #0f172a;
+        color: white;
+        border-radius: 999px;
+        padding: 7px 10px;
+        font-size: 11px;
+        font-weight: 950;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .store-view-btn:hover {
+        background: #1e293b;
     }
 
     .filtered-note {
@@ -538,6 +554,13 @@
                                     {% if store.store_name %}
                                         <div class="person-sub">{{ store.store_name }}</div>
                                     {% endif %}
+                                    <button
+                                        type="button"
+                                        class="store-view-btn"
+                                        data-store-filter="{{ 'no-store' if store.store_number == 'No Store' else store.store_number|lower }}"
+                                    >
+                                        View not logged in
+                                    </button>
                                 </td>
                                 <td>{{ store.area or "—" }}</td>
                                 <td><strong>{{ store.total }}</strong></td>
@@ -606,4 +629,47 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+document.addEventListener("click", function (event) {
+    const button = event.target.closest(".store-view-btn");
+    if (!button) return;
+
+    const storeValue = button.dataset.storeFilter || "";
+    const storeSelect = document.getElementById("storeFilter");
+    const statusSelect = document.getElementById("statusFilter");
+    const noteBox = document.getElementById("filteredNote");
+
+    if (storeSelect) {
+        storeSelect.value = storeValue;
+    }
+
+    if (statusSelect) {
+        statusSelect.value = "not-logged-in";
+    }
+
+    const rows = Array.from(document.querySelectorAll(".connect-user-row"));
+    let visible = 0;
+
+    rows.forEach(row => {
+        const matchesStore = !storeValue || row.dataset.store === storeValue;
+        const matchesStatus = row.dataset.status === "not-logged-in";
+        const match = matchesStore && matchesStatus;
+
+        row.style.display = match ? "" : "none";
+        if (match) visible += 1;
+    });
+
+    if (noteBox) {
+        const label = storeValue === "no-store" ? "No Store" : "Store " + storeValue;
+        noteBox.textContent = `Filtered to ${label} · ${visible} not logged in users.`;
+    }
+
+    const firstMatchingRow = rows.find(row => row.style.display !== "none");
+    if (firstMatchingRow) {
+        firstMatchingRow.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+});
+</script>
+
 {% endblock %}

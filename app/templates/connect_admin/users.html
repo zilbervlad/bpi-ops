@@ -478,15 +478,15 @@
             </form>
 
             <div class="active-filter-note">
-                Showing {{ filtered_users|length }} matching users.
                 {% if selected_store or selected_status or selected_role or search_query %}
-                    Filters are active.
+                    Focused view: showing {{ filtered_users|length }} matching users.
                 {% else %}
-                    No filters active.
+                    Full rollout view: showing {{ filtered_users|length }} users.
                 {% endif %}
             </div>
         </div>
 
+        {% if not selected_store %}
         <div class="section">
             <div class="section-header">
                 <div>
@@ -557,29 +557,21 @@
             {% endif %}
         </div>
 
-        {{ user_table(
-            "Not logged in yet",
-            "Active users who have not logged into BPI Connect yet.",
-            not_logged_in_users
-        ) }}
+        {% endif %}
 
-        {{ user_table(
-            "Pending invites",
-            "Users with an invite sent but not accepted yet.",
-            pending_invite_users
-        ) }}
-
-        {{ user_table(
-            "Active users",
-            "All active users currently available in BPI Connect.",
-            active_users
-        ) }}
-
-        {{ user_table(
-            "Inactive users",
-            "Inactive BPI Connect users.",
-            inactive_users
-        ) }}
+        {% if selected_store %}
+            {{ user_table(
+                "Store " ~ selected_store|upper ~ " users",
+                "Everyone assigned to this store based on the current filters.",
+                filtered_users
+            ) }}
+        {% else %}
+            {{ user_table(
+                "Users matching current view",
+                "This table reflects the selected filters. Click Reset to return to the full rollout view.",
+                filtered_users
+            ) }}
+        {% endif %}
     {% else %}
         <div class="error-box">
             Could not load BPI Connect users.

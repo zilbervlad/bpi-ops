@@ -339,7 +339,7 @@
                     <th>Store</th>
                     <th>Area</th>
                     <th>Role</th>
-                    <th>Login</th>
+                    <th>Last Connect Login</th>
                     <th>Invite</th>
                     <th>Push</th>
                     <th>Contact</th>
@@ -369,9 +369,13 @@
                         <td>
                             {% if user.get("has_logged_in") %}
                                 <span class="badge badge-green">Logged In</span>
-                                <div class="person-sub">{{ user.get("last_login_at") or "" }}</div>
+                                {% if user.get("last_login_at") %}
+                                    <div class="person-sub">{{ user.get("last_login_at") }}</div>
+                                {% else %}
+                                    <div class="person-sub">Date unavailable</div>
+                                {% endif %}
                             {% else %}
-                                <span class="badge badge-red">No Login</span>
+                                <span class="badge badge-red">No Connect Login</span>
                             {% endif %}
                         </td>
                         <td>

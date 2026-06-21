@@ -260,13 +260,17 @@
     .badge-blue { background: #dbeafe; color: #1d4ed8; }
     .badge-gray { background: #f1f5f9; color: #334155; }
 
-    .store-view-btn {
-        margin-top: 8px;
-        background: #0f172a;
-        color: white;
-        border-radius: 999px;
-        padding: 7px 10px;
-        font-size: 11px;
+    .store-rollup-row {
+        cursor: pointer;
+        transition: background .12s ease, transform .12s ease;
+    }
+
+    .store-rollup-row:hover td {
+        background: #f8fafc;
+    }
+
+    .store-rollup-row:active {
+        transform: scale(.998);
     }
 
     .empty {
@@ -487,7 +491,7 @@
             <div class="section-header">
                 <div>
                     <h2 class="section-title">Store rollout summary</h2>
-                    <div class="section-subtitle">Open a focused not-logged-in list for any store in a new tab.</div>
+                    <div class="section-subtitle">Click a store row to view everyone assigned to that store.</div>
                 </div>
                 <span class="count-pill">{{ store_rollup|length }} stores</span>
             </div>
@@ -508,7 +512,10 @@
                     </thead>
                     <tbody>
                         {% for store in store_rollup %}
-                            <tr>
+                            <tr
+                                class="store-rollup-row"
+                                onclick="window.location.href='{{ url_for('connect_admin.users') }}?store={{ 'no-store' if store.store_number == 'No Store' else store.store_number|lower }}'"
+                            >
                                 <td>
                                     <div class="person-name">
                                         {% if store.store_number == "No Store" %}
@@ -520,14 +527,7 @@
                                     {% if store.store_name %}
                                         <div class="person-sub">{{ store.store_name }}</div>
                                     {% endif %}
-                                    <a
-                                        class="store-view-btn"
-                                        href="{{ url_for('connect_admin.users') }}?store={{ 'no-store' if store.store_number == 'No Store' else store.store_number|lower }}&status=not-logged-in"
-                                        target="_blank"
-                                        rel="noopener"
-                                    >
-                                        View not logged in
-                                    </a>
+
                                 </td>
                                 <td>{{ store.area or "—" }}</td>
                                 <td><strong>{{ store.total }}</strong></td>

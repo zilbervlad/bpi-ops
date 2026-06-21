@@ -238,6 +238,69 @@
         font-weight: 850;
     }
 
+    .users-toolbar {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 14px;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+        margin-bottom: 16px;
+        display: grid;
+        grid-template-columns: 1.4fr repeat(3, minmax(150px, .7fr)) auto;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .filter-input,
+    .filter-select {
+        width: 100%;
+        border: 1px solid #dbe3ef;
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 12px 13px;
+        color: #0f172a;
+        font-size: 13px;
+        font-weight: 850;
+        outline: none;
+    }
+
+    .filter-input:focus,
+    .filter-select:focus {
+        border-color: #94a3b8;
+        background: white;
+    }
+
+    .export-btn {
+        border: 0;
+        background: #0f172a;
+        color: white;
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 13px;
+        font-weight: 950;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .filtered-note {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 850;
+        margin: -6px 0 14px 2px;
+    }
+
+    @media (max-width: 1100px) {
+        .users-toolbar {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 680px) {
+        .users-toolbar {
+            grid-template-columns: 1fr;
+        }
+    }
+
     @media (max-width: 1100px) {
         .users-tabs {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -291,7 +354,13 @@
             </thead>
             <tbody>
                 {% for user in users %}
-                    <tr>
+                    <tr class="connect-user-row"
+                        data-name="{{ (user.get('name') or '')|lower }}"
+                        data-email="{{ (user.get('email') or '')|lower }}"
+                        data-phone="{{ (user.get('phone_number') or '')|lower }}"
+                        data-role="{{ (user.get('role') or 'unknown')|lower }}"
+                        data-store="{{ (user.get('store_number') or 'no-store')|lower }}"
+                        data-status="{% if not user.get('is_active') %}inactive{% elif user.get('pending_invite') %}pending{% elif user.get('has_logged_in') %}logged-in{% else %}not-logged-in{% endif %}">
                         <td>
                             <div class="person-name">{{ user.get("name") or "Unknown" }}</div>
                             <div class="person-sub">{{ user.get("email") or "No email" }}</div>
@@ -387,6 +456,41 @@
                 <div class="tab-note">Users with login activity</div>
             </div>
         </div>
+
+        <div class="users-toolbar">
+            <input id="userSearch" class="filter-input" type="search" placeholder="Search name, email, or phone">
+
+            <select id="roleFilter" class="filter-select">
+                <option value="">All roles</option>
+                {% for role in all_users|map(attribute="role")|unique|list|sort %}
+                    {% if role %}
+                        <option value="{{ role|lower }}">{{ role|replace("_", " ")|title }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+
+            <select id="storeFilter" class="filter-select">
+                <option value="">All stores</option>
+                {% for store_number in all_users|map(attribute="store_number")|unique|list|sort %}
+                    {% if store_number %}
+                        <option value="{{ store_number|lower }}">Store {{ store_number }}</option>
+                    {% endif %}
+                {% endfor %}
+                <option value="no-store">No store</option>
+            </select>
+
+            <select id="statusFilter" class="filter-select">
+                <option value="">All statuses</option>
+                <option value="not-logged-in">Not logged in</option>
+                <option value="pending">Pending invite</option>
+                <option value="logged-in">Logged in</option>
+                <option value="inactive">Inactive</option>
+            </select>
+
+            <button type="button" class="export-btn" onclick="exportVisibleUsers()">Export CSV</button>
+        </div>
+
+        <div id="filteredNote" class="filtered-note">Showing all visible rows.</div>
 
         {{ user_table(
             "Not logged in yet",

@@ -387,7 +387,7 @@
                 <div class="metric-note">Read-only count from BPI Connect</div>
             </a>
 
-            <div class="metric-card">
+            <a class="metric-card" href="{{ url_for('connect_admin.threads') }}" style="text-decoration:none; color:inherit;">
                 <div class="metric-top">
                     <div>
                         <div class="metric-label">Threads</div>
@@ -395,8 +395,8 @@
                     </div>
                     <div class="metric-icon">💬</div>
                 </div>
-                <div class="metric-note">{{ threads.get("memberships", 0) }} memberships</div>
-            </div>
+                <div class="metric-note">View thread summary · {{ threads.get("memberships", 0) }} memberships</div>
+            </a>
 
             <div class="metric-card">
                 <div class="metric-top">

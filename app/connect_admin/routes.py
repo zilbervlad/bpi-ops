@@ -116,6 +116,104 @@ def fetch_connect_summary():
     return result
 
 
+def fetch_connect_threads():
+    api_base = (current_app.config.get("BPI_CONNECT_API_BASE") or os.getenv("BPI_CONNECT_API_BASE") or "").rstrip("/")
+    integration_secret = current_app.config.get("BPI_CONNECT_INTEGRATION_SECRET") or os.getenv("BPI_CONNECT_INTEGRATION_SECRET")
+
+    status = {
+        "api_base_configured": bool(api_base),
+        "secret_configured": bool(integration_secret),
+        "connected": False,
+        "status_code": None,
+        "error": None,
+        "threads": [],
+        "counts": {},
+    }
+
+    if not api_base or not integration_secret:
+        status["error"] = "BPI Connect API base or integration secret is not configured."
+        return status
+
+    try:
+        response = requests.get(
+            f"{api_base}/api/integrations/bpi-ops/admin/threads",
+            headers=bpi_connect_headers(integration_secret),
+            timeout=12,
+        )
+        status["status_code"] = response.status_code
+
+        try:
+            payload = response.json()
+        except ValueError:
+            payload = {"raw": response.text[:1000]}
+
+        if response.ok and payload.get("success"):
+            status["connected"] = True
+            status["threads"] = payload.get("threads", []) or []
+            status["counts"] = payload.get("counts", {}) or {}
+        else:
+            status["error"] = payload
+
+    except requests.RequestException as exc:
+        status["error"] = str(exc)
+
+    return status
+
+
+@connect_admin_bp.route("/threads")
+def threads():
+    if not session.get("user_id"):
+        return redirect(url_for("auth.login"))
+
+    if not can_access_connect_admin():
+        flash("You do not have access to BPI Connect Admin.", "error")
+        return redirect(url_for("dashboard.index"))
+
+    threads_status = fetch_connect_threads()
+    all_threads = threads_status.get("threads", []) or []
+
+    selected_type = (request.args.get("type") or "").strip().lower()
+    search_query = (request.args.get("q") or "").strip().lower()
+
+    def matches_filters(thread):
+        thread_type = str(thread.get("type") or "unknown").strip().lower()
+        haystack = " ".join([
+            str(thread.get("name") or ""),
+            str(thread.get("group_key") or ""),
+            str(thread.get("scope_type") or ""),
+            str(thread.get("scope_value") or ""),
+        ]).lower()
+
+        if selected_type and thread_type != selected_type:
+            return False
+
+        if search_query and search_query not in haystack:
+            return False
+
+        return True
+
+    filtered_threads = [
+        thread for thread in all_threads
+        if matches_filters(thread)
+    ]
+
+    type_options = sorted({
+        str(thread.get("type") or "").strip()
+        for thread in all_threads
+        if str(thread.get("type") or "").strip()
+    })
+
+    return render_template(
+        "connect_admin/threads.html",
+        threads_status=threads_status,
+        all_threads=all_threads,
+        filtered_threads=filtered_threads,
+        type_options=type_options,
+        selected_type=selected_type,
+        search_query=search_query,
+    )
+
+
 @connect_admin_bp.route("/users")
 def users():
     if not session.get("user_id"):

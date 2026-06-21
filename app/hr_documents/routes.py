@@ -206,21 +206,19 @@ def add_recipients_to_document(document, selected_users):
             document_id=document.id,
             user_id=user.id,
             status="pending",
+            email_sent_at=None,
+            email_error=None,
         )
         db.session.add(recipient)
         added_recipients.append(recipient)
 
     db.session.flush()
 
+    # Important: do NOT send emails here.
+    # Large assignments can be 600+ people and will timeout if sent in one request.
+    # Emails are queued implicitly by email_sent_at being NULL.
     sent_count = 0
     failed_count = 0
-
-    for recipient in added_recipients:
-        if send_hr_document_email(document, recipient):
-            sent_count += 1
-            send_hr_document_connect_notification(document, recipient, action="assigned")
-        else:
-            failed_count += 1
 
     return added_recipients, skipped_count, sent_count, failed_count
 
@@ -346,6 +344,46 @@ Boston Pie, Inc.
     except Exception as exc:
         recipient.email_error = str(exc)
         return False
+
+
+def send_hr_document_email_batch(document, limit=50):
+    recipients = HRDocumentRecipient.query.filter(
+        HRDocumentRecipient.document_id == document.id,
+        HRDocumentRecipient.status != "acknowledged",
+        HRDocumentRecipient.email_sent_at.is_(None),
+    ).order_by(HRDocumentRecipient.assigned_at.asc()).limit(limit).all()
+
+    sent_count = 0
+    failed_count = 0
+    skipped_count = 0
+
+    for recipient in recipients:
+        if not recipient.user:
+            recipient.email_error = "User not found."
+            failed_count += 1
+            continue
+
+        if send_hr_document_email(document, recipient):
+            sent_count += 1
+            send_hr_document_connect_notification(document, recipient, action="assigned")
+        else:
+            failed_count += 1
+
+    db.session.commit()
+
+    remaining_count = HRDocumentRecipient.query.filter(
+        HRDocumentRecipient.document_id == document.id,
+        HRDocumentRecipient.status != "acknowledged",
+        HRDocumentRecipient.email_sent_at.is_(None),
+    ).count()
+
+    return {
+        "processed": len(recipients),
+        "sent": sent_count,
+        "failed": failed_count,
+        "skipped": skipped_count,
+        "remaining": remaining_count,
+    }
 
 
 @hr_documents_bp.route("/")
@@ -525,7 +563,7 @@ def new_document():
         db.session.commit()
 
         flash(
-            f"Document assigned to {len(recipients)} user(s). Emails sent: {sent_count}. Failed: {failed_count}. Skipped existing: {skipped_count}.",
+            f"Document assigned to {len(recipients)} user(s). Emails queued: {len(recipients)}. Skipped existing: {skipped_count}. Use Send Next 50 from the detail page.",
             "success",
         )
         return redirect(url_for("hr_documents.detail", document_id=document.id))
@@ -706,7 +744,7 @@ def add_recipients(document_id):
         db.session.commit()
 
         flash(
-            f"Added {len(recipients)} new recipient(s). Emails sent: {sent_count}. Failed: {failed_count}. Skipped existing: {skipped_count}.",
+            f"Added {len(recipients)} new recipient(s). Emails queued: {len(recipients)}. Skipped existing: {skipped_count}. Use Send Next 50 from the detail page.",
             "success",
         )
         return redirect(url_for("hr_documents.detail", document_id=document.id))
@@ -751,24 +789,19 @@ def resend_document_email(document_id, recipient_id):
 def resend_pending_document_emails(document_id):
     document = HRDocument.query.get_or_404(document_id)
 
-    recipients = HRDocumentRecipient.query.filter(
-        HRDocumentRecipient.document_id == document.id,
-        HRDocumentRecipient.status != "acknowledged",
-    ).all()
+    try:
+        limit = int(request.form.get("limit") or 50)
+    except ValueError:
+        limit = 50
 
-    sent_count = 0
-    failed_count = 0
+    limit = max(1, min(limit, 100))
+    result = send_hr_document_email_batch(document, limit=limit)
 
-    for recipient in recipients:
-        if send_hr_document_email(document, recipient):
-            sent_count += 1
-            send_hr_document_connect_notification(document, recipient, action="assigned")
-        else:
-            failed_count += 1
-
-    db.session.commit()
-
-    flash(f"Resent pending notifications. Sent: {sent_count}. Failed: {failed_count}.", "success")
+    flash(
+        f"Email batch complete. Sent: {result['sent']}. Failed: {result['failed']}. "
+        f"Processed: {result['processed']}. Remaining: {result['remaining']}.",
+        "success" if result["failed"] == 0 else "error",
+    )
     return redirect(url_for("hr_documents.detail", document_id=document.id))
 
 

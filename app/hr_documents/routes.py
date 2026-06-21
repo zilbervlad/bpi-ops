@@ -351,6 +351,7 @@ def send_hr_document_email_batch(document, limit=50):
         HRDocumentRecipient.document_id == document.id,
         HRDocumentRecipient.status != "acknowledged",
         HRDocumentRecipient.email_sent_at.is_(None),
+        HRDocumentRecipient.email_error.is_(None),
     ).order_by(HRDocumentRecipient.assigned_at.asc()).limit(limit).all()
 
     sent_count = 0
@@ -377,6 +378,7 @@ def send_hr_document_email_batch(document, limit=50):
         HRDocumentRecipient.document_id == document.id,
         HRDocumentRecipient.status != "acknowledged",
         HRDocumentRecipient.email_sent_at.is_(None),
+        HRDocumentRecipient.email_error.is_(None),
     ).count()
 
     return {

@@ -152,6 +152,34 @@ class HRDocumentRecipient(db.Model):
     user = db.relationship("User", foreign_keys=[user_id])
 
 
+
+class HRDocumentEmailJob(db.Model):
+    __tablename__ = "hr_document_email_jobs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey("hr_documents.id"), nullable=False)
+    requested_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+
+    job_type = db.Column(db.String(30), nullable=False, default="reminder")
+    status = db.Column(db.String(30), nullable=False, default="queued")  # queued, running, completed, failed
+
+    total_unsigned = db.Column(db.Integer, nullable=False, default=0)
+    total_sendable = db.Column(db.Integer, nullable=False, default=0)
+    sent_count = db.Column(db.Integer, nullable=False, default=0)
+    failed_count = db.Column(db.Integer, nullable=False, default=0)
+    no_email_count = db.Column(db.Integer, nullable=False, default=0)
+    processed_count = db.Column(db.Integer, nullable=False, default=0)
+
+    error_message = db.Column(db.Text, nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    started_at = db.Column(db.DateTime, nullable=True)
+    finished_at = db.Column(db.DateTime, nullable=True)
+
+    document = db.relationship("HRDocument", backref="email_jobs")
+    requested_by = db.relationship("User", foreign_keys=[requested_by_user_id])
+
+
 class Store(db.Model):
     __tablename__ = "stores"
 

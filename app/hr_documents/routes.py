@@ -190,6 +190,48 @@ def recipient_query_for_target(target_mode, form):
 
 
 
+
+def ensure_hr_document_email_job_table():
+    try:
+        HRDocumentEmailJob.__table__.create(db.engine, checkfirst=True)
+    except Exception:
+        pass
+
+
+def build_hr_document_email_job(document, requested_by_user_id=None):
+    ensure_hr_document_email_job_table()
+
+    recipients = HRDocumentRecipient.query.filter(
+        HRDocumentRecipient.document_id == document.id,
+        HRDocumentRecipient.status != "acknowledged",
+    ).all()
+
+    total_unsigned = len(recipients)
+    total_sendable = 0
+    no_email_count = 0
+
+    for recipient in recipients:
+        user = recipient.user
+        if user and user.get_notification_email():
+            total_sendable += 1
+        else:
+            no_email_count += 1
+
+    job = HRDocumentEmailJob(
+        document_id=document.id,
+        requested_by_user_id=requested_by_user_id,
+        job_type="reminder",
+        status="queued",
+        total_unsigned=total_unsigned,
+        total_sendable=total_sendable,
+        no_email_count=no_email_count,
+    )
+    db.session.add(job)
+    db.session.commit()
+
+    return job
+
+
 def add_recipients_to_document(document, selected_users):
     existing_user_ids = {
         row.user_id
@@ -356,17 +398,27 @@ Boston Pie, Inc.
         return False
 
 
-def send_hr_document_reminders_for_unsigned(document_id, batch_size=50, pause_seconds=2):
-    document = HRDocument.query.get(document_id)
+def send_hr_document_reminders_for_unsigned(job_id, batch_size=50, pause_seconds=2):
+    ensure_hr_document_email_job_table()
+
+    job = HRDocumentEmailJob.query.get(job_id)
+
+    if not job:
+        print(f"[HR DOC EMAIL] Job {job_id} not found.")
+        return
+
+    document = HRDocument.query.get(job.document_id)
 
     if not document:
-        print(f"[HR DOC EMAIL] Document {document_id} not found.")
-        return {
-            "sent": 0,
-            "failed": 0,
-            "no_email": 0,
-            "processed": 0,
-        }
+        job.status = "failed"
+        job.error_message = f"Document {job.document_id} not found."
+        job.finished_at = datetime.utcnow()
+        db.session.commit()
+        return
+
+    job.status = "running"
+    job.started_at = datetime.utcnow()
+    db.session.commit()
 
     recipients = (
         HRDocumentRecipient.query
@@ -386,62 +438,64 @@ def send_hr_document_reminders_for_unsigned(document_id, batch_size=50, pause_se
     no_email_count = 0
     processed_count = 0
 
-    for index, recipient in enumerate(recipients, start=1):
-        user = recipient.user
+    try:
+        for index, recipient in enumerate(recipients, start=1):
+            user = recipient.user
 
-        if not user:
-            recipient.email_error = "User not found."
-            failed_count += 1
-            processed_count += 1
-            continue
+            if not user:
+                recipient.email_error = "User not found."
+                failed_count += 1
+                processed_count += 1
+            elif not user.get_notification_email():
+                recipient.email_error = "NO_EMAIL: No notification email configured."
+                no_email_count += 1
+                processed_count += 1
+            else:
+                if send_hr_document_email(document, recipient):
+                    sent_count += 1
+                    send_hr_document_connect_notification(document, recipient, action="assigned")
+                else:
+                    failed_count += 1
+                processed_count += 1
 
-        if not user.get_notification_email():
-            recipient.email_error = "NO_EMAIL: No notification email configured."
-            no_email_count += 1
-            processed_count += 1
-            continue
+            job.sent_count = sent_count
+            job.failed_count = failed_count
+            job.no_email_count = no_email_count
+            job.processed_count = processed_count
 
-        if send_hr_document_email(document, recipient):
-            sent_count += 1
-            send_hr_document_connect_notification(document, recipient, action="assigned")
-        else:
-            failed_count += 1
+            if index % batch_size == 0:
+                db.session.commit()
+                time.sleep(pause_seconds)
 
-        processed_count += 1
+        job.status = "completed"
+        job.finished_at = datetime.utcnow()
+        db.session.commit()
 
-        # Commit every batch so progress is saved even if the worker restarts.
-        if index % batch_size == 0:
+        print(
+            f"[HR DOC EMAIL] Job {job.id} complete. "
+            f"document={document.id} sent={sent_count} failed={failed_count} "
+            f"no_email={no_email_count} processed={processed_count}"
+        )
+
+    except Exception as exc:
+        db.session.rollback()
+        job = HRDocumentEmailJob.query.get(job_id)
+        if job:
+            job.status = "failed"
+            job.error_message = str(exc)
+            job.finished_at = datetime.utcnow()
             db.session.commit()
-            time.sleep(pause_seconds)
-
-    db.session.commit()
-
-    print(
-        f"[HR DOC EMAIL] Document {document.id} reminder job complete. "
-        f"sent={sent_count} failed={failed_count} no_email={no_email_count} processed={processed_count}"
-    )
-
-    return {
-        "sent": sent_count,
-        "failed": failed_count,
-        "no_email": no_email_count,
-        "processed": processed_count,
-    }
+        print(f"[HR DOC EMAIL] Job {job_id} failed: {exc}")
 
 
-def start_hr_document_reminder_background_job(app, document_id):
+def start_hr_document_reminder_background_job(app, job_id):
     def runner():
         with app.app_context():
-            try:
-                send_hr_document_reminders_for_unsigned(document_id)
-            except Exception as exc:
-                db.session.rollback()
-                print(f"[HR DOC EMAIL] Reminder job failed for document {document_id}: {exc}")
+            send_hr_document_reminders_for_unsigned(job_id)
 
     thread = threading.Thread(target=runner, daemon=True)
     thread.start()
     return thread
-
 
 
 @hr_documents_bp.route("/")
@@ -706,6 +760,15 @@ def detail(document_id):
     email_failed_count = sum(1 for recipient in all_recipients if recipient.email_error)
     overdue_count = sum(1 for recipient in all_recipients if is_recipient_overdue(recipient))
 
+    ensure_hr_document_email_job_table()
+    recent_email_jobs = (
+        HRDocumentEmailJob.query
+        .filter_by(document_id=document.id)
+        .order_by(HRDocumentEmailJob.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
     return render_template(
         "hr_documents/detail.html",
         document=document,
@@ -718,6 +781,7 @@ def detail(document_id):
         pending_count=pending_count,
         email_failed_count=email_failed_count,
         overdue_count=overdue_count,
+        recent_email_jobs=recent_email_jobs,
         today=date.today(),
     )
 
@@ -856,12 +920,17 @@ def resend_pending_document_emails(document_id):
         flash("Everyone has acknowledged this document. No reminders needed.", "success")
         return redirect(url_for("hr_documents.detail", document_id=document.id))
 
+    job = build_hr_document_email_job(
+        document,
+        requested_by_user_id=session.get("user_id"),
+    )
+
     app = current_app._get_current_object()
-    start_hr_document_reminder_background_job(app, document.id)
+    start_hr_document_reminder_background_job(app, job.id)
 
     flash(
-        f"Reminder email job started in the background for {unsigned_count} unsigned recipient(s). "
-        "You can leave this page; refresh later to see updated email status.",
+        f"Reminder job #{job.id} started for {job.total_unsigned} unsigned recipient(s). "
+        f"Sendable: {job.total_sendable}. No Email: {job.no_email_count}.",
         "success",
     )
     return redirect(url_for("hr_documents.detail", document_id=document.id))

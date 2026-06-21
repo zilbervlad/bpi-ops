@@ -186,6 +186,7 @@
 
     .store-rollup-row:hover td {
         background: #f8fafc;
+        box-shadow: inset 4px 0 0 #0f172a;
     }
 
     .person-name {
@@ -525,8 +526,7 @@
                     <tbody>
                         {% for store in store_rollup %}
                             <tr class="store-rollup-row"
-                                data-store-filter="{{ 'no-store' if store.store_number == 'No Store' else store.store_number|lower }}"
-                                onclick="filterToStore(this.dataset.storeFilter)">
+                                data-store-filter="{{ 'no-store' if store.store_number == 'No Store' else store.store_number|lower }}">
                                 <td>
                                     <div class="person-name" style="cursor:pointer;">
                                         {% if store.store_number == "No Store" %}

@@ -292,6 +292,7 @@
     }
 
     .store-view-btn {
+        display: inline-flex;
         margin-top: 8px;
         border: 0;
         background: #0f172a;
@@ -302,6 +303,7 @@
         font-weight: 950;
         cursor: pointer;
         white-space: nowrap;
+        text-decoration: none;
     }
 
     .store-view-btn:hover {
@@ -554,13 +556,14 @@
                                     {% if store.store_name %}
                                         <div class="person-sub">{{ store.store_name }}</div>
                                     {% endif %}
-                                    <button
-                                        type="button"
+                                    <a
                                         class="store-view-btn"
-                                        data-store-filter="{{ 'no-store' if store.store_number == 'No Store' else store.store_number|lower }}"
+                                        href="{{ url_for('connect_admin.users') }}?store={{ 'no-store' if store.store_number == 'No Store' else store.store_number|lower }}&status=not-logged-in"
+                                        target="_blank"
+                                        rel="noopener"
                                     >
                                         View not logged in
-                                    </button>
+                                    </a>
                                 </td>
                                 <td>{{ store.area or "—" }}</td>
                                 <td><strong>{{ store.total }}</strong></td>
@@ -631,45 +634,128 @@
 </div>
 
 <script>
-document.addEventListener("click", function (event) {
-    const button = event.target.closest(".store-view-btn");
-    if (!button) return;
+(function () {
+    const search = document.getElementById("userSearch");
+    const role = document.getElementById("roleFilter");
+    const store = document.getElementById("storeFilter");
+    const status = document.getElementById("statusFilter");
+    const note = document.getElementById("filteredNote");
 
-    const storeValue = button.dataset.storeFilter || "";
-    const storeSelect = document.getElementById("storeFilter");
-    const statusSelect = document.getElementById("statusFilter");
-    const noteBox = document.getElementById("filteredNote");
+    function rowMatches(row) {
+        const q = (search?.value || "").trim().toLowerCase();
+        const roleValue = role?.value || "";
+        const storeValue = store?.value || "";
+        const statusValue = status?.value || "";
 
-    if (storeSelect) {
-        storeSelect.value = storeValue;
+        const haystack = [
+            row.dataset.name || "",
+            row.dataset.email || "",
+            row.dataset.phone || ""
+        ].join(" ");
+
+        if (q && !haystack.includes(q)) return false;
+        if (roleValue && row.dataset.role !== roleValue) return false;
+        if (storeValue && row.dataset.store !== storeValue) return false;
+        if (statusValue && row.dataset.status !== statusValue) return false;
+
+        return true;
     }
 
-    if (statusSelect) {
-        statusSelect.value = "not-logged-in";
+    function applyFilters() {
+        const rows = Array.from(document.querySelectorAll(".connect-user-row"));
+        let visible = 0;
+
+        rows.forEach(row => {
+            const match = rowMatches(row);
+            row.style.display = match ? "" : "none";
+            if (match) visible += 1;
+        });
+
+        if (note) {
+            note.textContent = `Showing ${visible} matching rows across all sections.`;
+        }
     }
 
-    const rows = Array.from(document.querySelectorAll(".connect-user-row"));
-    let visible = 0;
+    function applyUrlFilters() {
+        const params = new URLSearchParams(window.location.search);
 
-    rows.forEach(row => {
-        const matchesStore = !storeValue || row.dataset.store === storeValue;
-        const matchesStatus = row.dataset.status === "not-logged-in";
-        const match = matchesStore && matchesStatus;
+        const initialStore = params.get("store");
+        const initialStatus = params.get("status");
+        const initialRole = params.get("role");
+        const initialSearch = params.get("q");
 
-        row.style.display = match ? "" : "none";
-        if (match) visible += 1;
+        if (initialStore && store) store.value = initialStore;
+        if (initialStatus && status) status.value = initialStatus;
+        if (initialRole && role) role.value = initialRole;
+        if (initialSearch && search) search.value = initialSearch;
+    }
+
+    [search, role, store, status].forEach(input => {
+        if (input) input.addEventListener("input", applyFilters);
+        if (input) input.addEventListener("change", applyFilters);
     });
 
-    if (noteBox) {
-        const label = storeValue === "no-store" ? "No Store" : "Store " + storeValue;
-        noteBox.textContent = `Filtered to ${label} · ${visible} not logged in users.`;
-    }
+    document.querySelectorAll(".store-view-btn").forEach(button => {
+        button.addEventListener("click", event => {
+            const storeValue = button.dataset.storeFilter || "";
 
-    const firstMatchingRow = rows.find(row => row.style.display !== "none");
-    if (firstMatchingRow) {
-        firstMatchingRow.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-});
+            if (store) store.value = storeValue;
+            if (status) status.value = "not-logged-in";
+
+            applyFilters();
+
+            if (note) {
+                const label = storeValue === "no-store" ? "No Store" : `Store ${storeValue}`;
+                const visible = Array.from(document.querySelectorAll(".connect-user-row"))
+                    .filter(row => row.style.display !== "none").length;
+                note.textContent = `Filtered to ${label} · ${visible} not logged in users.`;
+            }
+
+            setTimeout(() => {
+                const firstVisibleUserRow = Array.from(document.querySelectorAll(".connect-user-row"))
+                    .find(row => row.style.display !== "none");
+
+                if (firstVisibleUserRow) {
+                    firstVisibleUserRow.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }, 80);
+        });
+    });
+
+    window.exportVisibleUsers = function () {
+        const rows = Array.from(document.querySelectorAll(".connect-user-row"))
+            .filter(row => row.style.display !== "none");
+
+        const lines = [["Name", "Email", "Phone", "Role", "Store", "Status"]];
+
+        rows.forEach(row => {
+            lines.push([
+                row.dataset.name || "",
+                row.dataset.email || "",
+                row.dataset.phone || "",
+                row.dataset.role || "",
+                row.dataset.store || "",
+                row.dataset.status || ""
+            ]);
+        });
+
+        const csv = lines.map(line =>
+            line.map(value => `"${String(value).replaceAll('"', '""')}"`).join(",")
+        ).join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "bpi-connect-users-visible.csv";
+        link.click();
+
+        URL.revokeObjectURL(url);
+    };
+
+    applyUrlFilters();
+    applyFilters();
+})();
 </script>
-
 {% endblock %}

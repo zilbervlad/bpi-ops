@@ -149,6 +149,18 @@ def users():
         if not user.get("is_active")
     ]
 
+    role_options = sorted({
+        str(user.get("role") or "").strip()
+        for user in all_users
+        if str(user.get("role") or "").strip()
+    })
+
+    store_options = sorted({
+        str(user.get("store_number") or "").strip()
+        for user in all_users
+        if str(user.get("store_number") or "").strip()
+    })
+
     return render_template(
         "connect_admin/users.html",
         users_status=users_status,
@@ -157,6 +169,8 @@ def users():
         pending_invite_users=pending_invite_users,
         active_users=active_users,
         inactive_users=inactive_users,
+        role_options=role_options,
+        store_options=store_options,
     )
 
 

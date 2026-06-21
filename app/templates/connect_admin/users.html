@@ -462,19 +462,15 @@
 
             <select id="roleFilter" class="filter-select">
                 <option value="">All roles</option>
-                {% for role in all_users|map(attribute="role")|unique|list|sort %}
-                    {% if role %}
-                        <option value="{{ role|lower }}">{{ role|replace("_", " ")|title }}</option>
-                    {% endif %}
+                {% for role in role_options %}
+                    <option value="{{ role|lower }}">{{ role|replace("_", " ")|title }}</option>
                 {% endfor %}
             </select>
 
             <select id="storeFilter" class="filter-select">
                 <option value="">All stores</option>
-                {% for store_number in all_users|map(attribute="store_number")|unique|list|sort %}
-                    {% if store_number %}
-                        <option value="{{ store_number|lower }}">Store {{ store_number }}</option>
-                    {% endif %}
+                {% for store_number in store_options %}
+                    <option value="{{ store_number|lower }}">Store {{ store_number }}</option>
                 {% endfor %}
                 <option value="no-store">No store</option>
             </select>

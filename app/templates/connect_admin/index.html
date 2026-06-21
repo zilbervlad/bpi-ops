@@ -354,7 +354,7 @@
                 <div class="metric-note">{{ users.get("active", 0) }} active · {{ users.get("inactive", 0) }} inactive</div>
             </div>
 
-            <div class="metric-card">
+            <a class="metric-card" href="{{ url_for('connect_admin.users') }}" style="text-decoration:none; color:inherit;">
                 <div class="metric-top">
                     <div>
                         <div class="metric-label">Logged In</div>
@@ -363,7 +363,7 @@
                     <div class="metric-icon">✓</div>
                 </div>
                 <div class="metric-note">{{ users.get("without_login", 0) }} users have not logged in yet</div>
-            </div>
+            </a>
 
             <div class="metric-card">
                 <div class="metric-top">
@@ -376,7 +376,7 @@
                 <div class="metric-note">{{ stores.get("total", 0) }} total · {{ areas.get("total", 0) }} areas</div>
             </div>
 
-            <div class="metric-card">
+            <a class="metric-card" href="{{ url_for('connect_admin.users') }}" style="text-decoration:none; color:inherit;">
                 <div class="metric-top">
                     <div>
                         <div class="metric-label">Pending Invites</div>
@@ -385,7 +385,7 @@
                     <div class="metric-icon">✉</div>
                 </div>
                 <div class="metric-note">Read-only count from BPI Connect</div>
-            </div>
+            </a>
 
             <div class="metric-card">
                 <div class="metric-top">

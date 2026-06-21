@@ -347,46 +347,76 @@ Boston Pie, Inc.
 
 
 def send_hr_document_email_batch(document, limit=50):
-    recipients = HRDocumentRecipient.query.filter(
-        HRDocumentRecipient.document_id == document.id,
-        HRDocumentRecipient.status != "acknowledged",
-        HRDocumentRecipient.email_sent_at.is_(None),
-        HRDocumentRecipient.email_error.is_(None),
-    ).order_by(HRDocumentRecipient.assigned_at.asc()).limit(limit).all()
+    # This is a REMINDER batch:
+    # send to people who have not acknowledged yet, even if they were emailed before.
+    all_unsigned = (
+        HRDocumentRecipient.query
+        .filter(
+            HRDocumentRecipient.document_id == document.id,
+            HRDocumentRecipient.status != "acknowledged",
+        )
+        .order_by(
+            HRDocumentRecipient.email_sent_at.asc().nullsfirst(),
+            HRDocumentRecipient.assigned_at.asc(),
+        )
+        .all()
+    )
+
+    sendable_recipients = []
+    no_email_count = 0
+
+    for recipient in all_unsigned:
+        user = recipient.user
+
+        if not user:
+            recipient.email_error = "User not found."
+            continue
+
+        if not user.get_notification_email():
+            recipient.email_error = "NO_EMAIL: No notification email configured."
+            no_email_count += 1
+            continue
+
+        sendable_recipients.append(recipient)
+
+        if len(sendable_recipients) >= limit:
+            break
 
     sent_count = 0
     failed_count = 0
-    skipped_count = 0
 
-    for recipient in recipients:
-        if not recipient.user:
-            recipient.email_error = "User not found."
-            failed_count += 1
-            continue
-
+    for recipient in sendable_recipients:
         if send_hr_document_email(document, recipient):
             sent_count += 1
             send_hr_document_connect_notification(document, recipient, action="assigned")
-        elif recipient.email_error and recipient.email_error.startswith("NO_EMAIL:"):
-            skipped_count += 1
         else:
             failed_count += 1
 
     db.session.commit()
 
-    remaining_count = HRDocumentRecipient.query.filter(
+    unsigned_with_email_count = 0
+    unsigned_no_email_count = 0
+
+    remaining_unsigned = HRDocumentRecipient.query.filter(
         HRDocumentRecipient.document_id == document.id,
         HRDocumentRecipient.status != "acknowledged",
-        HRDocumentRecipient.email_sent_at.is_(None),
-        HRDocumentRecipient.email_error.is_(None),
-    ).count()
+    ).all()
+
+    for recipient in remaining_unsigned:
+        user = recipient.user
+
+        if user and user.get_notification_email():
+            unsigned_with_email_count += 1
+        else:
+            unsigned_no_email_count += 1
 
     return {
-        "processed": len(recipients),
+        "processed": len(sendable_recipients),
         "sent": sent_count,
         "failed": failed_count,
-        "skipped": skipped_count,
-        "remaining": remaining_count,
+        "skipped": no_email_count,
+        "remaining": unsigned_with_email_count,
+        "unsigned_no_email": unsigned_no_email_count,
     }
 
 
@@ -802,8 +832,9 @@ def resend_pending_document_emails(document_id):
     result = send_hr_document_email_batch(document, limit=limit)
 
     flash(
-        f"Email batch complete. Sent: {result['sent']}. Failed: {result['failed']}. "
-        f"No Email: {result['skipped']}. Processed: {result['processed']}. Remaining: {result['remaining']}.",
+        f"Reminder batch complete. Sent: {result['sent']}. Failed: {result['failed']}. "
+        f"No Email: {result['skipped']}. Processed: {result['processed']}. "
+        f"Unsigned with Email: {result['remaining']}. Unsigned No Email: {result['unsigned_no_email']}.",
         "success" if result["failed"] == 0 else "error",
     )
     return redirect(url_for("hr_documents.detail", document_id=document.id))

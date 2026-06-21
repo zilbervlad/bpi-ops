@@ -371,7 +371,7 @@
             {% if document.is_active %}
             <form method="POST" action="{{ url_for('hr_documents.resend_pending_document_emails', document_id=document.id) }}" style="display:inline;">
                     <input type="hidden" name="limit" value="50">
-                <button type="submit" class="btn-primary">Send Reminder Emails</button>
+                <button type="submit" class="btn-primary">Send Reminder to Next 50</button>
             </form>
             {% endif %}
 

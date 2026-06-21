@@ -313,7 +313,7 @@ def send_hr_document_connect_notification(document, recipient, action="assigned"
 def send_hr_document_email(document, recipient):
     to_email = recipient.user.get_notification_email()
     if not to_email:
-        recipient.email_error = "NO_EMAIL: No notification email configured."
+        recipient.email_error = "No notification email configured."
         return False
 
     document_url = url_for("hr_documents.acknowledge_document", document_id=document.id, _external=True)
@@ -366,8 +366,6 @@ def send_hr_document_email_batch(document, limit=50):
         if send_hr_document_email(document, recipient):
             sent_count += 1
             send_hr_document_connect_notification(document, recipient, action="assigned")
-        elif recipient.email_error and recipient.email_error.startswith("NO_EMAIL:"):
-            skipped_count += 1
         else:
             failed_count += 1
 
@@ -801,7 +799,7 @@ def resend_pending_document_emails(document_id):
 
     flash(
         f"Email batch complete. Sent: {result['sent']}. Failed: {result['failed']}. "
-        f"No Email: {result['skipped']}. Processed: {result['processed']}. Remaining: {result['remaining']}.",
+        f"Processed: {result['processed']}. Remaining: {result['remaining']}.",
         "success" if result["failed"] == 0 else "error",
     )
     return redirect(url_for("hr_documents.detail", document_id=document.id))

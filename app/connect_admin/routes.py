@@ -117,8 +117,8 @@ def fetch_connect_summary():
 
 
 def fetch_connect_threads():
-    api_base = (current_app.config.get("BPI_CONNECT_API_BASE") or os.getenv("BPI_CONNECT_API_BASE") or "").rstrip("/")
-    integration_secret = current_app.config.get("BPI_CONNECT_INTEGRATION_SECRET") or os.getenv("BPI_CONNECT_INTEGRATION_SECRET")
+    api_base = os.getenv("BPI_CONNECT_API_BASE", "").strip().rstrip("/")
+    integration_secret = os.getenv("BPI_CONNECT_INTEGRATION_SECRET", "").strip()
 
     status = {
         "api_base_configured": bool(api_base),

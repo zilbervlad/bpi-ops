@@ -849,6 +849,14 @@ def admin_center():
                 "status": "View Only",
                 "icon": "👥",
             },
+            {
+                "title": "BPI Connect",
+                "eyebrow": "Messaging",
+                "description": "Read-only app admin and integration status.",
+                "url": url_for("connect_admin.index"),
+                "status": "View Only",
+                "icon": "💬",
+            },
         ])
 
     if is_admin:
@@ -900,6 +908,14 @@ def admin_center():
                 "url": url_for("auth.manage_users"),
                 "status": "Admin",
                 "icon": "👥",
+            },
+            {
+                "title": "BPI Connect",
+                "eyebrow": "Messaging",
+                "description": "Read-only app admin and integration status.",
+                "url": url_for("connect_admin.index"),
+                "status": "Read Only",
+                "icon": "💬",
             },
             {
                 "title": "Store Admin",

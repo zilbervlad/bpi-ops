@@ -488,6 +488,74 @@
 
         <div id="filteredNote" class="filtered-note">Showing all visible rows.</div>
 
+        <div class="section">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Store rollout summary</h2>
+                    <div class="section-subtitle">
+                        Stores with the most users not logged in are shown first.
+                    </div>
+                </div>
+                <span class="count-pill">{{ store_rollup|length }} stores</span>
+            </div>
+
+            {% if store_rollup %}
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Store</th>
+                            <th>Area</th>
+                            <th>Total</th>
+                            <th>Logged In</th>
+                            <th>Not Logged In</th>
+                            <th>Pending</th>
+                            <th>Push Tokens</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for store in store_rollup %}
+                            <tr>
+                                <td>
+                                    <div class="person-name">
+                                        {% if store.store_number == "No Store" %}
+                                            No Store
+                                        {% else %}
+                                            Store {{ store.store_number }}
+                                        {% endif %}
+                                    </div>
+                                    {% if store.store_name %}
+                                        <div class="person-sub">{{ store.store_name }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ store.area or "—" }}</td>
+                                <td><strong>{{ store.total }}</strong></td>
+                                <td><span class="badge badge-green">{{ store.logged_in }}</span></td>
+                                <td>
+                                    {% if store.not_logged_in > 0 %}
+                                        <span class="badge badge-red">{{ store.not_logged_in }}</span>
+                                    {% else %}
+                                        <span class="badge badge-green">0</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if store.pending_invites > 0 %}
+                                        <span class="badge badge-blue">{{ store.pending_invites }}</span>
+                                    {% else %}
+                                        <span class="badge badge-gray">0</span>
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ store.push_tokens }}</strong></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="empty">No store rollout data available.</div>
+            {% endif %}
+        </div>
+
         {{ user_table(
             "Not logged in yet",
             "Active users who have not logged into BPI Connect yet. This is the main adoption follow-up list.",

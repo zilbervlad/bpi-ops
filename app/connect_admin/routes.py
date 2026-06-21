@@ -161,6 +161,53 @@ def users():
         if str(user.get("store_number") or "").strip()
     })
 
+    store_rollup_map = {}
+
+    for user in all_users:
+        store_number = str(user.get("store_number") or "").strip() or "No Store"
+        store_name = str(user.get("store_name") or "").strip()
+        area = str(user.get("area") or "").strip()
+
+        if store_number not in store_rollup_map:
+            store_rollup_map[store_number] = {
+                "store_number": store_number,
+                "store_name": store_name,
+                "area": area,
+                "total": 0,
+                "active": 0,
+                "inactive": 0,
+                "logged_in": 0,
+                "not_logged_in": 0,
+                "pending_invites": 0,
+                "push_tokens": 0,
+            }
+
+        row = store_rollup_map[store_number]
+        row["total"] += 1
+
+        if user.get("is_active"):
+            row["active"] += 1
+        else:
+            row["inactive"] += 1
+
+        if user.get("has_logged_in"):
+            row["logged_in"] += 1
+        elif user.get("is_active"):
+            row["not_logged_in"] += 1
+
+        if user.get("pending_invite"):
+            row["pending_invites"] += 1
+
+        try:
+            row["push_tokens"] += int(user.get("active_push_tokens") or 0)
+        except (TypeError, ValueError):
+            pass
+
+    store_rollup = sorted(
+        store_rollup_map.values(),
+        key=lambda row: (-row["not_logged_in"], str(row["store_number"])),
+    )
+
     return render_template(
         "connect_admin/users.html",
         users_status=users_status,
@@ -171,6 +218,7 @@ def users():
         inactive_users=inactive_users,
         role_options=role_options,
         store_options=store_options,
+        store_rollup=store_rollup,
     )
 
 

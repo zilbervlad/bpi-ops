@@ -217,10 +217,9 @@ def build_dashboard_data():
         DailyChecklist.store_number.in_(visible_store_numbers)
     ).all() if visible_store_numbers else []
 
-    daily_map = {
-        row.store_number: row
-        for row in daily_rows
-    }
+    daily_map = {}
+    for row in sorted(daily_rows, key=lambda item: item.id):
+        daily_map[row.store_number] = row
 
     for store in stores:
         daily = daily_map.get(store.store_number)

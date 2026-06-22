@@ -149,7 +149,9 @@ def build_heat_map(today, active_section_name):
         checklist_date=today
     ).all()
 
-    daily_by_store = {row.store_number: row for row in all_daily}
+    daily_by_store = {}
+    for row in sorted(all_daily, key=lambda item: item.id):
+        daily_by_store[row.store_number] = row
 
     heat_map = []
 

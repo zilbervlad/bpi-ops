@@ -61,10 +61,15 @@ def utc_naive_to_et(dt):
 
 
 def get_or_create_daily_checklist(store_number: str, checklist_date: date):
-    daily = DailyChecklist.query.filter_by(
-        store_number=store_number,
-        checklist_date=checklist_date
-    ).first()
+    daily = (
+        DailyChecklist.query
+        .filter_by(
+            store_number=store_number,
+            checklist_date=checklist_date
+        )
+        .order_by(DailyChecklist.id.desc())
+        .first()
+    )
 
     if daily:
         return daily

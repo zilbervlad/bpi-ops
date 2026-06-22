@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .announce-shell {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 18px;
+    }
+
+    .announce-hero {
+        background: linear-gradient(135deg, #111827, #1f2937);
+        color: white;
+        border-radius: 24px;
+        padding: 26px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+        margin-bottom: 18px;
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-end;
+    }
+
+    .eyebrow {
+        font-size: 12px;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        opacity: .75;
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+    .title {
+        font-size: 34px;
+        font-weight: 950;
+        margin: 0;
+        line-height: 1.05;
+        letter-spacing: -.05em;
+    }
+
+    .subtitle {
+        margin-top: 10px;
+        max-width: 780px;
+        color: rgba(255,255,255,.78);
+        font-size: 15px;
+        line-height: 1.5;
+        font-weight: 700;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        color: white;
+        background: rgba(255,255,255,.10);
+        border: 1px solid rgba(255,255,255,.16);
+        border-radius: 999px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 420px;
+        gap: 16px;
+        align-items: start;
+    }
+
+    .panel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 22px;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+    }
+
+    .panel-header {
+        padding: 18px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .panel-title {
+        margin: 0;
+        color: #0f172a;
+        font-size: 21px;
+        font-weight: 950;
+        letter-spacing: -.04em;
+    }
+
+    .panel-subtitle {
+        margin-top: 5px;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 750;
+    }
+
+    .form-body {
+        padding: 18px;
+        display: grid;
+        gap: 14px;
+    }
+
+    .field label {
+        display: block;
+        margin-bottom: 7px;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+    }
+
+    .input,
+    .select,
+    .textarea {
+        width: 100%;
+        border: 1px solid #dbe3ef;
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 12px 13px;
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 800;
+        outline: none;
+    }
+
+    .textarea {
+        min-height: 150px;
+        resize: vertical;
+        line-height: 1.45;
+    }
+
+    .btn-dark {
+        border: 0;
+        background: #0f172a;
+        color: white;
+        border-radius: 14px;
+        padding: 13px 16px;
+        font-size: 13px;
+        font-weight: 950;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .warning {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        border-radius: 16px;
+        padding: 12px;
+        font-size: 13px;
+        font-weight: 850;
+        line-height: 1.45;
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 18px;
+    }
+
+    .metric {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 14px;
+    }
+
+    .metric-label {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+    }
+
+    .metric-value {
+        margin-top: 8px;
+        color: #0f172a;
+        font-size: 28px;
+        font-weight: 950;
+        letter-spacing: -.05em;
+    }
+
+    .preview-list {
+        max-height: 430px;
+        overflow: auto;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .person {
+        padding: 12px 18px;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .person-name {
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 950;
+    }
+
+    .person-sub {
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 750;
+    }
+
+    .empty {
+        padding: 18px;
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 850;
+    }
+
+    @media (max-width: 1000px) {
+        .layout {
+            grid-template-columns: 1fr;
+        }
+
+        .announce-hero {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+<div class="announce-shell">
+    <div class="announce-hero">
+        <div>
+            <div class="eyebrow">BPI Connect Admin</div>
+            <h1 class="title">New Announcement</h1>
+            <div class="subtitle">
+                Build and preview an announcement target. This page is preview-only for now —
+                it does not send anything to BPI Connect yet.
+            </div>
+        </div>
+        <a class="back-link" href="{{ url_for('connect_admin.index') }}">← Dashboard</a>
+    </div>
+
+    <div class="layout">
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Announcement draft</h2>
+                <div class="panel-subtitle">Choose a target and preview who would receive it.</div>
+            </div>
+
+            <form method="post" class="form-body">
+                <div class="warning">
+                    Preview mode only. No push notification, message, or thread post will be sent from this page yet.
+                </div>
+
+                <div class="field">
+                    <label>Target type</label>
+                    <select class="select" name="target_type" onchange="this.form.submit()">
+                        <option value="company" {% if target_type == "company" %}selected{% endif %}>Company-wide</option>
+                        <option value="area" {% if target_type == "area" %}selected{% endif %}>Area</option>
+                        <option value="store" {% if target_type == "store" %}selected{% endif %}>Store</option>
+                        <option value="role" {% if target_type == "role" %}selected{% endif %}>Role</option>
+                    </select>
+                </div>
+
+                {% if target_type == "store" %}
+                    <div class="field">
+                        <label>Store</label>
+                        <select class="select" name="target_value" onchange="this.form.submit()">
+                            <option value="">Choose store</option>
+                            {% for store in store_options %}
+                                <option value="{{ store }}" {% if target_value == store %}selected{% endif %}>Store {{ store }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% elif target_type == "area" %}
+                    <div class="field">
+                        <label>Area</label>
+                        <select class="select" name="target_value" onchange="this.form.submit()">
+                            <option value="">Choose area</option>
+                            {% for area in area_options %}
+                                <option value="{{ area }}" {% if target_value == area %}selected{% endif %}>{{ area }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% elif target_type == "role" %}
+                    <div class="field">
+                        <label>Role</label>
+                        <select class="select" name="target_value" onchange="this.form.submit()">
+                            <option value="">Choose role</option>
+                            {% for role in role_options %}
+                                <option value="{{ role }}" {% if target_value == role %}selected{% endif %}>{{ role|replace("_", " ")|title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+
+                <div class="field">
+                    <label>Title</label>
+                    <input class="input" name="title" value="{{ title }}" placeholder="Example: Schedule Reminder">
+                </div>
+
+                <div class="field">
+                    <label>Message</label>
+                    <textarea class="textarea" name="message" placeholder="Write the announcement message...">{{ message }}</textarea>
+                </div>
+
+                <button class="btn-dark" type="submit">Refresh Preview</button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Recipient preview</h2>
+                <div class="panel-subtitle">
+                    {% if target_type == "company" %}
+                        Company-wide
+                    {% elif target_value %}
+                        {{ target_type|title }}: {{ target_value }}
+                    {% else %}
+                        Select a target
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="metric-grid">
+                <div class="metric">
+                    <div class="metric-label">Recipients</div>
+                    <div class="metric-value">{{ preview_counts.total }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">With Push</div>
+                    <div class="metric-value">{{ preview_counts.with_push }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">No Push</div>
+                    <div class="metric-value">{{ preview_counts.without_push }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Logged In</div>
+                    <div class="metric-value">{{ preview_counts.logged_in }}</div>
+                </div>
+            </div>
+
+            {% if preview_users %}
+                <div class="preview-list">
+                    {% for user in preview_users[:80] %}
+                        <div class="person">
+                            <div class="person-name">{{ user.get("name") or "Unknown" }}</div>
+                            <div class="person-sub">
+                                Store {{ user.get("store_number") or "—" }}
+                                · {{ user.get("role") or "unknown" }}
+                                · Push tokens: {{ user.get("active_push_tokens", 0) }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty">No recipients match this target yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

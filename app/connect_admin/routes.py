@@ -369,6 +369,86 @@ def users():
     )
 
 
+
+
+@connect_admin_bp.route("/announcements/new", methods=["GET", "POST"])
+def new_announcement():
+    if not session.get("user_id"):
+        return redirect(url_for("auth.login"))
+
+    if not require_connect_admin_access():
+        flash("You do not have access to BPI Connect Admin.", "danger")
+        return redirect(url_for("dashboard.index"))
+
+    users_status = fetch_connect_users()
+    all_users = users_status.get("users", []) or []
+
+    target_type = (request.form.get("target_type") or request.args.get("target_type") or "company").strip().lower()
+    target_value = (request.form.get("target_value") or request.args.get("target_value") or "").strip()
+    title = (request.form.get("title") or "").strip()
+    message = (request.form.get("message") or "").strip()
+
+    store_options = sorted({
+        str(user.get("store_number") or "").strip()
+        for user in all_users
+        if str(user.get("store_number") or "").strip()
+    })
+
+    area_options = sorted({
+        str(user.get("area") or "").strip()
+        for user in all_users
+        if str(user.get("area") or "").strip()
+    })
+
+    role_options = sorted({
+        str(user.get("role") or "").strip()
+        for user in all_users
+        if str(user.get("role") or "").strip()
+    })
+
+    def matches_target(user):
+        if target_type == "company":
+            return bool(user.get("is_active"))
+
+        if target_type == "store":
+            return bool(user.get("is_active")) and str(user.get("store_number") or "").strip() == target_value
+
+        if target_type == "area":
+            return bool(user.get("is_active")) and str(user.get("area") or "").strip() == target_value
+
+        if target_type == "role":
+            return bool(user.get("is_active")) and str(user.get("role") or "").strip() == target_value
+
+        return False
+
+    preview_users = [
+        user for user in all_users
+        if matches_target(user)
+    ]
+
+    preview_counts = {
+        "total": len(preview_users),
+        "with_push": sum(1 for user in preview_users if int(user.get("active_push_tokens") or 0) > 0),
+        "without_push": sum(1 for user in preview_users if int(user.get("active_push_tokens") or 0) <= 0),
+        "logged_in": sum(1 for user in preview_users if user.get("has_logged_in")),
+        "not_logged_in": sum(1 for user in preview_users if not user.get("has_logged_in")),
+    }
+
+    return render_template(
+        "connect_admin/announcement_new.html",
+        users_status=users_status,
+        target_type=target_type,
+        target_value=target_value,
+        title=title,
+        message=message,
+        store_options=store_options,
+        area_options=area_options,
+        role_options=role_options,
+        preview_users=preview_users,
+        preview_counts=preview_counts,
+    )
+
+
 @connect_admin_bp.route("/")
 def index():
     if not session.get("user_id"):

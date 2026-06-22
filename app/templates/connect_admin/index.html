@@ -342,6 +342,20 @@
     </div>
 
     {% if connect_status.connected %}
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 18px;">
+            <a href="{{ url_for('connect_admin.new_announcement') }}" style="text-decoration:none; color:inherit; background:white; border:1px solid #e5e7eb; border-radius:20px; padding:18px; box-shadow:0 10px 25px rgba(15,23,42,.06); display:block;">
+                <div style="font-size:12px; font-weight:950; text-transform:uppercase; letter-spacing:.10em; color:#64748b;">Announcements</div>
+                <div style="font-size:22px; font-weight:950; color:#0f172a; margin-top:8px; letter-spacing:-.04em;">New Announcement Preview</div>
+                <div style="font-size:13px; font-weight:800; color:#64748b; margin-top:6px;">Choose company, area, store, or role and preview recipients before sending.</div>
+            </a>
+
+            <a href="{{ url_for('connect_admin.threads') }}" style="text-decoration:none; color:inherit; background:white; border:1px solid #e5e7eb; border-radius:20px; padding:18px; box-shadow:0 10px 25px rgba(15,23,42,.06); display:block;">
+                <div style="font-size:12px; font-weight:950; text-transform:uppercase; letter-spacing:.10em; color:#64748b;">Threads</div>
+                <div style="font-size:22px; font-weight:950; color:#0f172a; margin-top:8px; letter-spacing:-.04em;">View Thread Summary</div>
+                <div style="font-size:13px; font-weight:800; color:#64748b; margin-top:6px;">Read-only thread structure, member counts, and activity.</div>
+            </a>
+        </div>
+
         <div class="metric-grid">
             <div class="metric-card">
                 <div class="metric-top">

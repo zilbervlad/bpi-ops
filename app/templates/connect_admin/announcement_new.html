@@ -308,7 +308,10 @@
                     <textarea class="textarea" name="message" placeholder="Write the announcement message...">{{ message }}</textarea>
                 </div>
 
-                <button class="btn-dark" type="submit">Refresh Preview</button>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn-dark" type="submit">Refresh Preview</button>
+                    <button class="btn-dark" type="submit" formaction="{{ url_for('connect_admin.confirm_announcement') }}" formmethod="post" style="background:#dc2626;">Continue to Confirmation</button>
+                </div>
             </form>
         </div>
 

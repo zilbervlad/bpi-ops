@@ -116,6 +116,74 @@ def fetch_connect_summary():
     return result
 
 
+
+
+
+
+def validate_announcement_target(target_type, target_value, title, message):
+    errors = []
+
+    if target_type not in {"company", "area", "store", "role"}:
+        errors.append("Choose a valid target type.")
+
+    if target_type in {"area", "store", "role"} and not target_value:
+        errors.append(f"Choose a {target_type} before continuing.")
+
+    if not title:
+        errors.append("Title is required.")
+
+    if not message:
+        errors.append("Message is required.")
+
+    if len(title) > 120:
+        errors.append("Title must be 120 characters or less.")
+
+    if len(message) > 600:
+        errors.append("Message must be 600 characters or less.")
+
+    return errors
+
+
+def send_connect_announcement(payload):
+    api_base = os.getenv("BPI_CONNECT_API_BASE", "").strip().rstrip("/")
+    integration_secret = os.getenv("BPI_CONNECT_INTEGRATION_SECRET", "").strip()
+
+    result = {
+        "success": False,
+        "error": None,
+        "status_code": None,
+        "data": {},
+    }
+
+    if not api_base or not integration_secret:
+        result["error"] = "BPI Connect integration is not configured."
+        return result
+
+    try:
+        response = requests.post(
+            f"{api_base}/api/integrations/bpi-ops/admin/announcements/send",
+            headers=bpi_connect_headers(integration_secret),
+            json=payload,
+            timeout=25,
+        )
+        result["status_code"] = response.status_code
+
+        try:
+            data = response.json()
+        except Exception:
+            data = {"raw": response.text[:500]}
+
+        result["data"] = data
+        result["success"] = response.ok and bool(data.get("success"))
+        if not result["success"]:
+            result["error"] = data.get("error") or f"BPI Connect returned HTTP {response.status_code}"
+
+    except requests.RequestException as exc:
+        result["error"] = str(exc)
+
+    return result
+
+
 def fetch_connect_threads():
     api_base = os.getenv("BPI_CONNECT_API_BASE", "").strip().rstrip("/")
     integration_secret = os.getenv("BPI_CONNECT_INTEGRATION_SECRET", "").strip()
@@ -446,6 +514,130 @@ def new_announcement():
         role_options=role_options,
         preview_users=preview_users,
         preview_counts=preview_counts,
+    )
+
+
+
+
+@connect_admin_bp.route("/announcements/confirm", methods=["POST"])
+def confirm_announcement():
+    if not session.get("user_id"):
+        return redirect(url_for("auth.login"))
+
+    if not require_connect_admin_access():
+        flash("You do not have access to BPI Connect Admin.", "danger")
+        return redirect(url_for("dashboard.index"))
+
+    users_status = fetch_connect_users()
+    all_users = users_status.get("users", []) or []
+
+    target_type = (request.form.get("target_type") or "company").strip().lower()
+    target_value = (request.form.get("target_value") or "").strip()
+    title = (request.form.get("title") or "").strip()
+    message = (request.form.get("message") or "").strip()
+
+    validation_errors = validate_announcement_target(target_type, target_value, title, message)
+    if validation_errors:
+        for error in validation_errors:
+            flash(error, "danger")
+        return redirect(url_for("connect_admin.new_announcement"))
+
+    def matches_target(user):
+        if target_type == "company":
+            return bool(user.get("is_active"))
+
+        if target_type == "store":
+            return bool(user.get("is_active")) and str(user.get("store_number") or "").strip() == target_value
+
+        if target_type == "area":
+            return bool(user.get("is_active")) and str(user.get("area") or "").strip().lower() == target_value.lower()
+
+        if target_type == "role":
+            return bool(user.get("is_active")) and str(user.get("role") or "").strip().lower() == target_value.lower()
+
+        return False
+
+    preview_users = [user for user in all_users if matches_target(user)]
+
+    preview_counts = {
+        "total": len(preview_users),
+        "with_push": sum(1 for user in preview_users if int(user.get("active_push_tokens") or 0) > 0),
+        "without_push": sum(1 for user in preview_users if int(user.get("active_push_tokens") or 0) <= 0),
+        "logged_in": sum(1 for user in preview_users if user.get("has_logged_in")),
+    }
+
+    if preview_counts["total"] <= 0:
+        flash("No active BPI Connect users match that announcement target.", "danger")
+        return redirect(url_for("connect_admin.new_announcement"))
+
+    return render_template(
+        "connect_admin/announcement_confirm.html",
+        target_type=target_type,
+        target_value=target_value,
+        title=title,
+        message=message,
+        preview_users=preview_users,
+        preview_counts=preview_counts,
+    )
+
+
+@connect_admin_bp.route("/announcements/send", methods=["POST"])
+def send_announcement():
+    if not session.get("user_id"):
+        return redirect(url_for("auth.login"))
+
+    if not require_connect_admin_access():
+        flash("You do not have access to BPI Connect Admin.", "danger")
+        return redirect(url_for("dashboard.index"))
+
+    confirmation_text = (request.form.get("confirmation_text") or "").strip()
+
+    if confirmation_text != "SEND":
+        flash("Type SEND to confirm before sending the announcement.", "danger")
+        return redirect(url_for("connect_admin.new_announcement"))
+
+    payload = {
+        "target_type": (request.form.get("target_type") or "company").strip().lower(),
+        "target_value": (request.form.get("target_value") or "").strip(),
+        "title": (request.form.get("title") or "").strip(),
+        "message": (request.form.get("message") or "").strip(),
+    }
+
+    validation_errors = validate_announcement_target(
+        payload["target_type"],
+        payload["target_value"],
+        payload["title"],
+        payload["message"],
+    )
+    if validation_errors:
+        return render_template(
+            "connect_admin/announcement_result.html",
+            result={
+                "success": False,
+                "error": "Final send validation failed.",
+                "status_code": None,
+                "data": {},
+            },
+            data={
+                "error": "; ".join(validation_errors),
+                "recipient_count": 0,
+                "token_count": 0,
+                "sent": False,
+            },
+            payload=payload,
+        )
+
+    if payload["target_type"] == "company":
+        payload["confirm_company_wide"] = True
+
+    result = send_connect_announcement(payload)
+    data = result.get("data") or {}
+
+    return render_template(
+        "connect_admin/announcement_result.html",
+        result=result,
+        data=data,
+        payload=payload,
     )
 
 

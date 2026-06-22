@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .result-shell {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 18px;
+    }
+
+    .result-hero {
+        background: linear-gradient(135deg, #111827, #1f2937);
+        color: white;
+        border-radius: 24px;
+        padding: 26px;
+        margin-bottom: 18px;
+        box-shadow: 0 18px 45px rgba(15,23,42,.18);
+    }
+
+    .result-hero.success {
+        background: linear-gradient(135deg, #065f46, #111827);
+    }
+
+    .result-hero.error {
+        background: linear-gradient(135deg, #7f1d1d, #111827);
+    }
+
+    .eyebrow {
+        font-size: 12px;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        opacity: .75;
+        font-weight: 950;
+        margin-bottom: 8px;
+    }
+
+    .title {
+        margin: 0;
+        font-size: 34px;
+        font-weight: 950;
+        letter-spacing: -.05em;
+    }
+
+    .subtitle {
+        margin-top: 10px;
+        color: rgba(255,255,255,.78);
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.5;
+    }
+
+    .panel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 22px;
+        box-shadow: 0 10px 25px rgba(15,23,42,.06);
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+
+    .panel-inner {
+        padding: 20px;
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .metric {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 14px;
+    }
+
+    .metric-label {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+    }
+
+    .metric-value {
+        margin-top: 8px;
+        color: #0f172a;
+        font-size: 30px;
+        font-weight: 950;
+        letter-spacing: -.05em;
+    }
+
+    .label {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .10em;
+        margin-bottom: 6px;
+    }
+
+    .value {
+        color: #0f172a;
+        font-size: 15px;
+        font-weight: 850;
+        line-height: 1.45;
+        margin-bottom: 14px;
+    }
+
+    .code-box {
+        background: #0f172a;
+        color: #e5e7eb;
+        border-radius: 16px;
+        padding: 14px;
+        overflow: auto;
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .btn {
+        border-radius: 14px;
+        padding: 13px 16px;
+        font-size: 13px;
+        font-weight: 950;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-dark {
+        background: #0f172a;
+        color: white;
+    }
+
+    .btn-light {
+        background: white;
+        color: #0f172a;
+        border: 1px solid #e5e7eb;
+    }
+
+    @media (max-width: 800px) {
+        .metric-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+</style>
+
+<div class="result-shell">
+    <div class="result-hero {% if result.success %}success{% else %}error{% endif %}">
+        <div class="eyebrow">BPI Connect Announcement</div>
+        <h1 class="title">
+            {% if result.success %}
+                Announcement Sent
+            {% else %}
+                Send Failed
+            {% endif %}
+        </h1>
+        <div class="subtitle">
+            {% if result.success %}
+                BPI Connect accepted the announcement request.
+            {% else %}
+                BPI Connect did not send the announcement. Review the error below.
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-inner">
+            <div class="metric-grid">
+                <div class="metric">
+                    <div class="metric-label">Recipients</div>
+                    <div class="metric-value">{{ data.get("recipient_count", 0) }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Push Tokens</div>
+                    <div class="metric-value">{{ data.get("token_count", 0) }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Status</div>
+                    <div class="metric-value" style="font-size:22px;">{{ result.status_code or "—" }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Sent</div>
+                    <div class="metric-value" style="font-size:22px;">{{ "Yes" if data.get("sent") else "No" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-inner">
+            <div class="label">Target</div>
+            <div class="value">
+                {% if payload.target_type == "company" %}
+                    Company-wide
+                {% else %}
+                    {{ payload.target_type|title }}: {{ payload.target_value }}
+                {% endif %}
+            </div>
+
+            <div class="label">Title</div>
+            <div class="value">{{ payload.title }}</div>
+
+            <div class="label">Message</div>
+            <div class="value">{{ payload.message }}</div>
+
+            {% if result.error %}
+                <div class="label">Error</div>
+                <div class="value" style="color:#b91c1c;">{{ result.error }}</div>
+            {% endif %}
+
+            <div class="label">Raw Result</div>
+            <div class="code-box">{{ data }}</div>
+        </div>
+    </div>
+
+    <div class="actions">
+        <a class="btn btn-light" href="{{ url_for('connect_admin.new_announcement') }}">New Announcement</a>
+        <a class="btn btn-dark" href="{{ url_for('connect_admin.index') }}">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

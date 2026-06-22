@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .confirm-shell {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 18px;
+    }
+
+    .confirm-hero {
+        background: linear-gradient(135deg, #7f1d1d, #111827);
+        color: white;
+        border-radius: 24px;
+        padding: 26px;
+        margin-bottom: 18px;
+        box-shadow: 0 18px 45px rgba(15,23,42,.18);
+    }
+
+    .eyebrow {
+        font-size: 12px;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        opacity: .75;
+        font-weight: 950;
+        margin-bottom: 8px;
+    }
+
+    .title {
+        margin: 0;
+        font-size: 34px;
+        font-weight: 950;
+        letter-spacing: -.05em;
+    }
+
+    .subtitle {
+        margin-top: 10px;
+        color: rgba(255,255,255,.78);
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.5;
+    }
+
+    .panel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 22px;
+        box-shadow: 0 10px 25px rgba(15,23,42,.06);
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+
+    .panel-inner {
+        padding: 20px;
+    }
+
+    .label {
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .10em;
+        color: #64748b;
+        margin-bottom: 6px;
+    }
+
+    .value {
+        color: #0f172a;
+        font-size: 16px;
+        font-weight: 900;
+        line-height: 1.45;
+        margin-bottom: 16px;
+    }
+
+    .message-box {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 14px;
+        color: #0f172a;
+        font-size: 15px;
+        font-weight: 750;
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .metric {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 14px;
+    }
+
+    .metric-label {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+    }
+
+    .metric-value {
+        margin-top: 8px;
+        color: #0f172a;
+        font-size: 30px;
+        font-weight: 950;
+        letter-spacing: -.05em;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .btn {
+        border: 0;
+        border-radius: 14px;
+        padding: 13px 16px;
+        font-size: 13px;
+        font-weight: 950;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-light {
+        background: white;
+        color: #0f172a;
+        border: 1px solid #e5e7eb;
+    }
+
+    .btn-danger {
+        background: #dc2626;
+        color: white;
+    }
+
+    .warning {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        border-radius: 16px;
+        padding: 14px;
+        font-size: 13px;
+        font-weight: 900;
+        line-height: 1.45;
+        margin-bottom: 16px;
+    }
+
+    @media (max-width: 800px) {
+        .metric-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+</style>
+
+<div class="confirm-shell">
+    <div class="confirm-hero">
+        <div class="eyebrow">Final Confirmation</div>
+        <h1 class="title">Send Announcement?</h1>
+        <div class="subtitle">
+            This is the safety screen. Nothing has been sent yet. Review the target and message before sending.
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-inner">
+            <div class="warning">
+                Clicking Send Announcement will send push notifications through BPI Connect to users with active push tokens.
+                This will attempt to notify {{ preview_counts.with_push }} devices for {{ preview_counts.total }} matching recipients.
+            </div>
+
+            <div class="label">Target</div>
+            <div class="value">
+                {% if target_type == "company" %}
+                    Company-wide
+                {% else %}
+                    {{ target_type|title }}: {{ target_value }}
+                {% endif %}
+            </div>
+
+            <div class="label">Title</div>
+            <div class="value">{{ title }}</div>
+
+            <div class="label">Message</div>
+            <div class="message-box">{{ message }}</div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-inner">
+            <div class="metric-grid">
+                <div class="metric">
+                    <div class="metric-label">Recipients</div>
+                    <div class="metric-value">{{ preview_counts.total }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">With Push</div>
+                    <div class="metric-value">{{ preview_counts.with_push }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">No Push</div>
+                    <div class="metric-value">{{ preview_counts.without_push }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Logged In</div>
+                    <div class="metric-value">{{ preview_counts.logged_in }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" action="{{ url_for('connect_admin.send_announcement') }}" class="actions">
+        <input type="hidden" name="target_type" value="{{ target_type }}">
+        <input type="hidden" name="target_value" value="{{ target_value }}">
+        <input type="hidden" name="title" value="{{ title }}">
+        <input type="hidden" name="message" value="{{ message }}">
+
+        <div style="width:100%; margin-bottom:10px;">
+            <div class="label">Type SEND to confirm</div>
+            <input
+                name="confirmation_text"
+                placeholder="SEND"
+                autocomplete="off"
+                style="width:100%; border:1px solid #fecaca; background:#fff1f2; color:#7f1d1d; border-radius:14px; padding:13px 14px; font-size:16px; font-weight:950; letter-spacing:.08em;"
+            >
+        </div>
+
+        <a class="btn btn-light" href="{{ url_for('connect_admin.new_announcement') }}">Cancel</a>
+        <button class="btn btn-danger" type="submit">Send Announcement</button>
+    </form>
+</div>
+{% endblock %}

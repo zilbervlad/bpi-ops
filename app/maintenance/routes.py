@@ -639,6 +639,22 @@ def index():
     visible_store_numbers = get_visible_store_numbers()
     role = get_current_role()
 
+    def is_ajax_request():
+        return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+    def maintenance_response(message, category="success", status_code=200, **extra):
+        if is_ajax_request():
+            payload = {
+                "ok": category != "error",
+                "message": message,
+                "category": category,
+            }
+            payload.update(extra)
+            return jsonify(payload), status_code
+
+        flash(message, category)
+        return redirect(url_for("maintenance.index"))
+
     if request.method == "POST":
         action = request.form.get("action", "").strip()
 
@@ -648,8 +664,7 @@ def index():
             details = request.form.get("details", "").strip()
 
             if store_number not in visible_store_numbers:
-                flash("Invalid store selection.", "error")
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response("Invalid store selection.", "error", 400)
 
             title_lines = split_lines_to_tasks(title)
 
@@ -667,15 +682,14 @@ def index():
                 db.session.commit()
 
                 if len(title_lines) == 1:
-                    flash("Maintenance task created.", "success")
+                    message = "Maintenance task created."
                 else:
-                    flash(f"{len(title_lines)} maintenance tasks created.", "success")
+                    message = f"{len(title_lines)} maintenance tasks created."
 
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response(message, "success", created_count=len(title_lines))
 
             if not details:
-                flash("Task title is required.", "error")
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response("Task title is required.", "error", 400)
 
             ticket = MaintenanceTicket(
                 store_number=store_number,
@@ -687,20 +701,17 @@ def index():
             db.session.add(ticket)
             db.session.commit()
 
-            flash("Maintenance task created.", "success")
-            return redirect(url_for("maintenance.index"))
+            return maintenance_response("Maintenance task created.", "success", created_count=1)
 
         if action == "update":
             ticket_id = request.form.get("ticket_id", "").strip()
             ticket = MaintenanceTicket.query.get(ticket_id)
 
             if not ticket:
-                flash("Ticket not found.", "error")
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response("Ticket not found.", "error", 404)
 
             if ticket.store_number not in visible_store_numbers:
-                flash("You do not have access to that ticket.", "error")
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response("You do not have access to that ticket.", "error", 403)
 
             store_number = request.form.get("store_number", "").strip()
             title = request.form.get("title", "").strip()
@@ -710,20 +721,16 @@ def index():
             valid_statuses = {"open", "assigned", "in_progress", "complete"}
 
             if store_number not in visible_store_numbers:
-                flash("Invalid store selection.", "error")
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response("Invalid store selection.", "error", 400)
 
             if not title:
-                flash("Task title is required.", "error")
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response("Task title is required.", "error", 400)
 
             if status not in valid_statuses:
-                flash("Invalid status.", "error")
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response("Invalid status.", "error", 400)
 
             if role == "manager" and store_number != session.get("user_store"):
-                flash("Managers can only manage tickets for their own store.", "error")
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response("Managers can only manage tickets for their own store.", "error", 403)
 
             ticket.store_number = store_number
             ticket.title = title
@@ -731,40 +738,59 @@ def index():
             ticket.status = status
 
             db.session.commit()
-            flash("Maintenance task updated.", "success")
-            return redirect(url_for("maintenance.index"))
+            return maintenance_response(
+                "Maintenance task updated.",
+                "success",
+                ticket={
+                    "id": ticket.id,
+                    "store_number": ticket.store_number,
+                    "title": ticket.title,
+                    "details": ticket.details or "",
+                    "status": ticket.status,
+                    "status_label": ticket.status.replace("_", " ").title(),
+                },
+            )
 
         if action == "delete":
             if role == "manager":
-                flash("Managers cannot delete maintenance tasks.", "error")
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response("Managers cannot delete maintenance tasks.", "error", 403)
 
             ticket_id = request.form.get("ticket_id", "").strip()
             ticket = MaintenanceTicket.query.get(ticket_id)
 
             if not ticket:
-                flash("Ticket not found.", "error")
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response("Ticket not found.", "error", 404)
 
             if ticket.store_number not in visible_store_numbers:
-                flash("You do not have access to that ticket.", "error")
-                return redirect(url_for("maintenance.index"))
+                return maintenance_response("You do not have access to that ticket.", "error", 403)
 
             db.session.delete(ticket)
             db.session.commit()
 
-            flash("Maintenance task deleted.", "success")
-            return redirect(url_for("maintenance.index"))
+            return maintenance_response("Maintenance task deleted.", "success", deleted=True, ticket_id=ticket_id)
 
     status_filter = request.args.get("status", "").strip()
     store_filter = request.args.get("store", "").strip()
 
-    tickets = MaintenanceTicket.query.order_by(
+    all_visible_tickets = MaintenanceTicket.query.order_by(
         MaintenanceTicket.created_at.asc(),
         MaintenanceTicket.id.asc()
     ).all()
 
-    tickets = [t for t in tickets if t.store_number in visible_store_numbers]
+    all_visible_tickets = [t for t in all_visible_tickets if t.store_number in visible_store_numbers]
+
+    status_counts = {
+        "open": len([t for t in all_visible_tickets if t.status == "open"]),
+        "assigned": len([t for t in all_visible_tickets if t.status == "assigned"]),
+        "in_progress": len([t for t in all_visible_tickets if t.status == "in_progress"]),
+        "complete": len([t for t in all_visible_tickets if t.status == "complete"]),
+    }
+
+    store_counts = {}
+    for ticket in all_visible_tickets:
+        store_counts[ticket.store_number] = store_counts.get(ticket.store_number, 0) + 1
+
+    tickets = list(all_visible_tickets)
 
     if status_filter:
         tickets = [t for t in tickets if t.status == status_filter]
@@ -804,6 +830,9 @@ def index():
         stores=visible_stores,
         status_filter=status_filter,
         store_filter=store_filter,
+        status_counts=status_counts,
+        store_counts=store_counts,
+        all_visible_tickets=all_visible_tickets,
         user_role=role,
     )
 

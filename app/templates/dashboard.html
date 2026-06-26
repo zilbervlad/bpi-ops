@@ -228,6 +228,35 @@
         white-space: nowrap;
     }
 
+
+    .doughy-mini-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        object-fit: contain;
+        background: rgba(255, 255, 255, 0.92);
+        padding: 2px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+        flex: 0 0 auto;
+    }
+
+    .doughy-header-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        object-fit: contain;
+        background: rgba(255, 255, 255, 0.94);
+        padding: 3px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+        flex: 0 0 auto;
+    }
+
+    .doughy-mini-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
     .doughy-mini-button:hover {
         background: rgba(37, 99, 235, 0.32);
         transform: translateY(-1px);
@@ -681,7 +710,7 @@
     <div class="command-bar-right">
         {% if user_role %}
         <button type="button" class="doughy-mini-button" id="doughyMiniButton">
-            <span>🍕</span>
+            <img src="{{ url_for('static', filename='doughy_happy.png') }}" alt="" class="doughy-mini-icon">
             <span>Doughy</span>
         </button>
         {% endif %}
@@ -1550,9 +1579,12 @@ document.addEventListener("DOMContentLoaded", function () {
 {% if user_role %}
 <div class="doughy-mini-panel" id="doughyMiniPanel" aria-hidden="true">
     <div class="doughy-mini-header">
-        <div>
-            <strong>🍕 Doughy</strong>
-            <small>Ops helper</small>
+        <div class="doughy-mini-brand">
+            <img src="{{ url_for('static', filename='doughy_happy.png') }}" alt="" class="doughy-header-icon">
+            <div>
+                <strong>Doughy</strong>
+                <small>Ops helper</small>
+            </div>
         </div>
         <button type="button" class="doughy-mini-close" id="doughyMiniClose" aria-label="Close Doughy">×</button>
     </div>

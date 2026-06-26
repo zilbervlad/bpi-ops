@@ -297,6 +297,59 @@
         color: #94a3b8;
     }
 
+    .doughy-mini-intro {
+        margin-bottom: 12px;
+    }
+
+    .doughy-mini-title-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        font-weight: 900;
+        color: #f8fafc;
+    }
+
+    .doughy-quick-starts {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .doughy-quick-button {
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(255, 255, 255, 0.06);
+        color: #e5e7eb;
+        border-radius: 12px;
+        padding: 10px 11px;
+        text-align: left;
+        font-weight: 800;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+    .doughy-quick-button:hover {
+        background: rgba(37, 99, 235, 0.24);
+        border-color: rgba(96, 165, 250, 0.38);
+    }
+
+    .doughy-coming-soon {
+        display: none;
+        margin-top: 12px;
+        padding: 11px;
+        border-radius: 13px;
+        background: rgba(37, 99, 235, 0.14);
+        border: 1px solid rgba(96, 165, 250, 0.24);
+        color: #cbd5e1;
+        line-height: 1.35;
+    }
+
+    .doughy-coming-soon.open {
+        display: block;
+    }
+
+
     @media (max-width: 720px) {
         .doughy-mini-panel {
             right: 14px;
@@ -1504,8 +1557,28 @@ document.addEventListener("DOMContentLoaded", function () {
         <button type="button" class="doughy-mini-close" id="doughyMiniClose" aria-label="Close Doughy">×</button>
     </div>
     <div class="doughy-mini-body">
-        <p><strong>Doughy is warming up.</strong></p>
-        <p class="doughy-mini-muted">Read-only ops help will be added here carefully.</p>
+        <div class="doughy-mini-intro">
+            <div class="doughy-mini-title-line">
+                <span>Ask Doughy</span>
+            </div>
+            <p class="doughy-mini-muted">Read-only ops help is coming soon.</p>
+        </div>
+
+        <div class="doughy-quick-starts" aria-label="Doughy quick starts">
+            <button type="button" class="doughy-quick-button" data-doughy-soon="What needs attention today?">
+                What needs attention today?
+            </button>
+            <button type="button" class="doughy-quick-button" data-doughy-soon="Summarize this store">
+                Summarize this store
+            </button>
+            <button type="button" class="doughy-quick-button" data-doughy-soon="Draft a follow-up message">
+                Draft a follow-up message
+            </button>
+        </div>
+
+        <div class="doughy-coming-soon" id="doughyComingSoon" aria-live="polite">
+            Coming soon: Doughy will answer this using read-only BPI Ops data.
+        </div>
     </div>
 </div>
 
@@ -1525,6 +1598,17 @@ document.addEventListener("DOMContentLoaded", function () {
         close.addEventListener("click", function () {
             panel.classList.remove("open");
             panel.setAttribute("aria-hidden", "true");
+        });
+
+        document.querySelectorAll("[data-doughy-soon]").forEach(function (quickButton) {
+            quickButton.addEventListener("click", function () {
+                const soonBox = document.getElementById("doughyComingSoon");
+                if (!soonBox) return;
+
+                const prompt = quickButton.getAttribute("data-doughy-soon") || "this";
+                soonBox.textContent = "Coming soon: Doughy will answer “" + prompt + "” using read-only BPI Ops data.";
+                soonBox.classList.add("open");
+            });
         });
     });
 </script>

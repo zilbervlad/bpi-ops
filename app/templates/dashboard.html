@@ -339,6 +339,23 @@
         color: #f8fafc;
     }
 
+
+    .doughy-context-card {
+        margin: 10px 0 12px;
+        padding: 10px 11px;
+        border-radius: 13px;
+        background: rgba(15, 23, 42, 0.55);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        color: #cbd5e1;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+    .doughy-context-card strong {
+        color: #f8fafc;
+        font-weight: 900;
+    }
+
     .doughy-quick-starts {
         display: grid;
         gap: 8px;
@@ -1594,6 +1611,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 <span>Ask Doughy</span>
             </div>
             <p class="doughy-mini-muted">Read-only ops help is coming soon.</p>
+        </div>
+
+        <div class="doughy-context-card">
+            <div><strong>Page:</strong> Dashboard</div>
+            <div><strong>Role:</strong> {{ role_label }}</div>
+            {% if session.get('user_store') %}
+            <div><strong>Store:</strong> {{ session.get('user_store') }}</div>
+            {% endif %}
         </div>
 
         <div class="doughy-quick-starts" aria-label="Doughy quick starts">

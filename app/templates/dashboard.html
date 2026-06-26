@@ -212,6 +212,103 @@
             grid-template-columns: 1fr;
         }
     }
+
+    .doughy-mini-button {
+        border: 1px solid rgba(96, 165, 250, 0.35);
+        background: rgba(37, 99, 235, 0.22);
+        color: #ffffff;
+        border-radius: 999px;
+        padding: 9px 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-weight: 900;
+        font-size: 13px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .doughy-mini-button:hover {
+        background: rgba(37, 99, 235, 0.32);
+        transform: translateY(-1px);
+    }
+
+    .doughy-mini-panel {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        width: 300px;
+        max-width: calc(100vw - 32px);
+        background: #111827;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 18px;
+        box-shadow: 0 22px 60px rgba(0, 0, 0, 0.32);
+        z-index: 9999;
+        display: none;
+        overflow: hidden;
+    }
+
+    .doughy-mini-panel.open {
+        display: block;
+    }
+
+    .doughy-mini-header {
+        padding: 13px 14px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .doughy-mini-header strong {
+        color: #f8fafc;
+        display: block;
+        font-size: 14px;
+    }
+
+    .doughy-mini-header small {
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    .doughy-mini-close {
+        border: 0;
+        background: rgba(255, 255, 255, 0.08);
+        color: #e5e7eb;
+        border-radius: 999px;
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    .doughy-mini-body {
+        padding: 14px;
+        color: #e5e7eb;
+        font-size: 13px;
+    }
+
+    .doughy-mini-body p {
+        margin: 0 0 8px;
+    }
+
+    .doughy-mini-muted {
+        color: #94a3b8;
+    }
+
+    @media (max-width: 720px) {
+        .doughy-mini-panel {
+            right: 14px;
+            bottom: 14px;
+        }
+
+        .doughy-mini-button {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+    }
+
 </style>
 
 <style>
@@ -529,6 +626,12 @@
     </div>
 
     <div class="command-bar-right">
+        {% if user_role %}
+        <button type="button" class="doughy-mini-button" id="doughyMiniButton">
+            <span>🍕</span>
+            <span>Doughy</span>
+        </button>
+        {% endif %}
         <div class="command-chip">
             {% if is_manager %}
                 {% if is_general_manager %}General Manager Dashboard{% else %}Manager Dashboard{% endif %}
@@ -1391,4 +1494,40 @@ document.addEventListener("DOMContentLoaded", function () {
     setInterval(refreshDashboard, 15000);
 });
 </script>
+{% if user_role %}
+<div class="doughy-mini-panel" id="doughyMiniPanel" aria-hidden="true">
+    <div class="doughy-mini-header">
+        <div>
+            <strong>🍕 Doughy</strong>
+            <small>Ops helper</small>
+        </div>
+        <button type="button" class="doughy-mini-close" id="doughyMiniClose" aria-label="Close Doughy">×</button>
+    </div>
+    <div class="doughy-mini-body">
+        <p><strong>Doughy is warming up.</strong></p>
+        <p class="doughy-mini-muted">Read-only ops help will be added here carefully.</p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const button = document.getElementById("doughyMiniButton");
+        const panel = document.getElementById("doughyMiniPanel");
+        const close = document.getElementById("doughyMiniClose");
+
+        if (!button || !panel || !close) return;
+
+        button.addEventListener("click", function () {
+            panel.classList.toggle("open");
+            panel.setAttribute("aria-hidden", panel.classList.contains("open") ? "false" : "true");
+        });
+
+        close.addEventListener("click", function () {
+            panel.classList.remove("open");
+            panel.setAttribute("aria-hidden", "true");
+        });
+    });
+</script>
+{% endif %}
+
 {% endblock %}

@@ -1,0 +1,290 @@
+{% if session.get('user_id') %}
+<style>
+    .doughy-mini-launcher {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        z-index: 9998;
+    }
+
+    .doughy-mini-button {
+        border: 1px solid rgba(96, 165, 250, 0.35);
+        background: rgba(37, 99, 235, 0.22);
+        color: #ffffff;
+        border-radius: 999px;
+        padding: 9px 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-weight: 900;
+        font-size: 13px;
+        cursor: pointer;
+        white-space: nowrap;
+        backdrop-filter: blur(10px);
+    }
+
+    .doughy-mini-button:hover {
+        background: rgba(37, 99, 235, 0.32);
+        transform: translateY(-1px);
+    }
+
+    .doughy-mini-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        object-fit: contain;
+        background: rgba(255, 255, 255, 0.92);
+        padding: 2px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+        flex: 0 0 auto;
+    }
+
+    .doughy-header-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        object-fit: contain;
+        background: rgba(255, 255, 255, 0.94);
+        padding: 3px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+        flex: 0 0 auto;
+    }
+
+    .doughy-mini-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .doughy-mini-panel {
+        position: fixed;
+        right: 24px;
+        bottom: 78px;
+        width: 360px;
+        max-width: calc(100vw - 32px);
+        background: #111827;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 18px;
+        box-shadow: 0 22px 60px rgba(0, 0, 0, 0.32);
+        z-index: 9999;
+        display: none;
+        overflow: hidden;
+    }
+
+    .doughy-mini-panel.open {
+        display: block;
+    }
+
+    .doughy-mini-header {
+        padding: 13px 14px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .doughy-mini-header strong {
+        color: #f8fafc;
+        display: block;
+        font-size: 14px;
+    }
+
+    .doughy-mini-header small {
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    .doughy-mini-close {
+        border: 0;
+        background: rgba(255, 255, 255, 0.08);
+        color: #e5e7eb;
+        border-radius: 999px;
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    .doughy-mini-body {
+        padding: 14px;
+        color: #e5e7eb;
+        font-size: 13px;
+    }
+
+    .doughy-mini-muted {
+        color: #94a3b8;
+        margin: 0;
+    }
+
+    .doughy-mini-intro {
+        margin-bottom: 12px;
+    }
+
+    .doughy-mini-title-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        font-weight: 900;
+        color: #f8fafc;
+    }
+
+    .doughy-context-card {
+        margin: 10px 0 12px;
+        padding: 10px 11px;
+        border-radius: 13px;
+        background: rgba(15, 23, 42, 0.55);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        color: #cbd5e1;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+    .doughy-context-card strong {
+        color: #f8fafc;
+        font-weight: 900;
+    }
+
+    .doughy-quick-starts {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .doughy-quick-button {
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(255, 255, 255, 0.06);
+        color: #e5e7eb;
+        border-radius: 12px;
+        padding: 10px 11px;
+        text-align: left;
+        font-weight: 800;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+    .doughy-quick-button:hover {
+        background: rgba(37, 99, 235, 0.24);
+        border-color: rgba(96, 165, 250, 0.38);
+    }
+
+    .doughy-coming-soon {
+        display: none;
+        margin-top: 12px;
+        padding: 11px;
+        border-radius: 13px;
+        background: rgba(37, 99, 235, 0.14);
+        border: 1px solid rgba(96, 165, 250, 0.24);
+        color: #cbd5e1;
+        line-height: 1.35;
+    }
+
+    .doughy-coming-soon.open {
+        display: block;
+    }
+
+    @media (max-width: 720px) {
+        .doughy-mini-launcher {
+            right: 14px;
+            bottom: 14px;
+        }
+
+        .doughy-mini-panel {
+            right: 14px;
+            bottom: 68px;
+            width: 330px;
+        }
+
+        .doughy-mini-button {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+    }
+</style>
+
+<div class="doughy-mini-launcher">
+    <button type="button" class="doughy-mini-button" id="doughyMiniButton">
+        <img src="{{ url_for('static', filename='doughy_happy.png') }}" alt="" class="doughy-mini-icon">
+        <span>Doughy</span>
+    </button>
+</div>
+
+<div class="doughy-mini-panel" id="doughyMiniPanel" aria-hidden="true">
+    <div class="doughy-mini-header">
+        <div class="doughy-mini-brand">
+            <img src="{{ url_for('static', filename='doughy_happy.png') }}" alt="" class="doughy-header-icon">
+            <div>
+                <strong>Doughy</strong>
+                <small>Ops helper</small>
+            </div>
+        </div>
+        <button type="button" class="doughy-mini-close" id="doughyMiniClose" aria-label="Close Doughy">×</button>
+    </div>
+
+    <div class="doughy-mini-body">
+        <div class="doughy-mini-intro">
+            <div class="doughy-mini-title-line">
+                <span>Ask Doughy</span>
+            </div>
+            <p class="doughy-mini-muted">Read-only ops help is coming soon.</p>
+        </div>
+
+        <div class="doughy-context-card">
+            <div><strong>Page:</strong> {{ request.endpoint|default("Current page", true)|replace("_", " ")|replace(".", " / ")|title }}</div>
+            <div><strong>Role:</strong> {{ role_label }}</div>
+            {% if session.get('user_store') %}
+            <div><strong>Store:</strong> {{ session.get('user_store') }}</div>
+            {% endif %}
+        </div>
+
+        <div class="doughy-quick-starts" aria-label="Doughy quick starts">
+            <button type="button" class="doughy-quick-button" data-doughy-soon="What needs attention today?">
+                What needs attention today?
+            </button>
+            <button type="button" class="doughy-quick-button" data-doughy-soon="Summarize this page">
+                Summarize this page
+            </button>
+            <button type="button" class="doughy-quick-button" data-doughy-soon="Draft a follow-up message">
+                Draft a follow-up message
+            </button>
+        </div>
+
+        <div class="doughy-coming-soon" id="doughyComingSoon" aria-live="polite">
+            Coming soon: Doughy will answer this using read-only BPI Ops data.
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const button = document.getElementById("doughyMiniButton");
+        const panel = document.getElementById("doughyMiniPanel");
+        const close = document.getElementById("doughyMiniClose");
+
+        if (!button || !panel || !close) return;
+
+        button.addEventListener("click", function () {
+            panel.classList.toggle("open");
+            panel.setAttribute("aria-hidden", panel.classList.contains("open") ? "false" : "true");
+        });
+
+        close.addEventListener("click", function () {
+            panel.classList.remove("open");
+            panel.setAttribute("aria-hidden", "true");
+        });
+
+        document.querySelectorAll("[data-doughy-soon]").forEach(function (quickButton) {
+            quickButton.addEventListener("click", function () {
+                const soonBox = document.getElementById("doughyComingSoon");
+                if (!soonBox) return;
+
+                const prompt = quickButton.getAttribute("data-doughy-soon") || "this";
+                soonBox.textContent = "Coming soon: Doughy will answer “" + prompt + "” using read-only BPI Ops data.";
+                soonBox.classList.add("open");
+            });
+        });
+    });
+</script>
+{% endif %}

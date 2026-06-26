@@ -4,6 +4,7 @@
 {% block header %}Maintenance Calendar{% endblock %}
 
 {% block content %}
+<div class="maintenance-calendar-page">
 <div class="command-bar panel" style="margin-bottom: 24px;">
     <div class="command-bar-left">
         <div class="command-eyebrow">MAINTENANCE CALENDAR</div>
@@ -612,6 +613,449 @@
             flex-wrap: wrap;
         }
     }
+
+    /* Registration-style light maintenance calendar */
+    .maintenance-calendar-page {
+        color: #0f172a;
+    }
+
+    .maintenance-calendar-page .command-bar {
+        background: linear-gradient(135deg, #101827 0%, #172033 55%, #202b42 100%);
+        border: 0;
+        border-radius: 16px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    }
+
+    .maintenance-calendar-page .command-title,
+    .maintenance-calendar-page .command-eyebrow {
+        color: #ffffff;
+    }
+
+    .maintenance-calendar-page .command-subtitle {
+        color: rgba(255,255,255,.72);
+    }
+
+    .maintenance-calendar-page .command-chip,
+    .maintenance-calendar-page .command-bar .action-btn {
+        background: rgba(255,255,255,0.10);
+        border-color: rgba(255,255,255,0.16);
+        color: #ffffff;
+    }
+
+    .maintenance-calendar-page .panel,
+    .maintenance-calendar-page .premium-panel {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .maintenance-calendar-layout {
+        gap: 18px;
+        height: calc(100vh - 205px);
+    }
+
+    .maintenance-tech-filter-bar {
+        padding: 2px 2px 12px;
+        border-bottom: 1px solid #edf0f4;
+        margin-bottom: 12px;
+    }
+
+    .maintenance-calendar-page .area-subtitle {
+        color: #64748b;
+        opacity: 1;
+    }
+
+    .maintenance-tech-chip {
+        background: #ffffff;
+        color: #334155;
+        border: 1px solid #d8dee8;
+        box-shadow: none;
+    }
+
+    .maintenance-tech-chip:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+    }
+
+    .maintenance-tech-chip.is-active {
+        background: #0f172a;
+        border-color: #0f172a;
+        color: #ffffff;
+    }
+
+    .maintenance-calendar-page .summary-pill {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        color: #334155;
+    }
+
+    .maintenance-calendar-grid {
+        gap: 10px;
+        padding: 2px 2px 10px;
+    }
+
+    .maintenance-day-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 10px;
+        min-height: 720px;
+    }
+
+    .maintenance-day-header {
+        background: #fbfcfe;
+        border-bottom: 1px solid #edf0f4;
+        color: #0f172a;
+        margin: -10px -10px 10px -10px;
+        padding: 10px;
+        backdrop-filter: none;
+    }
+
+    .maintenance-day-date {
+        color: #64748b;
+        opacity: 1;
+    }
+
+    .maintenance-day-count {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        color: #334155;
+    }
+
+    .maintenance-anytime-zone {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 7px;
+    }
+
+    .maintenance-anytime-label,
+    .maintenance-time-label {
+        color: #64748b;
+        opacity: 1;
+    }
+
+    .maintenance-time-slot {
+        border-top: 1px solid #edf0f4;
+        padding: 7px 0;
+    }
+
+    .maintenance-time-slot.is-empty {
+        opacity: 1;
+    }
+
+    .maintenance-slot-body {
+        min-height: 32px;
+    }
+
+    .js-drop-zone.is-drop-hover .maintenance-slot-body,
+    .maintenance-anytime-zone.is-drop-hover,
+    .maintenance-unscheduled-drop.is-drop-hover {
+        background: #eff6ff;
+        outline: 2px solid rgba(37, 99, 235, 0.24);
+        box-shadow: 0 12px 30px rgba(37, 99, 235, 0.10);
+    }
+
+    .maintenance-event-card {
+        background: #ffffff;
+        color: #0f172a;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #94a3b8;
+        border-radius: 10px;
+        padding: 7px 8px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.035);
+    }
+
+    .maintenance-event-card:hover {
+        background: #fbfdff;
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+    }
+
+    .maintenance-event-card.status-open {
+        border-left-color: #ef4444;
+    }
+
+    .maintenance-event-card.status-assigned {
+        border-left-color: #f59e0b;
+    }
+
+    .maintenance-event-card.status-in_progress {
+        border-left-color: #3b82f6;
+    }
+
+    .maintenance-event-card.status-complete {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+        border-left-color: #22c55e;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.035);
+    }
+
+    .maintenance-event-time {
+        color: #64748b;
+        opacity: 1;
+    }
+
+    .maintenance-event-title {
+        color: #0f172a;
+        font-size: 11px;
+    }
+
+    .maintenance-event-meta {
+        color: #64748b;
+        opacity: 1;
+    }
+
+    .maintenance-assignee-badge {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+    }
+
+    .maintenance-assignee-badge.is-unassigned {
+        background: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #64748b;
+    }
+
+    .maintenance-status-pill,
+    .maintenance-priority-pill {
+        border: 1px solid #e2e8f0;
+        background: #f1f5f9;
+        color: #334155;
+        padding: 2px 6px;
+        font-size: 7px;
+    }
+
+    .maintenance-status-pill.status-open {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
+    }
+
+    .maintenance-status-pill.status-assigned {
+        background: #fff7ed;
+        color: #9a3412;
+        border-color: #fed7aa;
+    }
+
+    .maintenance-status-pill.status-in_progress {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #bfdbfe;
+    }
+
+    .maintenance-status-pill.status-complete {
+        background: #ecfdf5;
+        color: #047857;
+        border-color: #bbf7d0;
+    }
+
+    .maintenance-priority-pill.priority-low {
+        background: #f8fafc;
+        color: #64748b;
+        border-color: #e2e8f0;
+    }
+
+    .maintenance-priority-pill.priority-normal {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #bfdbfe;
+    }
+
+    .maintenance-priority-pill.priority-high {
+        background: #fff7ed;
+        color: #9a3412;
+        border-color: #fed7aa;
+    }
+
+    .maintenance-priority-pill.priority-urgent {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
+    }
+
+    .maintenance-side-panel {
+        color: #0f172a;
+    }
+
+    .maintenance-unscheduled-drop {
+        background: #fbfcfe;
+        border: 1px solid #edf0f4;
+        border-radius: 14px;
+        padding: 8px;
+    }
+
+    .maintenance-empty-day {
+        color: #64748b;
+        opacity: 1;
+    }
+
+    .maintenance-modal {
+        background: #ffffff;
+        color: #0f172a;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 30px 80px rgba(15, 23, 42, 0.22);
+    }
+
+    .maintenance-modal-header {
+        background: #fbfcfe;
+        border-bottom: 1px solid #edf0f4;
+    }
+
+    .maintenance-modal-subtitle {
+        color: #64748b;
+        opacity: 1;
+    }
+
+    .maintenance-modal-close,
+    .maintenance-modal-actions .action-btn {
+        background: #ffffff;
+        border: 1px solid #d8dee8;
+        color: #334155;
+    }
+
+    .maintenance-toast {
+        background: #0f172a;
+        color: #ffffff;
+        border: 0;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+    }
+
+    @media (max-width: 1450px) {
+        .maintenance-day-card {
+            min-height: 620px;
+        }
+    }
+
+
+    /* Calendar typography cleanup */
+    .maintenance-calendar-page {
+        font-feature-settings: "kern";
+    }
+
+    .maintenance-calendar-page .command-eyebrow,
+    .maintenance-calendar-page .maintenance-day-name,
+    .maintenance-calendar-page .maintenance-anytime-label,
+    .maintenance-calendar-page .maintenance-time-label,
+    .maintenance-calendar-page .maintenance-event-time,
+    .maintenance-calendar-page .maintenance-status-pill,
+    .maintenance-calendar-page .maintenance-priority-pill {
+        letter-spacing: 0.02em;
+    }
+
+    .maintenance-calendar-page .maintenance-day-name {
+        font-size: 13px;
+        font-weight: 850;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    .maintenance-calendar-page .maintenance-day-date {
+        font-size: 12px;
+        font-weight: 650;
+    }
+
+    .maintenance-calendar-page .maintenance-anytime-label {
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: none;
+        letter-spacing: 0.01em;
+    }
+
+    .maintenance-calendar-page .maintenance-time-label {
+        font-size: 12px;
+        font-weight: 750;
+        letter-spacing: 0;
+    }
+
+    .maintenance-calendar-page .maintenance-event-time {
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    .maintenance-calendar-page .maintenance-event-title {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0;
+        line-height: 1.25;
+    }
+
+    .maintenance-calendar-page .maintenance-event-meta {
+        font-size: 10px;
+        font-weight: 650;
+    }
+
+    .maintenance-calendar-page .maintenance-assignee-badge {
+        font-size: 9px;
+        font-weight: 750;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+
+    .maintenance-calendar-page .maintenance-status-pill,
+    .maintenance-calendar-page .maintenance-priority-pill {
+        font-size: 8px;
+        font-weight: 750;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+
+    .maintenance-calendar-page .maintenance-tech-chip {
+        font-size: 13px;
+        font-weight: 750;
+        letter-spacing: 0;
+    }
+
+    .maintenance-calendar-page .summary-pill {
+        font-size: 12px;
+        font-weight: 750;
+        letter-spacing: 0;
+    }
+
+
+    /* Calendar hero visibility fix */
+    .maintenance-calendar-page .command-bar {
+        background: linear-gradient(135deg, #101827 0%, #172033 55%, #202b42 100%) !important;
+        color: #ffffff !important;
+    }
+
+    .maintenance-calendar-page .command-bar .command-eyebrow,
+    .maintenance-calendar-page .command-bar .command-title {
+        color: #ffffff !important;
+    }
+
+    .maintenance-calendar-page .command-bar .command-subtitle {
+        color: rgba(255,255,255,.76) !important;
+    }
+
+    .maintenance-calendar-page .command-bar .command-chip {
+        background: rgba(255,255,255,0.12) !important;
+        border: 1px solid rgba(255,255,255,0.20) !important;
+        color: #ffffff !important;
+        box-shadow: none !important;
+    }
+
+    .maintenance-calendar-page .command-bar .action-btn {
+        background: rgba(255,255,255,0.10) !important;
+        border: 1px solid rgba(255,255,255,0.20) !important;
+        color: #ffffff !important;
+        box-shadow: none !important;
+        text-decoration: none;
+    }
+
+    .maintenance-calendar-page .command-bar .action-btn:hover {
+        background: rgba(255,255,255,0.18) !important;
+        border-color: rgba(255,255,255,0.32) !important;
+    }
+
+    .maintenance-calendar-page .command-bar-right {
+        color: #ffffff !important;
+    }
+
 </style>
 
 {% macro render_ticket_card(ticket) %}
@@ -772,6 +1216,8 @@
             </div>
         </div>
     </aside>
+</div>
+
 </div>
 
 <div id="maintenance-toast" class="maintenance-toast">Maintenance task moved.</div>

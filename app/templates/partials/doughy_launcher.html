@@ -395,13 +395,11 @@
             "danger",
             "urgent",
             "overdue",
-            "open",
             "failed",
             "fail",
             "missing",
             "incomplete",
             "exception",
-            "short",
             "shortage",
             "late",
             "not completed",
@@ -410,18 +408,42 @@
             "pending",
             "unassigned",
             "unverified",
-            "cancelled",
             "cash difference",
-            "difference",
             "variance",
-            "low",
-            "below",
-            "issue"
+            "below goal",
+            "low integrity",
+            "not verified",
+            "past due"
+        ];
+
+        const ignoredContainers = [
+            ".doughy-mini-panel",
+            ".doughy-mini-launcher",
+            ".sidebar",
+            ".topbar",
+            ".navbar",
+            ".nav",
+            ".quick-actions",
+            ".admin-actions",
+            ".action-buttons",
+            ".filters",
+            ".filter-bar",
+            ".pagination",
+            ".dropdown-menu",
+            ".menu",
+            "header",
+            "footer",
+            "nav"
         ];
 
         const visible = function (el) {
             if (!el) return false;
-            if (el.closest(".doughy-mini-panel") || el.closest(".doughy-mini-launcher")) return false;
+
+            const isIgnored = ignoredContainers.some(function (selector) {
+                return el.closest(selector);
+            });
+
+            if (isIgnored) return false;
 
             const style = window.getComputedStyle(el);
             const rect = el.getBoundingClientRect();
@@ -436,16 +458,66 @@
             return String(value || "").trim().replace(/\s+/g, " ");
         };
 
-        const candidates = Array.from(document.querySelectorAll(
-            "main .card, main .tile, main .dashboard-card, main .summary-card, main .stat-card, main .metric-card, main table tr, main li, main section, main article, .content .card, .content table tr, .app-content .card, .app-content table tr"
-        )).filter(visible);
+        const mostlyLinksOrButtons = function (el) {
+            const text = cleanText(el.textContent);
+            if (!text) return true;
+
+            const linkButtonText = Array.from(el.querySelectorAll("a, button"))
+                .map(child => cleanText(child.textContent))
+                .filter(Boolean)
+                .join(" ");
+
+            if (!linkButtonText) return false;
+
+            return linkButtonText.length >= text.length * 0.65;
+        };
+
+        const appRoot = document.querySelector(
+            "main, .app-main, .app-content, .page-content, .content, .content-wrap, .dashboard-content, .shell-content, .main-content"
+        ) || document.body;
+
+        const candidates = Array.from(appRoot.querySelectorAll(
+            [
+                ".card",
+                ".tile",
+                ".panel",
+                ".section",
+                ".block",
+                ".module",
+                ".dashboard-card",
+                ".summary-card",
+                ".stat-card",
+                ".metric-card",
+                ".heatmap-card",
+                ".exception-card",
+                ".checklist-card",
+                ".maintenance-card",
+                ".store-card",
+                ".checklist-section",
+                ".checklist-item",
+                ".daily-card",
+                ".ops-card",
+                ".glass-card",
+                "[class*='card']",
+                "[class*='panel']",
+                "[class*='section']",
+                "[class*='checklist']",
+                "[class*='metric']",
+                "[class*='summary']",
+                "table tbody tr",
+                ".table-row",
+                "li"
+            ].join(", ")
+        )).filter(visible).filter(function (el) {
+            return !mostlyLinksOrButtons(el);
+        });
 
         const items = [];
 
         candidates.forEach(function (el) {
             const text = cleanText(el.textContent);
             if (!text || text.length < 4) return;
-            if (text.length > 500) return;
+            if (text.length > 650) return;
 
             const lower = text.toLowerCase();
             const classHint = (el.className || "").toString().toLowerCase();
@@ -454,15 +526,14 @@
                 return lower.includes(keyword);
             });
 
-            const hasClassHint =
+            const hasBadClassHint =
                 classHint.includes("warning") ||
                 classHint.includes("danger") ||
                 classHint.includes("error") ||
                 classHint.includes("alert") ||
-                classHint.includes("open") ||
                 classHint.includes("failed") ||
-                classHint.includes("red") ||
-                classHint.includes("yellow");
+                classHint.includes("critical") ||
+                classHint.includes("bad");
 
             const percentMatches = lower.match(/\b(\d{1,3})\s*%/g) || [];
             const hasLowPercent = percentMatches.some(function (match) {
@@ -479,20 +550,52 @@
                     lower.includes("cash")
                 );
 
-            const hasZeroOpen =
+            const hasOpenOpsConcern =
                 /\b[1-9]\d*\b/.test(lower) &&
                 (
-                    lower.includes("open") ||
+                    lower.includes("open ticket") ||
+                    lower.includes("open maintenance") ||
                     lower.includes("pending") ||
                     lower.includes("incomplete") ||
-                    lower.includes("missing")
+                    lower.includes("missing") ||
+                    lower.includes("unverified")
                 );
 
-            if (hasKeyword || hasClassHint || hasLowPercent || hasMoneyConcern || hasZeroOpen) {
+            const hasChecklistProgressConcern =
+                (
+                    lower.includes("completion") ||
+                    lower.includes("integrity") ||
+                    lower.includes("walk integrity") ||
+                    lower.includes("before open") ||
+                    lower.includes("checklist")
+                ) &&
+                (
+                    lower.includes("0.0%") ||
+                    lower.includes("0%") ||
+                    /\b0\s*\/\s*\d+\b/.test(lower)
+                );
+
+            const hasVeryLowChecklistPercent =
+                (
+                    lower.includes("completion") ||
+                    lower.includes("integrity") ||
+                    lower.includes("checklist")
+                ) &&
+                percentMatches.some(function (match) {
+                    const num = parseInt(match.replace(/[^0-9]/g, ""), 10);
+                    return !Number.isNaN(num) && num < 50;
+                });
+
+            if (hasKeyword || hasBadClassHint || hasLowPercent || hasMoneyConcern || hasOpenOpsConcern || hasChecklistProgressConcern || hasVeryLowChecklistPercent) {
                 let cleaned = text;
 
-                if (cleaned.length > 140) {
-                    cleaned = cleaned.slice(0, 137) + "...";
+                cleaned = cleaned
+                    .replace(/\s*→\s*/g, " → ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+
+                if (cleaned.length > 150) {
+                    cleaned = cleaned.slice(0, 147) + "...";
                 }
 
                 if (!items.includes(cleaned)) {

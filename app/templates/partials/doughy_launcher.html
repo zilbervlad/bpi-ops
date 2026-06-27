@@ -326,12 +326,14 @@
             const role = data.role || "unknown";
             const store = data.store || "not set";
             const company = data.company_id || "not set";
+            const resourceId = data.resource_id || "none";
 
             body.innerHTML = `
                 Page: <strong>${page}</strong><br>
                 Role: <strong>${role}</strong><br>
                 Store: <strong>${store}</strong><br>
-                Company: <strong>${company}</strong>
+                Company: <strong>${company}</strong><br>
+                Page ID: <strong>${resourceId}</strong>
             `;
         } catch (error) {
             body.textContent = "Context unavailable.";

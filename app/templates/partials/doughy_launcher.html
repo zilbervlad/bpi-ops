@@ -249,12 +249,9 @@
             <p class="doughy-mini-muted">Read-only ops help is coming soon.</p>
         </div>
 
-        <div class="doughy-context-card">
-            <div><strong>Page:</strong> {{ request.endpoint|default("Current page", true)|replace("_", " ")|replace(".", " / ")|title }}</div>
-            <div><strong>Role:</strong> {{ role_label }}</div>
-            {% if session.get('user_store') %}
-            <div><strong>Store:</strong> {{ session.get('user_store') }}</div>
-            {% endif %}
+        <div class="doughy-context-card" id="doughyContextCard">
+            <div><strong>Context</strong></div>
+            <div id="doughyContextBody" class="doughy-context-muted">Checking where Doughy is...</div>
         </div>
 
         <div class="doughy-quick-starts" aria-label="Doughy quick starts">
@@ -304,5 +301,44 @@
             });
         });
     });
+
+    async function loadDoughyContext() {
+        const body = document.getElementById("doughyContextBody");
+        if (!body) return;
+
+        try {
+            const currentPath = window.location.pathname || "/";
+            const response = await fetch(`/doughy/context?path=${encodeURIComponent(currentPath)}`, {
+                headers: {
+                    "Accept": "application/json"
+                },
+                credentials: "same-origin"
+            });
+
+            if (!response.ok) {
+                body.textContent = "Context unavailable.";
+                return;
+            }
+
+            const data = await response.json();
+
+            const page = data.page || "unknown";
+            const role = data.role || "unknown";
+            const store = data.store || "not set";
+            const company = data.company_id || "not set";
+
+            body.innerHTML = `
+                Page: <strong>${page}</strong><br>
+                Role: <strong>${role}</strong><br>
+                Store: <strong>${store}</strong><br>
+                Company: <strong>${company}</strong>
+            `;
+        } catch (error) {
+            body.textContent = "Context unavailable.";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadDoughyContext);
+
 </script>
 {% endif %}

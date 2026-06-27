@@ -322,7 +322,7 @@
                     if (attention.items.length === 0) {
                         soonBox.innerHTML = `
                             <strong>Read-only attention scan</strong><br>
-                            I do not see obvious warning/open/failed items on this visible page.<br>
+                            I scanned <strong>${attention.scanned}</strong> visible page block(s), but I do not see obvious warning/open/failed items.<br>
                             <span class="doughy-context-muted">This is only scanning visible page text. AI and database checks are still off.</span>
                         `;
                     } else {
@@ -405,7 +405,18 @@
             "shortage",
             "late",
             "not completed",
-            "needs attention"
+            "needs attention",
+            "not done",
+            "pending",
+            "unassigned",
+            "unverified",
+            "cancelled",
+            "cash difference",
+            "difference",
+            "variance",
+            "low",
+            "below",
+            "issue"
         ];
 
         const visible = function (el) {
@@ -421,32 +432,69 @@
                 rect.height > 0;
         };
 
+        const cleanText = function (value) {
+            return String(value || "").trim().replace(/\s+/g, " ");
+        };
+
         const candidates = Array.from(document.querySelectorAll(
-            ".alert, .warning, .danger, .error, .badge, .status, .card, .dashboard-card, .summary-card, .tile, tr, li"
+            "main .card, main .tile, main .dashboard-card, main .summary-card, main .stat-card, main .metric-card, main table tr, main li, main section, main article, .content .card, .content table tr, .app-content .card, .app-content table tr"
         )).filter(visible);
 
         const items = [];
 
         candidates.forEach(function (el) {
-            const text = (el.textContent || "").trim().replace(/\s+/g, " ");
-            if (!text || text.length < 3) return;
+            const text = cleanText(el.textContent);
+            if (!text || text.length < 4) return;
+            if (text.length > 500) return;
 
             const lower = text.toLowerCase();
+            const classHint = (el.className || "").toString().toLowerCase();
+
             const hasKeyword = keywords.some(function (keyword) {
                 return lower.includes(keyword);
             });
 
-            const classHint = (el.className || "").toString().toLowerCase();
             const hasClassHint =
                 classHint.includes("warning") ||
                 classHint.includes("danger") ||
                 classHint.includes("error") ||
                 classHint.includes("alert") ||
                 classHint.includes("open") ||
-                classHint.includes("failed");
+                classHint.includes("failed") ||
+                classHint.includes("red") ||
+                classHint.includes("yellow");
 
-            if (hasKeyword || hasClassHint) {
-                const cleaned = text.length > 120 ? text.slice(0, 117) + "..." : text;
+            const percentMatches = lower.match(/\b(\d{1,3})\s*%/g) || [];
+            const hasLowPercent = percentMatches.some(function (match) {
+                const num = parseInt(match.replace(/[^0-9]/g, ""), 10);
+                return !Number.isNaN(num) && num < 80;
+            });
+
+            const hasMoneyConcern =
+                /\$\s*\d+/.test(lower) &&
+                (
+                    lower.includes("short") ||
+                    lower.includes("difference") ||
+                    lower.includes("variance") ||
+                    lower.includes("cash")
+                );
+
+            const hasZeroOpen =
+                /\b[1-9]\d*\b/.test(lower) &&
+                (
+                    lower.includes("open") ||
+                    lower.includes("pending") ||
+                    lower.includes("incomplete") ||
+                    lower.includes("missing")
+                );
+
+            if (hasKeyword || hasClassHint || hasLowPercent || hasMoneyConcern || hasZeroOpen) {
+                let cleaned = text;
+
+                if (cleaned.length > 140) {
+                    cleaned = cleaned.slice(0, 137) + "...";
+                }
+
                 if (!items.includes(cleaned)) {
                     items.push(cleaned);
                 }
@@ -454,7 +502,8 @@
         });
 
         return {
-            items: items.slice(0, 6)
+            items: items.slice(0, 8),
+            scanned: candidates.length
         };
     }
 

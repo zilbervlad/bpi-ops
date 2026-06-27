@@ -299,11 +299,63 @@
                 if (!soonBox) return;
 
                 const prompt = quickButton.getAttribute("data-doughy-soon") || "this";
+
+                if (prompt === "Summarize this page") {
+                    const snapshot = buildDoughyVisibleSnapshot();
+
+                    soonBox.innerHTML = `
+                        <strong>Read-only page snapshot</strong><br>
+                        Doughy can see this page has
+                        <strong>${snapshot.statCards}</strong> stat/card areas,
+                        <strong>${snapshot.tables}</strong> table(s),
+                        and <strong>${snapshot.buttons}</strong> visible action button(s).<br>
+                        ${snapshot.heading ? `View: <strong>${snapshot.heading}</strong><br>` : ""}
+                        <span class="doughy-context-muted">AI summary is still off. This is only visible page structure.</span>
+                    `;
+                    soonBox.classList.add("open");
+                    return;
+                }
+
                 soonBox.textContent = "Coming soon: Doughy will answer “" + prompt + "” using read-only BPI Ops data.";
                 soonBox.classList.add("open");
             });
         });
     });
+
+
+    function buildDoughyVisibleSnapshot() {
+        const headingEl = document.querySelector("main h1, main h2, .page-title, .dashboard-title, h1, h2");
+        const heading = headingEl ? headingEl.textContent.trim().replace(/\s+/g, " ") : "";
+
+        const visible = function (el) {
+            if (!el) return false;
+            const style = window.getComputedStyle(el);
+            const rect = el.getBoundingClientRect();
+            return style.display !== "none" &&
+                style.visibility !== "hidden" &&
+                rect.width > 0 &&
+                rect.height > 0;
+        };
+
+        const statCards = Array.from(document.querySelectorAll(
+            ".card, .stat-card, .metric-card, .dashboard-card, .summary-card, .tile, .kpi-card"
+        )).filter(visible).length;
+
+        const tables = Array.from(document.querySelectorAll("table")).filter(visible).length;
+
+        const buttons = Array.from(document.querySelectorAll("button, .btn, a.btn"))
+            .filter(visible)
+            .filter(function (el) {
+                return !el.closest(".doughy-mini-panel") && !el.closest(".doughy-mini-launcher");
+            }).length;
+
+        return {
+            heading: heading,
+            statCards: statCards,
+            tables: tables,
+            buttons: buttons
+        };
+    }
 
     async function loadDoughyContext() {
         const body = document.getElementById("doughyContextBody");

@@ -108,6 +108,8 @@ def context():
     page_path = request.args.get("path") or request.referrer or request.path
     endpoint = request.args.get("endpoint") or ""
     page_label = request.args.get("page_label") or ""
+    visible_heading = request.args.get("visible_heading") or ""
+    browser_title = request.args.get("browser_title") or ""
 
     guessed_page = page_label or _guess_page_from_path(endpoint or page_path)
     page = _friendly_page_name(endpoint, guessed_page)
@@ -136,6 +138,8 @@ def context():
         {
             "page": page,
             "endpoint": endpoint,
+            "visible_heading": visible_heading,
+            "browser_title": browser_title,
             "path": path_context.get("path"),
             "section": path_context.get("section"),
             "resource_id": path_context.get("resource_id"),

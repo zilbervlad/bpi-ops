@@ -314,10 +314,17 @@
             const contextCard = document.getElementById("doughyContextCard");
             const endpoint = contextCard ? contextCard.dataset.endpoint || "" : "";
             const pageLabel = contextCard ? contextCard.dataset.pageLabel || "" : "";
+
+            const headingEl = document.querySelector("main h1, main h2, .page-title, .dashboard-title, h1, h2");
+            const visibleHeading = headingEl ? headingEl.textContent.trim().replace(/\s+/g, " ") : "";
+            const browserTitle = document.title ? document.title.trim().replace(/\s+/g, " ") : "";
+
             const params = new URLSearchParams({
                 path: currentPath,
                 endpoint: endpoint,
-                page_label: pageLabel
+                page_label: pageLabel,
+                visible_heading: visibleHeading,
+                browser_title: browserTitle
             });
 
             const response = await fetch(`/doughy/context?${params.toString()}`, {
@@ -339,9 +346,11 @@
             const store = data.store || "not set";
             const company = data.company_id || "not set";
             const resourceId = data.resource_id || "none";
+            const view = data.visible_heading || data.browser_title || "";
 
             body.innerHTML = `
                 Page: <strong>${page}</strong><br>
+                ${view ? `View: <strong>${view}</strong><br>` : ""}
                 Role: <strong>${role}</strong><br>
                 Store: <strong>${store}</strong><br>
                 Company: <strong>${company}</strong><br>

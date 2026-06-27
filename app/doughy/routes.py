@@ -74,7 +74,10 @@ def _extract_context_from_path(path):
 @login_required
 def context():
     page_path = request.args.get("path") or request.referrer or request.path
-    page = _guess_page_from_path(page_path)
+    endpoint = request.args.get("endpoint") or ""
+    page_label = request.args.get("page_label") or ""
+
+    page = page_label or _guess_page_from_path(endpoint or page_path)
     path_context = _extract_context_from_path(page_path)
 
     user = _current_user()
@@ -99,6 +102,7 @@ def context():
     return jsonify(
         {
             "page": page,
+            "endpoint": endpoint,
             "path": path_context.get("path"),
             "section": path_context.get("section"),
             "resource_id": path_context.get("resource_id"),

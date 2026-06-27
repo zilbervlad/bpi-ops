@@ -249,7 +249,10 @@
             <p class="doughy-mini-muted">Read-only ops help is coming soon.</p>
         </div>
 
-        <div class="doughy-context-card" id="doughyContextCard">
+        <div class="doughy-context-card"
+             id="doughyContextCard"
+             data-endpoint="{{ request.endpoint|default('', true) }}"
+             data-page-label="{{ request.endpoint|default('Current page', true)|replace('_', ' ')|replace('.', ' / ')|title }}">
             <div><strong>Context</strong></div>
             <div id="doughyContextBody" class="doughy-context-muted">Checking where Doughy is...</div>
         </div>
@@ -308,7 +311,16 @@
 
         try {
             const currentPath = window.location.pathname || "/";
-            const response = await fetch(`/doughy/context?path=${encodeURIComponent(currentPath)}`, {
+            const contextCard = document.getElementById("doughyContextCard");
+            const endpoint = contextCard ? contextCard.dataset.endpoint || "" : "";
+            const pageLabel = contextCard ? contextCard.dataset.pageLabel || "" : "";
+            const params = new URLSearchParams({
+                path: currentPath,
+                endpoint: endpoint,
+                page_label: pageLabel
+            });
+
+            const response = await fetch(`/doughy/context?${params.toString()}`, {
                 headers: {
                     "Accept": "application/json"
                 },

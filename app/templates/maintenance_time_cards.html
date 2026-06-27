@@ -247,7 +247,7 @@
             <input type="date" name="end" value="{{ end_date.strftime('%Y-%m-%d') }}">
         </div>
 
-        {% if user_role in ["admin", "supervisor"] %}
+        {% if user_role in ["admin", "hr"] %}
         <div class="form-group">
             <label>Tech</label>
             <select name="tech">

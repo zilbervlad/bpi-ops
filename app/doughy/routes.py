@@ -69,6 +69,38 @@ def _extract_context_from_path(path):
 
     return context
 
+def _friendly_page_name(endpoint, fallback):
+    endpoint = (endpoint or "").lower()
+
+    page_names = {
+        "dashboard": "Dashboard",
+        "checklist": "Daily Checklist",
+        "svr": "SVR",
+        "maintenance": "Maintenance",
+        "store_admin": "Store Admin",
+        "reports": "Reports",
+        "nightly_numbers": "Nightly Numbers",
+        "cash": "Cash Control",
+        "cash_review": "Cash Review",
+        "verification": "Verification",
+        "store_dashboard": "Store Dashboard",
+        "prep": "Prep",
+        "shift_todos": "Shift To-Dos",
+        "forms": "Forms",
+        "hr_documents": "HR Documents",
+        "connect_admin": "BPI Connect Admin",
+        "dwp": "DWP",
+        "auth": "Admin Center",
+    }
+
+    if endpoint:
+        blueprint = endpoint.split(".", 1)[0]
+        if blueprint in page_names:
+            return page_names[blueprint]
+
+    return fallback or "Current Page"
+
+
 
 @doughy_bp.route("/context")
 @login_required
@@ -77,7 +109,8 @@ def context():
     endpoint = request.args.get("endpoint") or ""
     page_label = request.args.get("page_label") or ""
 
-    page = page_label or _guess_page_from_path(endpoint or page_path)
+    guessed_page = page_label or _guess_page_from_path(endpoint or page_path)
+    page = _friendly_page_name(endpoint, guessed_page)
     path_context = _extract_context_from_path(page_path)
 
     user = _current_user()

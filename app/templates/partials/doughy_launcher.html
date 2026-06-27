@@ -316,6 +316,28 @@
                     return;
                 }
 
+                if (prompt === "What needs attention today?") {
+                    const attention = buildDoughyAttentionSnapshot();
+
+                    if (attention.items.length === 0) {
+                        soonBox.innerHTML = `
+                            <strong>Read-only attention scan</strong><br>
+                            I do not see obvious warning/open/failed items on this visible page.<br>
+                            <span class="doughy-context-muted">This is only scanning visible page text. AI and database checks are still off.</span>
+                        `;
+                    } else {
+                        soonBox.innerHTML = `
+                            <strong>Read-only attention scan</strong><br>
+                            I found <strong>${attention.items.length}</strong> visible item(s) that may need attention:<br>
+                            ${attention.items.map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}
+                            <br><span class="doughy-context-muted">This is only scanning visible page text. AI and database checks are still off.</span>
+                        `;
+                    }
+
+                    soonBox.classList.add("open");
+                    return;
+                }
+
                 soonBox.textContent = "Coming soon: Doughy will answer “" + prompt + "” using read-only BPI Ops data.";
                 soonBox.classList.add("open");
             });
@@ -354,6 +376,85 @@
             statCards: statCards,
             tables: tables,
             buttons: buttons
+        };
+    }
+
+
+    function escapeDoughyHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function buildDoughyAttentionSnapshot() {
+        const keywords = [
+            "warning",
+            "danger",
+            "urgent",
+            "overdue",
+            "open",
+            "failed",
+            "fail",
+            "missing",
+            "incomplete",
+            "exception",
+            "short",
+            "shortage",
+            "late",
+            "not completed",
+            "needs attention"
+        ];
+
+        const visible = function (el) {
+            if (!el) return false;
+            if (el.closest(".doughy-mini-panel") || el.closest(".doughy-mini-launcher")) return false;
+
+            const style = window.getComputedStyle(el);
+            const rect = el.getBoundingClientRect();
+
+            return style.display !== "none" &&
+                style.visibility !== "hidden" &&
+                rect.width > 0 &&
+                rect.height > 0;
+        };
+
+        const candidates = Array.from(document.querySelectorAll(
+            ".alert, .warning, .danger, .error, .badge, .status, .card, .dashboard-card, .summary-card, .tile, tr, li"
+        )).filter(visible);
+
+        const items = [];
+
+        candidates.forEach(function (el) {
+            const text = (el.textContent || "").trim().replace(/\s+/g, " ");
+            if (!text || text.length < 3) return;
+
+            const lower = text.toLowerCase();
+            const hasKeyword = keywords.some(function (keyword) {
+                return lower.includes(keyword);
+            });
+
+            const classHint = (el.className || "").toString().toLowerCase();
+            const hasClassHint =
+                classHint.includes("warning") ||
+                classHint.includes("danger") ||
+                classHint.includes("error") ||
+                classHint.includes("alert") ||
+                classHint.includes("open") ||
+                classHint.includes("failed");
+
+            if (hasKeyword || hasClassHint) {
+                const cleaned = text.length > 120 ? text.slice(0, 117) + "..." : text;
+                if (!items.includes(cleaned)) {
+                    items.push(cleaned);
+                }
+            }
+        });
+
+        return {
+            items: items.slice(0, 6)
         };
     }
 

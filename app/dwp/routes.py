@@ -148,6 +148,11 @@ def can_view_record(user, record):
     if is_admin_like(user):
         return True
 
+    # The person assigned to the DWP must always be able to open their own record,
+    # including supervisors who may have an area instead of a store number.
+    if record.team_member_id == user.id:
+        return True
+
     if is_supervisor_like(user):
         return str(record.store_number) in allowed_store_numbers_for_user(user)
 

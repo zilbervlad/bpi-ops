@@ -220,6 +220,18 @@
             height: 28px;
         }
     }
+
+    .doughy-draft-box {
+        margin-top: 8px;
+        margin-bottom: 8px;
+        padding: 10px 11px;
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.22);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        color: #e5e7eb;
+        line-height: 1.45;
+    }
+
 </style>
 
 <div class="doughy-mini-launcher">
@@ -331,6 +343,39 @@
                             I found <strong>${attention.items.length}</strong> visible item(s) that may need attention:<br>
                             ${attention.items.map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}
                             <br><span class="doughy-context-muted">This is only scanning visible page text. AI and database checks are still off.</span>
+                        `;
+                    }
+
+                    soonBox.classList.add("open");
+                    return;
+                }
+
+                if (prompt === "Draft a follow-up message") {
+                    const attention = buildDoughyAttentionSnapshot();
+                    const contextText = (document.getElementById("doughyContextBody") || {}).textContent || "";
+                    const storeMatch = contextText.match(/Store:\s*([^\n]+)/i);
+                    const pageMatch = contextText.match(/Page:\s*([^\n]+)/i);
+
+                    const store = storeMatch ? storeMatch[1].trim() : "this store/page";
+                    const page = pageMatch ? pageMatch[1].trim() : "BPI Ops";
+
+                    if (attention.items.length === 0) {
+                        soonBox.innerHTML = `
+                            <strong>Follow-up draft</strong><br>
+                            <div class="doughy-draft-box">
+                                Quick follow-up on ${escapeDoughyHtml(page)} for ${escapeDoughyHtml(store)} — I do not see any obvious visible warning/open/failed items right now. Please review and confirm everything is updated.
+                            </div>
+                            <span class="doughy-context-muted">Draft is based only on visible page text. AI and send actions are still off.</span>
+                        `;
+                    } else {
+                        soonBox.innerHTML = `
+                            <strong>Follow-up draft</strong><br>
+                            <div class="doughy-draft-box">
+                                Quick follow-up on ${escapeDoughyHtml(page)} for ${escapeDoughyHtml(store)}. Please review the items below:<br>
+                                ${attention.items.slice(0, 4).map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}<br>
+                                Please update once complete.
+                            </div>
+                            <span class="doughy-context-muted">Draft is based only on visible page text. AI and send actions are still off.</span>
                         `;
                     }
 

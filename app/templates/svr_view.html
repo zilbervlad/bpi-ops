@@ -63,6 +63,38 @@
                 {% else %}
                     <div class="svr-value-text">{{ value.value_text or '—' }}</div>
                 {% endif %}
+
+                {% set field_photos = photos_by_field.get(value.field_key, []) if photos_by_field else [] %}
+                {% if field_photos %}
+                <div class="svr-photo-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; margin-top:12px;">
+                    {% for photo in field_photos %}
+                    <div style="position:relative;">
+                        <a href="{{ photo.image_url }}" target="_blank" rel="noopener" style="display:block; text-decoration:none;">
+                            <img
+                                src="{{ photo.thumbnail_url or photo.image_url }}"
+                                alt="SVR photo for {{ value.field_label }}"
+                                style="width:100%; height:95px; object-fit:cover; border-radius:14px; border:1px solid rgba(148,163,184,.35);"
+                            >
+                        </a>
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('svr.delete_svr_photo', photo_id=photo.id) }}"
+                            onsubmit="return confirm('Delete this SVR photo? This cannot be undone.');"
+                            style="position:absolute; top:6px; right:6px; margin:0;"
+                        >
+                            <button
+                                type="submit"
+                                title="Delete photo"
+                                style="border:0; border-radius:999px; background:rgba(127,29,29,.94); color:#fecaca; font-weight:900; width:26px; height:26px; cursor:pointer; box-shadow:0 8px 18px rgba(15,23,42,.25); line-height:1;"
+                            >
+                                ×
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>

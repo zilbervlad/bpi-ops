@@ -4,7 +4,7 @@
 {% block header %}Create SVR Report{% endblock %}
 
 {% block content %}
-<form method="POST" class="panel premium-panel" id="svr-form">
+<form method="POST" enctype="multipart/form-data" class="panel premium-panel" id="svr-form">
     <div class="panel-head">
         <h3>Supervisor Visit Report</h3>
         <span class="summary-pill">Supervisor Only</span>
@@ -44,6 +44,24 @@
             {% else %}
                 <textarea id="{{ field.field_key }}" name="{{ field.field_key }}" rows="4"></textarea>
             {% endif %}
+
+            {% if field.field_key not in ['store_number', 'date', 'manager_on_duty'] %}
+            <div class="svr-photo-upload" style="margin-top:10px; padding:10px; border:1px dashed rgba(148,163,184,.35); border-radius:14px; background:rgba(15,23,42,.25);">
+                <label style="display:block; font-size:12px; font-weight:700; color:#94a3b8; margin-bottom:6px;">
+                    Add photos for {{ field.field_label }}
+                </label>
+                <input
+                    type="file"
+                    name="photos__{{ field.field_key }}"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    style="font-size:13px;"
+                >
+                <div style="font-size:11px; color:#94a3b8; margin-top:5px;">
+                    JPG, PNG, or WEBP. Max 5 MB each.
+                </div>
+            </div>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
@@ -79,6 +97,7 @@ function saveDraft() {
     const data = {};
 
     formData.forEach((value, key) => {
+        if (value instanceof File) return;
         data[key] = value;
     });
 

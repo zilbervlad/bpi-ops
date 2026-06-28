@@ -1,6 +1,12 @@
 from datetime import datetime, date, timedelta
+import os
 from io import BytesIO
+from urllib.request import urlopen
 from zoneinfo import ZoneInfo
+
+import cloudinary
+import cloudinary.uploader
+import cloudinary.utils
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file
 from app.auth.routes import login_required, role_required
@@ -12,6 +18,7 @@ from app.models import (
     SVRReportValue,
     MaintenanceTicket,
     WeeklyFocusItem,
+    UploadedPhoto,
 )
 
 from reportlab.lib import colors
@@ -25,11 +32,159 @@ from reportlab.platypus import (
     Spacer,
     Table,
     TableStyle,
+    Image,
 )
 
 svr_bp = Blueprint("svr", __name__, url_prefix="/svr")
 
 APP_TZ = ZoneInfo("America/New_York")
+
+ALLOWED_PHOTO_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+MAX_SVR_PHOTO_BYTES = 5 * 1024 * 1024
+MAX_SVR_PHOTOS_TOTAL = 15
+PHOTO_EXCLUDED_FIELD_KEYS = {"store_number", "date", "manager_on_duty"}
+
+
+def svr_photos_enabled():
+    return os.getenv("SVR_PHOTOS_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def configure_cloudinary():
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME")
+    api_key = os.getenv("CLOUDINARY_API_KEY")
+    api_secret = os.getenv("CLOUDINARY_API_SECRET")
+
+    if not cloud_name or not api_key or not api_secret:
+        return False
+
+    cloudinary.config(
+        cloud_name=cloud_name,
+        api_key=api_key,
+        api_secret=api_secret,
+        secure=True,
+    )
+    return True
+
+
+def allowed_photo_file(file_storage):
+    filename = (file_storage.filename or "").strip().lower()
+    if "." not in filename:
+        return False
+    ext = filename.rsplit(".", 1)[1]
+    return ext in ALLOWED_PHOTO_EXTENSIONS
+
+
+def get_file_size(file_storage):
+    try:
+        position = file_storage.stream.tell()
+        file_storage.stream.seek(0, os.SEEK_END)
+        size = file_storage.stream.tell()
+        file_storage.stream.seek(position)
+        return size
+    except Exception:
+        return None
+
+
+def upload_svr_photos(report, fields):
+    if not svr_photos_enabled():
+        return
+
+    if not configure_cloudinary():
+        flash("SVR saved, but photo upload is not configured.", "warning")
+        return
+
+    uploaded_count = 0
+
+    for field in fields:
+        if field.field_key in PHOTO_EXCLUDED_FIELD_KEYS:
+            continue
+
+        input_name = f"photos__{field.field_key}"
+        files = request.files.getlist(input_name)
+
+        for file_storage in files:
+            if not file_storage or not file_storage.filename:
+                continue
+
+            if uploaded_count >= MAX_SVR_PHOTOS_TOTAL:
+                flash(f"Only the first {MAX_SVR_PHOTOS_TOTAL} SVR photos were uploaded.", "warning")
+                return
+
+            if not allowed_photo_file(file_storage):
+                flash(f"Skipped unsupported photo type: {file_storage.filename}", "warning")
+                continue
+
+            file_size = get_file_size(file_storage)
+            if file_size and file_size > MAX_SVR_PHOTO_BYTES:
+                flash(f"Skipped {file_storage.filename}: max photo size is 5 MB.", "warning")
+                continue
+
+            try:
+                result = cloudinary.uploader.upload(
+                    file_storage,
+                    folder=f"bpi_ops/svr/{report.store_number}/{report.id}",
+                    resource_type="image",
+                    transformation=[
+                        {"width": 1600, "height": 1600, "crop": "limit"},
+                        {"quality": "auto", "fetch_format": "auto"},
+                    ],
+                )
+            except Exception as exc:
+                flash(f"SVR saved, but one photo failed to upload: {file_storage.filename}", "warning")
+                print(f"SVR photo upload failed for report {report.id}: {exc}")
+                continue
+
+            public_id = result.get("public_id")
+            image_url = result.get("secure_url") or result.get("url")
+            thumbnail_url = None
+
+            if public_id:
+                thumbnail_url, _ = cloudinary.utils.cloudinary_url(
+                    public_id,
+                    secure=True,
+                    width=420,
+                    height=320,
+                    crop="fill",
+                    quality="auto",
+                    fetch_format="auto",
+                )
+
+            if not image_url:
+                continue
+
+            db.session.add(
+                UploadedPhoto(
+                    source_type="svr",
+                    source_id=report.id,
+                    store_number=report.store_number,
+                    field_key=field.field_key,
+                    caption=field.field_label,
+                    image_url=image_url,
+                    thumbnail_url=thumbnail_url,
+                    storage_key=public_id,
+                    original_filename=file_storage.filename,
+                    content_type=file_storage.content_type,
+                    file_size=file_size,
+                    uploaded_by_user_id=session.get("user_id"),
+                )
+            )
+            uploaded_count += 1
+
+
+def get_svr_photos_by_field(report_id):
+    photos = UploadedPhoto.query.filter_by(
+        source_type="svr",
+        source_id=report_id,
+    ).order_by(
+        UploadedPhoto.created_at.asc(),
+        UploadedPhoto.id.asc(),
+    ).all()
+
+    photos_by_field = {}
+    for photo in photos:
+        photos_by_field.setdefault(photo.field_key, []).append(photo)
+
+    return photos_by_field
 
 
 def now_et():
@@ -632,6 +787,8 @@ def new_report():
                 )
             )
 
+        upload_svr_photos(report, fields)
+
         db.session.commit()
         sync_maintenance_from_svr(report)
         sync_weekly_focus_from_svr(report)
@@ -660,15 +817,47 @@ def view_report(report_id):
         return redirect(url_for("svr.index"))
 
     values, manager_summary, open_action_items, completed_action_items = build_report_context(report)
+    photos_by_field = get_svr_photos_by_field(report.id)
 
     return render_template(
         "svr_view.html",
         report=report,
         values=values,
+        photos_by_field=photos_by_field,
         manager_summary=manager_summary,
         open_action_items=open_action_items,
         completed_action_items=completed_action_items,
     )
+
+
+@svr_bp.route("/photo/<int:photo_id>/delete", methods=["POST"])
+@login_required
+@role_required("admin", "supervisor")
+def delete_svr_photo(photo_id):
+    photo = UploadedPhoto.query.get_or_404(photo_id)
+
+    if photo.source_type != "svr":
+        flash("Photo not found.", "error")
+        return redirect(url_for("svr.index"))
+
+    report = SVRReport.query.get_or_404(photo.source_id)
+    visible_store_numbers = {store.store_number for store in get_supervisor_visible_stores()}
+
+    if report.store_number not in visible_store_numbers:
+        flash("You do not have access to delete that SVR photo.", "error")
+        return redirect(url_for("svr.index"))
+
+    if photo.storage_key and configure_cloudinary():
+        try:
+            cloudinary.uploader.destroy(photo.storage_key, resource_type="image")
+        except Exception as exc:
+            print(f"Cloudinary photo delete failed for photo {photo.id}: {exc}")
+
+    db.session.delete(photo)
+    db.session.commit()
+
+    flash("SVR photo deleted.", "success")
+    return redirect(url_for("svr.view_report", report_id=report.id))
 
 
 @svr_bp.route("/<int:report_id>/export-pdf")
@@ -797,6 +986,14 @@ def delete_report(report_id):
             ticket.details = f"{ticket.details} | Original SVR was deleted"
         else:
             ticket.details = "Original SVR was deleted"
+
+    for photo in UploadedPhoto.query.filter_by(source_type="svr", source_id=report.id).all():
+        if photo.storage_key and configure_cloudinary():
+            try:
+                cloudinary.uploader.destroy(photo.storage_key, resource_type="image")
+            except Exception as exc:
+                print(f"Cloudinary photo delete failed for photo {photo.id}: {exc}")
+        db.session.delete(photo)
 
     WeeklyFocusItem.query.filter_by(svr_report_id=report.id).delete()
     SVRReportValue.query.filter_by(report_id=report.id).delete()

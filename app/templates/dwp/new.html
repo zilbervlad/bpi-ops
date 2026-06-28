@@ -359,7 +359,8 @@
                 {% for employee in employees %}
                     {% set employee_name = employee.name or employee.username or employee.email or ('User ' ~ employee.id|string) %}
                     {% set employee_position = employee.position or (employee.role|replace('_', ' ')|title) %}
-                    {% set employee_label = 'Store ' ~ (employee.store_number or '—') ~ ' · ' ~ employee_name ~ ' · ' ~ employee_position %}
+                    {% set employee_scope = ('Store ' ~ employee.store_number) if employee.store_number else (('Area ' ~ employee.area_name) if employee.area_name else 'No Store') %}
+                    {% set employee_label = employee_scope ~ ' · ' ~ employee_name ~ ' · ' ~ employee_position %}
                     <button
                         type="button"
                         class="dwp-employee-option"
@@ -368,7 +369,7 @@
                         data-search="{{ employee_label|lower }} {{ employee.username|default('', true)|lower }} {{ employee.email|default('', true)|lower }} {{ employee.role|default('', true)|lower }}"
                     >
                         <div class="dwp-employee-option-main">{{ employee_name }}</div>
-                        <div class="dwp-employee-option-sub">Store {{ employee.store_number or '—' }} · {{ employee_position }}</div>
+                        <div class="dwp-employee-option-sub">{{ employee_scope }} · {{ employee_position }}</div>
                     </button>
                 {% endfor %}
             </div>

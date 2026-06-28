@@ -161,19 +161,44 @@ def allowed_employee_query(user):
     if hasattr(User, "is_active"):
         query = query.filter(User.is_active.is_(True))
 
-    # DWP records must attach to a store-level person with a store number.
-    query = query.filter(User.store_number.isnot(None), User.store_number != "")
+    # Exclude system/admin/HR accounts from DWP target selection.
+    if hasattr(User, "role"):
+        query = query.filter(~User.role.in_(["admin", "hr"]))
 
-    # Any active store-level account can receive a DWP, regardless of role/position.
     if is_admin_like(user):
-        return query.order_by(User.store_number.asc(), User.name.asc(), User.username.asc())
+        # Admin/HR can select any active store-level user, plus supervisors assigned to an area.
+        return (
+            query
+            .filter(
+                (
+                    (User.store_number.isnot(None)) & (User.store_number != "")
+                )
+                | (
+                    (User.role == "supervisor")
+                    & (User.area_name.isnot(None))
+                    & (User.area_name != "")
+                )
+            )
+            .order_by(User.store_number.asc(), User.area_name.asc(), User.name.asc(), User.username.asc())
+        )
 
     stores = allowed_store_numbers_for_user(user)
+
+    if is_supervisor_like(user):
+        # Supervisors can see store-level users in their area plus themselves.
+        scoped_query = query.filter(
+            (
+                (User.store_number.in_(stores)) if stores else False
+            )
+            | (User.id == user.id)
+        )
+        return scoped_query.order_by(User.store_number.asc(), User.area_name.asc(), User.name.asc(), User.username.asc())
+
     if stores:
         return (
             query
             .filter(User.store_number.in_(stores))
-            .order_by(User.store_number.asc(), User.name.asc(), User.username.asc())
+            .order_by(User.store_number.asc(), User.area_name.asc(), User.name.asc(), User.username.asc())
         )
 
     return query.filter(User.id == -1)
@@ -397,8 +422,10 @@ def new():
                 raise ValueError("Please select a team member from the employee list.")
 
             store_number = str(team_member.store_number or user.store_number or "").strip()
+            if not store_number and getattr(team_member, "role", None) == "supervisor" and getattr(team_member, "area_name", None):
+                store_number = f"Area: {team_member.area_name}"
             if not store_number:
-                raise ValueError("Selected team member must have a store number.")
+                raise ValueError("Selected team member must have a store number or supervisor area.")
 
             expected_performance = (request.form.get("expected_performance") or "").strip()
             actual_performance = (request.form.get("actual_performance") or "").strip()

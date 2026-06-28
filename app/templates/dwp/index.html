@@ -338,6 +338,101 @@
     line-height: 1.5;
 }
 
+.dwp-mobile-records {
+    display: none;
+}
+
+.dwp-mobile-record {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+}
+
+.dwp-mobile-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.dwp-mobile-person {
+    min-width: 0;
+}
+
+.dwp-mobile-name {
+    font-size: 16px;
+    font-weight: 950;
+    color: #111827;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.dwp-mobile-sub {
+    margin-top: 3px;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.dwp-mobile-badge {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    padding: 6px 9px;
+    font-size: 11px;
+    font-weight: 950;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+}
+
+.dwp-mobile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 10px 0 12px;
+}
+
+.dwp-mobile-meta {
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 13px;
+    padding: 9px 10px;
+    min-width: 0;
+}
+
+.dwp-mobile-label {
+    color: #6b7280;
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+
+.dwp-mobile-value {
+    color: #111827;
+    font-size: 13px;
+    font-weight: 850;
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+.dwp-mobile-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.dwp-mobile-actions a {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+}
+
 @media (max-width: 1200px) {
     .filter-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -349,12 +444,37 @@
 }
 
 @media (max-width: 800px) {
+    .dwp-page {
+        padding: 4px 8px 90px;
+        overflow-x: hidden;
+    }
+
     .dwp-hero {
         display: block;
+        border-radius: 18px;
+        padding: 18px;
+    }
+
+    .dwp-hero h1 {
+        font-size: 24px;
+        line-height: 1.05;
+    }
+
+    .dwp-hero p {
+        font-size: 13px;
+        line-height: 1.4;
     }
 
     .dwp-hero .dwp-btn {
         margin-top: 16px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .filter-card,
+    .dwp-card {
+        border-radius: 18px;
+        padding: 14px;
     }
 
     .filter-grid,
@@ -362,12 +482,45 @@
         grid-template-columns: 1fr;
     }
 
-    .dwp-card {
-        overflow-x: auto;
+    .filter-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .filter-actions .btn-small {
+        text-align: center;
+        justify-content: center;
+    }
+
+    .table-header {
+        padding: 0 0 12px;
+        border-bottom: 0;
     }
 
     .dwp-table {
-        min-width: 900px;
+        display: none;
+    }
+
+    .dwp-mobile-records {
+        display: block;
+    }
+}
+
+@media (max-width: 430px) {
+    .dwp-mobile-top {
+        flex-direction: column;
+    }
+
+    .dwp-mobile-badge {
+        align-self: flex-start;
+    }
+
+    .dwp-mobile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-actions {
+        grid-template-columns: 1fr;
     }
 }
 </style>
@@ -556,6 +709,68 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <div class="dwp-mobile-records">
+            {% for record in records %}
+                <div class="dwp-mobile-record">
+                    <div class="dwp-mobile-top">
+                        <div class="dwp-mobile-person">
+                            <div class="dwp-mobile-name">
+                                {{ record.team_member_name_snapshot }}
+                            </div>
+                            <div class="dwp-mobile-sub">
+                                Store {{ record.store_number }}
+                                {% if record.conversation_date %}
+                                    · {{ record.conversation_date.strftime('%m/%d/%y') }}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% set mobile_type_class = 'pill-coaching' %}
+                        {% if record.discussion_type == 'Oral Reminder' %}
+                            {% set mobile_type_class = 'pill-oral' %}
+                        {% elif record.discussion_type == 'Written Reminder' %}
+                            {% set mobile_type_class = 'pill-written' %}
+                        {% elif record.discussion_type == 'DML - Decision Making Leave' %}
+                            {% set mobile_type_class = 'pill-dml' %}
+                        {% endif %}
+                        <div class="dwp-mobile-badge {{ mobile_type_class }}">{{ record.discussion_type }}</div>
+                    </div>
+
+                    <div class="dwp-mobile-grid">
+                        <div class="dwp-mobile-meta">
+                            <div class="dwp-mobile-label">Category</div>
+                            <div class="dwp-mobile-value">{{ record.category }}</div>
+                        </div>
+
+                        <div class="dwp-mobile-meta">
+                            <div class="dwp-mobile-label">Infraction</div>
+                            <div class="dwp-mobile-value">{{ record.infraction_date.strftime('%m/%d/%y') }}</div>
+                        </div>
+
+                        <div class="dwp-mobile-meta">
+                            <div class="dwp-mobile-label">Submitted By</div>
+                            <div class="dwp-mobile-value">{{ record.submitted_by_name_snapshot }}</div>
+                        </div>
+
+                        <div class="dwp-mobile-meta">
+                            <div class="dwp-mobile-label">Status</div>
+                            <div class="dwp-mobile-value">
+                                {% if record.acknowledged_at %}
+                                    Acknowledged
+                                {% else %}
+                                    Pending
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dwp-mobile-actions">
+                        <a class="btn-small btn-search" href="{{ url_for('dwp.detail', record_id=record.id) }}">Open Record</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
         {% else %}
         <div class="empty-state">
             <h3>No DWP records found</h3>

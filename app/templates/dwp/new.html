@@ -2,79 +2,242 @@
 
 {% block content %}
 <style>
-.dwp-form-page { max-width: 1000px; margin: 0 auto; }
-.form-hero {
-    background: #111827;
+.dwp-form-page {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 8px 12px 34px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.dwp-form-page * {
+    box-sizing: border-box;
+}
+
+.dwp-form-hero {
+    background: linear-gradient(135deg, #111827, #1f2937);
     color: #fff;
     border-radius: 22px;
     padding: 24px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, .18);
 }
-.form-hero h1 { margin: 0; letter-spacing: -0.04em; }
-.form-hero p { margin: 8px 0 0; color: #d1d5db; }
-.form-card {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 18px;
-    padding: 20px;
+
+.dwp-form-hero h1 {
+    margin: 0;
+    letter-spacing: -0.045em;
+    font-size: 30px;
+    line-height: 1.05;
 }
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.field { margin-bottom: 16px; }
-label { display: block; font-weight: 800; margin-bottom: 7px; color: #111827; }
-input, select, textarea {
+
+.dwp-form-hero p {
+    margin: 8px 0 0;
+    color: #d1d5db;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.dwp-form-card {
     width: 100%;
-    border: 1px solid #d1d5db;
-    border-radius: 12px;
-    padding: 11px 12px;
-    font: inherit;
-    box-sizing: border-box;
+    max-width: 100%;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 20px;
+    overflow: hidden;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
 }
-textarea { min-height: 92px; resize: vertical; }
-.help { color: #6b7280; font-size: 13px; margin-top: 5px; }
-.required-letter {
+
+.dwp-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.dwp-field {
+    min-width: 0;
+    margin-bottom: 16px;
+}
+
+.dwp-field label {
+    display: block;
+    font-weight: 900;
+    margin-bottom: 7px;
+    color: #111827;
+    line-height: 1.25;
+}
+
+.dwp-field input,
+.dwp-field select,
+.dwp-field textarea {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border: 1px solid #d1d5db;
+    border-radius: 13px;
+    padding: 12px 13px;
+    font: inherit;
+    background: #fff;
+    color: #111827;
+}
+
+.dwp-field select {
+    text-overflow: ellipsis;
+}
+
+.dwp-field textarea {
+    min-height: 96px;
+    resize: vertical;
+    line-height: 1.45;
+}
+
+.dwp-help {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.dwp-required-letter {
     display: none;
     background: #fffbeb;
     border: 1px solid #fbbf24;
     color: #92400e;
-    border-radius: 14px;
+    border-radius: 15px;
     padding: 14px;
     margin-bottom: 16px;
+    line-height: 1.4;
 }
-.actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; }
-.btn {
+
+.dwp-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.dwp-local-btn {
     border: 0;
     border-radius: 999px;
-    padding: 11px 18px;
-    font-weight: 900;
+    padding: 12px 18px;
+    font-weight: 950;
     cursor: pointer;
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    text-align: center;
 }
-.btn-primary { background: #2563eb; color: white; }
-.btn-muted { background: #f3f4f6; color: #111827; }
+
+.dwp-btn-primary {
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, .22);
+}
+
+.dwp-btn-muted {
+    background: #f3f4f6;
+    color: #111827;
+}
+
 @media (max-width: 800px) {
-    .grid { grid-template-columns: 1fr; }
+    .dwp-form-page {
+        padding: 4px 8px 90px;
+    }
+
+    .dwp-form-hero {
+        border-radius: 18px;
+        padding: 18px;
+        margin-bottom: 12px;
+    }
+
+    .dwp-form-hero h1 {
+        font-size: 24px;
+    }
+
+    .dwp-form-hero p {
+        font-size: 13px;
+    }
+
+    .dwp-form-card {
+        border-radius: 18px;
+        padding: 16px;
+    }
+
+    .dwp-form-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .dwp-field {
+        margin-bottom: 14px;
+    }
+
+    .dwp-field label {
+        font-size: 13px;
+    }
+
+    .dwp-field input,
+    .dwp-field select,
+    .dwp-field textarea {
+        font-size: 16px;
+        border-radius: 12px;
+        padding: 12px;
+    }
+
+    .dwp-field textarea {
+        min-height: 104px;
+    }
+
+    .dwp-actions {
+        position: sticky;
+        bottom: calc(74px + env(safe-area-inset-bottom));
+        z-index: 20;
+        background: rgba(255, 255, 255, .94);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(226, 232, 240, .9);
+        border-radius: 18px;
+        padding: 10px;
+        margin: 18px -4px 0;
+        box-shadow: 0 -10px 30px rgba(15, 23, 42, .12);
+    }
+
+    .dwp-local-btn {
+        width: 100%;
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 430px) {
+    .dwp-actions {
+        flex-direction: column-reverse;
+    }
 }
 </style>
 
 <div class="dwp-form-page">
-    <div class="form-hero">
+    <div class="dwp-form-hero">
         <h1>New DWP Record</h1>
         <p>Select an existing team member account. Written Reminder and DML require an uploaded letter.</p>
     </div>
 
-    <form class="form-card" method="POST" enctype="multipart/form-data">
-        <div class="grid">
-            <div class="field">
+    <form class="dwp-form-card" method="POST" enctype="multipart/form-data">
+        <div class="dwp-form-grid">
+            <div class="dwp-field">
                 <label>Date of Conversation</label>
                 <input type="date" name="conversation_date" value="{{ today }}" required>
             </div>
-            <div class="field">
+            <div class="dwp-field">
                 <label>Date of Infraction</label>
                 <input type="date" name="infraction_date" value="{{ today }}" required>
             </div>
         </div>
 
-        <div class="field">
+        <div class="dwp-field">
             <label>Team Member</label>
             <select name="team_member_id" required>
                 <option value="">Select employee...</option>
@@ -84,11 +247,11 @@ textarea { min-height: 92px; resize: vertical; }
                     </option>
                 {% endfor %}
             </select>
-            <div class="help">Team member must have an active BPI Ops account before a DWP record can be created.</div>
+            <div class="dwp-help">Team member must have an active BPI Ops account before a DWP record can be created.</div>
         </div>
 
-        <div class="grid">
-            <div class="field">
+        <div class="dwp-form-grid">
+            <div class="dwp-field">
                 <label>Type of Discussion</label>
                 <select name="discussion_type" id="discussionType" required>
                     <option value="">Select type...</option>
@@ -97,7 +260,7 @@ textarea { min-height: 92px; resize: vertical; }
                     {% endfor %}
                 </select>
             </div>
-            <div class="field">
+            <div class="dwp-field">
                 <label>Category of Infraction</label>
                 <select name="category" required>
                     <option value="">Select category...</option>
@@ -108,60 +271,60 @@ textarea { min-height: 92px; resize: vertical; }
             </div>
         </div>
 
-        <div class="required-letter" id="requiredLetterNotice">
+        <div class="dwp-required-letter" id="requiredLetterNotice">
             <strong>Letter required.</strong>
             Written Reminder and DML - Decision Making Leave require an uploaded letter before submitting.
         </div>
 
-        <div class="field">
+        <div class="dwp-field">
             <label>Letter Upload</label>
             <input type="file" name="letter_file" id="letterFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-            <div class="help">Required for Written Reminder and DML only. Accepted: PDF, DOC, DOCX, JPG, PNG.</div>
+            <div class="dwp-help">Required for Written Reminder and DML only. Accepted: PDF, DOC, DOCX, JPG, PNG.</div>
         </div>
 
-        <div class="field">
+        <div class="dwp-field">
             <label>Information on Previous Conversations</label>
             <textarea name="previous_conversations"></textarea>
         </div>
 
-        <div class="field">
+        <div class="dwp-field">
             <label>Expected Performance</label>
             <textarea name="expected_performance" required></textarea>
         </div>
 
-        <div class="field">
+        <div class="dwp-field">
             <label>Actual Performance</label>
             <textarea name="actual_performance" required></textarea>
         </div>
 
-        <div class="field">
+        <div class="dwp-field">
             <label>Team Member Statement / Response</label>
             <textarea name="team_member_statement"></textarea>
         </div>
 
-        <div class="field">
+        <div class="dwp-field">
             <label>Good Business Reason Why the Problem Needs to Be Solved</label>
             <textarea name="business_reason" required></textarea>
         </div>
 
-        <div class="field">
+        <div class="dwp-field">
             <label>Logical Consequences if Problem Is Not Corrected</label>
             <textarea name="logical_consequence" required></textarea>
         </div>
 
-        <div class="field">
+        <div class="dwp-field">
             <label>Team Member Agrees To</label>
             <textarea name="team_member_agrees_to" required></textarea>
         </div>
 
-        <div class="field">
+        <div class="dwp-field">
             <label>Additional Comments</label>
             <textarea name="additional_comments"></textarea>
         </div>
 
-        <div class="actions">
-            <a class="btn btn-muted" href="{{ url_for('dwp.index') }}">Cancel</a>
-            <button class="btn btn-primary" type="submit">Save DWP Record</button>
+        <div class="dwp-actions">
+            <a class="dwp-local-btn dwp-btn-muted" href="{{ url_for('dwp.index') }}">Cancel</a>
+            <button class="dwp-local-btn dwp-btn-primary" type="submit">Save DWP Record</button>
         </div>
     </form>
 </div>

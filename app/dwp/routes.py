@@ -164,10 +164,7 @@ def allowed_employee_query(user):
     # DWP records must attach to a store-level person with a store number.
     query = query.filter(User.store_number.isnot(None), User.store_number != "")
 
-    # Keep DWP employee selection focused on store-level users.
-    if hasattr(User, "role"):
-        query = query.filter(User.role.in_(["tm", "manager", "general_manager", "gm"]))
-
+    # Any active store-level account can receive a DWP, regardless of role/position.
     if is_admin_like(user):
         return query.order_by(User.store_number.asc(), User.name.asc(), User.username.asc())
 

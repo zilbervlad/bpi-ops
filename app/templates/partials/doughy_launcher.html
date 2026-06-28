@@ -586,7 +586,72 @@
                     return !Number.isNaN(num) && num < 50;
                 });
 
-            if (hasKeyword || hasBadClassHint || hasLowPercent || hasMoneyConcern || hasOpenOpsConcern || hasChecklistProgressConcern || hasVeryLowChecklistPercent) {
+            const pageText = (
+                (document.getElementById("doughyContextBody") || {}).textContent || ""
+            ).toLowerCase();
+
+            const isChecklistPage = pageText.includes("daily checklist") || window.location.pathname.includes("checklist");
+            const isMaintenancePage = pageText.includes("maintenance") || window.location.pathname.includes("maintenance");
+            const isSvrPage = pageText.includes("svr") || window.location.pathname.includes("svr");
+            const isCashPage = pageText.includes("cash") || window.location.pathname.includes("cash");
+            const isDashboardPage = pageText.includes("dashboard") || window.location.pathname === "/" || window.location.pathname.includes("dashboard");
+
+            const hasMaintenanceConcern =
+                isMaintenancePage &&
+                (
+                    lower.includes("open") ||
+                    lower.includes("in progress") ||
+                    lower.includes("submitted") ||
+                    lower.includes("unassigned") ||
+                    lower.includes("overdue") ||
+                    lower.includes("not verified")
+                );
+
+            const hasSvrConcern =
+                isSvrPage &&
+                (
+                    lower.includes("fail") ||
+                    lower.includes("missed") ||
+                    lower.includes("needs follow") ||
+                    lower.includes("action") ||
+                    lower.includes("issue") ||
+                    lower.includes("not complete")
+                );
+
+            const hasCashConcern =
+                isCashPage &&
+                (
+                    lower.includes("short") ||
+                    lower.includes("over") ||
+                    lower.includes("variance") ||
+                    lower.includes("difference") ||
+                    lower.includes("review")
+                );
+
+            const hasDashboardConcern =
+                isDashboardPage &&
+                (
+                    hasLowPercent ||
+                    lower.includes("exception") ||
+                    lower.includes("warning") ||
+                    lower.includes("open") ||
+                    lower.includes("failed") ||
+                    lower.includes("needs attention")
+                );
+
+            if (
+                hasKeyword ||
+                hasBadClassHint ||
+                hasLowPercent ||
+                hasMoneyConcern ||
+                hasOpenOpsConcern ||
+                hasChecklistProgressConcern ||
+                hasVeryLowChecklistPercent ||
+                hasMaintenanceConcern ||
+                hasSvrConcern ||
+                hasCashConcern ||
+                hasDashboardConcern
+            ) {
                 let cleaned = text;
 
                 cleaned = cleaned

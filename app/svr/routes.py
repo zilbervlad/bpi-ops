@@ -400,7 +400,71 @@ def build_report_context(report: SVRReport):
     return values, manager_summary, open_action_items, completed_action_items
 
 
-def generate_svr_pdf(report, values, manager_summary, open_action_items, completed_action_items):
+def build_pdf_photo_grid(photos, max_photos=8):
+    """
+    Build a small photo grid for the SVR PDF.
+    Uses thumbnail URLs when available. Skips any photo that cannot load.
+    """
+    if not photos:
+        return []
+
+    image_cells = []
+
+    for photo in photos[:max_photos]:
+        image_url = photo.thumbnail_url or photo.image_url
+        if not image_url:
+            continue
+
+        try:
+            with urlopen(image_url, timeout=8) as response:
+                image_data = response.read()
+
+            img = Image(BytesIO(image_data))
+            img._restrictSize(2.35 * inch, 1.65 * inch)
+            image_cells.append(img)
+        except Exception as exc:
+            print(f"Could not add SVR photo to PDF: {exc}")
+            continue
+
+    if not image_cells:
+        return []
+
+    rows = []
+    for i in range(0, len(image_cells), 2):
+        row = image_cells[i:i + 2]
+        if len(row) == 1:
+            row.append("")
+        rows.append(row)
+
+    flowables = [
+        Table(
+            rows,
+            colWidths=[2.55 * inch, 2.55 * inch],
+            hAlign="LEFT",
+            style=TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ]),
+        )
+    ]
+
+    if len(photos) > max_photos:
+        styles = getSampleStyleSheet()
+        flowables.append(
+            Paragraph(
+                f"+ {len(photos) - max_photos} more photo(s) available in BPI Ops.",
+                styles["Normal"],
+            )
+        )
+
+    return flowables
+
+
+def generate_svr_pdf(report, values, manager_summary, open_action_items, completed_action_items, photos_by_field=None):
+    photos_by_field = photos_by_field or {}
     buffer = BytesIO()
 
     doc = SimpleDocTemplate(
@@ -557,6 +621,24 @@ def generate_svr_pdf(report, values, manager_summary, open_action_items, complet
     ]))
     story.append(field_table)
     story.append(Spacer(1, 14))
+
+    photo_sections_added = 0
+    for value in values:
+        field_photos = photos_by_field.get(value.field_key, [])
+        if not field_photos:
+            continue
+
+        if photo_sections_added == 0:
+            story.append(Paragraph("SVR Photos", section_style))
+
+        story.append(Paragraph(value.field_label, label_style))
+        for photo_flowable in build_pdf_photo_grid(field_photos):
+            story.append(photo_flowable)
+        story.append(Spacer(1, 8))
+        photo_sections_added += 1
+
+    if photo_sections_added:
+        story.append(Spacer(1, 8))
 
     story.append(Paragraph("Manager Weekly Focus Summary", section_style))
 
@@ -872,12 +954,15 @@ def export_pdf(report_id):
         return redirect(url_for("svr.index"))
 
     values, manager_summary, open_action_items, completed_action_items = build_report_context(report)
+    photos_by_field = get_svr_photos_by_field(report.id)
+
     pdf_buffer = generate_svr_pdf(
         report,
         values,
         manager_summary,
         open_action_items,
-        completed_action_items
+        completed_action_items,
+        photos_by_field=photos_by_field,
     )
 
     filename = f"SVR_{report.store_number}_{report.visit_date.strftime('%Y%m%d')}.pdf"

@@ -800,7 +800,7 @@ def index():
 
     open_tickets = sorted(
         [t for t in tickets if t.status == "open"],
-        key=lambda t: (t.created_at or datetime.min, t.id or 0)
+        key=lambda t: (str(t.store_number or ""), t.created_at or datetime.min, t.id or 0)
     )
 
     assigned_tickets = sorted(

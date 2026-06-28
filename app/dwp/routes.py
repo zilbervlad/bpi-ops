@@ -423,7 +423,8 @@ def new():
 
             store_number = str(team_member.store_number or user.store_number or "").strip()
             if not store_number and getattr(team_member, "role", None) == "supervisor" and getattr(team_member, "area_name", None):
-                store_number = f"Area: {team_member.area_name}"
+                # DWPRecord.store_number is varchar(10), so store supervisor area compactly.
+                store_number = str(team_member.area_name or "").strip()[:10]
             if not store_number:
                 raise ValueError("Selected team member must have a store number or supervisor area.")
 

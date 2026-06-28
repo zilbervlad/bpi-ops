@@ -798,6 +798,11 @@ def index():
     if store_filter:
         tickets = [t for t in tickets if t.store_number == store_filter]
 
+    tickets = sorted(
+        tickets,
+        key=lambda t: (str(t.store_number or ""), t.created_at or datetime.min, t.id or 0)
+    )
+
     open_tickets = sorted(
         [t for t in tickets if t.status == "open"],
         key=lambda t: (str(t.store_number or ""), t.created_at or datetime.min, t.id or 0)

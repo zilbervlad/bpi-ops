@@ -232,6 +232,24 @@
         line-height: 1.45;
     }
 
+
+    .doughy-copy-button {
+        margin-top: 8px;
+        width: 100%;
+        border: 1px solid rgba(96, 165, 250, 0.35);
+        background: rgba(37, 99, 235, 0.18);
+        color: #dbeafe;
+        border-radius: 11px;
+        padding: 9px 10px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .doughy-copy-button:hover {
+        background: rgba(37, 99, 235, 0.28);
+    }
+
 </style>
 
 <div class="doughy-mini-launcher">
@@ -305,6 +323,30 @@
             panel.setAttribute("aria-hidden", "true");
         });
 
+
+        document.addEventListener("click", async function (event) {
+            const copyButton = event.target.closest("[data-doughy-copy-draft]");
+            if (!copyButton) return;
+
+            const draftBox = document.getElementById("doughyDraftText");
+            if (!draftBox) return;
+
+            const draftText = draftBox.innerText.trim();
+
+            try {
+                await navigator.clipboard.writeText(draftText);
+                copyButton.textContent = "Copied";
+                setTimeout(function () {
+                    copyButton.textContent = "Copy draft";
+                }, 1400);
+            } catch (error) {
+                copyButton.textContent = "Copy failed";
+                setTimeout(function () {
+                    copyButton.textContent = "Copy draft";
+                }, 1400);
+            }
+        });
+
         document.querySelectorAll("[data-doughy-soon]").forEach(function (quickButton) {
             quickButton.addEventListener("click", function () {
                 const soonBox = document.getElementById("doughyComingSoon");
@@ -362,19 +404,21 @@
                     if (attention.items.length === 0) {
                         soonBox.innerHTML = `
                             <strong>Follow-up draft</strong><br>
-                            <div class="doughy-draft-box">
+                            <div class="doughy-draft-box" id="doughyDraftText">
                                 Quick follow-up on ${escapeDoughyHtml(page)} for ${escapeDoughyHtml(store)} — I do not see any obvious visible warning/open/failed items right now. Please review and confirm everything is updated.
                             </div>
+                            <button type="button" class="doughy-copy-button" data-doughy-copy-draft>Copy draft</button>
                             <span class="doughy-context-muted">Draft is based only on visible page text. AI and send actions are still off.</span>
                         `;
                     } else {
                         soonBox.innerHTML = `
                             <strong>Follow-up draft</strong><br>
-                            <div class="doughy-draft-box">
+                            <div class="doughy-draft-box" id="doughyDraftText">
                                 Quick follow-up on ${escapeDoughyHtml(page)} for ${escapeDoughyHtml(store)}. Please review the items below:<br>
                                 ${attention.items.slice(0, 4).map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}<br>
                                 Please update once complete.
                             </div>
+                            <button type="button" class="doughy-copy-button" data-doughy-copy-draft>Copy draft</button>
                             <span class="doughy-context-muted">Draft is based only on visible page text. AI and send actions are still off.</span>
                         `;
                     }

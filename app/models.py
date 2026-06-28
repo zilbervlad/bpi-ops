@@ -174,6 +174,31 @@ class ChecklistTemplateItem(db.Model):
     is_active = db.Column(db.Boolean, default=True)
 
 
+class ChecklistOAMapping(db.Model):
+    __tablename__ = "checklist_oa_mappings"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    checklist_template_item_id = db.Column(
+        db.Integer,
+        db.ForeignKey("checklist_template_items.id"),
+        nullable=False,
+        unique=True,
+    )
+
+    oa_section = db.Column(db.String(120), nullable=True)
+    oa_item_name = db.Column(db.String(255), nullable=True)
+    oa_points = db.Column(db.Float, nullable=False, default=0.0)
+    is_critical = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)
+    notes = db.Column(db.Text, nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    checklist_template_item = db.relationship("ChecklistTemplateItem", backref=db.backref("oa_mapping", uselist=False))
+
+
 class DailyChecklist(db.Model):
     __tablename__ = "daily_checklists"
 

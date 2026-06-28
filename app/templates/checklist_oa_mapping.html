@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Checklist Admin</p>
+            <h1>OA Mapping</h1>
+            <p class="subtitle">Map checklist tasks to 2026 Operations Assessment points.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn-secondary" href="{{ url_for('checklist.admin') }}">Back to Checklist Admin</a>
+        </div>
+    </div>
+
+    <div class="panel" style="margin-bottom: 18px;">
+        <div class="panel-head">
+            <div>
+                <h2>How this works</h2>
+                <p class="area-subtitle">
+                    Each checklist item can be tied to an OA section, OA line item, and point value.
+                    Critical items should be marked critical and normally carry a 10-point risk.
+                </p>
+            </div>
+        </div>
+        <div class="metric-grid" style="grid-template-columns: repeat(6, minmax(120px, 1fr));">
+            <div class="metric-card"><span>Product</span><strong>37</strong></div>
+            <div class="metric-card"><span>Product Procedures</span><strong>22</strong></div>
+            <div class="metric-card"><span>Cleanliness / Food Safety</span><strong>22</strong></div>
+            <div class="metric-card"><span>Brand Image</span><strong>15</strong></div>
+            <div class="metric-card"><span>Brand Safety</span><strong>4</strong></div>
+            <div class="metric-card"><span>Critical</span><strong>-10 each</strong></div>
+        </div>
+    </div>
+
+    <form method="POST">
+        <div class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2>Checklist Item Mapping</h2>
+                    <p class="area-subtitle">Save often while mapping. Unmapped items count as 0 OA risk.</p>
+                </div>
+                <button type="submit" class="btn-primary">Save OA Mapping</button>
+            </div>
+
+            <div class="table-wrap">
+                <table class="ops-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 190px;">Checklist Section</th>
+                            <th style="min-width: 280px;">Checklist Item</th>
+                            <th style="min-width: 190px;">OA Section</th>
+                            <th style="min-width: 260px;">OA Item</th>
+                            <th style="width: 90px;">Points</th>
+                            <th style="width: 90px;">Critical</th>
+                            <th style="width: 90px;">Active</th>
+                            <th style="min-width: 180px;">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                            {% set mapping = mappings.get(item.id) %}
+                            {% set selected_section = mapping.oa_section if mapping else "" %}
+                            {% set selected_item = mapping.oa_item_name if mapping else "" %}
+                            <tr>
+                                <td>
+                                    <input type="hidden" name="template_item_id" value="{{ item.id }}">
+                                    <strong>{{ item.section_name }}</strong>
+                                    {% if not item.is_active %}
+                                        <div class="area-subtitle">Inactive checklist item</div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.task_text }}</td>
+                                <td>
+                                    <select name="mapping_{{ item.id }}_oa_section" class="oa-section-select" data-row-id="{{ item.id }}">
+                                        <option value="">Not mapped</option>
+                                        {% for section in oa_sections %}
+                                            <option value="{{ section }}" {% if selected_section == section %}selected{% endif %}>{{ section }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="mapping_{{ item.id }}_oa_item_name" class="oa-item-select" data-row-id="{{ item.id }}" data-selected="{{ selected_item }}">
+                                        <option value="">Not mapped</option>
+                                        {% for section, names in oa_items_by_section.items() %}
+                                            {% for name in names %}
+                                                <option value="{{ name }}" data-section="{{ section }}" {% if selected_item == name %}selected{% endif %}>{{ name }}</option>
+                                            {% endfor %}
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.5" min="0" max="10" name="mapping_{{ item.id }}_oa_points" value="{{ mapping.oa_points if mapping else 0 }}" style="width: 80px;">
+                                </td>
+                                <td style="text-align:center;">
+                                    <input type="checkbox" name="mapping_{{ item.id }}_is_critical" {% if mapping and mapping.is_critical %}checked{% endif %}>
+                                </td>
+                                <td style="text-align:center;">
+                                    <input type="checkbox" name="mapping_{{ item.id }}_is_active" {% if not mapping or mapping.is_active %}checked{% endif %}>
+                                </td>
+                                <td>
+                                    <input type="text" name="mapping_{{ item.id }}_notes" value="{{ mapping.notes if mapping and mapping.notes else '' }}" placeholder="Optional">
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-top: 18px;">
+                <button type="submit" class="btn-primary">Save OA Mapping</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function filterItemsForRow(rowId) {
+        const sectionSelect = document.querySelector(`.oa-section-select[data-row-id="${rowId}"]`);
+        const itemSelect = document.querySelector(`.oa-item-select[data-row-id="${rowId}"]`);
+        if (!sectionSelect || !itemSelect) return;
+
+        const selectedSection = sectionSelect.value;
+
+        Array.from(itemSelect.options).forEach(function(option) {
+            if (!option.value) {
+                option.hidden = false;
+                return;
+            }
+
+            option.hidden = selectedSection && option.dataset.section !== selectedSection;
+        });
+
+        const currentOption = itemSelect.options[itemSelect.selectedIndex];
+        if (currentOption && currentOption.hidden) {
+            itemSelect.value = "";
+        }
+    }
+
+    document.querySelectorAll(".oa-section-select").forEach(function(select) {
+        filterItemsForRow(select.dataset.rowId);
+        select.addEventListener("change", function() {
+            filterItemsForRow(select.dataset.rowId);
+        });
+    });
+});
+</script>
+{% endblock %}

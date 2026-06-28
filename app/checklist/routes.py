@@ -9,6 +9,7 @@ from app.auth.routes import login_required, role_required
 from app.extensions import db
 from app.models import (
     ChecklistTemplateItem,
+    ChecklistOAMapping,
     DailyChecklist,
     DailyChecklistItem,
     Store,
@@ -1461,6 +1462,135 @@ def admin():
         section_options=section_options,
         integrity_settings=settings,
         auto_email_settings=auto_email_settings,
+    )
+
+
+@checklist_bp.route("/admin/oa-mapping", methods=["GET", "POST"])
+@login_required
+@role_required("admin")
+def oa_mapping_admin():
+    oa_sections = [
+        "Critical Operations Elements",
+        "Product",
+        "Product Procedures",
+        "Cleanliness & Food Safety",
+        "Brand Image",
+        "Brand Safety",
+    ]
+
+    oa_items_by_section = {
+        "Critical Operations Elements": [
+            "Expired/unlabeled products critical",
+            "Dough management procedures neglected",
+            "Excessive remakes",
+            "Lack of cleaning supplies/water/hand sink",
+            "Hazardous temperatures past critical thresholds",
+            "Pest control past critical thresholds",
+            "Mold on food/food-contact surfaces",
+            "Appearance/hygiene critical",
+            "Mature content on premises",
+            "Weapons/drugs/alcohol on premises",
+        ],
+        "Product": [
+            "Great/remake pizzas",
+            "Great/remake side items",
+        ],
+        "Product Procedures": [
+            "Dough in-use properly proofed",
+            "Dough systems evident and in-use",
+            "Pizza procedures in-use",
+            "Side item procedures in-use",
+            "Dating procedures upheld",
+            "Product handling procedures upheld",
+            "Pizza Cheese & Pizza Sauce systems evident and in-use",
+            "Store set up and PRP",
+            "Required tools for producing Domino's product",
+        ],
+        "Cleanliness & Food Safety": [
+            "Store interior clean and in good repair",
+            "All products not expired",
+            "Refrigerated products within specified temperature ranges",
+            "Cooked product meets end bake temperatures",
+            "Pest control standards maintained",
+            "Oven operational, clean, and in good repair",
+            "Walk-in operational, clean, and in good repair",
+            "Makelines operational, clean, and in good repair",
+            "Personnel appearance and hygiene standards",
+            "Food prep surfaces and storage areas clean/in good repair",
+            "Sinks operational, clean, and stocked",
+            "Smallwares and bakewares clean/in good repair",
+        ],
+        "Brand Image": [
+            "Uniform worn properly / positive brand image",
+            "Customer area clean and in good repair",
+            "Store exterior clean and in good repair",
+            "Domino's Technology operational and clean",
+            "Customer Greeting",
+            "Delivery vehicles and experts represent positive brand image",
+            "Signage clean, illuminated, not damaged",
+            "Sufficient clean/in-good-repair hot bags",
+        ],
+        "Brand Safety": [
+            "Store follows safe cash procedures",
+            "No weapons/pocket knives/mace/pepper spray/similar items",
+            "Security callbacks completed",
+        ],
+    }
+
+    if request.method == "POST":
+        template_item_ids = request.form.getlist("template_item_id")
+
+        for template_item_id in template_item_ids:
+            item = ChecklistTemplateItem.query.get(template_item_id)
+            if not item:
+                continue
+
+            mapping = ChecklistOAMapping.query.filter_by(
+                checklist_template_item_id=item.id
+            ).first()
+
+            if not mapping:
+                mapping = ChecklistOAMapping(checklist_template_item_id=item.id)
+                db.session.add(mapping)
+
+            prefix = f"mapping_{item.id}_"
+
+            mapping.oa_section = request.form.get(prefix + "oa_section", "").strip() or None
+            mapping.oa_item_name = request.form.get(prefix + "oa_item_name", "").strip() or None
+            mapping.notes = request.form.get(prefix + "notes", "").strip() or None
+            mapping.is_critical = request.form.get(prefix + "is_critical") == "on"
+            mapping.is_active = request.form.get(prefix + "is_active") == "on"
+
+            try:
+                mapping.oa_points = float(request.form.get(prefix + "oa_points", "0").strip() or 0)
+            except ValueError:
+                mapping.oa_points = 0.0
+
+        db.session.commit()
+        flash("OA mapping updated.", "success")
+        return redirect(url_for("checklist.oa_mapping_admin"))
+
+    items = (
+        ChecklistTemplateItem.query
+        .order_by(
+            ChecklistTemplateItem.section_name.asc(),
+            ChecklistTemplateItem.sort_order.asc(),
+            ChecklistTemplateItem.id.asc(),
+        )
+        .all()
+    )
+
+    mappings = {
+        mapping.checklist_template_item_id: mapping
+        for mapping in ChecklistOAMapping.query.all()
+    }
+
+    return render_template(
+        "checklist_oa_mapping.html",
+        items=items,
+        mappings=mappings,
+        oa_sections=oa_sections,
+        oa_items_by_section=oa_items_by_section,
     )
 
 

@@ -107,6 +107,33 @@
     text-overflow: ellipsis;
 }
 
+.dwp-employee-search-wrap {
+    margin-bottom: 8px;
+}
+
+.dwp-employee-search {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 13px;
+    padding: 12px 13px;
+    font: inherit;
+    background: #f8fafc;
+    color: #111827;
+}
+
+.dwp-employee-search::placeholder {
+    color: #6b7280;
+}
+
+.dwp-employee-count {
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #6b7280;
+}
+
 .dwp-field textarea {
     min-height: 96px;
     resize: vertical;
@@ -259,11 +286,29 @@
 
         <div class="dwp-field">
             <label>Team Member</label>
-            <select name="team_member_id" required>
+
+            <div class="dwp-employee-search-wrap">
+                <input
+                    type="search"
+                    id="employeeSearch"
+                    class="dwp-employee-search"
+                    placeholder="Search by name, store, username, email, or role..."
+                    autocomplete="off"
+                >
+                <div class="dwp-employee-count" id="employeeSearchCount">
+                    {{ employees|length }} team member{% if employees|length != 1 %}s{% endif %} available
+                </div>
+            </div>
+
+            <select name="team_member_id" id="teamMemberSelect" required>
                 <option value="">Select employee...</option>
                 {% for employee in employees %}
-                    <option value="{{ employee.id }}">
-                        Store {{ employee.store_number or '—' }} · {{ employee.name or employee.username or employee.email or ('User ' ~ employee.id) }} · {{ employee.role|title }}
+                    {% set employee_label = 'Store ' ~ (employee.store_number or '—') ~ ' · ' ~ (employee.name or employee.username or employee.email or ('User ' ~ employee.id|string)) ~ ' · ' ~ (employee.role|title) %}
+                    <option
+                        value="{{ employee.id }}"
+                        data-search="{{ employee_label|lower }} {{ employee.username|default('', true)|lower }} {{ employee.email|default('', true)|lower }} {{ employee.position|default('', true)|lower }}"
+                    >
+                        {{ employee_label }}
                     </option>
                 {% endfor %}
             </select>
@@ -354,6 +399,9 @@
     const discussionType = document.getElementById("discussionType");
     const notice = document.getElementById("requiredLetterNotice");
     const letterFile = document.getElementById("letterFile");
+    const employeeSearch = document.getElementById("employeeSearch");
+    const teamMemberSelect = document.getElementById("teamMemberSelect");
+    const employeeSearchCount = document.getElementById("employeeSearchCount");
 
     function syncLetterRequirement() {
         const requires = ["Written Reminder", "DML - Decision Making Leave"].includes(discussionType.value);
@@ -363,6 +411,41 @@
         } else {
             letterFile.removeAttribute("required");
         }
+    }
+
+    function filterEmployees() {
+        if (!employeeSearch || !teamMemberSelect) return;
+
+        const query = employeeSearch.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        Array.from(teamMemberSelect.options).forEach((option, index) => {
+            if (index === 0) {
+                option.hidden = false;
+                return;
+            }
+
+            const haystack = option.dataset.search || option.textContent.toLowerCase();
+            const isMatch = !query || haystack.includes(query);
+
+            option.hidden = !isMatch;
+            option.disabled = !isMatch;
+            if (isMatch) visibleCount += 1;
+        });
+
+        const selectedOption = teamMemberSelect.options[teamMemberSelect.selectedIndex];
+        if (selectedOption && selectedOption.hidden) {
+            teamMemberSelect.value = "";
+        }
+
+        if (employeeSearchCount) {
+            employeeSearchCount.textContent = `${visibleCount} team member${visibleCount === 1 ? "" : "s"} matching`;
+        }
+    }
+
+    if (employeeSearch) {
+        employeeSearch.addEventListener("input", filterEmployees);
+        filterEmployees();
     }
 
     discussionType.addEventListener("change", syncLetterRequirement);

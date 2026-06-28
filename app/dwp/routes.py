@@ -157,16 +157,27 @@ def can_view_record(user, record):
 def allowed_employee_query(user):
     query = User.query
 
-    # Only active-ish real accounts. If your User model has is_active, respect it.
+    # Only active-ish real accounts.
     if hasattr(User, "is_active"):
         query = query.filter(User.is_active.is_(True))
 
+    # DWP records must attach to a store-level person with a store number.
+    query = query.filter(User.store_number.isnot(None), User.store_number != "")
+
+    # Keep DWP employee selection focused on store-level users.
+    if hasattr(User, "role"):
+        query = query.filter(User.role.in_(["tm", "manager", "general_manager", "gm"]))
+
     if is_admin_like(user):
-        return query.order_by(User.store_number.asc(), User.username.asc())
+        return query.order_by(User.store_number.asc(), User.name.asc(), User.username.asc())
 
     stores = allowed_store_numbers_for_user(user)
     if stores:
-        return query.filter(User.store_number.in_(stores)).order_by(User.store_number.asc(), User.username.asc())
+        return (
+            query
+            .filter(User.store_number.in_(stores))
+            .order_by(User.store_number.asc(), User.name.asc(), User.username.asc())
+        )
 
     return query.filter(User.id == -1)
 

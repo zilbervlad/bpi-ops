@@ -134,6 +134,57 @@
     color: #6b7280;
 }
 
+.dwp-employee-results {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.dwp-employee-option {
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 14px;
+    padding: 11px 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.dwp-employee-option:hover,
+.dwp-employee-option.is-selected {
+    border-color: #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .10);
+}
+
+.dwp-employee-option-main {
+    font-weight: 950;
+    color: #111827;
+    line-height: 1.25;
+}
+
+.dwp-employee-option-sub {
+    margin-top: 3px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #6b7280;
+}
+
+.dwp-selected-employee {
+    display: none;
+    margin-top: 10px;
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: #ecfdf5;
+    border: 1px solid #bbf7d0;
+    color: #065f46;
+    font-size: 13px;
+    font-weight: 900;
+}
+
 .dwp-field textarea {
     min-height: 96px;
     resize: vertical;
@@ -287,6 +338,8 @@
         <div class="dwp-field">
             <label>Team Member</label>
 
+            <input type="hidden" name="team_member_id" id="teamMemberId" required>
+
             <div class="dwp-employee-search-wrap">
                 <input
                     type="search"
@@ -300,19 +353,26 @@
                 </div>
             </div>
 
-            <select name="team_member_id" id="teamMemberSelect" required>
-                <option value="">Select employee...</option>
+            <div class="dwp-selected-employee" id="selectedEmployeeText"></div>
+
+            <div class="dwp-employee-results" id="employeeResults">
                 {% for employee in employees %}
-                    {% set employee_label = 'Store ' ~ (employee.store_number or '—') ~ ' · ' ~ (employee.name or employee.username or employee.email or ('User ' ~ employee.id|string)) ~ ' · ' ~ (employee.role|title) %}
-                    <option
-                        value="{{ employee.id }}"
+                    {% set employee_name = employee.name or employee.username or employee.email or ('User ' ~ employee.id|string) %}
+                    {% set employee_label = 'Store ' ~ (employee.store_number or '—') ~ ' · ' ~ employee_name ~ ' · ' ~ (employee.role|title) %}
+                    <button
+                        type="button"
+                        class="dwp-employee-option"
+                        data-employee-id="{{ employee.id }}"
+                        data-employee-label="{{ employee_label }}"
                         data-search="{{ employee_label|lower }} {{ employee.username|default('', true)|lower }} {{ employee.email|default('', true)|lower }} {{ employee.position|default('', true)|lower }}"
                     >
-                        {{ employee_label }}
-                    </option>
+                        <div class="dwp-employee-option-main">{{ employee_name }}</div>
+                        <div class="dwp-employee-option-sub">Store {{ employee.store_number or '—' }} · {{ employee.role|title }}</div>
+                    </button>
                 {% endfor %}
-            </select>
-            <div class="dwp-help">Team member must have an active BPI Ops account before a DWP record can be created.</div>
+            </div>
+
+            <div class="dwp-help">Search, then tap the team member to attach this DWP to their file.</div>
         </div>
 
         <div class="dwp-form-grid">
@@ -400,8 +460,25 @@
     const notice = document.getElementById("requiredLetterNotice");
     const letterFile = document.getElementById("letterFile");
     const employeeSearch = document.getElementById("employeeSearch");
-    const teamMemberSelect = document.getElementById("teamMemberSelect");
+    const employeeResults = document.getElementById("employeeResults");
+    const employeeOptions = Array.from(document.querySelectorAll(".dwp-employee-option"));
+    const teamMemberId = document.getElementById("teamMemberId");
     const employeeSearchCount = document.getElementById("employeeSearchCount");
+    const selectedEmployeeText = document.getElementById("selectedEmployeeText");
+
+    function selectEmployee(option) {
+        if (!option || !teamMemberId) return;
+
+        teamMemberId.value = option.dataset.employeeId || "";
+
+        employeeOptions.forEach(item => item.classList.remove("is-selected"));
+        option.classList.add("is-selected");
+
+        if (selectedEmployeeText) {
+            selectedEmployeeText.textContent = `Selected: ${option.dataset.employeeLabel || option.textContent.trim()}`;
+            selectedEmployeeText.style.display = "block";
+        }
+    }
 
     function syncLetterRequirement() {
         const requires = ["Written Reminder", "DML - Decision Making Leave"].includes(discussionType.value);
@@ -414,34 +491,27 @@
     }
 
     function filterEmployees() {
-        if (!employeeSearch || !teamMemberSelect) return;
+        if (!employeeSearch) return;
 
         const query = employeeSearch.value.trim().toLowerCase();
         let visibleCount = 0;
 
-        Array.from(teamMemberSelect.options).forEach((option, index) => {
-            if (index === 0) {
-                option.hidden = false;
-                return;
-            }
-
+        employeeOptions.forEach(option => {
             const haystack = option.dataset.search || option.textContent.toLowerCase();
             const isMatch = !query || haystack.includes(query);
 
-            option.hidden = !isMatch;
-            option.disabled = !isMatch;
+            option.style.display = isMatch ? "block" : "none";
             if (isMatch) visibleCount += 1;
         });
-
-        const selectedOption = teamMemberSelect.options[teamMemberSelect.selectedIndex];
-        if (selectedOption && selectedOption.hidden) {
-            teamMemberSelect.value = "";
-        }
 
         if (employeeSearchCount) {
             employeeSearchCount.textContent = `${visibleCount} team member${visibleCount === 1 ? "" : "s"} matching`;
         }
     }
+
+    employeeOptions.forEach(option => {
+        option.addEventListener("click", () => selectEmployee(option));
+    });
 
     if (employeeSearch) {
         employeeSearch.addEventListener("input", filterEmployees);

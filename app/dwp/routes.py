@@ -29,7 +29,7 @@ from reportlab.platypus import (
 
 from app import db
 from app.dwp import dwp_bp
-from app.models import DWPRecord, User
+from app.models import DWPRecord, User, Store
 
 
 DISCUSSION_TYPES = [
@@ -108,6 +108,13 @@ def allowed_store_numbers_for_user(user):
         return sorted({str(r[0]) for r in rows if r[0]})
 
     if is_supervisor_like(user):
+        if user.area_name:
+            return sorted({
+                store.store_number
+                for store in Store.query.filter_by(area_name=user.area_name, is_active=True).all()
+                if store.store_number
+            })
+
         stores = []
 
         multi_store_fields = [

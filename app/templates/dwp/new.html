@@ -83,6 +83,26 @@
     color: #111827;
 }
 
+.dwp-field input[type="date"] {
+    inline-size: 100%;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: left;
+}
+
+.dwp-field input[type="date"]::-webkit-date-and-time-value {
+    text-align: left;
+    min-width: 0;
+    margin: 0;
+}
+
+.dwp-field input[type="date"]::-webkit-datetime-edit {
+    max-width: 100%;
+    overflow: hidden;
+}
+
 .dwp-field select {
     text-overflow: ellipsis;
 }

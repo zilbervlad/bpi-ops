@@ -241,6 +241,46 @@
     padding-left: 18px;
 }
 
+.hr-doc-list {
+    padding: 8px 16px 16px;
+}
+
+.hr-doc-item {
+    padding: 13px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.hr-doc-item:last-child {
+    border-bottom: 0;
+}
+
+.hr-doc-title {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-weight: 950;
+    color: #111827;
+    margin-bottom: 6px;
+}
+
+.hr-doc-meta {
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.45;
+}
+
+.pill-pending {
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.pill-acknowledged {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
 @media (max-width: 1000px) {
     .layout {
         grid-template-columns: 1fr;
@@ -341,19 +381,43 @@
 
             <div class="card" style="margin-top:14px;">
                 <div class="card-header">
-                    <div class="card-title">Coming Later</div>
+                    <div class="card-title">HR Documents</div>
                 </div>
-                <div class="future-box">
-                    This file can become the full employee record.
-                    <ul class="future-list">
-                        <li>HR documents</li>
-                        <li>Forms</li>
-                        <li>Training</li>
-                        <li>Attendance</li>
-                        <li>Time cards</li>
-                        <li>Manager notes</li>
-                    </ul>
-                </div>
+
+                {% if hr_documents %}
+                    <div class="hr-doc-list">
+                        {% for recipient in hr_documents %}
+                            <div class="hr-doc-item">
+                                <div class="hr-doc-title">
+                                    {{ recipient.document.title }}
+                                    {% if recipient.status == "acknowledged" %}
+                                        <span class="pill pill-acknowledged">Acknowledged</span>
+                                    {% else %}
+                                        <span class="pill pill-pending">Pending</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="hr-doc-meta">
+                                    Assigned {{ recipient.assigned_at.strftime('%m/%d/%y') if recipient.assigned_at else '—' }}
+                                    {% if recipient.document.due_date %}
+                                        · Due {{ recipient.document.due_date.strftime('%m/%d/%y') }}
+                                    {% endif %}
+                                    {% if recipient.acknowledged_at %}
+                                        · Acknowledged {{ recipient.acknowledged_at.strftime('%m/%d/%y') }}
+                                    {% endif %}
+                                </div>
+
+                                <div style="margin-top:8px;">
+                                    <a class="view-link" href="{{ url_for('hr_documents.detail', document_id=recipient.document_id) }}">Open document</a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty">
+                        No HR documents assigned to this team member yet.
+                    </div>
+                {% endif %}
             </div>
         </div>
 

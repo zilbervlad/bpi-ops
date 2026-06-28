@@ -29,7 +29,7 @@ from reportlab.platypus import (
 
 from app import db
 from app.dwp import dwp_bp
-from app.models import DWPRecord, User, Store
+from app.models import DWPRecord, User, Store, HRDocument, HRDocumentRecipient
 from app.services.email_service import send_email
 
 
@@ -557,12 +557,35 @@ def team_member_file(user_id):
         "dml": sum(1 for r in records if r.discussion_type == "DML - Decision Making Leave"),
     }
 
+    hr_documents = (
+        HRDocumentRecipient.query
+        .join(HRDocument)
+        .filter(
+            HRDocumentRecipient.user_id == team_member.id,
+            HRDocument.is_active.is_(True),
+        )
+        .order_by(
+            HRDocumentRecipient.status.asc(),
+            HRDocument.due_date.asc().nullslast(),
+            HRDocumentRecipient.assigned_at.desc(),
+        )
+        .all()
+    )
+
+    hr_doc_stats = {
+        "total": len(hr_documents),
+        "pending": sum(1 for row in hr_documents if row.status == "pending"),
+        "acknowledged": sum(1 for row in hr_documents if row.status == "acknowledged"),
+    }
+
     return render_template(
         "team_members/file.html",
         team_member=team_member,
         team_member_name=user_display_name(team_member),
         records=records,
         stats=stats,
+        hr_documents=hr_documents,
+        hr_doc_stats=hr_doc_stats,
         user=user,
     )
 

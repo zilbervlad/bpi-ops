@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         document.querySelectorAll("[data-doughy-soon]").forEach(function (quickButton) {
-            quickButton.addEventListener("click", function () {
+            quickButton.addEventListener("click", async function () {
                 const soonBox = document.getElementById("doughyComingSoon");
                 if (!soonBox) return;
 
@@ -67,12 +67,54 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 if (prompt === "What needs attention today?") {
+                    soonBox.innerHTML = `
+                        <strong>Checking...</strong><br>
+                        Doughy is checking this page using read-only context.
+                    `;
+                    soonBox.classList.add("open");
+
+                    let checklistContext = null;
+
+                    try {
+                        checklistContext = await loadDoughyChecklistContextIfAvailable();
+                    } catch (error) {
+                        checklistContext = null;
+                    }
+
+                    if (checklistContext && checklistContext.ok && checklistContext.found) {
+                        const items = checklistContext.attention || [];
+
+                        if (items.length === 0) {
+                            soonBox.innerHTML = `
+                                <strong>Checklist attention</strong><br>
+                                Store <strong>${escapeDoughyHtml(checklistContext.store)}</strong> checklist looks okay from read-only checklist data.<br>
+                                Completion: <strong>${checklistContext.completion}%</strong><br>
+                                Integrity: <strong>${checklistContext.integrity}%</strong><br>
+                                <span class="doughy-context-muted">Read-only checklist data. AI and write actions are still off.</span>
+                            `;
+                        } else {
+                            soonBox.innerHTML = `
+                                <strong>Checklist attention</strong><br>
+                                Store <strong>${escapeDoughyHtml(checklistContext.store)}</strong> has <strong>${items.length}</strong> item(s) needing attention:<br>
+                                ${items.map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}
+                                <br><span class="doughy-context-muted">Read-only checklist data. AI and write actions are still off.</span>
+                            `;
+                        }
+
+                        soonBox.classList.add("open");
+                        return;
+                    }
+
                     const attention = buildDoughyAttentionSnapshot();
+                    const checklistDebug = checklistContext
+                        ? (checklistContext.debug || checklistContext.message || checklistContext.error || "Checklist backend returned, but no active checklist data was used.")
+                        : "Checklist backend was not used.";
 
                     if (attention.items.length === 0) {
                         soonBox.innerHTML = `
                             <strong>Read-only attention scan</strong><br>
                             I scanned <strong>${attention.scanned}</strong> visible page block(s), but I do not see obvious warning/open/failed items.<br>
+                            <span class="doughy-context-muted">Backend: ${escapeDoughyHtml(checklistDebug)}</span><br>
                             <span class="doughy-context-muted">This is only scanning visible page text. AI and database checks are still off.</span>
                         `;
                     } else {
@@ -458,6 +500,65 @@ document.addEventListener("DOMContentLoaded", function () {
             items: items.slice(0, 8),
             scanned: candidates.length
         };
+    }
+
+
+    async function loadDoughyChecklistContextIfAvailable() {
+        const currentPath = window.location.pathname || "";
+        const contextText = (document.getElementById("doughyContextBody") || {}).textContent || "";
+        const isChecklistPage =
+            currentPath.includes("checklist") ||
+            contextText.toLowerCase().includes("daily checklist");
+
+        if (!isChecklistPage) {
+            return null;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search || "");
+        const requestParams = new URLSearchParams();
+
+        const storeFromQuery = urlParams.get("store") || "";
+        const dateFromQuery = urlParams.get("date") || "";
+
+        const contextStoreMatch = contextText.match(/Store:\s*([^\n]+)/i);
+        const storeFromContext = contextStoreMatch ? contextStoreMatch[1].trim() : "";
+
+        if (storeFromQuery) {
+            requestParams.set("store", storeFromQuery);
+        } else if (storeFromContext && !storeFromContext.toLowerCase().includes("not set")) {
+            requestParams.set("store", storeFromContext);
+        }
+
+        if (dateFromQuery) {
+            requestParams.set("date", dateFromQuery);
+        }
+
+        try {
+            const response = await fetch(`/doughy/checklist-context?${requestParams.toString()}`, {
+                headers: {
+                    "Accept": "application/json"
+                },
+                credentials: "same-origin"
+            });
+
+            if (!response.ok) {
+                return {
+                    ok: false,
+                    found: false,
+                    debug: "Checklist context HTTP " + response.status
+                };
+            }
+
+            const data = await response.json();
+            data.debug = data.debug || data.message || "Checklist context loaded";
+            return data;
+        } catch (error) {
+            return {
+                ok: false,
+                found: false,
+                debug: "Checklist context fetch failed"
+            };
+        }
     }
 
     async function loadDoughyContext() {

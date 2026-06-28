@@ -1,7 +1,9 @@
+from datetime import date
+
 from flask import jsonify, request, session
 
 from app.auth.routes import login_required
-from app.models import User
+from app.models import DailyChecklist, User
 
 from . import doughy_bp
 
@@ -102,6 +104,73 @@ def _friendly_page_name(endpoint, fallback):
 
 
 
+def _parse_date(value):
+    if not value:
+        return date.today()
+
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return date.today()
+
+
+def _daily_checklist_query(store, checklist_date, company_id=None):
+    query = DailyChecklist.query.filter_by(
+        store_number=str(store),
+        checklist_date=checklist_date,
+    )
+
+    if company_id and hasattr(DailyChecklist, "company_id"):
+        query = query.filter(DailyChecklist.company_id == company_id)
+
+    return query.order_by(DailyChecklist.id.desc())
+
+
+def _build_checklist_sections(daily):
+    sections = {}
+
+    for item in daily.items:
+        section_name = item.section_name or "Other"
+
+        if section_name not in sections:
+            sections[section_name] = {
+                "name": section_name,
+                "done": 0,
+                "total": 0,
+            }
+
+        sections[section_name]["total"] += 1
+
+        if item.is_completed:
+            sections[section_name]["done"] += 1
+
+    return list(sections.values())
+
+
+def _build_checklist_attention(daily, sections):
+    attention = []
+
+    completion = round(daily.percent_complete or 0, 1)
+    integrity = round(daily.integrity_score or 0, 1)
+
+    if completion < 80:
+        attention.append(f"Checklist completion is {completion}%.")
+
+    if integrity < 70:
+        attention.append(f"Integrity score is {integrity}%.")
+
+    for section in sections:
+        total = section["total"]
+        done = section["done"]
+
+        if total and done == 0:
+            attention.append(f"{section['name']} has 0/{total} completed.")
+        elif total and (done / total) < 0.5:
+            attention.append(f"{section['name']} is only {done}/{total} completed.")
+
+    return attention[:8]
+
+
 @doughy_bp.route("/context")
 @login_required
 def context():
@@ -149,3 +218,67 @@ def context():
             "mode": "read_only_context",
         }
     )
+
+
+@doughy_bp.route("/checklist-context")
+@login_required
+def checklist_context():
+    user = _current_user()
+
+    store = (
+        request.args.get("store")
+        or session.get("user_store")
+        or _safe_attr(user, "store_number", None)
+        or _safe_attr(user, "store", None)
+        or _safe_attr(user, "primary_store", None)
+    )
+
+    company_id = (
+        session.get("company_id")
+        or session.get("current_company_id")
+        or _safe_attr(user, "company_id", None)
+        or _safe_attr(user, "current_company_id", None)
+    )
+
+    checklist_date = _parse_date(request.args.get("date"))
+
+    if not store:
+        return jsonify(
+            {
+                "ok": False,
+                "error": "No store context found.",
+                "mode": "read_only_checklist_context",
+            }
+        ), 400
+
+    daily = _daily_checklist_query(store, checklist_date, company_id).first()
+
+    if not daily:
+        return jsonify(
+            {
+                "ok": True,
+                "found": False,
+                "store": str(store),
+                "business_date": checklist_date.isoformat(),
+                "message": "No checklist found for this store/date.",
+                "mode": "read_only_checklist_context",
+            }
+        )
+
+    sections = _build_checklist_sections(daily)
+    attention = _build_checklist_attention(daily, sections)
+
+    return jsonify(
+        {
+            "ok": True,
+            "found": True,
+            "store": str(store),
+            "business_date": checklist_date.isoformat(),
+            "completion": round(daily.percent_complete or 0, 1),
+            "integrity": round(daily.integrity_score or 0, 1),
+            "sections": sections,
+            "attention": attention,
+            "mode": "read_only_checklist_context",
+        }
+    )
+

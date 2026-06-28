@@ -38,7 +38,7 @@
 
 .my-doc-mini-stats {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
 }
 
@@ -221,6 +221,26 @@
     border-color: #fecaca;
 }
 
+.status-pill.dwp {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+}
+
+.status-pill.dwp-pending {
+    background: #fff7ed;
+    color: #9a3412;
+    border-color: #fed7aa;
+}
+
+.dwp-doc-panel {
+    margin-top: 12px;
+}
+
+.dwp-avatar {
+    background: #2563eb;
+}
+
 .action-cell {
     min-width: 120px;
     text-align: right;
@@ -299,6 +319,8 @@
 
 {% set pending_count = recipients|selectattr('status', 'ne', 'acknowledged')|list|length %}
 {% set acknowledged_count = recipients|selectattr('status', 'equalto', 'acknowledged')|list|length %}
+{% set dwp_pending_count = dwp_records|selectattr('acknowledged_at', 'none')|list|length %}
+{% set dwp_acknowledged_count = dwp_records|rejectattr('acknowledged_at', 'none')|list|length %}
 
 <div class="my-doc-page">
     <div class="my-doc-hero">
@@ -320,6 +342,10 @@
         <div class="my-doc-stat">
             <div class="my-doc-stat-label">Assigned</div>
             <div class="my-doc-stat-value">{{ recipients|length }}</div>
+        </div>
+        <div class="my-doc-stat">
+            <div class="my-doc-stat-label">DWP</div>
+            <div class="my-doc-stat-value">{{ dwp_records|length }}</div>
         </div>
     </div>
 
@@ -422,6 +448,74 @@
         <div class="my-doc-footer">
             <span>Showing <span id="myDocVisibleCount">{{ recipients|length }}</span> document(s)</span>
             <span>BPI Ops · Documents</span>
+        </div>
+    </div>
+
+    <div class="my-doc-panel dwp-doc-panel">
+        <div class="my-doc-toolbar">
+            <div class="my-doc-tabs">
+                <span class="my-doc-tab active">DWP Records · {{ dwp_records|length }}</span>
+                <span class="my-doc-tab">Pending · {{ dwp_pending_count }}</span>
+                <span class="my-doc-tab">Acknowledged · {{ dwp_acknowledged_count }}</span>
+            </div>
+        </div>
+
+        <table class="my-doc-table">
+            <thead>
+                <tr>
+                    <th>Record</th>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Submitted By</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in dwp_records %}
+                <tr>
+                    <td>
+                        <div class="document-cell">
+                            <div class="document-avatar dwp-avatar">W</div>
+                            <div>
+                                <div class="document-name">{{ record.discussion_type }}</div>
+                                <div class="document-sub">DWP Record · {{ record.store_number or '—' }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-pill">
+                            {{ record.conversation_date.strftime('%m/%d/%Y') if record.conversation_date else '—' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-pill dwp">{{ record.category or '—' }}</span>
+                    </td>
+                    <td>
+                        {% if record.acknowledged_at %}
+                            <span class="status-pill acknowledged">Acknowledged</span>
+                        {% else %}
+                            <span class="status-pill dwp-pending">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="compact-muted">{{ record.submitted_by_name_snapshot or '—' }}</div>
+                    </td>
+                    <td class="action-cell">
+                        <a class="btn-mini btn-view" href="{{ url_for('dwp.detail', record_id=record.id) }}">View</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="empty-row">No DWP records assigned to you yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="my-doc-footer">
+            <span>Showing {{ dwp_records|length }} DWP record(s)</span>
+            <span>BPI Ops · DWP</span>
         </div>
     </div>
 </div>

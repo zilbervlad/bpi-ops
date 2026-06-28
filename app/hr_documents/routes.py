@@ -9,7 +9,7 @@ from io import BytesIO, StringIO
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
-from app.models import User, Store, HRDocument, HRDocumentRecipient
+from app.models import User, Store, HRDocument, HRDocumentRecipient, DWPRecord
 from app.auth.routes import login_required, role_required
 from app.services.email_service import send_email
 
@@ -553,7 +553,22 @@ def my_documents():
         HRDocumentRecipient.assigned_at.desc(),
     ).all()
 
-    return render_template("hr_documents/my.html", recipients=recipients)
+    dwp_records = (
+        DWPRecord.query
+        .filter(DWPRecord.team_member_id == user.id)
+        .order_by(
+            DWPRecord.acknowledged_at.isnot(None),
+            DWPRecord.conversation_date.desc(),
+            DWPRecord.created_at.desc(),
+        )
+        .all()
+    )
+
+    return render_template(
+        "hr_documents/my.html",
+        recipients=recipients,
+        dwp_records=dwp_records,
+    )
 
 
 @hr_documents_bp.route("/<int:document_id>")

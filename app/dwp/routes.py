@@ -30,6 +30,7 @@ from reportlab.platypus import (
 from app import db
 from app.dwp import dwp_bp
 from app.models import DWPRecord, User, Store
+from app.services.email_service import send_email
 
 
 DISCUSSION_TYPES = [
@@ -182,6 +183,72 @@ def allowed_file(filename):
         return False
     ext = filename.rsplit(".", 1)[1].lower()
     return ext in ALLOWED_LETTER_EXTENSIONS
+
+def send_dwp_created_emails(record):
+    team_member = User.query.get(record.team_member_id)
+    submitter = User.query.get(record.submitted_by_id)
+
+    record_url = url_for("dwp.detail", record_id=record.id, _external=True)
+    tm_name = record.team_member_name_snapshot or user_display_name(team_member)
+    submitter_name = record.submitted_by_name_snapshot or user_display_name(submitter)
+
+    tm_email = team_member.get_notification_email() if team_member else None
+    submitter_email = submitter.get_notification_email() if submitter else None
+
+    sent_count = 0
+
+    if tm_email:
+        body = f"""Hi {tm_name},
+
+A DWP record has been created for you in BPI Ops.
+
+Store: {record.store_number}
+Type: {record.discussion_type}
+Category: {record.category}
+Date of Conversation: {record.conversation_date.strftime('%m/%d/%Y')}
+Date of Infraction: {record.infraction_date.strftime('%m/%d/%Y')}
+Submitted By: {submitter_name}
+
+Please review and acknowledge the record here:
+{record_url}
+
+Thank you,
+BPI Ops
+"""
+
+        send_email(
+            to_email=tm_email,
+            subject=f"DWP Record Created - {record.discussion_type}",
+            body=body,
+        )
+        sent_count += 1
+
+    if submitter_email and submitter_email != tm_email:
+        body = f"""Hi {submitter_name},
+
+Your DWP record was submitted successfully.
+
+Team Member: {tm_name}
+Store: {record.store_number}
+Type: {record.discussion_type}
+Category: {record.category}
+Date of Conversation: {record.conversation_date.strftime('%m/%d/%Y')}
+
+You can view the record here:
+{record_url}
+
+Thank you,
+BPI Ops
+"""
+
+        send_email(
+            to_email=submitter_email,
+            subject=f"DWP Submitted - {tm_name}",
+            body=body,
+        )
+        sent_count += 1
+
+    return sent_count
 
 
 
@@ -399,7 +466,15 @@ def new():
             db.session.add(record)
             db.session.commit()
 
-            flash("DWP record created.", "success")
+            try:
+                email_count = send_dwp_created_emails(record)
+                if email_count:
+                    flash(f"DWP record created. Email notification sent to {email_count} recipient(s).", "success")
+                else:
+                    flash("DWP record created. No email notification was sent because no notification email was available.", "success")
+            except Exception as email_exc:
+                flash(f"DWP record created, but email notification failed: {email_exc}", "warning")
+
             return redirect(url_for("dwp.detail", record_id=record.id))
 
         except ValueError as exc:

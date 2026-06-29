@@ -33,6 +33,8 @@ Rules:
   - current risk
   - pending later
 - Treat burst and expected-time flags as review signals, not proof.
+- If timing_summary shows elapsed_minutes near 0, explain it as elapsed time being too fast versus expected_minutes.
+- Never say expected time was zero unless expected_minutes is actually 0.
 - Separate current risks from future sections that are not due yet.
 - Do not recommend discipline.
 - Do not offer write actions.

@@ -521,10 +521,92 @@ def execution_feed():
         ) if scored_rows else None,
     }
 
+    manager_groups = {}
+
+    for row in feed_rows:
+        manager_name = (row.get("manager_on_duty") or "Unassigned").strip() or "Unassigned"
+
+        if manager_name not in manager_groups:
+            manager_groups[manager_name] = {
+                "manager_name": manager_name,
+                "stores": [],
+                "protected_points": 0,
+                "questionable_points": 0,
+                "current_risk_points": 0,
+                "pending_later_points": 0,
+                "due_points": 0,
+                "reliability_scores": [],
+                "review_count": 0,
+                "current_risk_count": 0,
+            }
+
+        group = manager_groups[manager_name]
+        group["stores"].append(row["store_number"])
+        group["protected_points"] += row["protected_points"]
+        group["questionable_points"] += row["questionable_points"]
+        group["current_risk_points"] += row["current_risk_points"]
+        group["pending_later_points"] += row["pending_later_points"]
+        group["due_points"] += row.get("due_points") or 0
+
+        if row.get("reliability_score") is not None:
+            group["reliability_scores"].append(row["reliability_score"])
+
+        if row.get("questionable_points", 0) > 0:
+            group["review_count"] += 1
+
+        if row.get("current_risk_points", 0) > 0:
+            group["current_risk_count"] += 1
+
+    manager_rows = []
+
+    for manager_name, group in manager_groups.items():
+        scores = group["reliability_scores"]
+
+        if scores:
+            avg_reliability_score = round(sum(scores) / len(scores), 1)
+        else:
+            avg_reliability_score = None
+
+        if avg_reliability_score is None:
+            reliability_label = "Pending"
+        elif avg_reliability_score >= 90:
+            reliability_label = "Strong"
+        elif avg_reliability_score >= 75:
+            reliability_label = "Watch"
+        elif avg_reliability_score >= 60:
+            reliability_label = "Needs Review"
+        else:
+            reliability_label = "High Risk"
+
+        manager_rows.append({
+            "manager_name": manager_name,
+            "stores": sorted(group["stores"]),
+            "store_count": len(group["stores"]),
+            "protected_points": group["protected_points"],
+            "questionable_points": group["questionable_points"],
+            "current_risk_points": group["current_risk_points"],
+            "pending_later_points": group["pending_later_points"],
+            "due_points": group["due_points"],
+            "avg_reliability_score": avg_reliability_score,
+            "reliability_label": reliability_label,
+            "review_count": group["review_count"],
+            "current_risk_count": group["current_risk_count"],
+        })
+
+    manager_rows.sort(
+        key=lambda row: (
+            row["avg_reliability_score"] is None,
+            row["avg_reliability_score"] if row["avg_reliability_score"] is not None else 999,
+            -row["current_risk_points"],
+            -row["questionable_points"],
+        )
+    )
+
     return render_template(
         "doughy_execution_feed.html",
         selected_date=selected_date,
         feed_rows=feed_rows,
+        manager_rows=manager_rows,
         summary=summary,
     )
 

@@ -84,6 +84,28 @@
         margin-top: 3px;
     }
 
+    .manager-feed-table-wrap {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+        margin-bottom: 16px;
+    }
+
+    .manager-section-title {
+        font-size: 1.05rem;
+        font-weight: 950;
+        color: #111827;
+        margin: 18px 0 10px;
+    }
+
+    .store-list {
+        color: #334155;
+        font-size: 0.82rem;
+        line-height: 1.35;
+    }
+
     .doughy-feed-table-wrap {
         background: #ffffff;
         border: 1px solid #e5e7eb;
@@ -260,6 +282,75 @@
             </div>
         </div>
     </div>
+
+
+    <div class="manager-section-title">Manager Rollup</div>
+
+    <div class="manager-feed-table-wrap">
+        <table class="doughy-feed-table">
+            <thead>
+                <tr>
+                    <th>Manager</th>
+                    <th>Stores</th>
+                    <th>Protected</th>
+                    <th>Questionable</th>
+                    <th>Current Risk</th>
+                    <th>Pending Later</th>
+                    <th>Reliability</th>
+                    <th>Flags</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in manager_rows %}
+                    <tr>
+                        <td>
+                            <strong>{{ row.manager_name }}</strong>
+                            <div class="muted">{{ row.store_count }} store{{ "" if row.store_count == 1 else "s" }}</div>
+                        </td>
+                        <td>
+                            <div class="store-list">{{ row.stores|join(", ") }}</div>
+                        </td>
+                        <td><div class="metric-line">{{ "%.0f"|format(row.protected_points) }}</div></td>
+                        <td><div class="metric-line">{{ "%.0f"|format(row.questionable_points) }}</div></td>
+                        <td><div class="metric-line">{{ "%.0f"|format(row.current_risk_points) }}</div></td>
+                        <td><div class="metric-line">{{ "%.0f"|format(row.pending_later_points) }}</div></td>
+                        <td>
+                            {% set label = row.reliability_label or "Pending" %}
+                            {% set badge_class = "reliability-pending" %}
+                            {% if label == "Strong" %}
+                                {% set badge_class = "reliability-strong" %}
+                            {% elif label == "Watch" %}
+                                {% set badge_class = "reliability-watch" %}
+                            {% elif label == "Needs Review" %}
+                                {% set badge_class = "reliability-review" %}
+                            {% elif label == "High Risk" %}
+                                {% set badge_class = "reliability-risk" %}
+                            {% endif %}
+
+                            <span class="reliability-badge {{ badge_class }}">
+                                {% if row.avg_reliability_score is not none %}
+                                    {{ "%.1f"|format(row.avg_reliability_score) }}% · {{ label }}
+                                {% else %}
+                                    {{ label }}
+                                {% endif %}
+                            </span>
+                            <div class="muted">Due pts {{ "%.0f"|format(row.due_points or 0) }}</div>
+                        </td>
+                        <td>
+                            <div class="focus-line">{{ row.review_count }} store{{ "" if row.review_count == 1 else "s" }} need timing review</div>
+                            <div class="focus-line">{{ row.current_risk_count }} store{{ "" if row.current_risk_count == 1 else "s" }} have current risk</div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8">No manager rollup available for this date.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="manager-section-title">Store Detail</div>
 
     <div class="doughy-feed-table-wrap">
         <table class="doughy-feed-table">

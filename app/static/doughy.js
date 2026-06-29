@@ -51,17 +51,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 const prompt = quickButton.getAttribute("data-doughy-soon") || "this";
 
                 if (prompt === "Summarize this page") {
-                    const snapshot = buildDoughyVisibleSnapshot();
-
                     soonBox.innerHTML = `
-                        <strong>Read-only page snapshot</strong><br>
-                        Doughy can see this page has
-                        <strong>${snapshot.statCards}</strong> stat/card areas,
-                        <strong>${snapshot.tables}</strong> table(s),
-                        and <strong>${snapshot.buttons}</strong> visible action button(s).<br>
-                        ${snapshot.heading ? `View: <strong>${snapshot.heading}</strong><br>` : ""}
-                        <span class="doughy-context-muted">AI summary is still off. This is only visible page structure.</span>
+                        <strong>Summarizing...</strong><br>
+                        Doughy is summarizing the read-only execution snapshot.
                     `;
+                    soonBox.classList.add("open");
+
+                    try {
+                        const data = await askDoughyReadOnly("Summarize this checklist execution.");
+                        soonBox.innerHTML = `
+                            <strong>🧠 Doughy’s Summary</strong><br>
+                            <div class="doughy-draft-box">${escapeDoughyHtml(data.answer).replace(/\n/g, "<br>")}</div>
+                            <span class="doughy-context-muted">Read-only summary. AI and write actions are still off.</span>
+                        `;
+                    } catch (error) {
+                        const snapshot = buildDoughyVisibleSnapshot();
+
+                        soonBox.innerHTML = `
+                            <strong>Read-only page snapshot</strong><br>
+                            Doughy can see this page has
+                            <strong>${snapshot.statCards}</strong> stat/card areas,
+                            <strong>${snapshot.tables}</strong> table(s),
+                            and <strong>${snapshot.buttons}</strong> visible action button(s).<br>
+                            ${snapshot.heading ? `View: <strong>${snapshot.heading}</strong><br>` : ""}
+                            <span class="doughy-context-muted">Execution snapshot unavailable: ${escapeDoughyHtml(error.message || error)}</span>
+                        `;
+                    }
+
                     soonBox.classList.add("open");
                     return;
                 }

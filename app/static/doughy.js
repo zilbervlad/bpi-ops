@@ -88,21 +88,35 @@ document.addEventListener("DOMContentLoaded", function () {
                         const totals = snapshot.totals || {};
 
                         if (doughyRead.headline || doughyRead.summary) {
+                            const reviewFocus = doughyRead.review_focus || [];
+                            const currentFocus = doughyRead.current_focus || [];
+                            const futureFocus = doughyRead.future_focus || [];
+
+                            const reviewHtml = reviewFocus.length
+                                ? `<br><strong>Needs review</strong><br>${reviewFocus.slice(0, 2).map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}`
+                                : "";
+
+                            const currentHtml = currentFocus.length
+                                ? `<br><br><strong>Current risk</strong><br>${currentFocus.slice(0, 2).map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}`
+                                : "";
+
+                            const futureHtml = futureFocus.length
+                                ? `<br><br><strong>Pending later</strong><br>${futureFocus.slice(0, 3).map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}`
+                                : "";
+
                             soonBox.innerHTML = `
-                                <strong>🧠 Doughy Read</strong><br>
+                                <strong>🧠 Doughy’s Take</strong><br>
                                 ${doughyRead.headline ? `<strong>${escapeDoughyHtml(doughyRead.headline)}</strong><br>` : ""}
-                                ${doughyRead.summary ? `${escapeDoughyHtml(doughyRead.summary)}<br>` : ""}
-                                ${
-                                    focusItems.length
-                                        ? `<br>${focusItems.slice(0, 5).map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}`
-                                        : ""
-                                }
-                                <br><br>
+                                <br>
                                 <span class="doughy-context-muted">
-                                    Protected: ${escapeDoughyHtml(totals.protected_points || 0)}
-                                    · Questionable: ${escapeDoughyHtml(totals.questionable_points || 0)}
-                                    · Not protected: ${escapeDoughyHtml(totals.at_risk_points || 0)}
-                                </span><br>
+                                    ${escapeDoughyHtml(totals.protected_points || 0)} protected
+                                    · ${escapeDoughyHtml(totals.questionable_points || 0)} questionable
+                                    · ${escapeDoughyHtml(totals.at_risk_points || 0)} not protected yet
+                                </span>
+                                ${reviewHtml}
+                                ${currentHtml}
+                                ${futureHtml}
+                                <br><br>
                                 <span class="doughy-context-muted">Read-only execution snapshot. AI and write actions are still off.</span>
                             `;
                         } else {

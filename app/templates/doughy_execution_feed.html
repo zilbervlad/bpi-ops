@@ -56,7 +56,7 @@
 
     .doughy-summary-grid {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 10px;
         margin-bottom: 14px;
     }
@@ -151,6 +151,43 @@
         margin-top: 3px;
     }
 
+    .reliability-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 5px 9px;
+        font-weight: 950;
+        font-size: 0.78rem;
+        background: #f1f5f9;
+        color: #0f172a;
+        white-space: nowrap;
+    }
+
+    .reliability-strong {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .reliability-watch {
+        background: #fef9c3;
+        color: #854d0e;
+    }
+
+    .reliability-review {
+        background: #ffedd5;
+        color: #9a3412;
+    }
+
+    .reliability-risk {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .reliability-pending {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
     .feed-link {
         color: #2563eb;
         font-weight: 850;
@@ -212,6 +249,16 @@
             <div class="doughy-summary-label">Pending Later</div>
             <div class="doughy-summary-value">{{ "%.0f"|format(summary.pending_later_points) }}</div>
         </div>
+        <div class="doughy-summary-card">
+            <div class="doughy-summary-label">Avg Reliability</div>
+            <div class="doughy-summary-value">
+                {% if summary.avg_reliability_score is not none %}
+                    {{ "%.1f"|format(summary.avg_reliability_score) }}%
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <div class="doughy-feed-table-wrap">
@@ -225,6 +272,7 @@
                     <th>Questionable</th>
                     <th>Current Risk</th>
                     <th>Pending Later</th>
+                    <th>Reliability</th>
                     <th>Doughy’s Take</th>
                     <th>Open</th>
                 </tr>
@@ -246,6 +294,28 @@
                         <td><div class="metric-line">{{ "%.0f"|format(row.current_risk_points) }}</div></td>
                         <td><div class="metric-line">{{ "%.0f"|format(row.pending_later_points) }}</div></td>
                         <td>
+                            {% set label = row.reliability_label or "Pending" %}
+                            {% set badge_class = "reliability-pending" %}
+                            {% if label == "Strong" %}
+                                {% set badge_class = "reliability-strong" %}
+                            {% elif label == "Watch" %}
+                                {% set badge_class = "reliability-watch" %}
+                            {% elif label == "Needs Review" %}
+                                {% set badge_class = "reliability-review" %}
+                            {% elif label == "High Risk" %}
+                                {% set badge_class = "reliability-risk" %}
+                            {% endif %}
+
+                            <span class="reliability-badge {{ badge_class }}">
+                                {% if row.reliability_score is not none %}
+                                    {{ "%.1f"|format(row.reliability_score) }}% · {{ label }}
+                                {% else %}
+                                    {{ label }}
+                                {% endif %}
+                            </span>
+                            <div class="muted">Due pts {{ "%.0f"|format(row.due_points or 0) }}</div>
+                        </td>
+                        <td>
                             <div class="take-headline">{{ row.headline or "Execution snapshot ready." }}</div>
                             {% if row.review_focus %}
                                 <div class="focus-line">Review: {{ row.review_focus[0] }}</div>
@@ -265,7 +335,7 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="9">No checklist rows found for this date.</td>
+                        <td colspan="10">No checklist rows found for this date.</td>
                     </tr>
                 {% endfor %}
             </tbody>

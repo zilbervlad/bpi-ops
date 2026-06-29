@@ -465,22 +465,49 @@ def execution_feed():
             else:
                 current_risk += at_risk_points
 
+        protected_points = totals.get("protected_points", 0) or 0
+        questionable_points = totals.get("questionable_points", 0) or 0
+        at_risk_points = totals.get("at_risk_points", 0) or 0
+
+        due_points = protected_points + questionable_points + current_risk
+
+        if due_points > 0:
+            reliability_score = round(((protected_points + (questionable_points * 0.35)) / due_points) * 100, 1)
+        else:
+            reliability_score = None
+
+        if reliability_score is None:
+            reliability_label = "Pending"
+        elif reliability_score >= 90:
+            reliability_label = "Strong"
+        elif reliability_score >= 75:
+            reliability_label = "Watch"
+        elif reliability_score >= 60:
+            reliability_label = "Needs Review"
+        else:
+            reliability_label = "High Risk"
+
         feed_rows.append({
             "store_number": store_number,
             "manager_on_duty": snapshot.get("manager_on_duty"),
             "status": snapshot.get("status"),
             "percent_complete": snapshot.get("percent_complete"),
             "integrity_score": snapshot.get("integrity_score"),
-            "protected_points": totals.get("protected_points", 0),
-            "questionable_points": totals.get("questionable_points", 0),
-            "at_risk_points": totals.get("at_risk_points", 0),
+            "protected_points": protected_points,
+            "questionable_points": questionable_points,
+            "at_risk_points": at_risk_points,
             "current_risk_points": current_risk,
             "pending_later_points": pending_later,
+            "due_points": due_points,
+            "reliability_score": reliability_score,
+            "reliability_label": reliability_label,
             "headline": doughy_read.get("headline"),
             "review_focus": doughy_read.get("review_focus") or [],
             "current_focus": doughy_read.get("current_focus") or [],
             "future_focus": doughy_read.get("future_focus") or [],
         })
+
+    scored_rows = [row for row in feed_rows if row.get("reliability_score") is not None]
 
     summary = {
         "stores": len(feed_rows),
@@ -488,6 +515,10 @@ def execution_feed():
         "questionable_points": sum(row["questionable_points"] for row in feed_rows),
         "current_risk_points": sum(row["current_risk_points"] for row in feed_rows),
         "pending_later_points": sum(row["pending_later_points"] for row in feed_rows),
+        "avg_reliability_score": round(
+            sum(row["reliability_score"] for row in scored_rows) / len(scored_rows),
+            1,
+        ) if scored_rows else None,
     }
 
     return render_template(

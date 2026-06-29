@@ -287,3 +287,117 @@ def checklist_context():
         }
     )
 
+def _build_safe_doughy_answer(prompt, checklist_context):
+    prompt_text = (prompt or "").lower()
+    doughy_read = checklist_context.get("doughy_read") or {}
+    snapshot = checklist_context.get("execution_snapshot") or {}
+    totals = snapshot.get("totals") or {}
+
+    review_focus = doughy_read.get("review_focus") or []
+    current_focus = doughy_read.get("current_focus") or []
+    future_focus = doughy_read.get("future_focus") or []
+
+    protected = totals.get("protected_points", 0) or 0
+    questionable = totals.get("questionable_points", 0) or 0
+    at_risk = totals.get("at_risk_points", 0) or 0
+    possible = totals.get("possible_points", 0) or 0
+
+    headline = doughy_read.get("headline") or "Here’s what I see."
+    summary = doughy_read.get("summary") or (
+        f"{protected:g} of {possible:g} OA-mapped points are protected. "
+        f"{questionable:g} are checked but not fully verified, and {at_risk:g} are not protected yet."
+    )
+
+    lines = [headline, "", summary]
+
+    if "recover" in prompt_text or "fix" in prompt_text or "still" in prompt_text:
+        if current_focus:
+            lines.extend(["", "What can still be recovered:"])
+            lines.extend([f"• {item}" for item in current_focus[:4]])
+        if future_focus:
+            lines.extend(["", "Pending later:"])
+            lines.extend([f"• {item}" for item in future_focus[:3]])
+    elif "review" in prompt_text or "questionable" in prompt_text or "timing" in prompt_text:
+        if review_focus:
+            lines.extend(["", "Needs review:"])
+            lines.extend([f"• {item}" for item in review_focus[:4]])
+        else:
+            lines.extend(["", "I do not see checked items marked questionable from the current snapshot."])
+    elif "summary" in prompt_text or "summarize" in prompt_text:
+        focus_items = doughy_read.get("focus_items") or []
+        if focus_items:
+            lines.extend(["", "Main points:"])
+            lines.extend([f"• {item}" for item in focus_items[:5]])
+    else:
+        if review_focus:
+            lines.extend(["", "Needs review:"])
+            lines.extend([f"• {item}" for item in review_focus[:3]])
+        if current_focus:
+            lines.extend(["", "Current risk:"])
+            lines.extend([f"• {item}" for item in current_focus[:3]])
+        if future_focus:
+            lines.extend(["", "Pending later:"])
+            lines.extend([f"• {item}" for item in future_focus[:2]])
+
+    lines.extend([
+        "",
+        "I’m treating timing flags as review signals, not proof. This is read-only."
+    ])
+
+    return "\n".join(lines)
+
+
+@doughy_bp.route("/ask", methods=["POST"])
+@login_required
+def ask():
+    payload = request.get_json(silent=True) or {}
+
+    prompt = (payload.get("prompt") or "").strip()
+    store = (payload.get("store") or request.args.get("store") or "").strip()
+    checklist_date = _parse_date(payload.get("date") or request.args.get("date"))
+
+    if not prompt:
+        return jsonify({
+            "ok": False,
+            "error": "Missing prompt.",
+            "mode": "read_only_doughy_ask",
+        }), 400
+
+    user = _current_user()
+
+    if not store:
+        store = (
+            session.get("user_store")
+            or _safe_attr(user, "store_number", None)
+            or _safe_attr(user, "store", None)
+            or _safe_attr(user, "primary_store", None)
+        )
+
+    if not store:
+        return jsonify({
+            "ok": False,
+            "error": "No store context found.",
+            "mode": "read_only_doughy_ask",
+        }), 400
+
+    execution_snapshot = build_execution_snapshot(str(store), checklist_date)
+
+    checklist_context = {
+        "store": str(store),
+        "business_date": checklist_date.isoformat(),
+        "execution_snapshot": execution_snapshot,
+        "doughy_read": execution_snapshot.get("doughy_read"),
+    }
+
+    answer = _build_safe_doughy_answer(prompt, checklist_context)
+
+    return jsonify({
+        "ok": True,
+        "answer": answer,
+        "store": str(store),
+        "business_date": checklist_date.isoformat(),
+        "mode": "read_only_doughy_ask",
+        "uses_ai": False,
+        "execution_snapshot": execution_snapshot,
+    })
+

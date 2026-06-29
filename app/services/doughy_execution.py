@@ -320,7 +320,12 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
             if item.template_item_id:
                 daily_items_by_template_id[item.template_item_id] = item
 
-    questionable_daily_item_ids, flags_by_section, timing_by_section = _find_questionable_daily_item_ids(daily_items)
+    integrity_result = _find_questionable_daily_item_ids(daily_items)
+    if len(integrity_result) == 3:
+        questionable_daily_item_ids, flags_by_section, timing_by_section = integrity_result
+    else:
+        questionable_daily_item_ids, flags_by_section = integrity_result
+        timing_by_section = {}
 
     all_section_names = set(SECTION_ORDER)
     for item in template_items:

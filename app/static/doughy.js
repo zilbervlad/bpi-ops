@@ -82,23 +82,48 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
                     if (checklistContext && checklistContext.ok && checklistContext.found) {
-                        const items = checklistContext.attention || [];
+                        const doughyRead = checklistContext.doughy_read || {};
+                        const focusItems = doughyRead.focus_items || [];
+                        const snapshot = checklistContext.execution_snapshot || {};
+                        const totals = snapshot.totals || {};
 
-                        if (items.length === 0) {
+                        if (doughyRead.headline || doughyRead.summary) {
                             soonBox.innerHTML = `
-                                <strong>Checklist attention</strong><br>
-                                Store <strong>${escapeDoughyHtml(checklistContext.store)}</strong> checklist looks okay from read-only checklist data.<br>
-                                Completion: <strong>${checklistContext.completion}%</strong><br>
-                                Integrity: <strong>${checklistContext.integrity}%</strong><br>
-                                <span class="doughy-context-muted">Read-only checklist data. AI and write actions are still off.</span>
+                                <strong>🧠 Doughy Read</strong><br>
+                                ${doughyRead.headline ? `<strong>${escapeDoughyHtml(doughyRead.headline)}</strong><br>` : ""}
+                                ${doughyRead.summary ? `${escapeDoughyHtml(doughyRead.summary)}<br>` : ""}
+                                ${
+                                    focusItems.length
+                                        ? `<br>${focusItems.slice(0, 5).map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}`
+                                        : ""
+                                }
+                                <br><br>
+                                <span class="doughy-context-muted">
+                                    Protected: ${escapeDoughyHtml(totals.protected_points || 0)}
+                                    · Questionable: ${escapeDoughyHtml(totals.questionable_points || 0)}
+                                    · Not protected: ${escapeDoughyHtml(totals.at_risk_points || 0)}
+                                </span><br>
+                                <span class="doughy-context-muted">Read-only execution snapshot. AI and write actions are still off.</span>
                             `;
                         } else {
-                            soonBox.innerHTML = `
-                                <strong>Checklist attention</strong><br>
-                                Store <strong>${escapeDoughyHtml(checklistContext.store)}</strong> has <strong>${items.length}</strong> item(s) needing attention:<br>
-                                ${items.map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}
-                                <br><span class="doughy-context-muted">Read-only checklist data. AI and write actions are still off.</span>
-                            `;
+                            const items = checklistContext.attention || [];
+
+                            if (items.length === 0) {
+                                soonBox.innerHTML = `
+                                    <strong>Checklist attention</strong><br>
+                                    Store <strong>${escapeDoughyHtml(checklistContext.store)}</strong> checklist looks okay from read-only checklist data.<br>
+                                    Completion: <strong>${checklistContext.completion}%</strong><br>
+                                    Integrity: <strong>${checklistContext.integrity}%</strong><br>
+                                    <span class="doughy-context-muted">Read-only checklist data. AI and write actions are still off.</span>
+                                `;
+                            } else {
+                                soonBox.innerHTML = `
+                                    <strong>Checklist attention</strong><br>
+                                    Store <strong>${escapeDoughyHtml(checklistContext.store)}</strong> has <strong>${items.length}</strong> item(s) needing attention:<br>
+                                    ${items.map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}
+                                    <br><span class="doughy-context-muted">Read-only checklist data. AI and write actions are still off.</span>
+                                `;
+                            }
                         }
 
                         soonBox.classList.add("open");

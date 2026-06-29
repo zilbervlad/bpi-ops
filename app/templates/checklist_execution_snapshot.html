@@ -313,6 +313,101 @@
         }
     }
 
+
+    .tri-bar {
+        display: flex;
+        height: 10px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: #e5e7eb;
+        margin: 10px 0 12px;
+    }
+
+    .tri-protected {
+        background: #111827;
+    }
+
+    .tri-questionable {
+        background: #f59e0b;
+    }
+
+    .tri-risk {
+        background: #dc2626;
+    }
+
+    .bucket-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .bucket-chip {
+        border-radius: 999px;
+        padding: 6px 9px;
+        font-size: 0.8rem;
+        font-weight: 850;
+        background: #f1f5f9;
+        color: #334155 !important;
+    }
+
+    .bucket-chip strong {
+        color: #111827 !important;
+    }
+
+    .bucket-chip.questionable {
+        background: #fff7ed;
+        color: #92400e !important;
+    }
+
+    .bucket-chip.risk {
+        background: #fef2f2;
+        color: #991b1b !important;
+    }
+
+    .questionable-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        color: #92400e !important;
+        font-size: 0.9rem;
+    }
+
+    .questionable-list li {
+        margin-bottom: 5px;
+        color: #92400e !important;
+    }
+
+    .integrity-flag {
+        margin: 8px 0;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: #fff7ed;
+        color: #92400e !important;
+        font-size: 0.86rem;
+        font-weight: 800;
+    }
+
+    .section-summary-mini {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 7px;
+        font-size: 0.76rem;
+        font-weight: 850;
+    }
+
+    .section-summary-mini span {
+        color: #cbd5e1;
+    }
+
+    .section-summary-mini .q {
+        color: #fbbf24;
+    }
+
+    .section-summary-mini .r {
+        color: #fca5a5;
+    }
+
 </style>
 
 <div class="snapshot-wrap">
@@ -350,11 +445,14 @@
             </div>
 
             <div class="snapshot-card">
-                <div class="snapshot-card-label">Protected OA Points</div>
+                <div class="snapshot-card-label">OA Points</div>
                 <div class="snapshot-card-value">
                     {{ snapshot.totals.protected_points|round(1) }} / {{ snapshot.totals.possible_points|round(1) }}
                 </div>
-                <div class="snapshot-card-note">{{ snapshot.totals.at_risk_points|round(1) }} points at risk</div>
+                <div class="snapshot-card-note">
+                    {{ snapshot.totals.questionable_points|default(0)|round(1) }} questionable ·
+                    {{ snapshot.totals.at_risk_points|round(1) }} at risk
+                </div>
             </div>
 
             <div class="snapshot-card">
@@ -390,7 +488,12 @@
                         {{ section.protected_points|round(1) }} / {{ section.possible_points|round(1) }}
                     </div>
                     <div class="section-summary-note">
-                        {{ section.at_risk_points|round(1) }} at risk · {{ section.completed_tasks }} / {{ section.total_tasks }} tasks
+                        {{ section.completed_tasks }} / {{ section.total_tasks }} tasks
+                    </div>
+                    <div class="section-summary-mini">
+                        <span>{{ section.protected_points|round(1) }} protected</span>
+                        <span class="q">{{ section.questionable_points|default(0)|round(1) }} questionable</span>
+                        <span class="r">{{ section.at_risk_points|round(1) }} at risk</span>
                     </div>
                     <div class="section-summary-bar">
                         <div class="section-summary-fill" style="width: {{ section_pct|round(1) }}%;"></div>
@@ -418,9 +521,43 @@
                     </div>
                 </div>
 
-                <div class="bar">
-                    <div class="bar-fill" style="width: {{ pct|round(1) }}%;"></div>
+                {% set q_pct = 0 %}
+                {% set risk_pct = 0 %}
+                {% if section.possible_points %}
+                    {% set q_pct = (section.questionable_points|default(0) / section.possible_points * 100) %}
+                    {% set risk_pct = (section.at_risk_points / section.possible_points * 100) %}
+                {% endif %}
+
+                <div class="tri-bar">
+                    <div class="tri-protected" style="width: {{ pct|round(1) }}%;"></div>
+                    <div class="tri-questionable" style="width: {{ q_pct|round(1) }}%;"></div>
+                    <div class="tri-risk" style="width: {{ risk_pct|round(1) }}%;"></div>
                 </div>
+
+                <div class="bucket-row">
+                    <div class="bucket-chip"><strong>{{ section.protected_points|round(1) }}</strong> protected</div>
+                    <div class="bucket-chip questionable"><strong>{{ section.questionable_points|default(0)|round(1) }}</strong> questionable</div>
+                    <div class="bucket-chip risk"><strong>{{ section.at_risk_points|round(1) }}</strong> at risk</div>
+                </div>
+
+                {% if section.integrity_flags %}
+                    {% for flag in section.integrity_flags %}
+                        <div class="integrity-flag">Integrity flag: {{ flag }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if section.questionable_items %}
+                    <strong>Questionable protected items</strong>
+                    <ul class="questionable-list">
+                        {% for item in section.questionable_items[:5] %}
+                            <li>
+                                <strong>{{ item.points|round(1) }} pts</strong>
+                                — {{ item.task }}
+                                <span>({{ item.oa_item_name }})</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
 
                 {% if section.top_risks %}
                     <strong>Top OA risks</strong>

@@ -145,7 +145,32 @@ document.addEventListener("DOMContentLoaded", function () {
                             ? ` Pending later: ${futureFocus.slice(0, 2).join(" ")}`
                             : "";
 
-                        const draft = `Quick checklist follow-up for store ${store}. ${manager ? manager + " — " : ""}${totals.protected_points || 0} OA-mapped points are protected, ${totals.questionable_points || 0} are checked but not fully verified, and ${totals.at_risk_points || 0} are not protected yet.${reviewText}${currentText}${futureText} Please review and update what can still be recovered.`;
+                        const draftLines = [
+                            `${manager && manager !== "team" ? manager + " — " : ""}quick checklist follow-up for store ${store}.`,
+                            "",
+                            `Protected: ${totals.protected_points || 0} OA-mapped points`,
+                            `Needs review: ${totals.questionable_points || 0} checked but not fully verified`,
+                            `Not protected yet: ${totals.at_risk_points || 0} points`,
+                        ];
+
+                        if (reviewFocus.length) {
+                            draftLines.push("", "Needs review:");
+                            reviewFocus.slice(0, 2).forEach(item => draftLines.push(`• ${item}`));
+                        }
+
+                        if (currentFocus.length) {
+                            draftLines.push("", "Current risk:");
+                            currentFocus.slice(0, 2).forEach(item => draftLines.push(`• ${item}`));
+                        }
+
+                        if (futureFocus.length) {
+                            draftLines.push("", "Pending later:");
+                            futureFocus.slice(0, 3).forEach(item => draftLines.push(`• ${item}`));
+                        }
+
+                        draftLines.push("", "Please review and update what can still be recovered.");
+
+                        const draft = draftLines.join("\n");
 
                         soonBox.innerHTML = `
                             <strong>Follow-up draft</strong><br>

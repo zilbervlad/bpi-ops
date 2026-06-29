@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .doughy-feed-wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 18px;
+    }
+
+    .doughy-feed-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+
+    .doughy-feed-title {
+        font-size: 1.55rem;
+        font-weight: 950;
+        color: #111827;
+        margin: 0;
+    }
+
+    .doughy-feed-subtitle {
+        color: #64748b;
+        font-size: 0.92rem;
+        margin-top: 4px;
+    }
+
+    .doughy-feed-filter {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 10px;
+    }
+
+    .doughy-feed-filter input {
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: 8px 10px;
+    }
+
+    .doughy-feed-filter button {
+        border: 0;
+        border-radius: 10px;
+        padding: 9px 12px;
+        font-weight: 850;
+        background: #111827;
+        color: #ffffff;
+    }
+
+    .doughy-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .doughy-summary-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 12px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .doughy-summary-label {
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 850;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .doughy-summary-value {
+        color: #111827;
+        font-size: 1.45rem;
+        font-weight: 950;
+        margin-top: 3px;
+    }
+
+    .doughy-feed-table-wrap {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+    }
+
+    .doughy-feed-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .doughy-feed-table th {
+        background: #f8fafc;
+        color: #475569;
+        text-align: left;
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 11px 10px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .doughy-feed-table td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #eef2f7;
+        vertical-align: top;
+        color: #111827;
+        font-size: 0.88rem;
+    }
+
+    .doughy-feed-table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .store-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        background: #111827;
+        color: #ffffff;
+        font-weight: 950;
+        padding: 5px 9px;
+    }
+
+    .metric-line {
+        white-space: nowrap;
+        font-weight: 850;
+    }
+
+    .muted {
+        color: #64748b;
+        font-size: 0.78rem;
+    }
+
+    .take-headline {
+        font-weight: 900;
+        margin-bottom: 4px;
+    }
+
+    .focus-line {
+        color: #334155;
+        font-size: 0.82rem;
+        margin-top: 3px;
+    }
+
+    .feed-link {
+        color: #2563eb;
+        font-weight: 850;
+        text-decoration: none;
+    }
+
+    @media (max-width: 900px) {
+        .doughy-feed-header {
+            flex-direction: column;
+        }
+
+        .doughy-summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .doughy-feed-table-wrap {
+            overflow-x: auto;
+        }
+
+        .doughy-feed-table {
+            min-width: 980px;
+        }
+    }
+</style>
+
+<div class="doughy-feed-wrap">
+    <div class="doughy-feed-header">
+        <div>
+            <h1 class="doughy-feed-title">🧠 Doughy Execution Feed</h1>
+            <div class="doughy-feed-subtitle">
+                Protected, questionable, current risk, and pending-later OA-mapped points across stores.
+            </div>
+        </div>
+
+        <form class="doughy-feed-filter" method="get">
+            <input type="date" name="date" value="{{ selected_date.isoformat() }}">
+            <button type="submit">Load</button>
+        </form>
+    </div>
+
+    <div class="doughy-summary-grid">
+        <div class="doughy-summary-card">
+            <div class="doughy-summary-label">Stores</div>
+            <div class="doughy-summary-value">{{ summary.stores }}</div>
+        </div>
+        <div class="doughy-summary-card">
+            <div class="doughy-summary-label">Protected</div>
+            <div class="doughy-summary-value">{{ "%.0f"|format(summary.protected_points) }}</div>
+        </div>
+        <div class="doughy-summary-card">
+            <div class="doughy-summary-label">Questionable</div>
+            <div class="doughy-summary-value">{{ "%.0f"|format(summary.questionable_points) }}</div>
+        </div>
+        <div class="doughy-summary-card">
+            <div class="doughy-summary-label">Current Risk</div>
+            <div class="doughy-summary-value">{{ "%.0f"|format(summary.current_risk_points) }}</div>
+        </div>
+        <div class="doughy-summary-card">
+            <div class="doughy-summary-label">Pending Later</div>
+            <div class="doughy-summary-value">{{ "%.0f"|format(summary.pending_later_points) }}</div>
+        </div>
+    </div>
+
+    <div class="doughy-feed-table-wrap">
+        <table class="doughy-feed-table">
+            <thead>
+                <tr>
+                    <th>Store</th>
+                    <th>Manager</th>
+                    <th>Progress</th>
+                    <th>Protected</th>
+                    <th>Questionable</th>
+                    <th>Current Risk</th>
+                    <th>Pending Later</th>
+                    <th>Doughy’s Take</th>
+                    <th>Open</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in feed_rows %}
+                    <tr>
+                        <td><span class="store-pill">{{ row.store_number }}</span></td>
+                        <td>
+                            {{ row.manager_on_duty or "—" }}
+                            <div class="muted">{{ row.status or "" }}</div>
+                        </td>
+                        <td>
+                            <div class="metric-line">{{ row.percent_complete or 0 }}% complete</div>
+                            <div class="muted">Integrity {{ row.integrity_score or 0 }}</div>
+                        </td>
+                        <td><div class="metric-line">{{ "%.0f"|format(row.protected_points) }}</div></td>
+                        <td><div class="metric-line">{{ "%.0f"|format(row.questionable_points) }}</div></td>
+                        <td><div class="metric-line">{{ "%.0f"|format(row.current_risk_points) }}</div></td>
+                        <td><div class="metric-line">{{ "%.0f"|format(row.pending_later_points) }}</div></td>
+                        <td>
+                            <div class="take-headline">{{ row.headline or "Execution snapshot ready." }}</div>
+                            {% if row.review_focus %}
+                                <div class="focus-line">Review: {{ row.review_focus[0] }}</div>
+                            {% endif %}
+                            {% if row.current_focus %}
+                                <div class="focus-line">Current: {{ row.current_focus[0] }}</div>
+                            {% endif %}
+                            {% if row.future_focus %}
+                                <div class="focus-line">Later: {{ row.future_focus[0] }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a class="feed-link" href="{{ url_for('checklist.execution_snapshot', store=row.store_number, date=selected_date.isoformat()) }}">
+                                Snapshot
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="9">No checklist rows found for this date.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

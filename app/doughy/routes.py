@@ -1,11 +1,11 @@
 from datetime import date
 
-from flask import jsonify, request, session
+from flask import jsonify, render_template, request, session
 
 from app.auth.routes import login_required
 from app.models import DailyChecklist, User
 from app.services.doughy_execution import build_execution_snapshot
-from app.services.doughy_ai_service import ask_doughy_ai, doughy_ai_enabled
+from app.services.doughy_ai_service import ask_doughy_ai, doughy_ai_enabled, doughy_ai_provider
 
 from . import doughy_bp
 
@@ -410,7 +410,90 @@ def ask():
         "business_date": checklist_date.isoformat(),
         "mode": "read_only_doughy_ask",
         "uses_ai": uses_ai,
+        "ai_provider": doughy_ai_provider() if uses_ai else None,
         "ai_error": ai_error,
         "execution_snapshot": execution_snapshot,
     })
+
+@doughy_bp.route("/execution-feed")
+@login_required
+def execution_feed():
+    user = _current_user()
+    role = (_safe_attr(user, "role", "") or "").lower()
+
+    if role not in {"admin", "supervisor"}:
+        return jsonify({"ok": False, "error": "Unauthorized"}), 403
+
+    selected_date = _parse_date(request.args.get("date"))
+
+    company_id = (
+        session.get("company_id")
+        or session.get("current_company_id")
+        or _safe_attr(user, "company_id", None)
+        or _safe_attr(user, "current_company_id", None)
+    )
+
+    query = DailyChecklist.query.filter(DailyChecklist.checklist_date == selected_date)
+
+    if company_id and hasattr(DailyChecklist, "company_id"):
+        query = query.filter(DailyChecklist.company_id == company_id)
+
+    rows = query.order_by(DailyChecklist.store_number.asc(), DailyChecklist.id.desc()).all()
+
+    latest_by_store = {}
+    for row in rows:
+        store_number = str(row.store_number)
+        if store_number not in latest_by_store:
+            latest_by_store[store_number] = row
+
+    feed_rows = []
+
+    for store_number in sorted(latest_by_store.keys()):
+        snapshot = build_execution_snapshot(store_number, selected_date)
+        totals = snapshot.get("totals") or {}
+        doughy_read = snapshot.get("doughy_read") or {}
+
+        current_risk = 0
+        pending_later = 0
+
+        for section in snapshot.get("sections") or []:
+            due_status = section.get("due_status") or {}
+            at_risk_points = section.get("at_risk_points") or 0
+
+            if due_status.get("status") in {"not_due", "future_day"}:
+                pending_later += at_risk_points
+            else:
+                current_risk += at_risk_points
+
+        feed_rows.append({
+            "store_number": store_number,
+            "manager_on_duty": snapshot.get("manager_on_duty"),
+            "status": snapshot.get("status"),
+            "percent_complete": snapshot.get("percent_complete"),
+            "integrity_score": snapshot.get("integrity_score"),
+            "protected_points": totals.get("protected_points", 0),
+            "questionable_points": totals.get("questionable_points", 0),
+            "at_risk_points": totals.get("at_risk_points", 0),
+            "current_risk_points": current_risk,
+            "pending_later_points": pending_later,
+            "headline": doughy_read.get("headline"),
+            "review_focus": doughy_read.get("review_focus") or [],
+            "current_focus": doughy_read.get("current_focus") or [],
+            "future_focus": doughy_read.get("future_focus") or [],
+        })
+
+    summary = {
+        "stores": len(feed_rows),
+        "protected_points": sum(row["protected_points"] for row in feed_rows),
+        "questionable_points": sum(row["questionable_points"] for row in feed_rows),
+        "current_risk_points": sum(row["current_risk_points"] for row in feed_rows),
+        "pending_later_points": sum(row["pending_later_points"] for row in feed_rows),
+    }
+
+    return render_template(
+        "doughy_execution_feed.html",
+        selected_date=selected_date,
+        feed_rows=feed_rows,
+        summary=summary,
+    )
 

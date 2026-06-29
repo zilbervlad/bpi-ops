@@ -1,11 +1,16 @@
 import json
 import os
+import urllib.error
+import urllib.request
 from typing import Any
 
 from openai import OpenAI
 
 
+AI_PROVIDER = (os.getenv("AI_PROVIDER") or "openai").strip().lower()
 OPENAI_MODEL = (os.getenv("OPENAI_MODEL") or os.getenv("DOUGHY_OPENAI_MODEL") or "gpt-4.1").strip()
+OLLAMA_BASE_URL = (os.getenv("OLLAMA_BASE_URL") or "http://localhost:11434").strip().rstrip("/")
+OLLAMA_MODEL = (os.getenv("OLLAMA_MODEL") or "llama3.1:8b").strip()
 
 
 DOUGHY_SYSTEM_PROMPT = """
@@ -43,7 +48,14 @@ Rules:
 
 
 def doughy_ai_enabled() -> bool:
+    if AI_PROVIDER == "ollama":
+        return bool(OLLAMA_BASE_URL and OLLAMA_MODEL)
+
     return bool((os.getenv("OPENAI_API_KEY") or "").strip())
+
+
+def doughy_ai_provider() -> str:
+    return AI_PROVIDER
 
 
 def _compact_execution_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
@@ -86,10 +98,8 @@ def _compact_execution_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def ask_doughy_ai(prompt: str, execution_snapshot: dict[str, Any]) -> str:
-    client = OpenAI()
-
-    payload = {
+def _build_ai_payload(prompt: str, execution_snapshot: dict[str, Any]) -> dict[str, Any]:
+    return {
         "user_prompt": prompt,
         "execution_snapshot": _compact_execution_snapshot(execution_snapshot),
         "answer_format": {
@@ -98,6 +108,11 @@ def ask_doughy_ai(prompt: str, execution_snapshot: dict[str, Any]) -> str:
             "tone": "direct, ops-focused, Doughy voice",
         },
     }
+
+
+def _ask_openai(prompt: str, execution_snapshot: dict[str, Any]) -> str:
+    client = OpenAI()
+    payload = _build_ai_payload(prompt, execution_snapshot)
 
     response = client.responses.create(
         model=OPENAI_MODEL,
@@ -115,3 +130,46 @@ def ask_doughy_ai(prompt: str, execution_snapshot: dict[str, Any]) -> str:
     )
 
     return (response.output_text or "").strip()
+
+
+def _ask_ollama(prompt: str, execution_snapshot: dict[str, Any]) -> str:
+    payload = _build_ai_payload(prompt, execution_snapshot)
+
+    request_body = {
+        "model": OLLAMA_MODEL,
+        "stream": False,
+        "messages": [
+            {
+                "role": "system",
+                "content": DOUGHY_SYSTEM_PROMPT,
+            },
+            {
+                "role": "user",
+                "content": json.dumps(payload, default=str),
+            },
+        ],
+        "options": {
+            "temperature": 0.2,
+            "num_predict": 400,
+        },
+    }
+
+    request = urllib.request.Request(
+        f"{OLLAMA_BASE_URL}/api/chat",
+        data=json.dumps(request_body).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    with urllib.request.urlopen(request, timeout=45) as response:
+        data = json.loads(response.read().decode("utf-8"))
+
+    message = data.get("message") or {}
+    return (message.get("content") or "").strip()
+
+
+def ask_doughy_ai(prompt: str, execution_snapshot: dict[str, Any]) -> str:
+    if AI_PROVIDER == "ollama":
+        return _ask_ollama(prompt, execution_snapshot)
+
+    return _ask_openai(prompt, execution_snapshot)

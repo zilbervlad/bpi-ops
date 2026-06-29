@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         soonBox.innerHTML = `
                             <strong>🧠 Doughy’s Summary</strong><br>
                             <div class="doughy-draft-box">${escapeDoughyHtml(data.answer).replace(/\n/g, "<br>")}</div>
-                            <span class="doughy-context-muted">Read-only summary. AI and write actions are still off.</span>
+                            <span class="doughy-context-muted">Real Doughy summary · read-only · no write actions.</span>
                         `;
                     } catch (error) {
                         const snapshot = buildDoughyVisibleSnapshot();
@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         soonBox.innerHTML = `
                             <strong>🧠 Doughy’s Take</strong><br>
                             <div class="doughy-draft-box">${escapeDoughyHtml(data.answer).replace(/\n/g, "<br>")}</div>
-                            <span class="doughy-context-muted">Read-only answer. AI and write actions are still off.</span>
+                            <span class="doughy-context-muted">Real Doughy answer · read-only · no write actions.</span>
                         `;
                     } catch (error) {
                         soonBox.innerHTML = `
@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             <strong>Follow-up draft</strong><br>
                             <div class="doughy-draft-box" id="doughyDraftText">${escapeDoughyHtml(draft)}</div>
                             <button type="button" class="doughy-copy-button" data-doughy-copy-draft>Copy draft</button>
-                            <span class="doughy-context-muted">Draft uses Doughy’s Take from the read-only execution snapshot. AI and send actions are still off.</span>
+                            <span class="doughy-context-muted">Draft uses Doughy’s Take · read-only · no send actions.</span>
                         `;
 
                         return;

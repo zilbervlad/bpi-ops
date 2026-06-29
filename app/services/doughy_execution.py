@@ -24,18 +24,30 @@ DEFAULT_INTEGRITY_RULES = {
     "Before Open / Before 10:30": {
         "burst_threshold": 4,
         "burst_window_seconds": 60,
+        "questionable_ratio": 0.30,
+        "fast_note_ratio": 0.50,
+        "full_score_ratio": 0.70,
     },
     "Manager's Walk": {
         "burst_threshold": 3,
         "burst_window_seconds": 45,
+        "questionable_ratio": 0.30,
+        "fast_note_ratio": 0.50,
+        "full_score_ratio": 0.70,
     },
     "During Dayshift": {
         "burst_threshold": 3,
         "burst_window_seconds": 45,
+        "questionable_ratio": 0.30,
+        "fast_note_ratio": 0.50,
+        "full_score_ratio": 0.70,
     },
     "3-O'Clock Restock": {
         "burst_threshold": 3,
         "burst_window_seconds": 45,
+        "questionable_ratio": 0.30,
+        "fast_note_ratio": 0.50,
+        "full_score_ratio": 0.70,
     },
 }
 
@@ -64,6 +76,7 @@ def _empty_section(section_name: str) -> dict[str, Any]:
         "top_risks": [],
         "questionable_items": [],
         "integrity_flags": [],
+        "timing_summary": None,
         "oa_items": {},
     }
 
@@ -74,7 +87,7 @@ def _sort_sections(section_names):
     return known + unknown
 
 
-def _build_integrity_rules() -> dict[str, dict[str, int]]:
+def _build_integrity_rules() -> dict[str, dict[str, float]]:
     rules = {
         section: values.copy()
         for section, values in DEFAULT_INTEGRITY_RULES.items()
@@ -85,13 +98,123 @@ def _build_integrity_rules() -> dict[str, dict[str, int]]:
         if not section:
             continue
 
+        defaults = DEFAULT_INTEGRITY_RULES.get(section, {})
         rules[section] = {
-            "burst_threshold": int(row.burst_threshold or DEFAULT_INTEGRITY_RULES.get(section, {}).get("burst_threshold", 3)),
-            "burst_window_seconds": int(row.burst_window_seconds or DEFAULT_INTEGRITY_RULES.get(section, {}).get("burst_window_seconds", 45)),
+            "burst_threshold": int(row.burst_threshold or defaults.get("burst_threshold", 3)),
+            "burst_window_seconds": int(row.burst_window_seconds or defaults.get("burst_window_seconds", 45)),
+            "questionable_ratio": float(row.low_score_ratio or defaults.get("questionable_ratio", 0.30)),
+            "fast_note_ratio": float(row.medium_score_ratio or defaults.get("fast_note_ratio", 0.50)),
+            "full_score_ratio": float(row.full_score_ratio or defaults.get("full_score_ratio", 0.70)),
         }
 
     return rules
 
+
+def _find_questionable_daily_item_ids(
+    daily_items: list[DailyChecklistItem],
+) -> tuple[set[int], dict[str, list[str]], dict[str, dict[str, Any]]]:
+    """
+    Flags completed checklist items that are suspicious.
+
+    Item-level integrity checks:
+    1. Burst detection: specific items completed too close together become questionable.
+    2. Section elapsed-time check: if a section was completed far faster than its expected time,
+       completed items in that section become questionable.
+    """
+    rules = _build_integrity_rules()
+    questionable_ids: set[int] = set()
+    flags_by_section: dict[str, list[str]] = defaultdict(list)
+    timing_by_section: dict[str, dict[str, Any]] = {}
+
+    items_by_section: dict[str, list[DailyChecklistItem]] = defaultdict(list)
+
+    for item in daily_items:
+        if item.is_completed and item.completed_at:
+            items_by_section[item.section_name or "(blank section)"].append(item)
+
+    for section_name, items in items_by_section.items():
+        section_rules = rules.get(section_name, {
+            "burst_threshold": 3,
+            "burst_window_seconds": 45,
+            "questionable_ratio": 0.30,
+            "fast_note_ratio": 0.50,
+            "full_score_ratio": 0.70,
+        })
+
+        threshold = int(section_rules.get("burst_threshold") or 3)
+        window_seconds = int(section_rules.get("burst_window_seconds") or 45)
+        questionable_ratio = float(section_rules.get("questionable_ratio") or 0.30)
+        fast_note_ratio = float(section_rules.get("fast_note_ratio") or 0.50)
+        full_score_ratio = float(section_rules.get("full_score_ratio") or 0.70)
+
+        completed_items = sorted(items, key=lambda row: row.completed_at)
+
+        # 1. Burst detection.
+        if len(completed_items) >= threshold:
+            for start_index in range(len(completed_items) - threshold + 1):
+                window_items = completed_items[start_index:start_index + threshold]
+                start_time = window_items[0].completed_at
+                end_time = window_items[-1].completed_at
+
+                if not start_time or not end_time:
+                    continue
+
+                elapsed_seconds = (end_time - start_time).total_seconds()
+
+                if elapsed_seconds <= window_seconds:
+                    for questionable_item in window_items:
+                        questionable_ids.add(questionable_item.id)
+
+                    flags_by_section[section_name].append(
+                        f"{threshold} tasks completed in {int(elapsed_seconds)} seconds "
+                        f"(burst threshold: {threshold} in {window_seconds}s)"
+                    )
+
+        # 2. Section elapsed-time vs expected-time detection.
+        # Use completed required items only, so incomplete tasks remain At Risk separately.
+        completed_required_items = [
+            item for item in completed_items
+            if item.is_required and (item.expected_minutes or 0) > 0
+        ]
+
+        expected_minutes = sum(item.expected_minutes or 0 for item in completed_required_items)
+
+        if len(completed_required_items) >= 2 and expected_minutes > 0:
+            first_completed = completed_required_items[0].completed_at
+            last_completed = completed_required_items[-1].completed_at
+            elapsed_minutes = (last_completed - first_completed).total_seconds() / 60
+
+            ratio = elapsed_minutes / expected_minutes if expected_minutes else 0
+
+            timing_by_section[section_name] = {
+                "completed_required_tasks": len(completed_required_items),
+                "expected_minutes": round(expected_minutes, 1),
+                "elapsed_minutes": round(elapsed_minutes, 1),
+                "ratio": round(ratio, 3),
+                "status": "believable",
+            }
+
+            if ratio < questionable_ratio:
+                for item in completed_required_items:
+                    questionable_ids.add(item.id)
+
+                timing_by_section[section_name]["status"] = "questionable"
+                flags_by_section[section_name].append(
+                    f"{len(completed_required_items)} completed required tasks took "
+                    f"{elapsed_minutes:.1f} minutes; expected about {expected_minutes:.1f} minutes "
+                    f"({ratio:.0%} of expected)"
+                )
+            elif ratio < fast_note_ratio:
+                timing_by_section[section_name]["status"] = "fast"
+                flags_by_section[section_name].append(
+                    f"{len(completed_required_items)} completed required tasks looked fast: "
+                    f"{elapsed_minutes:.1f} minutes vs {expected_minutes:.1f} expected "
+                    f"({ratio:.0%} of expected)"
+                )
+            elif ratio >= full_score_ratio:
+                timing_by_section[section_name]["status"] = "strong"
+
+    return questionable_ids, flags_by_section, timing_by_section
 
 def _find_questionable_daily_item_ids(daily_items: list[DailyChecklistItem]) -> tuple[set[int], dict[str, list[str]]]:
     """
@@ -197,7 +320,7 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
             if item.template_item_id:
                 daily_items_by_template_id[item.template_item_id] = item
 
-    questionable_daily_item_ids, flags_by_section = _find_questionable_daily_item_ids(daily_items)
+    questionable_daily_item_ids, flags_by_section, timing_by_section = _find_questionable_daily_item_ids(daily_items)
 
     all_section_names = set(SECTION_ORDER)
     for item in template_items:
@@ -222,6 +345,10 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
     for section_name, flags in flags_by_section.items():
         section = sections.setdefault(section_name, _empty_section(section_name))
         section["integrity_flags"].extend(flags)
+
+    for section_name, timing in timing_by_section.items():
+        section = sections.setdefault(section_name, _empty_section(section_name))
+        section["timing_summary"] = timing
 
     # Build from active template items so possible points are stable even if a daily checklist row is missing.
     for template_item in template_items:

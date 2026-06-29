@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .snapshot-wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .snapshot-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 18px;
+    }
+
+    .snapshot-title {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 800;
+    }
+
+    .snapshot-subtitle {
+        margin-top: 4px;
+        color: #6b7280;
+        font-size: 0.92rem;
+    }
+
+    .snapshot-filter {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .snapshot-filter select,
+    .snapshot-filter input {
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: 9px 10px;
+        font-size: 0.92rem;
+    }
+
+    .snapshot-filter button {
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-weight: 700;
+        background: #111827;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .snapshot-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .snapshot-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .snapshot-card-label {
+        color: #6b7280;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .snapshot-card-value {
+        margin-top: 6px;
+        font-size: 1.55rem;
+        font-weight: 900;
+    }
+
+    .snapshot-card-note {
+        margin-top: 3px;
+        color: #6b7280;
+        font-size: 0.85rem;
+    }
+
+    .section-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .section-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .section-name {
+        font-size: 1.05rem;
+        font-weight: 900;
+    }
+
+    .section-points {
+        font-weight: 900;
+        font-size: 1rem;
+    }
+
+    .bar {
+        height: 10px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+        margin: 10px 0 12px;
+    }
+
+    .bar-fill {
+        height: 100%;
+        background: #111827;
+        border-radius: 999px;
+    }
+
+    .risk-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        color: #374151;
+        font-size: 0.9rem;
+    }
+
+    .risk-list li {
+        margin-bottom: 5px;
+    }
+
+    .muted {
+        color: #6b7280;
+    }
+
+    .latest-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+
+    .latest-table th,
+    .latest-table td {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .latest-table th {
+        color: #6b7280;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    @media (max-width: 900px) {
+        .snapshot-header {
+            display: block;
+        }
+
+        .snapshot-filter {
+            justify-content: flex-start;
+            margin-top: 12px;
+        }
+
+        .snapshot-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 560px) {
+        .snapshot-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="snapshot-wrap">
+    <div class="snapshot-header">
+        <div>
+            <h1 class="snapshot-title">Doughy Execution Snapshot</h1>
+            <div class="snapshot-subtitle">
+                Admin-only readout using checklist completion, OA mapping, and integrity data.
+            </div>
+        </div>
+
+        <form class="snapshot-filter" method="get">
+            <select name="store">
+                {% for store in store_options %}
+                    <option value="{{ store }}" {% if store == selected_store %}selected{% endif %}>
+                        Store {{ store }}
+                    </option>
+                {% endfor %}
+                {% if selected_store and selected_store not in store_options %}
+                    <option value="{{ selected_store }}" selected>Store {{ selected_store }}</option>
+                {% endif %}
+            </select>
+
+            <input type="date" name="date" value="{{ selected_date }}">
+            <button type="submit">View</button>
+        </form>
+    </div>
+
+    {% if snapshot %}
+        <div class="snapshot-grid">
+            <div class="snapshot-card">
+                <div class="snapshot-card-label">Store / Date</div>
+                <div class="snapshot-card-value">{{ snapshot.store_number }}</div>
+                <div class="snapshot-card-note">{{ snapshot.checklist_date }}</div>
+            </div>
+
+            <div class="snapshot-card">
+                <div class="snapshot-card-label">Protected OA Points</div>
+                <div class="snapshot-card-value">
+                    {{ snapshot.totals.protected_points|round(1) }} / {{ snapshot.totals.possible_points|round(1) }}
+                </div>
+                <div class="snapshot-card-note">{{ snapshot.totals.at_risk_points|round(1) }} points at risk</div>
+            </div>
+
+            <div class="snapshot-card">
+                <div class="snapshot-card-label">Checklist Completion</div>
+                <div class="snapshot-card-value">{{ snapshot.totals.completion_percent|round(1) }}%</div>
+                <div class="snapshot-card-note">
+                    {{ snapshot.totals.completed_tasks }} / {{ snapshot.totals.total_tasks }} tasks
+                </div>
+            </div>
+
+            <div class="snapshot-card">
+                <div class="snapshot-card-label">Manager / Integrity</div>
+                <div class="snapshot-card-value">{{ snapshot.manager_on_duty or "—" }}</div>
+                <div class="snapshot-card-note">
+                    Integrity: {{ snapshot.integrity_score if snapshot.integrity_score is not none else "—" }}
+                    {% if snapshot.integrity_possible %}/ {{ snapshot.integrity_possible }}{% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% for section in snapshot.sections %}
+            {% set pct = 0 %}
+            {% if section.possible_points %}
+                {% set pct = (section.protected_points / section.possible_points * 100) %}
+            {% endif %}
+
+            <div class="section-card">
+                <div class="section-top">
+                    <div>
+                        <div class="section-name">{{ section.section_name }}</div>
+                        <div class="muted">
+                            {{ section.completed_tasks }} / {{ section.total_tasks }} tasks complete
+                        </div>
+                    </div>
+                    <div class="section-points">
+                        {{ section.protected_points|round(1) }} / {{ section.possible_points|round(1) }}
+                    </div>
+                </div>
+
+                <div class="bar">
+                    <div class="bar-fill" style="width: {{ pct|round(1) }}%;"></div>
+                </div>
+
+                {% if section.top_risks %}
+                    <strong>Top OA risks</strong>
+                    <ul class="risk-list">
+                        {% for risk in section.top_risks[:5] %}
+                            <li>
+                                <strong>{{ risk.points|round(1) }} pts</strong>
+                                — {{ risk.task }}
+                                <span class="muted">({{ risk.oa_item_name }})</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="muted">No open OA risks in this section.</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="snapshot-card">
+            No snapshot available yet.
+        </div>
+    {% endif %}
+
+    <div class="section-card">
+        <strong>Recent checklist rows</strong>
+        <table class="latest-table">
+            <thead>
+                <tr>
+                    <th>Store</th>
+                    <th>Date</th>
+                    <th>Manager</th>
+                    <th>Percent</th>
+                    <th>Integrity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in latest_checklists[:12] %}
+                    <tr>
+                        <td>{{ row.store_number }}</td>
+                        <td>{{ row.checklist_date }}</td>
+                        <td>{{ row.manager_on_duty or "—" }}</td>
+                        <td>{{ row.percent_complete or 0 }}%</td>
+                        <td>{{ row.integrity_score if row.integrity_score is not none else "—" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

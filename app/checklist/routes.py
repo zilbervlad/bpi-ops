@@ -21,6 +21,8 @@ from app.models import (
 )
 from app.services.email_service import send_email
 
+from app.services.doughy_execution import build_execution_snapshot
+
 checklist_bp = Blueprint("checklist", __name__, url_prefix="/checklist")
 
 APP_TZ = ZoneInfo("America/New_York")
@@ -1464,6 +1466,50 @@ def admin():
         auto_email_settings=auto_email_settings,
     )
 
+
+
+@checklist_bp.route("/admin/execution-snapshot")
+@login_required
+@role_required("admin")
+def execution_snapshot():
+    selected_store = (request.args.get("store") or "").strip()
+    selected_date_raw = (request.args.get("date") or "").strip()
+
+    latest_checklists = (
+        DailyChecklist.query
+        .order_by(DailyChecklist.checklist_date.desc(), DailyChecklist.id.desc())
+        .limit(50)
+        .all()
+    )
+
+    store_options = sorted({
+        row.store_number
+        for row in latest_checklists
+        if row.store_number
+    })
+
+    if not selected_store and latest_checklists:
+        selected_store = latest_checklists[0].store_number
+
+    if selected_date_raw:
+        selected_date = selected_date_raw
+    elif latest_checklists:
+        selected_date = latest_checklists[0].checklist_date.isoformat()
+    else:
+        selected_date = date.today().isoformat()
+
+    snapshot = None
+    if selected_store:
+        snapshot = build_execution_snapshot(selected_store, selected_date)
+
+    return render_template(
+        "checklist_execution_snapshot.html",
+        snapshot=snapshot,
+        store_options=store_options,
+        selected_store=selected_store,
+        selected_date=selected_date,
+        latest_checklists=latest_checklists,
+    )
 
 @checklist_bp.route("/admin/oa-mapping", methods=["GET", "POST"])
 @login_required

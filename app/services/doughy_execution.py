@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import date, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from app.models import (
     ChecklistOAMapping,
@@ -19,6 +20,43 @@ SECTION_ORDER = [
     "3-O'Clock Restock",
     "Manager's Walk",
 ]
+
+EASTERN_TZ = ZoneInfo("America/New_York")
+
+SECTION_DUE_RULES = {
+    "Before Open / Before 10:30": {
+        "label": "Opening setup",
+        "due_hour": 10,
+        "due_minute": 30,
+        "future_text": "Opening setup is not due yet.",
+        "due_text": "Opening setup is due by 10:30 AM.",
+        "overdue_text": "Opening setup is now past the 10:30 AM target.",
+    },
+    "During Dayshift": {
+        "label": "During Dayshift",
+        "due_hour": 14,
+        "due_minute": 0,
+        "future_text": "Dayshift work has not fully come due yet.",
+        "due_text": "Dayshift work is active now.",
+        "overdue_text": "Dayshift work should be under control by now.",
+    },
+    "3-O'Clock Restock": {
+        "label": "3PM Reset",
+        "due_hour": 15,
+        "due_minute": 0,
+        "future_text": "3PM Restock has not come due yet.",
+        "due_text": "3PM Restock is due around 3:00 PM.",
+        "overdue_text": "3PM Restock is now past the 3:00 PM target.",
+    },
+    "Manager's Walk": {
+        "label": "Manager's Walk",
+        "due_hour": 22,
+        "due_minute": 0,
+        "future_text": "Manager’s Walk protects tonight/tomorrow and has not come due yet.",
+        "due_text": "Manager’s Walk should be completed as part of the closing reset.",
+        "overdue_text": "Manager’s Walk is now in the closing window.",
+    },
+}
 
 DEFAULT_INTEGRITY_RULES = {
     "Before Open / Before 10:30": {
@@ -62,6 +100,59 @@ def _date_value(value):
     raise ValueError(f"Unsupported checklist_date value: {value!r}")
 
 
+
+def _now_et() -> datetime:
+    return datetime.now(EASTERN_TZ)
+
+
+def _section_due_status(section_name: str, checklist_date: date) -> dict[str, Any]:
+    """
+    Time-aware section status for Doughy language.
+
+    This does not decide whether a task is completed.
+    It only tells Doughy whether a section is not due yet, active, or past target.
+    """
+    now = _now_et()
+    today = now.date()
+
+    rule = SECTION_DUE_RULES.get(section_name)
+    if not rule:
+        return {
+            "status": "unknown",
+            "label": section_name,
+            "message": "No due-time rule is configured for this section.",
+            "due_time": None,
+        }
+
+    due_dt = datetime(
+        checklist_date.year,
+        checklist_date.month,
+        checklist_date.day,
+        int(rule["due_hour"]),
+        int(rule["due_minute"]),
+        tzinfo=EASTERN_TZ,
+    )
+
+    if checklist_date < today:
+        status = "past_due"
+        message = rule["overdue_text"]
+    elif checklist_date > today:
+        status = "future_day"
+        message = rule["future_text"]
+    elif now < due_dt:
+        status = "not_due"
+        message = rule["future_text"]
+    else:
+        status = "due_now"
+        message = rule["overdue_text"]
+
+    return {
+        "status": status,
+        "label": rule["label"],
+        "message": message,
+        "due_time": due_dt.isoformat(),
+    }
+
 def _empty_section(section_name: str) -> dict[str, Any]:
     return {
         "section_name": section_name,
@@ -77,6 +168,7 @@ def _empty_section(section_name: str) -> dict[str, Any]:
         "questionable_items": [],
         "integrity_flags": [],
         "timing_summary": None,
+        "due_status": None,
         "oa_items": {},
     }
 
@@ -233,8 +325,10 @@ def _build_doughy_read(snapshot: dict[str, Any]) -> dict[str, Any]:
     questionable = totals.get("questionable_points", 0) or 0
     at_risk = totals.get("at_risk_points", 0) or 0
 
+    current_focus = []
+    future_focus = []
+    review_focus = []
     section_reads = []
-    focus_items = []
 
     for section in sections:
         name = section.get("section_name")
@@ -244,77 +338,105 @@ def _build_doughy_read(snapshot: dict[str, Any]) -> dict[str, Any]:
         s_at_risk = section.get("at_risk_points", 0) or 0
         timing = section.get("timing_summary")
         flags = section.get("integrity_flags") or []
+        due_status = section.get("due_status") or {}
+        due_state = due_status.get("status")
 
         if not s_possible:
             continue
 
-        status = "not_started"
         if s_questionable > 0:
             status = "needs_review"
+        elif due_state in ("not_due", "future_day") and s_protected == 0:
+            status = "pending"
         elif s_at_risk == 0 and s_protected >= s_possible:
             status = "protected"
         elif s_protected > 0:
             status = "partially_protected"
         elif s_at_risk >= s_possible:
-            status = "fully_at_risk"
+            status = "at_risk"
+        else:
+            status = "review"
 
-        section_read = {
+        section_reads.append({
             "section_name": name,
             "status": status,
+            "due_status": due_status,
             "protected_points": s_protected,
             "questionable_points": s_questionable,
             "at_risk_points": s_at_risk,
             "possible_points": s_possible,
             "timing_summary": timing,
             "integrity_flags": flags,
-        }
-        section_reads.append(section_read)
+        })
 
         if s_questionable > 0:
-            focus_items.append(
+            review_focus.append(
                 f"{name} has {s_questionable:g} checked points that are not fully verified due to timing."
             )
+
+        if due_state in ("not_due", "future_day"):
+            if s_at_risk > 0 and s_protected == 0:
+                future_focus.append(
+                    f"{name} is pending: {due_status.get('message')}"
+                )
+            elif s_at_risk > 0:
+                future_focus.append(
+                    f"{name} is partly started, with {s_at_risk:g} points still pending before it comes due."
+                )
+            continue
+
         if s_at_risk > 0:
             top_risks = section.get("top_risks") or []
             if top_risks:
                 top = top_risks[0]
-                focus_items.append(
-                    f"{name} still has {s_at_risk:g} OA-mapped points at risk. Top risk: {top.get('task')}."
+                current_focus.append(
+                    f"{name} has {s_at_risk:g} OA-mapped points currently at risk. Top risk: {top.get('task')}."
                 )
             else:
-                focus_items.append(
-                    f"{name} still has {s_at_risk:g} OA-mapped points at risk."
+                current_focus.append(
+                    f"{name} has {s_at_risk:g} OA-mapped points currently at risk."
                 )
 
     headline = "Execution snapshot ready."
 
-    if questionable > 0 and at_risk > 0:
-        headline = "Some work is protected, but timing and open risks need review."
-    elif questionable > 0:
+    if review_focus and current_focus:
+        headline = "Some work is protected, but timing and current risks need review."
+    elif review_focus:
         headline = "Some checked work needs timing review."
-    elif at_risk > 0 and protected > 0:
-        headline = "Some OA points are protected, but risks remain."
-    elif at_risk >= possible and possible > 0:
-        headline = "No OA-mapped points are protected yet."
+    elif current_focus and protected > 0:
+        headline = "Some OA points are protected, but current risks remain."
+    elif current_focus:
+        headline = "Current OA-mapped work still needs attention."
     elif protected >= possible and possible > 0:
-        headline = "All OA-mapped points are protected."
+        headline = "All currently due OA-mapped points are protected."
+    elif future_focus and not current_focus:
+        headline = "Future checklist sections are still pending."
 
     summary = (
         f"{snapshot.get('store_number')} protected {protected:g} of {possible:g} OA-mapped points. "
-        f"{questionable:g} points are checked but not fully verified, and {at_risk:g} points remain at risk."
+        f"{questionable:g} points are checked but not fully verified, and {at_risk:g} points are not protected yet."
     )
+
+    focus_items = []
+    focus_items.extend(review_focus[:3])
+    focus_items.extend(current_focus[:4])
+    focus_items.extend(future_focus[:3])
 
     safe_language = [
         "Say 'checked but not fully verified' instead of 'fake'.",
         "Say 'timing looks questionable' instead of accusing a manager.",
         "Treat burst and expected-time flags as review signals, not proof of misconduct.",
-        "Focus on what needs recovery or supervisor review.",
+        "Separate current risks from sections that are not due yet.",
+        "Focus on recovery and supervisor review.",
     ]
 
     return {
         "headline": headline,
         "summary": summary,
-        "focus_items": focus_items[:6],
+        "focus_items": focus_items[:7],
+        "current_focus": current_focus,
+        "future_focus": future_focus,
+        "review_focus": review_focus,
         "sections": section_reads,
         "safe_language": safe_language,
     }
@@ -385,6 +507,9 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
         section_name: _empty_section(section_name)
         for section_name in _sort_sections(all_section_names)
     }
+
+    for section_name, section in sections.items():
+        section["due_status"] = _section_due_status(section_name, checklist_date)
 
     totals = {
         "possible_points": 0.0,

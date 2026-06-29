@@ -576,6 +576,9 @@
                         <div class="section-name">{{ section.section_name }}</div>
                         <div class="muted">
                             {{ section.completed_tasks }} / {{ section.total_tasks }} tasks complete
+                            {% if section.due_status and section.due_status.message %}
+                                · {{ section.due_status.message }}
+                            {% endif %}
                         </div>
                     </div>
                     <div class="section-points">

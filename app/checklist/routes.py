@@ -1468,6 +1468,27 @@ def admin():
 
 
 
+
+@checklist_bp.route("/api/doughy/execution-snapshot")
+@login_required
+@role_required("admin", "supervisor")
+def doughy_execution_snapshot_api():
+    selected_store = (request.args.get("store") or "").strip()
+    selected_date = (request.args.get("date") or "").strip()
+
+    if not selected_store:
+        return jsonify({"ok": False, "error": "Missing store"}), 400
+
+    if not selected_date:
+        selected_date = date.today().isoformat()
+
+    snapshot = build_execution_snapshot(selected_store, selected_date)
+
+    return jsonify({
+        "ok": True,
+        "snapshot": snapshot,
+    })
+
 @checklist_bp.route("/admin/execution-snapshot")
 @login_required
 @role_required("admin")

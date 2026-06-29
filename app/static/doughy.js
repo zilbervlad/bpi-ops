@@ -69,99 +69,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (prompt === "What needs attention today?") {
                     soonBox.innerHTML = `
                         <strong>Checking...</strong><br>
-                        Doughy is checking this page using read-only context.
+                        Doughy is checking the read-only execution snapshot.
                     `;
                     soonBox.classList.add("open");
 
-                    let checklistContext = null;
-
                     try {
-                        checklistContext = await loadDoughyChecklistContextIfAvailable();
-                    } catch (error) {
-                        checklistContext = null;
-                    }
-
-                    if (checklistContext && checklistContext.ok && checklistContext.found) {
-                        const doughyRead = checklistContext.doughy_read || {};
-                        const focusItems = doughyRead.focus_items || [];
-                        const snapshot = checklistContext.execution_snapshot || {};
-                        const totals = snapshot.totals || {};
-
-                        if (doughyRead.headline || doughyRead.summary) {
-                            const reviewFocus = doughyRead.review_focus || [];
-                            const currentFocus = doughyRead.current_focus || [];
-                            const futureFocus = doughyRead.future_focus || [];
-
-                            const reviewHtml = reviewFocus.length
-                                ? `<br><strong>Needs review</strong><br>${reviewFocus.slice(0, 2).map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}`
-                                : "";
-
-                            const currentHtml = currentFocus.length
-                                ? `<br><br><strong>Current risk</strong><br>${currentFocus.slice(0, 2).map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}`
-                                : "";
-
-                            const futureHtml = futureFocus.length
-                                ? `<br><br><strong>Pending later</strong><br>${futureFocus.slice(0, 3).map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}`
-                                : "";
-
-                            soonBox.innerHTML = `
-                                <strong>🧠 Doughy’s Take</strong><br>
-                                ${doughyRead.headline ? `<strong>${escapeDoughyHtml(doughyRead.headline)}</strong><br>` : ""}
-                                <br>
-                                <span class="doughy-context-muted">
-                                    ${escapeDoughyHtml(totals.protected_points || 0)} protected
-                                    · ${escapeDoughyHtml(totals.questionable_points || 0)} questionable
-                                    · ${escapeDoughyHtml(totals.at_risk_points || 0)} not protected yet
-                                </span>
-                                ${reviewHtml}
-                                ${currentHtml}
-                                ${futureHtml}
-                                <br><br>
-                                <span class="doughy-context-muted">Read-only execution snapshot. AI and write actions are still off.</span>
-                            `;
-                        } else {
-                            const items = checklistContext.attention || [];
-
-                            if (items.length === 0) {
-                                soonBox.innerHTML = `
-                                    <strong>Checklist attention</strong><br>
-                                    Store <strong>${escapeDoughyHtml(checklistContext.store)}</strong> checklist looks okay from read-only checklist data.<br>
-                                    Completion: <strong>${checklistContext.completion}%</strong><br>
-                                    Integrity: <strong>${checklistContext.integrity}%</strong><br>
-                                    <span class="doughy-context-muted">Read-only checklist data. AI and write actions are still off.</span>
-                                `;
-                            } else {
-                                soonBox.innerHTML = `
-                                    <strong>Checklist attention</strong><br>
-                                    Store <strong>${escapeDoughyHtml(checklistContext.store)}</strong> has <strong>${items.length}</strong> item(s) needing attention:<br>
-                                    ${items.map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}
-                                    <br><span class="doughy-context-muted">Read-only checklist data. AI and write actions are still off.</span>
-                                `;
-                            }
-                        }
-
-                        soonBox.classList.add("open");
-                        return;
-                    }
-
-                    const attention = buildDoughyAttentionSnapshot();
-                    const checklistDebug = checklistContext
-                        ? (checklistContext.debug || checklistContext.message || checklistContext.error || "Checklist backend returned, but no active checklist data was used.")
-                        : "Checklist backend was not used.";
-
-                    if (attention.items.length === 0) {
+                        const data = await askDoughyReadOnly("What needs attention today?");
                         soonBox.innerHTML = `
-                            <strong>Read-only attention scan</strong><br>
-                            I scanned <strong>${attention.scanned}</strong> visible page block(s), but I do not see obvious warning/open/failed items.<br>
-                            <span class="doughy-context-muted">Backend: ${escapeDoughyHtml(checklistDebug)}</span><br>
-                            <span class="doughy-context-muted">This is only scanning visible page text. AI and database checks are still off.</span>
+                            <strong>🧠 Doughy’s Take</strong><br>
+                            <div class="doughy-draft-box">${escapeDoughyHtml(data.answer).replace(/\n/g, "<br>")}</div>
+                            <span class="doughy-context-muted">Read-only answer. AI and write actions are still off.</span>
                         `;
-                    } else {
+                    } catch (error) {
                         soonBox.innerHTML = `
-                            <strong>Read-only attention scan</strong><br>
-                            I found <strong>${attention.items.length}</strong> visible item(s) that may need attention:<br>
-                            ${attention.items.map(item => `• ${escapeDoughyHtml(item)}`).join("<br>")}
-                            <br><span class="doughy-context-muted">This is only scanning visible page text. AI and database checks are still off.</span>
+                            <strong>Doughy could not load the execution snapshot.</strong><br>
+                            <span class="doughy-context-muted">${escapeDoughyHtml(error.message || error)}</span>
                         `;
                     }
 
@@ -258,6 +180,70 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
+
+
+    async function askDoughyReadOnly(prompt) {
+        const storeAndDate = getDoughyStoreAndDate();
+
+        const response = await fetch("/doughy/ask", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                store: storeAndDate.store,
+                date: storeAndDate.date
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            throw new Error(data.error || "Doughy could not answer right now.");
+        }
+
+        return data;
+    }
+
+
+    function getDoughyStoreAndDate() {
+        const params = new URLSearchParams(window.location.search);
+
+        let store = (
+            params.get("store") ||
+            params.get("store_number") ||
+            ""
+        );
+
+        let date = (
+            params.get("date") ||
+            params.get("checklist_date") ||
+            params.get("business_date") ||
+            ""
+        );
+
+        const storeSelect = document.querySelector(
+            "select[name='store'], select[name='store_number'], #store, #store_number"
+        );
+
+        if (!store && storeSelect && storeSelect.value) {
+            store = storeSelect.value;
+        }
+
+        const dateInput = document.querySelector(
+            "input[name='date'], input[name='checklist_date'], input[name='business_date'], #date, #checklist_date"
+        );
+
+        if (!date && dateInput && dateInput.value) {
+            date = dateInput.value;
+        }
+
+        return {
+            store: store || null,
+            date: date || null
+        };
+    }
 
 
     function buildDoughyVisibleSnapshot() {

@@ -18,3 +18,4 @@ openpyxl==3.1.5
 qrcode[pil]
 requests==2.32.5
 cloudinary
+openai==2.26.0

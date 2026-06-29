@@ -5,6 +5,7 @@ from flask import jsonify, request, session
 from app.auth.routes import login_required
 from app.models import DailyChecklist, User
 from app.services.doughy_execution import build_execution_snapshot
+from app.services.doughy_ai_service import ask_doughy_ai, doughy_ai_enabled
 
 from . import doughy_bp
 
@@ -389,7 +390,18 @@ def ask():
         "doughy_read": execution_snapshot.get("doughy_read"),
     }
 
-    answer = _build_safe_doughy_answer(prompt, checklist_context)
+    uses_ai = False
+    ai_error = None
+
+    if doughy_ai_enabled():
+        try:
+            answer = ask_doughy_ai(prompt, execution_snapshot)
+            uses_ai = True
+        except Exception as exc:
+            ai_error = str(exc)
+            answer = _build_safe_doughy_answer(prompt, checklist_context)
+    else:
+        answer = _build_safe_doughy_answer(prompt, checklist_context)
 
     return jsonify({
         "ok": True,
@@ -397,7 +409,8 @@ def ask():
         "store": str(store),
         "business_date": checklist_date.isoformat(),
         "mode": "read_only_doughy_ask",
-        "uses_ai": False,
+        "uses_ai": uses_ai,
+        "ai_error": ai_error,
         "execution_snapshot": execution_snapshot,
     })
 

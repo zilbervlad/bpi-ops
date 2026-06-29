@@ -223,6 +223,102 @@ def _find_questionable_daily_item_ids(
 
     return questionable_ids, flags_by_section, timing_by_section
 
+
+def _build_doughy_read(snapshot: dict[str, Any]) -> dict[str, Any]:
+    totals = snapshot.get("totals", {})
+    sections = snapshot.get("sections", [])
+
+    possible = totals.get("possible_points", 0) or 0
+    protected = totals.get("protected_points", 0) or 0
+    questionable = totals.get("questionable_points", 0) or 0
+    at_risk = totals.get("at_risk_points", 0) or 0
+
+    section_reads = []
+    focus_items = []
+
+    for section in sections:
+        name = section.get("section_name")
+        s_possible = section.get("possible_points", 0) or 0
+        s_protected = section.get("protected_points", 0) or 0
+        s_questionable = section.get("questionable_points", 0) or 0
+        s_at_risk = section.get("at_risk_points", 0) or 0
+        timing = section.get("timing_summary")
+        flags = section.get("integrity_flags") or []
+
+        if not s_possible:
+            continue
+
+        status = "not_started"
+        if s_questionable > 0:
+            status = "needs_review"
+        elif s_at_risk == 0 and s_protected >= s_possible:
+            status = "protected"
+        elif s_protected > 0:
+            status = "partially_protected"
+        elif s_at_risk >= s_possible:
+            status = "fully_at_risk"
+
+        section_read = {
+            "section_name": name,
+            "status": status,
+            "protected_points": s_protected,
+            "questionable_points": s_questionable,
+            "at_risk_points": s_at_risk,
+            "possible_points": s_possible,
+            "timing_summary": timing,
+            "integrity_flags": flags,
+        }
+        section_reads.append(section_read)
+
+        if s_questionable > 0:
+            focus_items.append(
+                f"{name} has {s_questionable:g} checked points that are not fully verified due to timing."
+            )
+        if s_at_risk > 0:
+            top_risks = section.get("top_risks") or []
+            if top_risks:
+                top = top_risks[0]
+                focus_items.append(
+                    f"{name} still has {s_at_risk:g} OA-mapped points at risk. Top risk: {top.get('task')}."
+                )
+            else:
+                focus_items.append(
+                    f"{name} still has {s_at_risk:g} OA-mapped points at risk."
+                )
+
+    headline = "Execution snapshot ready."
+
+    if questionable > 0 and at_risk > 0:
+        headline = "Some work is protected, but timing and open risks need review."
+    elif questionable > 0:
+        headline = "Some checked work needs timing review."
+    elif at_risk > 0 and protected > 0:
+        headline = "Some OA points are protected, but risks remain."
+    elif at_risk >= possible and possible > 0:
+        headline = "No OA-mapped points are protected yet."
+    elif protected >= possible and possible > 0:
+        headline = "All OA-mapped points are protected."
+
+    summary = (
+        f"{snapshot.get('store_number')} protected {protected:g} of {possible:g} OA-mapped points. "
+        f"{questionable:g} points are checked but not fully verified, and {at_risk:g} points remain at risk."
+    )
+
+    safe_language = [
+        "Say 'checked but not fully verified' instead of 'fake'.",
+        "Say 'timing looks questionable' instead of accusing a manager.",
+        "Treat burst and expected-time flags as review signals, not proof of misconduct.",
+        "Focus on what needs recovery or supervisor review.",
+    ]
+
+    return {
+        "headline": headline,
+        "summary": summary,
+        "focus_items": focus_items[:6],
+        "sections": section_reads,
+        "safe_language": safe_language,
+    }
+
 def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any]:
     """
     Deterministic Doughy execution snapshot.
@@ -448,7 +544,7 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
             1,
         )
 
-    return {
+    snapshot = {
         "store_number": str(store_number),
         "checklist_date": checklist_date.isoformat(),
         "daily_checklist_id": checklist.id if checklist else None,
@@ -462,3 +558,5 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
         "totals": totals,
         "sections": [sections[name] for name in _sort_sections(sections.keys())],
     }
+    snapshot["doughy_read"] = _build_doughy_read(snapshot)
+    return snapshot

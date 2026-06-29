@@ -408,6 +408,51 @@
         color: #fca5a5;
     }
 
+
+    .doughy-read-card {
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+        color: #f8fafc;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+        padding: 16px 18px;
+        margin: 0 0 16px;
+        box-shadow: 0 16px 36px rgba(15, 23, 42, 0.24);
+    }
+
+    .doughy-read-kicker {
+        font-size: 0.75rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #93c5fd;
+        margin-bottom: 5px;
+    }
+
+    .doughy-read-headline {
+        color: #ffffff !important;
+        font-size: 1.18rem;
+        font-weight: 950;
+        margin-bottom: 5px;
+    }
+
+    .doughy-read-summary {
+        color: #cbd5e1 !important;
+        font-size: 0.92rem;
+        line-height: 1.45;
+    }
+
+    .doughy-read-list {
+        margin: 10px 0 0;
+        padding-left: 18px;
+        color: #e2e8f0 !important;
+        font-size: 0.88rem;
+    }
+
+    .doughy-read-list li {
+        margin-bottom: 4px;
+        color: #e2e8f0 !important;
+    }
+
 </style>
 
 <div class="snapshot-wrap">
@@ -437,6 +482,23 @@
     </div>
 
     {% if snapshot %}
+
+        {% if snapshot.doughy_read %}
+            <div class="doughy-read-card">
+                <div class="doughy-read-kicker">Doughy Read</div>
+                <div class="doughy-read-headline">{{ snapshot.doughy_read.headline }}</div>
+                <div class="doughy-read-summary">{{ snapshot.doughy_read.summary }}</div>
+
+                {% if snapshot.doughy_read.focus_items %}
+                    <ul class="doughy-read-list">
+                        {% for item in snapshot.doughy_read.focus_items[:4] %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endif %}
+
         <div class="snapshot-grid">
             <div class="snapshot-card">
                 <div class="snapshot-card-label">Store / Date</div>

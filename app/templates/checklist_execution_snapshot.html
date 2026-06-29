@@ -233,6 +233,86 @@
         }
     }
 
+
+    .section-summary-title {
+        margin: 18px 0 10px;
+        color: #f8fafc;
+        font-size: 0.82rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .section-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .section-summary-card {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        padding: 13px 14px;
+        color: #f8fafc;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.14);
+    }
+
+    .section-summary-name {
+        font-size: 0.83rem;
+        font-weight: 900;
+        color: #f8fafc;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .section-summary-points {
+        margin-top: 8px;
+        font-size: 1.25rem;
+        font-weight: 950;
+        color: #ffffff;
+    }
+
+    .section-summary-note {
+        margin-top: 3px;
+        font-size: 0.8rem;
+        color: #94a3b8;
+        font-weight: 700;
+    }
+
+    .section-summary-bar {
+        margin-top: 10px;
+        height: 8px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.16);
+    }
+
+    .section-summary-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: #f8fafc;
+    }
+
+    .risk-list {
+        columns: 1 !important;
+    }
+
+
+    @media (max-width: 1000px) {
+        .section-summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 560px) {
+        .section-summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
 </style>
 
 <div class="snapshot-wrap">
@@ -293,6 +373,30 @@
                     {% if snapshot.integrity_possible %}/ {{ snapshot.integrity_possible }}{% endif %}
                 </div>
             </div>
+        </div>
+
+
+        <div class="section-summary-title">Points protected by checklist book section</div>
+        <div class="section-summary-grid">
+            {% for section in snapshot.sections %}
+                {% set section_pct = 0 %}
+                {% if section.possible_points %}
+                    {% set section_pct = (section.protected_points / section.possible_points * 100) %}
+                {% endif %}
+
+                <div class="section-summary-card">
+                    <div class="section-summary-name">{{ section.section_name }}</div>
+                    <div class="section-summary-points">
+                        {{ section.protected_points|round(1) }} / {{ section.possible_points|round(1) }}
+                    </div>
+                    <div class="section-summary-note">
+                        {{ section.at_risk_points|round(1) }} at risk · {{ section.completed_tasks }} / {{ section.total_tasks }} tasks
+                    </div>
+                    <div class="section-summary-bar">
+                        <div class="section-summary-fill" style="width: {{ section_pct|round(1) }}%;"></div>
+                    </div>
+                </div>
+            {% endfor %}
         </div>
 
         {% for section in snapshot.sections %}

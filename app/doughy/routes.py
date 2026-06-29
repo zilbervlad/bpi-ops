@@ -4,6 +4,7 @@ from flask import jsonify, request, session
 
 from app.auth.routes import login_required
 from app.models import DailyChecklist, User
+from app.services.doughy_execution import build_execution_snapshot
 
 from . import doughy_bp
 
@@ -268,6 +269,8 @@ def checklist_context():
     sections = _build_checklist_sections(daily)
     attention = _build_checklist_attention(daily, sections)
 
+    execution_snapshot = build_execution_snapshot(str(store), checklist_date)
+
     return jsonify(
         {
             "ok": True,
@@ -278,6 +281,8 @@ def checklist_context():
             "integrity": round(daily.integrity_score or 0, 1),
             "sections": sections,
             "attention": attention,
+            "execution_snapshot": execution_snapshot,
+            "doughy_read": execution_snapshot.get("doughy_read"),
             "mode": "read_only_checklist_context",
         }
     )

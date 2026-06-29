@@ -9,6 +9,7 @@ from app.models import (
     ChecklistTemplateItem,
     DailyChecklist,
     DailyChecklistItem,
+    IntegritySettings,
 )
 
 
@@ -18,6 +19,25 @@ SECTION_ORDER = [
     "3-O'Clock Restock",
     "Manager's Walk",
 ]
+
+DEFAULT_INTEGRITY_RULES = {
+    "Before Open / Before 10:30": {
+        "burst_threshold": 4,
+        "burst_window_seconds": 60,
+    },
+    "Manager's Walk": {
+        "burst_threshold": 3,
+        "burst_window_seconds": 45,
+    },
+    "During Dayshift": {
+        "burst_threshold": 3,
+        "burst_window_seconds": 45,
+    },
+    "3-O'Clock Restock": {
+        "burst_threshold": 3,
+        "burst_window_seconds": 45,
+    },
+}
 
 
 def _date_value(value):
@@ -35,11 +55,15 @@ def _empty_section(section_name: str) -> dict[str, Any]:
         "section_name": section_name,
         "possible_points": 0.0,
         "protected_points": 0.0,
+        "questionable_points": 0.0,
         "at_risk_points": 0.0,
         "completed_tasks": 0,
+        "questionable_tasks": 0,
         "total_tasks": 0,
         "completion_percent": 0.0,
         "top_risks": [],
+        "questionable_items": [],
+        "integrity_flags": [],
         "oa_items": {},
     }
 
@@ -50,13 +74,88 @@ def _sort_sections(section_names):
     return known + unknown
 
 
+def _build_integrity_rules() -> dict[str, dict[str, int]]:
+    rules = {
+        section: values.copy()
+        for section, values in DEFAULT_INTEGRITY_RULES.items()
+    }
+
+    for row in IntegritySettings.query.all():
+        section = row.integrity_section
+        if not section:
+            continue
+
+        rules[section] = {
+            "burst_threshold": int(row.burst_threshold or DEFAULT_INTEGRITY_RULES.get(section, {}).get("burst_threshold", 3)),
+            "burst_window_seconds": int(row.burst_window_seconds or DEFAULT_INTEGRITY_RULES.get(section, {}).get("burst_window_seconds", 45)),
+        }
+
+    return rules
+
+
+def _find_questionable_daily_item_ids(daily_items: list[DailyChecklistItem]) -> tuple[set[int], dict[str, list[str]]]:
+    """
+    Flags completed checklist items that are part of a suspicious burst.
+
+    This is item-level integrity:
+    a checked item inside a suspicious burst becomes QUESTIONABLE, not fully protected.
+    """
+    rules = _build_integrity_rules()
+    questionable_ids: set[int] = set()
+    flags_by_section: dict[str, list[str]] = defaultdict(list)
+
+    items_by_section: dict[str, list[DailyChecklistItem]] = defaultdict(list)
+
+    for item in daily_items:
+        if item.is_completed and item.completed_at:
+            items_by_section[item.section_name or "(blank section)"].append(item)
+
+    for section_name, items in items_by_section.items():
+        section_rules = rules.get(section_name, {
+            "burst_threshold": 3,
+            "burst_window_seconds": 45,
+        })
+
+        threshold = int(section_rules.get("burst_threshold") or 3)
+        window_seconds = int(section_rules.get("burst_window_seconds") or 45)
+
+        completed_items = sorted(items, key=lambda row: row.completed_at)
+
+        if len(completed_items) < threshold:
+            continue
+
+        for start_index in range(len(completed_items) - threshold + 1):
+            window_items = completed_items[start_index:start_index + threshold]
+            start_time = window_items[0].completed_at
+            end_time = window_items[-1].completed_at
+
+            if not start_time or not end_time:
+                continue
+
+            elapsed_seconds = (end_time - start_time).total_seconds()
+
+            if elapsed_seconds <= window_seconds:
+                for questionable_item in window_items:
+                    questionable_ids.add(questionable_item.id)
+
+                flags_by_section[section_name].append(
+                    f"{threshold} tasks completed in {int(elapsed_seconds)} seconds "
+                    f"(threshold: {threshold} in {window_seconds}s)"
+                )
+
+    return questionable_ids, flags_by_section
+
+
 def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any]:
     """
     Deterministic Doughy execution snapshot.
 
     This does not call AI.
-    It converts checklist completion + OA mapping into an operations-readable summary:
-    possible OA points, protected OA points, at-risk OA points, and top missed risks.
+
+    Item states:
+    - Protected: completed and not part of a suspicious integrity burst
+    - Questionable: completed, but part of a suspicious integrity burst
+    - At Risk: not completed
     """
     checklist_date = _date_value(checklist_date)
 
@@ -98,6 +197,8 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
             if item.template_item_id:
                 daily_items_by_template_id[item.template_item_id] = item
 
+    questionable_daily_item_ids, flags_by_section = _find_questionable_daily_item_ids(daily_items)
+
     all_section_names = set(SECTION_ORDER)
     for item in template_items:
         all_section_names.add(item.section_name or "(blank section)")
@@ -110,11 +211,17 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
     totals = {
         "possible_points": 0.0,
         "protected_points": 0.0,
+        "questionable_points": 0.0,
         "at_risk_points": 0.0,
         "completed_tasks": 0,
+        "questionable_tasks": 0,
         "total_tasks": 0,
         "completion_percent": 0.0,
     }
+
+    for section_name, flags in flags_by_section.items():
+        section = sections.setdefault(section_name, _empty_section(section_name))
+        section["integrity_flags"].extend(flags)
 
     # Build from active template items so possible points are stable even if a daily checklist row is missing.
     for template_item in template_items:
@@ -124,6 +231,7 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
         daily_item = daily_items_by_template_id.get(template_item.id)
         completed = bool(daily_item.is_completed) if daily_item else False
         completed_at = daily_item.completed_at if daily_item else None
+        is_questionable = bool(daily_item and daily_item.id in questionable_daily_item_ids)
 
         section["total_tasks"] += 1
         totals["total_tasks"] += 1
@@ -131,6 +239,10 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
         if completed:
             section["completed_tasks"] += 1
             totals["completed_tasks"] += 1
+
+        if is_questionable:
+            section["questionable_tasks"] += 1
+            totals["questionable_tasks"] += 1
 
         item_mappings = mappings_by_template_id.get(template_item.id, [])
 
@@ -153,15 +265,32 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
                     "oa_item_name": oa_item_name,
                     "possible_points": 0.0,
                     "protected_points": 0.0,
+                    "questionable_points": 0.0,
                     "at_risk_points": 0.0,
                 },
             )
             section["oa_items"][oa_key]["possible_points"] += points
 
-            if completed:
+            if completed and not is_questionable:
                 section["protected_points"] += points
                 totals["protected_points"] += points
                 section["oa_items"][oa_key]["protected_points"] += points
+            elif completed and is_questionable:
+                section["questionable_points"] += points
+                totals["questionable_points"] += points
+                section["oa_items"][oa_key]["questionable_points"] += points
+                section["questionable_items"].append(
+                    {
+                        "task": template_item.task_text,
+                        "oa_section": oa_section,
+                        "oa_item_name": oa_item_name,
+                        "points": points,
+                        "completed": True,
+                        "completed_at": completed_at.isoformat() if completed_at else None,
+                        "is_required": bool(template_item.is_required),
+                        "reason": "Completed inside suspicious timing burst",
+                    }
+                )
             else:
                 section["top_risks"].append(
                     {
@@ -179,8 +308,9 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
     for section in sections.values():
         section["possible_points"] = round(section["possible_points"], 2)
         section["protected_points"] = round(section["protected_points"], 2)
+        section["questionable_points"] = round(section["questionable_points"], 2)
         section["at_risk_points"] = round(
-            max(section["possible_points"] - section["protected_points"], 0),
+            max(section["possible_points"] - section["protected_points"] - section["questionable_points"], 0),
             2,
         )
 
@@ -193,14 +323,20 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
         for oa_item in section["oa_items"].values():
             oa_item["possible_points"] = round(oa_item["possible_points"], 2)
             oa_item["protected_points"] = round(oa_item["protected_points"], 2)
+            oa_item["questionable_points"] = round(oa_item["questionable_points"], 2)
             oa_item["at_risk_points"] = round(
-                max(oa_item["possible_points"] - oa_item["protected_points"], 0),
+                max(
+                    oa_item["possible_points"]
+                    - oa_item["protected_points"]
+                    - oa_item["questionable_points"],
+                    0,
+                ),
                 2,
             )
 
         section["oa_items"] = sorted(
             section["oa_items"].values(),
-            key=lambda row: (-row["at_risk_points"], row["oa_section"], row["oa_item_name"]),
+            key=lambda row: (-row["at_risk_points"], -row["questionable_points"], row["oa_section"], row["oa_item_name"]),
         )
 
         section["top_risks"] = sorted(
@@ -208,10 +344,16 @@ def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any
             key=lambda row: (-row["points"], row["oa_section"], row["oa_item_name"], row["task"]),
         )[:8]
 
+        section["questionable_items"] = sorted(
+            section["questionable_items"],
+            key=lambda row: (-row["points"], row["oa_section"], row["oa_item_name"], row["task"]),
+        )[:8]
+
     totals["possible_points"] = round(totals["possible_points"], 2)
     totals["protected_points"] = round(totals["protected_points"], 2)
+    totals["questionable_points"] = round(totals["questionable_points"], 2)
     totals["at_risk_points"] = round(
-        max(totals["possible_points"] - totals["protected_points"], 0),
+        max(totals["possible_points"] - totals["protected_points"] - totals["questionable_points"], 0),
         2,
     )
     if totals["total_tasks"]:

@@ -4,7 +4,50 @@
 {% block header %}Checklist Admin{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 16px;"><a class="btn-secondary" href="{{ url_for('checklist.oa_mapping_admin') }}">OA Mapping</a></div>
+<style>
+    .checklist-admin-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .doughy-admin-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 15px;
+        border-radius: 14px;
+        text-decoration: none;
+        font-weight: 850;
+        background: linear-gradient(135deg, #101827, #24324f);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.20);
+    }
+
+    .doughy-admin-button:hover {
+        transform: translateY(-1px);
+        color: #ffffff;
+        text-decoration: none;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.28);
+    }
+
+    .doughy-admin-button span {
+        opacity: 0.78;
+        font-size: 0.88rem;
+        font-weight: 700;
+    }
+</style>
+
+<div class="checklist-admin-actions">
+    <a class="btn-secondary" href="{{ url_for('checklist.oa_mapping_admin') }}">OA Mapping</a>
+
+    <a class="doughy-admin-button" href="{{ url_for('checklist.execution_snapshot') }}">
+        🧠 Doughy Execution Snapshot
+        <span>OA risk readout</span>
+    </a>
+</div>
 <style>
     .checklist-admin-page {
         display: flex;

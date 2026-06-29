@@ -185,6 +185,54 @@
             grid-template-columns: 1fr;
         }
     }
+
+    .snapshot-card,
+    .section-card {
+        color: #111827;
+    }
+
+    .snapshot-card *,
+    .section-card * {
+        color: inherit;
+    }
+
+    .snapshot-card-label,
+    .snapshot-card-note,
+    .muted,
+    .latest-table th {
+        color: #64748b !important;
+    }
+
+    .snapshot-card-value,
+    .section-name,
+    .section-points,
+    .risk-list strong,
+    .section-card strong {
+        color: #111827 !important;
+    }
+
+    .risk-list,
+    .risk-list li,
+    .latest-table td {
+        color: #334155 !important;
+    }
+
+    .section-card {
+        padding: 14px 16px;
+        margin-bottom: 10px;
+    }
+
+    .risk-list {
+        columns: 2;
+        column-gap: 30px;
+    }
+
+    @media (max-width: 780px) {
+        .risk-list {
+            columns: 1;
+        }
+    }
+
 </style>
 
 <div class="snapshot-wrap">

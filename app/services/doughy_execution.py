@@ -114,14 +114,19 @@ def _find_questionable_daily_item_ids(
     daily_items: list[DailyChecklistItem],
 ) -> tuple[set[int], dict[str, list[str]], dict[str, dict[str, Any]]]:
     """
-    Flags completed checklist items that are suspicious.
+    Item-level integrity checks.
 
-    Item-level integrity checks:
-    1. Burst detection: specific items completed too close together become questionable.
-    2. Section elapsed-time check: if a section was completed far faster than its expected time,
-       completed items in that section become questionable.
+    Completed checklist items become questionable when:
+    1. They are part of a suspicious burst.
+    2. Their section was completed far faster than expected_minutes suggests.
+
+    Returns:
+    - questionable daily item ids
+    - integrity flags by checklist section
+    - timing summary by checklist section
     """
     rules = _build_integrity_rules()
+
     questionable_ids: set[int] = set()
     flags_by_section: dict[str, list[str]] = defaultdict(list)
     timing_by_section: dict[str, dict[str, Any]] = {}
@@ -133,26 +138,23 @@ def _find_questionable_daily_item_ids(
             items_by_section[item.section_name or "(blank section)"].append(item)
 
     for section_name, items in items_by_section.items():
-        section_rules = rules.get(section_name, {
-            "burst_threshold": 3,
-            "burst_window_seconds": 45,
-            "questionable_ratio": 0.30,
-            "fast_note_ratio": 0.50,
-            "full_score_ratio": 0.70,
-        })
+        section_rules = rules.get(section_name, {})
 
-        threshold = int(section_rules.get("burst_threshold") or 3)
-        window_seconds = int(section_rules.get("burst_window_seconds") or 45)
+        burst_threshold = int(section_rules.get("burst_threshold") or 3)
+        burst_window_seconds = int(section_rules.get("burst_window_seconds") or 45)
+
+        # Timing ratios mirror the existing integrity idea:
+        # 70%+ strong/full, 50%+ acceptable-fast, 30%+ weak, below 30% questionable.
         questionable_ratio = float(section_rules.get("questionable_ratio") or 0.30)
         fast_note_ratio = float(section_rules.get("fast_note_ratio") or 0.50)
         full_score_ratio = float(section_rules.get("full_score_ratio") or 0.70)
 
         completed_items = sorted(items, key=lambda row: row.completed_at)
 
-        # 1. Burst detection.
-        if len(completed_items) >= threshold:
-            for start_index in range(len(completed_items) - threshold + 1):
-                window_items = completed_items[start_index:start_index + threshold]
+        # 1. Burst detection: exact items in the burst become questionable.
+        if len(completed_items) >= burst_threshold:
+            for i in range(len(completed_items) - burst_threshold + 1):
+                window_items = completed_items[i:i + burst_threshold]
                 start_time = window_items[0].completed_at
                 end_time = window_items[-1].completed_at
 
@@ -161,17 +163,16 @@ def _find_questionable_daily_item_ids(
 
                 elapsed_seconds = (end_time - start_time).total_seconds()
 
-                if elapsed_seconds <= window_seconds:
+                if elapsed_seconds <= burst_window_seconds:
                     for questionable_item in window_items:
                         questionable_ids.add(questionable_item.id)
 
                     flags_by_section[section_name].append(
-                        f"{threshold} tasks completed in {int(elapsed_seconds)} seconds "
-                        f"(burst threshold: {threshold} in {window_seconds}s)"
+                        f"{burst_threshold} tasks completed in {int(elapsed_seconds)} seconds "
+                        f"(burst threshold: {burst_threshold} in {burst_window_seconds}s)"
                     )
 
-        # 2. Section elapsed-time vs expected-time detection.
-        # Use completed required items only, so incomplete tasks remain At Risk separately.
+        # 2. Section timing: completed required items should take a believable amount of time.
         completed_required_items = [
             item for item in completed_items
             if item.is_required and (item.expected_minutes or 0) > 0
@@ -186,88 +187,41 @@ def _find_questionable_daily_item_ids(
 
             ratio = elapsed_minutes / expected_minutes if expected_minutes else 0
 
+            status = "believable"
+            if ratio >= full_score_ratio:
+                status = "strong"
+            elif ratio >= fast_note_ratio:
+                status = "acceptable_fast"
+            elif ratio >= questionable_ratio:
+                status = "weak_fast"
+            else:
+                status = "questionable"
+
             timing_by_section[section_name] = {
                 "completed_required_tasks": len(completed_required_items),
                 "expected_minutes": round(expected_minutes, 1),
                 "elapsed_minutes": round(elapsed_minutes, 1),
                 "ratio": round(ratio, 3),
-                "status": "believable",
+                "status": status,
             }
 
             if ratio < questionable_ratio:
                 for item in completed_required_items:
                     questionable_ids.add(item.id)
 
-                timing_by_section[section_name]["status"] = "questionable"
                 flags_by_section[section_name].append(
                     f"{len(completed_required_items)} completed required tasks took "
                     f"{elapsed_minutes:.1f} minutes; expected about {expected_minutes:.1f} minutes "
                     f"({ratio:.0%} of expected)"
                 )
             elif ratio < fast_note_ratio:
-                timing_by_section[section_name]["status"] = "fast"
                 flags_by_section[section_name].append(
                     f"{len(completed_required_items)} completed required tasks looked fast: "
                     f"{elapsed_minutes:.1f} minutes vs {expected_minutes:.1f} expected "
                     f"({ratio:.0%} of expected)"
                 )
-            elif ratio >= full_score_ratio:
-                timing_by_section[section_name]["status"] = "strong"
 
     return questionable_ids, flags_by_section, timing_by_section
-
-def _find_questionable_daily_item_ids(daily_items: list[DailyChecklistItem]) -> tuple[set[int], dict[str, list[str]]]:
-    """
-    Flags completed checklist items that are part of a suspicious burst.
-
-    This is item-level integrity:
-    a checked item inside a suspicious burst becomes QUESTIONABLE, not fully protected.
-    """
-    rules = _build_integrity_rules()
-    questionable_ids: set[int] = set()
-    flags_by_section: dict[str, list[str]] = defaultdict(list)
-
-    items_by_section: dict[str, list[DailyChecklistItem]] = defaultdict(list)
-
-    for item in daily_items:
-        if item.is_completed and item.completed_at:
-            items_by_section[item.section_name or "(blank section)"].append(item)
-
-    for section_name, items in items_by_section.items():
-        section_rules = rules.get(section_name, {
-            "burst_threshold": 3,
-            "burst_window_seconds": 45,
-        })
-
-        threshold = int(section_rules.get("burst_threshold") or 3)
-        window_seconds = int(section_rules.get("burst_window_seconds") or 45)
-
-        completed_items = sorted(items, key=lambda row: row.completed_at)
-
-        if len(completed_items) < threshold:
-            continue
-
-        for start_index in range(len(completed_items) - threshold + 1):
-            window_items = completed_items[start_index:start_index + threshold]
-            start_time = window_items[0].completed_at
-            end_time = window_items[-1].completed_at
-
-            if not start_time or not end_time:
-                continue
-
-            elapsed_seconds = (end_time - start_time).total_seconds()
-
-            if elapsed_seconds <= window_seconds:
-                for questionable_item in window_items:
-                    questionable_ids.add(questionable_item.id)
-
-                flags_by_section[section_name].append(
-                    f"{threshold} tasks completed in {int(elapsed_seconds)} seconds "
-                    f"(threshold: {threshold} in {window_seconds}s)"
-                )
-
-    return questionable_ids, flags_by_section
-
 
 def build_execution_snapshot(store_number: str, checklist_date) -> dict[str, Any]:
     """

@@ -170,6 +170,55 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 if (prompt === "Draft a follow-up message") {
+                    soonBox.innerHTML = `
+                        <strong>Building draft...</strong><br>
+                        Doughy is using the read-only checklist execution snapshot.
+                    `;
+                    soonBox.classList.add("open");
+
+                    let checklistContext = null;
+
+                    try {
+                        checklistContext = await loadDoughyChecklistContextIfAvailable();
+                    } catch (error) {
+                        checklistContext = null;
+                    }
+
+                    if (checklistContext && checklistContext.ok && checklistContext.found && checklistContext.doughy_read) {
+                        const doughyRead = checklistContext.doughy_read || {};
+                        const snapshot = checklistContext.execution_snapshot || {};
+                        const totals = snapshot.totals || {};
+                        const reviewFocus = doughyRead.review_focus || [];
+                        const currentFocus = doughyRead.current_focus || [];
+                        const futureFocus = doughyRead.future_focus || [];
+
+                        const store = checklistContext.store || snapshot.store_number || "this store";
+                        const manager = snapshot.manager_on_duty || snapshot.opening_manager || "team";
+
+                        const reviewText = reviewFocus.length
+                            ? ` Needs review: ${reviewFocus.slice(0, 2).join(" ")}`
+                            : "";
+
+                        const currentText = currentFocus.length
+                            ? ` Current risk: ${currentFocus.slice(0, 2).join(" ")}`
+                            : "";
+
+                        const futureText = futureFocus.length
+                            ? ` Pending later: ${futureFocus.slice(0, 2).join(" ")}`
+                            : "";
+
+                        const draft = `Quick checklist follow-up for store ${store}. ${manager ? manager + " — " : ""}${totals.protected_points || 0} OA-mapped points are protected, ${totals.questionable_points || 0} are checked but not fully verified, and ${totals.at_risk_points || 0} are not protected yet.${reviewText}${currentText}${futureText} Please review and update what can still be recovered.`;
+
+                        soonBox.innerHTML = `
+                            <strong>Follow-up draft</strong><br>
+                            <div class="doughy-draft-box" id="doughyDraftText">${escapeDoughyHtml(draft)}</div>
+                            <button type="button" class="doughy-copy-button" data-doughy-copy-draft>Copy draft</button>
+                            <span class="doughy-context-muted">Draft uses Doughy’s Take from the read-only execution snapshot. AI and send actions are still off.</span>
+                        `;
+
+                        return;
+                    }
+
                     const attention = buildDoughyAttentionSnapshot();
                     const contextText = (document.getElementById("doughyContextBody") || {}).textContent || "";
                     const storeMatch = contextText.match(/Store:\s*([^\n]+)/i);
@@ -185,7 +234,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 Quick follow-up on ${escapeDoughyHtml(page)} for ${escapeDoughyHtml(store)} — I do not see any obvious visible warning/open/failed items right now. Please review and confirm everything is updated.
                             </div>
                             <button type="button" class="doughy-copy-button" data-doughy-copy-draft>Copy draft</button>
-                            <span class="doughy-context-muted">Draft is based only on visible page text. AI and send actions are still off.</span>
+                            <span class="doughy-context-muted">Fallback draft is based only on visible page text. AI and send actions are still off.</span>
                         `;
                     } else {
                         soonBox.innerHTML = `
@@ -196,7 +245,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 Please update once complete.
                             </div>
                             <button type="button" class="doughy-copy-button" data-doughy-copy-draft>Copy draft</button>
-                            <span class="doughy-context-muted">Draft is based only on visible page text. AI and send actions are still off.</span>
+                            <span class="doughy-context-muted">Fallback draft is based only on visible page text. AI and send actions are still off.</span>
                         `;
                     }
 

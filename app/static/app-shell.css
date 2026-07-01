@@ -1168,3 +1168,241 @@ a.btn-primary {
     padding-top: 12px;
     border-top: 1px solid rgba(148, 163, 184, 0.13);
 }
+
+/* =========================================================
+   Global responsive platform safety layer
+   Keeps BPI Ops usable across laptops, tablets, Windows displays,
+   and smaller browser widths without forcing table/card rewrites.
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+}
+
+.main-content,
+.page-content,
+.content,
+.content-wrapper,
+.dashboard-content,
+.admin-content,
+.app-content {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.card,
+.panel,
+.section-card,
+.admin-card,
+.dashboard-card,
+.metric-card,
+.form-card,
+.table-card {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.grid,
+.cards-grid,
+.dashboard-grid,
+.summary-grid,
+.metrics-grid,
+.admin-grid,
+.form-grid {
+    min-width: 0;
+}
+
+.table-responsive,
+.table-wrap,
+.table-wrapper,
+.admin-table-wrapper,
+.data-table-wrapper,
+.list-table-wrapper,
+.report-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+table {
+    max-width: 100%;
+}
+
+th,
+td {
+    overflow-wrap: anywhere;
+}
+
+.actions,
+.action-buttons,
+.actions-cell,
+.table-actions,
+.row-actions,
+.card-actions,
+.form-actions,
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.actions,
+.action-buttons,
+.actions-cell,
+.table-actions,
+.row-actions {
+    justify-content: flex-end;
+}
+
+.actions a,
+.actions button,
+.action-buttons a,
+.action-buttons button,
+.actions-cell a,
+.actions-cell button,
+.table-actions a,
+.table-actions button,
+.row-actions a,
+.row-actions button,
+.card-actions a,
+.card-actions button,
+.form-actions a,
+.form-actions button,
+.button-row a,
+.button-row button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+input,
+select,
+textarea,
+button {
+    max-width: 100%;
+}
+
+@media (max-width: 1200px) {
+    .actions,
+    .action-buttons,
+    .actions-cell,
+    .table-actions,
+    .row-actions {
+        justify-content: flex-start;
+    }
+
+    .hide-below-1200 {
+        display: none !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .grid,
+    .cards-grid,
+    .dashboard-grid,
+    .summary-grid,
+    .metrics-grid,
+    .admin-grid,
+    .form-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .two-column,
+    .three-column,
+    .four-column {
+        grid-template-columns: 1fr !important;
+    }
+
+    .page-header,
+    .admin-header,
+    .section-header,
+    .card-header,
+    .filter-bar,
+    .filters,
+    .toolbar {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .filter-bar > *,
+    .filters > *,
+    .toolbar > * {
+        min-width: 0;
+    }
+
+    .hide-below-900 {
+        display: none !important;
+    }
+}
+
+@media (max-width: 720px) {
+    body {
+        font-size: 14px;
+    }
+
+    .main-content,
+    .page-content,
+    .content,
+    .content-wrapper,
+    .dashboard-content,
+    .admin-content,
+    .app-content {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .card,
+    .panel,
+    .section-card,
+    .admin-card,
+    .dashboard-card,
+    .metric-card,
+    .form-card,
+    .table-card {
+        border-radius: 14px;
+    }
+
+    .actions,
+    .action-buttons,
+    .actions-cell,
+    .table-actions,
+    .row-actions,
+    .card-actions,
+    .form-actions,
+    .button-row {
+        justify-content: flex-start;
+    }
+
+    .actions a,
+    .actions button,
+    .action-buttons a,
+    .action-buttons button,
+    .actions-cell a,
+    .actions-cell button,
+    .table-actions a,
+    .table-actions button,
+    .row-actions a,
+    .row-actions button,
+    .card-actions a,
+    .card-actions button,
+    .form-actions a,
+    .form-actions button,
+    .button-row a,
+    .button-row button {
+        padding: 8px 11px;
+        font-size: 0.85rem;
+    }
+
+    .hide-below-720 {
+        display: none !important;
+    }
+}
+

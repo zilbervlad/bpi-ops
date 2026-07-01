@@ -1406,3 +1406,103 @@ button {
     }
 }
 
+
+/* Maintenance responsive width fix */
+.main-content,
+.app-content,
+.content-wrapper {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.maintenance-page,
+.maintenance-shell,
+.maintenance-layout,
+.maintenance-board,
+.maintenance-grid,
+.maintenance-content,
+.maintenance-panel,
+.maintenance-card {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.maintenance-layout,
+.maintenance-board,
+.maintenance-grid {
+    width: 100%;
+}
+
+/* Keep task table from pushing off screen */
+.table-responsive,
+.maintenance-table-wrap,
+.maintenance-tasks-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.maintenance-table,
+.maintenance-tasks-table,
+table {
+    max-width: 100%;
+}
+
+.maintenance-table td,
+.maintenance-table th,
+.maintenance-tasks-table td,
+.maintenance-tasks-table th {
+    white-space: normal;
+}
+
+/* Keep action buttons visible */
+.actions-cell,
+.row-actions,
+td:last-child,
+th:last-child {
+    white-space: nowrap;
+    text-align: right;
+}
+
+/* Medium/small laptop screens: stack filters above task list */
+@media (max-width: 1180px) {
+    .maintenance-layout,
+    .maintenance-board,
+    .maintenance-grid {
+        display: grid;
+        grid-template-columns: 1fr !important;
+        gap: 18px;
+    }
+
+    .maintenance-sidebar,
+    .maintenance-filters,
+    .filter-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .maintenance-content,
+    .maintenance-panel,
+    .maintenance-card {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+/* Very small height/low-res laptops */
+@media (max-width: 1180px), (max-height: 780px) {
+    .maintenance-table,
+    .maintenance-tasks-table {
+        font-size: 13px;
+    }
+
+    .maintenance-table th,
+    .maintenance-table td,
+    .maintenance-tasks-table th,
+    .maintenance-tasks-table td {
+        padding: 10px 12px;
+    }
+}
+

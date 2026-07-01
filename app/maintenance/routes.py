@@ -769,7 +769,11 @@ def index():
 
             return maintenance_response("Maintenance task deleted.", "success", deleted=True, ticket_id=ticket_id)
 
-    status_filter = request.args.get("status", "").strip()
+    valid_status_filters = {"open", "assigned", "in_progress", "complete"}
+    status_filter = request.args.get("status", "open").strip() or "open"
+    if status_filter not in valid_status_filters:
+        status_filter = "open"
+
     store_filter = request.args.get("store", "").strip()
 
     all_visible_tickets = MaintenanceTicket.query.order_by(
@@ -786,14 +790,13 @@ def index():
         "complete": len([t for t in all_visible_tickets if t.status == "complete"]),
     }
 
+    status_visible_tickets = [t for t in all_visible_tickets if t.status == status_filter]
+
     store_counts = {}
-    for ticket in all_visible_tickets:
+    for ticket in status_visible_tickets:
         store_counts[ticket.store_number] = store_counts.get(ticket.store_number, 0) + 1
 
-    tickets = list(all_visible_tickets)
-
-    if status_filter:
-        tickets = [t for t in tickets if t.status == status_filter]
+    tickets = list(status_visible_tickets)
 
     if store_filter:
         tickets = [t for t in tickets if t.store_number == store_filter]

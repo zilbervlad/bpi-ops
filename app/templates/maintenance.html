@@ -1768,14 +1768,6 @@ td:last-child button {
         <div class="maintenance-sidebar-section">
             <h3 class="maintenance-sidebar-title">Views</h3>
             <div class="maintenance-sidebar-scroll">
-                <a class="maintenance-sidebar-link {% if not status_filter %}is-active{% endif %}"
-                   href="{{ url_for('maintenance.index', store=store_filter) }}">
-                    <span class="maintenance-sidebar-left">
-                        <span class="maintenance-sidebar-icon"></span>
-                        <span class="maintenance-sidebar-name">All Tasks</span>
-                    </span>
-                    <span class="maintenance-sidebar-count">{{ all_visible_tickets|length }}</span>
-                </a>
 
                 <a class="maintenance-sidebar-link {% if status_filter == 'open' %}is-active{% endif %}"
                    href="{{ url_for('maintenance.index', status='open', store=store_filter) }}">
@@ -1824,7 +1816,7 @@ td:last-child button {
                         <span class="maintenance-sidebar-icon"></span>
                         <span class="maintenance-sidebar-name">All Stores</span>
                     </span>
-                    <span class="maintenance-sidebar-count">{{ all_visible_tickets|length }}</span>
+                    <span class="maintenance-sidebar-count">{{ status_counts.get(status_filter, 0) }}</span>
                 </a>
 
                 {% for store in stores %}

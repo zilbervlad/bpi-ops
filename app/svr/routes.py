@@ -85,6 +85,24 @@ def get_file_size(file_storage):
         return None
 
 
+
+def request_has_svr_photo_uploads(fields):
+    """
+    Keep normal SVR saves fast.
+    Only do Cloudinary/photo work when at least one photo input actually has a selected file.
+    """
+    for field in fields:
+        if field.field_key in PHOTO_EXCLUDED_FIELD_KEYS:
+            continue
+
+        input_name = f"photos__{field.field_key}"
+        for file_storage in request.files.getlist(input_name):
+            if file_storage and file_storage.filename:
+                return True
+
+    return False
+
+
 def upload_svr_photos(report, fields):
     if not svr_photos_enabled():
         return
@@ -869,7 +887,8 @@ def new_report():
                 )
             )
 
-        upload_svr_photos(report, fields)
+        if request_has_svr_photo_uploads(fields):
+            upload_svr_photos(report, fields)
 
         db.session.commit()
         sync_maintenance_from_svr(report)

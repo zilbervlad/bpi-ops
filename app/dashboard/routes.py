@@ -3,6 +3,7 @@ import json
 from datetime import timedelta, datetime
 from zoneinfo import ZoneInfo
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import selectinload
 
 from flask import Blueprint, render_template, session, jsonify, request, redirect, url_for, flash
 from app.auth.routes import login_required, role_required
@@ -212,7 +213,9 @@ def build_dashboard_data():
     if user_role == "manager" and user_store:
         manager_cash_summary = build_manager_cash_summary(user_store, today)
 
-    daily_rows = DailyChecklist.query.filter(
+    daily_rows = DailyChecklist.query.options(
+        selectinload(DailyChecklist.items)
+    ).filter(
         DailyChecklist.checklist_date == today,
         DailyChecklist.store_number.in_(visible_store_numbers)
     ).all() if visible_store_numbers else []

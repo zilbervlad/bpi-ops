@@ -6,6 +6,7 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 
 from app.extensions import db
 from app.services.email_service import send_email
+from app.services.ephemeral_photos import PhotoValidationError, normalize_ephemeral_photos
 from app.models import FormAnswer, FormQuestion, FormSubmission, FormTemplate, Store, User, today_et
 
 
@@ -208,7 +209,7 @@ def grade_from_score(percent, critical_failed_count=0):
     return "F"
 
 
-def send_form_submission_email(submission: FormSubmission):
+def send_form_submission_email(submission: FormSubmission, photos=None):
     template = submission.template
 
     manager_user = User.query.filter_by(
@@ -306,11 +307,20 @@ def send_form_submission_email(submission: FormSubmission):
         f"- BPI Ops"
     )
 
+    attachments = []
+    for index, photo in enumerate(photos or [], start=1):
+        attachments.append({
+            "filename": f"form-photo-{submission.id}-{index}.jpg",
+            "content": photo.image_bytes,
+            "mime_type": "image/jpeg",
+        })
+
     send_email(
         to_email=to_email,
         subject=f"Store {submission.store_number} {template.title}",
         body=body,
-        cc_emails=cc_emails if cc_emails else None
+        cc_emails=cc_emails if cc_emails else None,
+        attachments=attachments if attachments else None,
     )
 
     return {
@@ -539,8 +549,17 @@ def submit_form(template_id):
                 }
             )
 
-        if errors:
-            flash("Please answer all required questions.", "error")
+        photo_error = None
+        try:
+            form_photos = normalize_ephemeral_photos(request.files.getlist("photos"))
+        except PhotoValidationError as exc:
+            photo_error = str(exc)
+
+        if errors or photo_error:
+            if errors:
+                flash("Please answer all required questions.", "error")
+            if photo_error:
+                flash(photo_error, "error")
             return render_template(
                 "forms/submit.html",
                 template=template,
@@ -590,7 +609,7 @@ def submit_form(template_id):
         db.session.commit()
 
         try:
-            email_result = send_form_submission_email(submission)
+            email_result = send_form_submission_email(submission, photos=form_photos)
             flash(
                 f"Form submitted and emailed to {email_result['to_email']}.",
                 "success"

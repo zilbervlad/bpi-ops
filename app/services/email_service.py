@@ -1,9 +1,21 @@
 import os
 import smtplib
-from email.mime.text import MIMEText
+from email.message import EmailMessage
 
 
-def send_email(to_email: str, subject: str, body: str, cc_emails=None):
+def _normalize_email_list(value):
+    if not value:
+        return []
+
+    if isinstance(value, str):
+        raw_values = value.replace(";", ",").split(",")
+    else:
+        raw_values = value
+
+    return [email.strip() for email in raw_values if email and email.strip()]
+
+
+def send_email(to_email: str, subject: str, body: str, cc_emails=None, attachments=None):
     if not to_email:
         raise ValueError("Missing recipient email address.")
 
@@ -18,22 +30,47 @@ def send_email(to_email: str, subject: str, body: str, cc_emails=None):
             "Email settings are missing. Check EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASSWORD, and EMAIL_FROM."
         )
 
-    msg = MIMEText(body)
+    to_emails = _normalize_email_list(to_email)
+    cc_list = _normalize_email_list(cc_emails)
+
+    if not to_emails:
+        raise ValueError("Missing recipient email address.")
+
+    msg = EmailMessage()
     msg["Subject"] = subject
     msg["From"] = email_from
-    msg["To"] = to_email
+    msg["To"] = ", ".join(to_emails)
 
-    recipients = [to_email]
+    if cc_list:
+        msg["Cc"] = ", ".join(cc_list)
 
-    # Handle CC emails
-    if cc_emails:
-        if isinstance(cc_emails, str):
-            cc_emails = [cc_emails]
+    msg.set_content(body)
 
-        msg["Cc"] = ", ".join(cc_emails)
-        recipients.extend(cc_emails)
+    for attachment in attachments or []:
+        filename = attachment.get("filename") or "attachment"
+        content = attachment.get("content") or b""
+        mime_type = attachment.get("mime_type") or "application/octet-stream"
+
+        if not content:
+            continue
+
+        if "/" in mime_type:
+            maintype, subtype = mime_type.split("/", 1)
+        else:
+            maintype, subtype = "application", "octet-stream"
+
+        msg.add_attachment(
+            content,
+            maintype=maintype,
+            subtype=subtype,
+            filename=filename,
+        )
+
+    recipients = to_emails + cc_list
 
     with smtplib.SMTP(email_host, email_port) as server:
         server.starttls()
         server.login(email_user, email_password)
-        server.sendmail(email_from, recipients, msg.as_string())
+        server.send_message(msg, to_addrs=recipients)
+
+    return True

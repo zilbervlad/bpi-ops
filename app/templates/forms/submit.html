@@ -20,7 +20,7 @@
             </div>
         </div>
 
-        <form method="post" class="live-submit-form">
+        <form enctype="multipart/form-data" method="post" class="live-submit-form">
             <div class="submit-top-grid">
                 <div class="top-field-card">
                     <label class="forms-label">Store <span class="required-star">*</span></label>
@@ -93,6 +93,22 @@
                 </div>
                 {% endif %}
                 {% endfor %}
+            </div>
+
+
+            <div class="form-section">
+                <h3>Photos</h3>
+                <p class="muted-text">Optional. Photos are emailed with this form and are not saved in BPI Ops.</p>
+
+                <label for="photos">Attach photos</label>
+                <input
+                    type="file"
+                    id="photos"
+                    name="photos"
+                    accept="image/jpeg,image/png"
+                    multiple
+                >
+                <p class="muted-text">Maximum 5 photos. JPG or PNG only.</p>
             </div>
 
             <div class="sticky-form-actions">

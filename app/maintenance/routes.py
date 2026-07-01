@@ -928,12 +928,20 @@ def calendar():
                 flash("Managers can view the maintenance calendar, but cannot schedule maintenance tasks.", "error")
                 return calendar_redirect()
 
-            ticket = visible_ticket_or_none(request.form.get("ticket_id"), visible_store_numbers)
-            if not ticket:
-                flash("Maintenance task not found or not available.", "error")
-                return calendar_redirect()
+            ticket_id_raw = request.form.get("ticket_id", "").strip()
+            ticket = None
 
-            new_store_number = request.form.get("store_number", ticket.store_number).strip()
+            if ticket_id_raw:
+                ticket = visible_ticket_or_none(ticket_id_raw, visible_store_numbers)
+                if not ticket:
+                    flash("Maintenance task not found or not available.", "error")
+                    return calendar_redirect()
+
+            new_store_number = request.form.get(
+                "store_number",
+                ticket.store_number if ticket else ""
+            ).strip()
+
             if new_store_number not in visible_store_numbers:
                 flash("Invalid store selection.", "error")
                 return calendar_redirect()
@@ -948,6 +956,17 @@ def calendar():
                 flash("Invalid maintenance assignment.", "error")
                 return calendar_redirect()
 
+            is_new_ticket = ticket is None
+
+            if is_new_ticket:
+                ticket = MaintenanceTicket(
+                    store_number=new_store_number,
+                    title=title,
+                    status="open",
+                    priority="normal",
+                )
+                db.session.add(ticket)
+
             apply_schedule_form_to_ticket(ticket)
 
             if ticket.scheduled_time and not ticket.scheduled_date:
@@ -958,7 +977,12 @@ def calendar():
                 ticket.status = "assigned"
 
             db.session.commit()
-            flash("Maintenance schedule updated.", "success")
+
+            if is_new_ticket:
+                flash("Maintenance task created.", "success")
+            else:
+                flash("Maintenance schedule updated.", "success")
+
             return calendar_redirect()
 
     all_tickets = MaintenanceTicket.query.order_by(

@@ -1056,6 +1056,35 @@
         color: #ffffff !important;
     }
 
+
+    .maintenance-calendar-context-menu {
+        position: fixed;
+        z-index: 99999;
+        display: none;
+        min-width: 190px;
+        padding: 7px;
+        border-radius: 14px;
+        border: 1px solid rgba(15, 23, 42, 0.14);
+        background: #ffffff;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.20);
+    }
+
+    .maintenance-calendar-context-menu button {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        border-radius: 10px;
+        padding: 11px 12px;
+        text-align: left;
+        font-weight: 800;
+        color: #0f172a;
+        cursor: pointer;
+    }
+
+    .maintenance-calendar-context-menu button:hover {
+        background: #f1f5f9;
+    }
+
 </style>
 
 {% macro render_ticket_card(ticket) %}
@@ -1220,6 +1249,11 @@
 
 </div>
 
+
+<div id="maintenance-calendar-context-menu" class="maintenance-calendar-context-menu">
+    <button type="button" id="maintenance-context-create">+ Create task here</button>
+</div>
+
 <div id="maintenance-toast" class="maintenance-toast">Maintenance task moved.</div>
 
 <div id="maintenance-edit-modal-backdrop" class="maintenance-modal-backdrop">
@@ -1331,6 +1365,96 @@ document.addEventListener("DOMContentLoaded", function () {
     const moveUrl = "{{ url_for('maintenance.move_calendar_ticket') }}";
     const canMove = {{ 'true' if user_role in ['admin', 'supervisor', 'maintenance'] else 'false' }};
     const toast = document.getElementById("maintenance-toast");
+
+    const maintenanceContextMenu = document.getElementById("maintenance-calendar-context-menu");
+    const maintenanceContextCreate = document.getElementById("maintenance-context-create");
+    let maintenanceContextDate = "";
+    let maintenanceContextTime = "";
+
+    function hideMaintenanceContextMenu() {
+        if (maintenanceContextMenu) {
+            maintenanceContextMenu.style.display = "none";
+        }
+    }
+
+    function showMaintenanceContextMenu(event, dateValue, timeValue) {
+        if (!canMove || !maintenanceContextMenu || !dateValue || dateValue === "unscheduled") {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        maintenanceContextDate = dateValue;
+        maintenanceContextTime = timeValue || "";
+
+        const menuWidth = 200;
+        const menuHeight = 56;
+
+        maintenanceContextMenu.style.left = `${Math.max(12, Math.min(event.clientX, window.innerWidth - menuWidth - 12))}px`;
+        maintenanceContextMenu.style.top = `${Math.max(12, Math.min(event.clientY, window.innerHeight - menuHeight - 12))}px`;
+        maintenanceContextMenu.style.display = "block";
+    }
+
+    function openMaintenanceCreateModal() {
+        hideMaintenanceContextMenu();
+
+        const backdrop = document.getElementById("maintenance-edit-modal-backdrop");
+        const form = document.getElementById("maintenance-modal-form");
+        if (!backdrop || !form || !maintenanceContextDate) {
+            return;
+        }
+
+        form.reset();
+
+        const ticketId = document.getElementById("modal_ticket_id");
+        const status = document.getElementById("modal_status");
+        const assignedTo = document.getElementById("modal_assigned_to");
+        const priority = document.getElementById("modal_priority");
+        const scheduledDate = document.getElementById("modal_scheduled_date");
+        const scheduledTime = document.getElementById("modal_scheduled_time");
+        const title = document.getElementById("modal_title");
+        const details = document.getElementById("modal_details");
+        const minutes = document.getElementById("modal_estimated_minutes");
+        const modalTitle = document.getElementById("maintenance-modal-title");
+        const modalSubtitle = document.getElementById("maintenance-modal-subtitle");
+
+        if (ticketId) ticketId.value = "";
+        if (status) status.value = "open";
+        if (priority) priority.value = "normal";
+        if (scheduledDate) scheduledDate.value = maintenanceContextDate;
+        if (scheduledTime) scheduledTime.value = maintenanceContextTime;
+        if (title) title.value = "";
+        if (details) details.value = "";
+        if (minutes) minutes.value = "";
+
+        if (
+            assignedTo &&
+            typeof dragAssignTo !== "undefined" &&
+            dragAssignTo
+        ) {
+            assignedTo.value = dragAssignTo;
+        }
+
+        if (modalTitle) modalTitle.textContent = "Create Maintenance Task";
+        if (modalSubtitle) {
+            modalSubtitle.textContent = maintenanceContextTime
+                ? `New task for ${maintenanceContextDate} at ${maintenanceContextTime}`
+                : `New task for ${maintenanceContextDate}`;
+        }
+
+        const saveButton = form.querySelector("button[name='action'][value='schedule']");
+        if (saveButton) saveButton.textContent = "Create Task";
+
+        const unassignButton = form.querySelector("button[name='action'][value='unschedule']");
+        if (unassignButton) unassignButton.style.display = "none";
+
+        backdrop.classList.add("is-open");
+
+        setTimeout(function () {
+            if (title) title.focus();
+        }, 50);
+    }
 
     let draggedTicketId = null;
     let dragStarted = false;
@@ -1526,6 +1650,32 @@ document.addEventListener("DOMContentLoaded", function () {
             closeModal();
         }
     });
+    document.querySelectorAll(".js-drop-zone").forEach(function(zone) {
+        zone.addEventListener("contextmenu", function(event) {
+            showMaintenanceContextMenu(
+                event,
+                zone.dataset.dropDate || "",
+                zone.dataset.dropTime || ""
+            );
+        });
+    });
+
+    if (maintenanceContextCreate) {
+        maintenanceContextCreate.addEventListener("click", openMaintenanceCreateModal);
+    }
+
+    document.addEventListener("click", function(event) {
+        if (maintenanceContextMenu && !maintenanceContextMenu.contains(event.target)) {
+            hideMaintenanceContextMenu();
+        }
+    });
+
+    document.addEventListener("keydown", function(event) {
+        if (event.key === "Escape") {
+            hideMaintenanceContextMenu();
+        }
+    });
+
 });
 </script>
 {% endblock %}

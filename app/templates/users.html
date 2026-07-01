@@ -2033,3 +2033,240 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 {% endblock %}
+
+
+<style>
+    /* Clean Users v2 - UI-only final override layer */
+    .users-create-wrap {
+        margin-bottom: 14px !important;
+    }
+
+    .users-create-wrap .premium-panel,
+    .premium-panel:has(.user-search-bar),
+    .premium-panel:has(.user-card-list) {
+        border-radius: 22px !important;
+        border: 1px solid rgba(148, 163, 184, 0.22) !important;
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96)) !important;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
+        color: #0f172a !important;
+    }
+
+    .users-create-wrap .panel-head {
+        min-height: 54px;
+    }
+
+    .users-create-wrap .panel-head h3,
+    .premium-panel > .panel-head h3 {
+        font-size: 18px !important;
+        letter-spacing: -0.03em !important;
+        color: #0f172a !important;
+    }
+
+    .users-create-wrap .area-subtitle,
+    .premium-panel .area-subtitle {
+        color: #64748b !important;
+        opacity: 1 !important;
+    }
+
+    #create-user-chevron,
+    #userSearchCount,
+    .panel-head .summary-pill {
+        border: 1px solid #dbe3ee !important;
+        background: #f8fafc !important;
+        color: #334155 !important;
+        box-shadow: none !important;
+    }
+
+    #create-user-body {
+        border-top: 1px solid #e5e7eb;
+        padding-top: 14px;
+    }
+
+    .user-search-bar {
+        display: grid !important;
+        grid-template-columns: minmax(260px, 1fr) auto auto !important;
+        gap: 10px !important;
+        align-items: center !important;
+        margin: 10px 0 14px !important;
+    }
+
+    .user-search-input {
+        border: 1px solid #dbe3ee !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-radius: 14px !important;
+        min-height: 42px !important;
+        padding: 10px 14px !important;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+    }
+
+    .user-search-input::placeholder {
+        color: #94a3b8 !important;
+    }
+
+    #userSearchClear {
+        border: 1px solid #dbe3ee !important;
+        background: #ffffff !important;
+        color: #334155 !important;
+        min-height: 42px !important;
+    }
+
+    .user-directory-header {
+        color: #64748b !important;
+        opacity: 1 !important;
+        padding: 0 16px 8px !important;
+        font-size: 10px !important;
+        letter-spacing: 0.14em !important;
+    }
+
+    .user-card-list {
+        gap: 8px !important;
+    }
+
+    .user-card {
+        border-radius: 16px !important;
+        border: 1px solid #e5e7eb !important;
+        background: #ffffff !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+        color: #0f172a !important;
+        transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .user-card:hover {
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08) !important;
+        transform: translateY(-1px);
+    }
+
+    .user-card-summary {
+        min-height: 54px !important;
+        padding: 10px 16px !important;
+    }
+
+    .user-name-main {
+        font-size: 14px !important;
+        color: #0f172a !important;
+        font-weight: 900 !important;
+    }
+
+    .user-name-sub {
+        color: #64748b !important;
+        opacity: 1 !important;
+        font-size: 11px !important;
+    }
+
+    .user-card-left .summary-pill,
+    .user-card-left .status-badge,
+    .user-expand-chip,
+    .protected-pill {
+        border: 1px solid #e5e7eb !important;
+        background: #f8fafc !important;
+        color: #334155 !important;
+        box-shadow: none !important;
+        font-weight: 850 !important;
+    }
+
+    .status-badge.status-active,
+    .status-badge.active,
+    .summary-pill.is-active {
+        background: #ecfdf5 !important;
+        border-color: #bbf7d0 !important;
+        color: #166534 !important;
+    }
+
+    .status-badge.status-inactive,
+    .status-badge.inactive {
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        color: #64748b !important;
+    }
+
+    .user-expand-chip {
+        background: #eff6ff !important;
+        border-color: #bfdbfe !important;
+        color: #1d4ed8 !important;
+    }
+
+    .user-card-body {
+        border-top: 1px solid #eef2f7 !important;
+        background: #f8fafc !important;
+        padding: 14px 16px 16px !important;
+    }
+
+    .user-section-label {
+        color: #64748b !important;
+        opacity: 1 !important;
+        letter-spacing: 0.12em !important;
+    }
+
+    .user-card-body .login-form,
+    .user-card-body form {
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .compact-group input,
+    .compact-group select,
+    .compact-group textarea,
+    .user-card-body input,
+    .user-card-body select,
+    .user-card-body textarea {
+        border: 1px solid #dbe3ee !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-radius: 12px !important;
+    }
+
+    .compact-group label,
+    .user-card-body label {
+        color: #475569 !important;
+        font-weight: 850 !important;
+    }
+
+    .user-card-body .btn-primary,
+    .user-card-body button[type="submit"].btn-primary {
+        border-radius: 12px !important;
+        min-height: 38px !important;
+        font-weight: 900 !important;
+    }
+
+    .user-card-body .action-btn,
+    .user-card-body button:not(.btn-primary) {
+        border-radius: 12px !important;
+    }
+
+    .user-search-empty {
+        background: #f8fafc !important;
+        border: 1px dashed #cbd5e1 !important;
+        color: #64748b !important;
+        opacity: 1 !important;
+    }
+
+    @media (max-width: 980px) {
+        .user-search-bar {
+            grid-template-columns: 1fr !important;
+        }
+
+        .user-card-summary {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+        }
+
+        .user-card-left {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+        }
+
+        .user-card-right {
+            width: 100% !important;
+            justify-content: flex-start !important;
+        }
+
+        .user-directory-header {
+            display: none !important;
+        }
+    }
+</style>
+

@@ -187,6 +187,19 @@
                 </div>
                 {% endif %}
 
+
+                {% if account_role in ['general_manager', 'manager'] %}
+                <div class="nav-section">
+                    <div class="nav-section-label">People</div>
+
+                    <a href="{{ url_for('dwp.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('dwp') %}active{% endif %}">
+                        <span class="nav-icon">◇</span>
+                        <span>DWP</span>
+                    </a>
+                </div>
+                {% endif %}
+
                 {% if account_role in ['admin', 'hr', 'supervisor'] %}
                 <div class="nav-section">
                     <div class="nav-section-label">People & HR</div>

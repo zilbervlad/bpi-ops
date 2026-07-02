@@ -984,6 +984,7 @@ def registration_qr_center():
 
 
 @auth_bp.route("/public/register", methods=["GET", "POST"])
+@auth_bp.route("/public/register/", methods=["GET", "POST"])
 def public_register():
     store_number = (request.args.get("store") or request.form.get("store_number") or "").strip()
 

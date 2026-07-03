@@ -20,6 +20,7 @@
             {{ week_start.strftime('%b %d') }} - {{ week_end.strftime('%b %d') }}
         </div>
         <a href="{{ url_for('maintenance.calendar', start=next_week.strftime('%Y-%m-%d'), tech=tech_filter) }}" class="action-btn" style="max-width: 150px;">Next →</a>
+        <a href="{{ url_for('maintenance.export_calendar_pdf', start=week_start.strftime('%Y-%m-%d'), tech=tech_filter) }}" class="action-btn" style="max-width: 150px;">Export PDF</a>
         <a href="{{ url_for('maintenance.index') }}" class="action-btn" style="max-width: 150px;">Board View</a>
     </div>
 </div>

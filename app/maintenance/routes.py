@@ -1101,6 +1101,242 @@ def calendar():
     )
 
 
+
+
+@maintenance_bp.route("/calendar/export.pdf", methods=["GET"])
+@login_required
+def export_calendar_pdf():
+    from collections import defaultdict
+
+    visible_store_numbers = get_visible_store_numbers()
+
+    requested_start = parse_optional_date(
+        request.args.get("start", "").strip()
+        or request.args.get("week_start", "").strip()
+    )
+    week_start = requested_start or get_calendar_week_start()
+    week_end = week_start + timedelta(days=6)
+    week_days = [week_start + timedelta(days=i) for i in range(7)]
+
+    tech_filter = request.args.get("tech", "").strip()
+
+    query = (
+        MaintenanceTicket.query
+        .filter(
+            MaintenanceTicket.store_number.in_(visible_store_numbers),
+            MaintenanceTicket.scheduled_date >= week_start,
+            MaintenanceTicket.scheduled_date <= week_end,
+        )
+        .order_by(
+            MaintenanceTicket.scheduled_date.asc(),
+            MaintenanceTicket.scheduled_time.asc(),
+            MaintenanceTicket.store_number.asc(),
+            MaintenanceTicket.id.asc(),
+        )
+    )
+
+    tickets = query.all()
+
+    def assigned_label(ticket):
+        candidates = [
+            getattr(ticket, "assigned_to_name", None),
+            getattr(ticket, "assigned_name", None),
+            getattr(ticket, "technician_name", None),
+            getattr(ticket, "assigned_to", None),
+            getattr(ticket, "tech", None),
+        ]
+
+        for value in candidates:
+            if value:
+                text = str(value).strip()
+                if text:
+                    return text
+
+        assigned_user = getattr(ticket, "assigned_user", None)
+        if assigned_user:
+            return (
+                getattr(assigned_user, "name", None)
+                or getattr(assigned_user, "full_name", None)
+                or getattr(assigned_user, "email", None)
+                or "Assigned"
+            )
+
+        return "Unassigned"
+
+    if tech_filter:
+        tickets = [
+            ticket for ticket in tickets
+            if assigned_label(ticket).strip().lower() == tech_filter.lower()
+        ]
+
+    tickets_by_day = defaultdict(list)
+    for ticket in tickets:
+        tickets_by_day[ticket.scheduled_date].append(ticket)
+
+    def clean_status(value):
+        return (value or "open").replace("_", " ").title()
+
+    def ticket_title(ticket):
+        candidates = [
+            getattr(ticket, "title", None),
+            getattr(ticket, "issue", None),
+            getattr(ticket, "summary", None),
+            getattr(ticket, "description", None),
+            getattr(ticket, "notes", None),
+        ]
+
+        for value in candidates:
+            if value:
+                text = str(value).strip()
+                if text:
+                    return text[:95]
+
+        return f"Maintenance Task #{ticket.id}"
+
+    def time_label(ticket):
+        scheduled_time = getattr(ticket, "scheduled_time", None)
+        if not scheduled_time:
+            return "Any time"
+
+        return scheduled_time.strftime("%I:%M %p").lstrip("0")
+
+    buffer = BytesIO()
+
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(letter),
+        rightMargin=0.35 * inch,
+        leftMargin=0.35 * inch,
+        topMargin=0.35 * inch,
+        bottomMargin=0.35 * inch,
+        title="Maintenance Calendar",
+    )
+
+    title_style = ParagraphStyle(
+        "CalendarTitle",
+        fontName="Helvetica-Bold",
+        fontSize=18,
+        leading=22,
+        spaceAfter=6,
+    )
+    meta_style = ParagraphStyle(
+        "CalendarMeta",
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.HexColor("#555555"),
+        spaceAfter=8,
+    )
+    day_header_style = ParagraphStyle(
+        "CalendarDayHeader",
+        fontName="Helvetica-Bold",
+        fontSize=8.5,
+        leading=10,
+        textColor=colors.white,
+        alignment=1,
+    )
+    task_style = ParagraphStyle(
+        "CalendarTask",
+        fontName="Helvetica",
+        fontSize=6.7,
+        leading=8.2,
+        spaceAfter=2,
+    )
+    empty_style = ParagraphStyle(
+        "CalendarEmpty",
+        fontName="Helvetica",
+        fontSize=7,
+        leading=9,
+        textColor=colors.HexColor("#999999"),
+        alignment=1,
+    )
+
+    story = []
+
+    title = f"Maintenance Calendar - {week_start.strftime('%b %d')} to {week_end.strftime('%b %d, %Y')}"
+    story.append(Paragraph(title, title_style))
+
+    meta_parts = [
+        f"Tech: {tech_filter or 'All'}",
+        f"Generated: {datetime.now(APP_TZ).strftime('%m/%d/%Y %I:%M %p').lstrip('0')}",
+    ]
+    story.append(Paragraph(" &nbsp; | &nbsp; ".join(meta_parts), meta_style))
+
+    header_row = [
+        Paragraph(day.strftime("%A<br/>%m/%d"), day_header_style)
+        for day in week_days
+    ]
+
+    content_row = []
+
+    for day in week_days:
+        day_tickets = tickets_by_day.get(day, [])
+
+        if not day_tickets:
+            content_row.append(Paragraph("No scheduled tasks", empty_style))
+            continue
+
+        day_blocks = []
+
+        for ticket in day_tickets[:12]:
+            block = (
+                f"<b>{time_label(ticket)}</b> - "
+                f"Store {ticket.store_number}<br/>"
+                f"{ticket_title(ticket)}<br/>"
+                f"<font color='#666666'>{clean_status(ticket.status)} - {assigned_label(ticket)}</font>"
+            )
+            day_blocks.append(Paragraph(block, task_style))
+
+        if len(day_tickets) > 12:
+            day_blocks.append(
+                Paragraph(f"+ {len(day_tickets) - 12} more task(s)", task_style)
+            )
+
+        nested = Table([[item] for item in day_blocks], colWidths=[1.4 * inch])
+        nested.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 2),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("LINEBELOW", (0, 0), (-1, -2), 0.25, colors.HexColor("#DDDDDD")),
+        ]))
+        content_row.append(nested)
+
+    calendar_table = Table(
+        [header_row, content_row],
+        colWidths=[1.47 * inch] * 7,
+        rowHeights=[0.32 * inch, 6.35 * inch],
+        repeatRows=1,
+    )
+
+    calendar_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1F2937")),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#D1D5DB")),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#FFFFFF")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+
+    story.append(calendar_table)
+    story.append(Spacer(1, 0.12 * inch))
+    story.append(Paragraph("BPI Ops Maintenance Calendar", meta_style))
+
+    doc.build(story)
+
+    buffer.seek(0)
+    filename = f"maintenance-calendar-{week_start.strftime('%Y-%m-%d')}.pdf"
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/pdf",
+    )
+
 @maintenance_bp.route("/calendar/move", methods=["POST"])
 @login_required
 @role_required("admin", "supervisor", "maintenance")

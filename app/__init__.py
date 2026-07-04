@@ -40,7 +40,7 @@ def ensure_hr_document_due_date_column():
 
 
 def create_app():
-    from flask import Flask, request
+    from flask import Flask, request, send_from_directory
 
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -132,6 +132,16 @@ def create_app():
     @app.get("/healthz")
     def healthz():
         return {"ok": True}, 200
+
+
+    @app.get("/favicon.ico")
+    def favicon():
+        return send_from_directory(app.static_folder, "bpi-logo.png", mimetype="image/png")
+
+    @app.get("/apple-touch-icon.png")
+    @app.get("/apple-touch-icon-precomposed.png")
+    def apple_touch_icon():
+        return send_from_directory(app.static_folder, "bpi-logo.png", mimetype="image/png")
 
     @app.after_request
     def log_large_http_responses(response):

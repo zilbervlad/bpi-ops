@@ -40,7 +40,7 @@ def ensure_hr_document_due_date_column():
 
 
 def create_app():
-    from flask import Flask
+    from flask import Flask, request
 
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -126,6 +126,29 @@ def create_app():
     if "db" not in sys.argv:
         with app.app_context():
             seed_morning_inspection_form()
+
+
+    @app.after_request
+    def log_large_http_responses(response):
+        try:
+            size = response.calculate_content_length()
+            if size is None:
+                size = 0
+
+            # Log responses over 1 MB so we can find what is eating Render bandwidth.
+            if size >= 1_000_000:
+                print(
+                    "LARGE_RESPONSE",
+                    request.method,
+                    request.path,
+                    response.status_code,
+                    size,
+                    "bytes",
+                )
+        except Exception as exc:
+            print(f"large response logger failed: {exc}")
+
+        return response
 
     return app
 

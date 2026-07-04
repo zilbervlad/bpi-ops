@@ -1,0 +1,850 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>BPI Labels Admin</h1>
+        <p class="page-subtitle">
+            Manage label items, shelf-life rules, and layout using the existing BPI Labels API.
+        </p>
+    </div>
+
+    <div class="page-actions">
+        <a class="button" href="{{ url_for('labels.index') }}">Back to Labels</a>
+    </div>
+</div>
+
+<div class="labels-admin-shell" data-api-base="{{ labels_api_base }}">
+    <div class="labels-admin-top-grid">
+        <div class="card labels-admin-card">
+            <div class="card-header">
+                <div>
+                    <h2>Catalog Summary</h2>
+                    <p>Live from BPI Labels API.</p>
+                </div>
+            </div>
+
+            <div id="labelsSummary" class="labels-summary-grid">
+                <div class="labels-loading">Loading summary...</div>
+            </div>
+
+            <div id="labelsAdminStatus" class="labels-status">Ready.</div>
+        </div>
+
+        <div class="card labels-admin-card">
+            <div class="card-header">
+                <div>
+                    <h2>Add New Item</h2>
+                    <p>Create a new label item and rules.</p>
+                </div>
+            </div>
+
+            <form id="labelsCreateForm" class="labels-form">
+                <label>
+                    Category
+                    <select name="category_key" required id="newItemCategory"></select>
+                </label>
+
+                <label>
+                    Item Name
+                    <input type="text" name="name" placeholder="Example: Cinna Magic" required>
+                </label>
+
+                <div class="labels-two-col">
+                    <label>
+                        Storage
+                        <input type="text" name="storage" placeholder="Walk-in, makeline, dry rack...">
+                    </label>
+
+                    <label>
+                        Sort Order
+                        <input type="number" name="sort_order" value="999">
+                    </label>
+                </div>
+
+                <label>
+                    Received Rule
+                    <input type="text" name="received" placeholder="Example: 7 days">
+                </label>
+
+                <label>
+                    Prepped Rule
+                    <input type="text" name="prepped" placeholder="Example: 4 days">
+                </label>
+
+                <label>
+                    In Use Rule
+                    <input type="text" name="in_use" placeholder="Example: 8 hours">
+                </label>
+
+                <label>
+                    Notes
+                    <textarea name="notes" rows="2" placeholder="Optional notes"></textarea>
+                </label>
+
+                <button class="button primary" type="submit">Create Item</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card labels-admin-card">
+        <div class="card-header labels-search-header">
+            <div>
+                <h2>Label Items</h2>
+                <p>Search, edit rules, and enable/disable items.</p>
+            </div>
+
+            <div class="labels-search-tools">
+                <input type="search" id="labelsItemSearch" placeholder="Search items...">
+                <select id="labelsCategoryFilter">
+                    <option value="">All categories</option>
+                </select>
+                <button class="button" type="button" id="refreshLabelsAdmin">Refresh</button>
+            </div>
+        </div>
+
+        <div id="labelsItemsList" class="labels-items-list">
+            <div class="labels-loading">Loading items...</div>
+        </div>
+    </div>
+
+    <div class="card labels-admin-card">
+        <div class="card-header">
+            <div>
+                <h2>Layout Settings</h2>
+                <p>Controls what prints on the 2×1 labels.</p>
+            </div>
+        </div>
+
+        <form id="labelsLayoutForm" class="labels-form labels-layout-form">
+            <div class="labels-two-col">
+                <label>
+                    Date Format
+                    <select name="date_format">
+                        <option value="weekday_short_date">Weekday + Short Date</option>
+                        <option value="short_date">Short Date</option>
+                        <option value="text">Text</option>
+                    </select>
+                </label>
+
+                <label>
+                    Stage Format
+                    <select name="stage_format">
+                        <option value="stage_colon_item">Stage: Item</option>
+                        <option value="item_dash_stage">Item - Stage</option>
+                        <option value="item_only">Item Only</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="labels-two-col">
+                <label>
+                    Date Font Size
+                    <select name="date_font_size">
+                        <option value="normal">Normal</option>
+                        <option value="large">Large</option>
+                        <option value="extra_large">Extra Large</option>
+                    </select>
+                </label>
+
+                <label>
+                    Item Font Size
+                    <select name="item_font_size">
+                        <option value="small">Small</option>
+                        <option value="normal">Normal</option>
+                        <option value="large">Large</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="labels-two-col">
+                <label>
+                    Label Width
+                    <input type="text" name="label_width" value="2">
+                </label>
+
+                <label>
+                    Label Height
+                    <input type="text" name="label_height" value="1">
+                </label>
+            </div>
+
+            <div class="labels-check-row">
+                <label><input type="checkbox" name="show_day_of_week"> Show day of week</label>
+                <label><input type="checkbox" name="show_printed_at"> Show printed at</label>
+                <label><input type="checkbox" name="show_store_number"> Show store number</label>
+            </div>
+
+            <button class="button primary" type="submit">Save Layout</button>
+        </form>
+    </div>
+</div>
+
+<style>
+.labels-admin-shell {
+    display: grid;
+    gap: 18px;
+}
+
+.labels-admin-top-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 1.2fr);
+    gap: 18px;
+}
+
+.labels-admin-card {
+    padding: 22px;
+}
+
+.labels-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.labels-summary-tile {
+    padding: 16px;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.04);
+}
+
+.labels-summary-tile strong {
+    display: block;
+    font-size: 1.8rem;
+    color: #0f172a;
+}
+
+.labels-summary-tile span {
+    color: #64748b;
+    font-weight: 700;
+}
+
+.labels-status {
+    margin-top: 14px;
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(37, 99, 235, 0.08);
+    color: #1e293b;
+}
+
+.labels-form {
+    display: grid;
+    gap: 12px;
+}
+
+.labels-form label {
+    display: grid;
+    gap: 6px;
+    color: #334155;
+    font-weight: 700;
+}
+
+.labels-form input,
+.labels-form select,
+.labels-form textarea,
+.labels-search-tools input,
+.labels-search-tools select {
+    width: 100%;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #fff;
+    color: #0f172a;
+}
+
+.labels-two-col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.labels-search-header {
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.labels-search-tools {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.labels-search-tools input {
+    min-width: 220px;
+}
+
+.labels-items-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.labels-item-card {
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 20px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+}
+
+.labels-item-card.inactive {
+    opacity: 0.78;
+}
+
+.labels-item-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.labels-item-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.labels-item-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.labels-item-title {
+    font-weight: 950;
+    color: #0f172a;
+    font-size: 1.05rem;
+}
+
+.labels-item-meta {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+.labels-status-pill {
+    display: inline-flex;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 900;
+}
+
+.labels-status-pill.active {
+    background: rgba(22, 163, 74, 0.12);
+    color: #15803d;
+}
+
+.labels-status-pill.inactive {
+    background: rgba(100, 116, 139, 0.14);
+    color: #475569;
+}
+
+.labels-rule-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.labels-rule-chips span {
+    display: inline-flex;
+    gap: 7px;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.04);
+    color: #334155;
+    font-size: 0.86rem;
+}
+
+.labels-rule-chips strong {
+    color: #0f172a;
+}
+
+.labels-item-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.labels-item-actions .button,
+.labels-editor-actions .button {
+    min-height: 36px;
+    padding: 8px 12px;
+}
+
+.labels-item-editor {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.labels-edit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 0.7fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.labels-rule-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.labels-editor-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.labels-check-row {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.labels-check-row label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+}
+
+.labels-loading {
+    color: #64748b;
+    padding: 16px;
+}
+
+.labels-muted {
+    color: #64748b;
+}
+
+.labels-admin-shell .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 12px;
+    padding: 10px 14px;
+    background: rgba(15, 23, 42, 0.08);
+    color: #0f172a;
+    font-weight: 900;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.labels-admin-shell .button.primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+@media (max-width: 900px) {
+    .labels-admin-top-grid,
+    .labels-two-col,
+    .labels-edit-grid,
+    .labels-rule-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .labels-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .labels-search-tools {
+        justify-content: stretch;
+    }
+}
+</style>
+
+<script>
+(function () {
+    const shell = document.querySelector(".labels-admin-shell");
+    if (!shell) return;
+
+    const apiBase = shell.dataset.apiBase;
+    const status = document.getElementById("labelsAdminStatus");
+    const summaryEl = document.getElementById("labelsSummary");
+    const itemsList = document.getElementById("labelsItemsList");
+    const searchInput = document.getElementById("labelsItemSearch");
+    const categoryFilter = document.getElementById("labelsCategoryFilter");
+    const newItemCategory = document.getElementById("newItemCategory");
+    const createForm = document.getElementById("labelsCreateForm");
+    const layoutForm = document.getElementById("labelsLayoutForm");
+    const refreshButton = document.getElementById("refreshLabelsAdmin");
+
+    let categories = [];
+    let items = [];
+
+    function setStatus(message) {
+        if (status) status.textContent = message;
+    }
+
+    async function apiGet(path) {
+        const response = await fetch(apiBase + path, {
+            headers: { "Accept": "application/json" },
+        });
+        const data = await response.json();
+        if (!response.ok || data.ok === false) {
+            throw new Error(data.message || "API error");
+        }
+        return data;
+    }
+
+    async function apiSend(path, method, payload) {
+        const response = await fetch(apiBase + path, {
+            method,
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload || {}),
+        });
+        const data = await response.json();
+        if (!response.ok || data.ok === false) {
+            throw new Error(data.message || "API error");
+        }
+        return data;
+    }
+
+    function escapeHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function optionHtml(category) {
+        return `<option value="${escapeHtml(category.key)}">${escapeHtml(category.label)}</option>`;
+    }
+
+    function populateCategories() {
+        const options = categories.map(optionHtml).join("");
+        categoryFilter.innerHTML = `<option value="">All categories</option>` + options;
+        newItemCategory.innerHTML = options;
+    }
+
+    function getRule(item, key) {
+        const rule = (item.rules || []).find(row => row.stage_key === key);
+        return rule ? (rule.rule_text || "") : "";
+    }
+
+    function renderSummary(summary) {
+        summaryEl.innerHTML = `
+            <div class="labels-summary-tile">
+                <strong>${summary.total_categories || 0}</strong>
+                <span>Categories</span>
+            </div>
+            <div class="labels-summary-tile">
+                <strong>${summary.total_items || 0}</strong>
+                <span>Total Items</span>
+            </div>
+            <div class="labels-summary-tile">
+                <strong>${summary.total_active_items || 0}</strong>
+                <span>Active Items</span>
+            </div>
+        `;
+    }
+
+    function renderItems() {
+        if (!items.length) {
+            itemsList.innerHTML = `<div class="labels-loading">No items found.</div>`;
+            return;
+        }
+
+        itemsList.innerHTML = items.map(item => {
+            const statusText = item.is_active ? "Active" : "Inactive";
+            const statusClass = item.is_active ? "active" : "inactive";
+            const received = getRule(item, "received") || "—";
+            const prepped = getRule(item, "prepped") || "—";
+            const inUse = getRule(item, "in_use") || "—";
+
+            return `
+                <div class="labels-item-card ${statusClass}" data-slug="${escapeHtml(item.slug)}">
+                    <div class="labels-item-summary">
+                        <div class="labels-item-main">
+                            <div class="labels-item-title-row">
+                                <div class="labels-item-title">${escapeHtml(item.name)}</div>
+                                <span class="labels-status-pill ${statusClass}">${statusText}</span>
+                            </div>
+
+                            <div class="labels-item-meta">
+                                ${escapeHtml(item.category_label)} · ${escapeHtml(item.slug)}
+                            </div>
+
+                            <div class="labels-rule-chips">
+                                <span><strong>Received</strong>${escapeHtml(received)}</span>
+                                <span><strong>Prepped</strong>${escapeHtml(prepped)}</span>
+                                <span><strong>In Use</strong>${escapeHtml(inUse)}</span>
+                            </div>
+                        </div>
+
+                        <div class="labels-item-actions">
+                            <button class="button" type="button" data-action="edit">Edit</button>
+                            <button class="button" type="button" data-action="toggle">
+                                ${item.is_active ? "Disable" : "Enable"}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="labels-item-editor" hidden>
+                        <div class="labels-edit-grid">
+                            <label>
+                                Name
+                                <input data-field="name" value="${escapeHtml(item.name)}">
+                            </label>
+                            <label>
+                                Category
+                                <select data-field="category_key">
+                                    ${categories.map(category => `
+                                        <option value="${escapeHtml(category.key)}" ${category.key === item.category_key ? "selected" : ""}>
+                                            ${escapeHtml(category.label)}
+                                        </option>
+                                    `).join("")}
+                                </select>
+                            </label>
+                            <label>
+                                Sort
+                                <input data-field="sort_order" type="number" value="${escapeHtml(item.sort_order)}">
+                            </label>
+                        </div>
+
+                        <div class="labels-edit-grid">
+                            <label>
+                                Storage
+                                <input data-field="storage" value="${escapeHtml(item.storage)}">
+                            </label>
+                            <label>
+                                Notes
+                                <input data-field="notes" value="${escapeHtml(item.notes)}">
+                            </label>
+                            <label>
+                                Active
+                                <select data-field="is_active">
+                                    <option value="true" ${item.is_active ? "selected" : ""}>Active</option>
+                                    <option value="false" ${!item.is_active ? "selected" : ""}>Inactive</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="labels-rule-grid">
+                            <label>
+                                Received
+                                <input data-rule="received" value="${escapeHtml(getRule(item, "received"))}">
+                            </label>
+                            <label>
+                                Prepped
+                                <input data-rule="prepped" value="${escapeHtml(getRule(item, "prepped"))}">
+                            </label>
+                            <label>
+                                In Use
+                                <input data-rule="in_use" value="${escapeHtml(getRule(item, "in_use"))}">
+                            </label>
+                        </div>
+
+                        <div class="labels-editor-actions">
+                            <button class="button primary" type="button" data-action="save">Save Changes</button>
+                            <button class="button" type="button" data-action="cancel">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join("");
+    }
+
+    async function loadSummary() {
+        const data = await apiGet("/admin/catalog/summary");
+        renderSummary(data);
+    }
+
+    async function loadCategories() {
+        const data = await apiGet("/admin/catalog/categories");
+        categories = data.categories || [];
+        populateCategories();
+    }
+
+    async function loadItems() {
+        const params = new URLSearchParams();
+        const q = (searchInput.value || "").trim();
+        const category = (categoryFilter.value || "").trim();
+
+        if (q) params.set("q", q);
+        if (category) params.set("category_key", category);
+
+        const suffix = params.toString() ? "?" + params.toString() : "";
+        const data = await apiGet("/admin/catalog/items" + suffix);
+        items = data.items || [];
+        renderItems();
+    }
+
+    async function loadLayout() {
+        const data = await apiGet("/admin/layout");
+        const layout = data.layout || {};
+
+        for (const [key, value] of Object.entries(layout)) {
+            const field = layoutForm.elements[key];
+            if (!field) continue;
+
+            if (field.type === "checkbox") {
+                field.checked = Boolean(value);
+            } else {
+                field.value = value == null ? "" : value;
+            }
+        }
+    }
+
+    async function refreshAll() {
+        try {
+            setStatus("Loading BPI Labels admin data...");
+            await loadSummary();
+            await loadCategories();
+            await loadItems();
+            await loadLayout();
+            setStatus("Loaded.");
+        } catch (err) {
+            setStatus("Error: " + err.message);
+        }
+    }
+
+    function collectItemPayload(card) {
+        const payload = {
+            rules: {},
+        };
+
+        card.querySelectorAll("[data-field]").forEach(input => {
+            const key = input.dataset.field;
+            let value = input.value;
+
+            if (key === "is_active") {
+                value = value === "true";
+            }
+
+            if (key === "sort_order") {
+                value = parseInt(value || "999", 10);
+            }
+
+            payload[key] = value;
+        });
+
+        card.querySelectorAll("[data-rule]").forEach(input => {
+            payload.rules[input.dataset.rule] = input.value;
+        });
+
+        return payload;
+    }
+
+    itemsList.addEventListener("click", async function (event) {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+
+        const card = button.closest(".labels-item-card");
+        const slug = card.dataset.slug;
+        const action = button.dataset.action;
+
+        if (action === "edit") {
+            const editor = card.querySelector(".labels-item-editor");
+            if (editor) editor.hidden = false;
+            return;
+        }
+
+        if (action === "cancel") {
+            const editor = card.querySelector(".labels-item-editor");
+            if (editor) editor.hidden = true;
+            return;
+        }
+
+        try {
+            if (action === "save") {
+                setStatus("Saving " + slug + "...");
+                await apiSend("/admin/catalog/items/" + encodeURIComponent(slug), "PATCH", collectItemPayload(card));
+                setStatus("Saved " + slug + ".");
+            }
+
+            if (action === "toggle") {
+                setStatus("Toggling " + slug + "...");
+                await apiSend("/admin/catalog/items/" + encodeURIComponent(slug) + "/toggle", "POST", {});
+                setStatus("Updated " + slug + ".");
+            }
+
+            await loadSummary();
+            await loadItems();
+        } catch (err) {
+            setStatus("Error: " + err.message);
+        }
+    });
+
+    createForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const formData = new FormData(createForm);
+        const payload = {
+            category_key: formData.get("category_key"),
+            name: formData.get("name"),
+            storage: formData.get("storage"),
+            notes: formData.get("notes"),
+            sort_order: parseInt(formData.get("sort_order") || "999", 10),
+            is_active: true,
+            rules: {
+                received: formData.get("received") || "",
+                prepped: formData.get("prepped") || "",
+                in_use: formData.get("in_use") || "",
+            },
+        };
+
+        try {
+            setStatus("Creating item...");
+            await apiSend("/admin/catalog/items", "POST", payload);
+            createForm.reset();
+            await loadSummary();
+            await loadItems();
+            setStatus("Item created.");
+        } catch (err) {
+            setStatus("Error: " + err.message);
+        }
+    });
+
+    layoutForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const formData = new FormData(layoutForm);
+        const payload = {
+            date_format: formData.get("date_format"),
+            stage_format: formData.get("stage_format"),
+            date_font_size: formData.get("date_font_size"),
+            item_font_size: formData.get("item_font_size"),
+            label_width: formData.get("label_width"),
+            label_height: formData.get("label_height"),
+            show_day_of_week: layoutForm.elements.show_day_of_week.checked,
+            show_printed_at: layoutForm.elements.show_printed_at.checked,
+            show_store_number: layoutForm.elements.show_store_number.checked,
+        };
+
+        try {
+            setStatus("Saving layout...");
+            await apiSend("/admin/layout", "POST", payload);
+            await loadLayout();
+            setStatus("Layout saved.");
+        } catch (err) {
+            setStatus("Error: " + err.message);
+        }
+    });
+
+    let searchTimer = null;
+    searchInput.addEventListener("input", function () {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(loadItems, 250);
+    });
+
+    categoryFilter.addEventListener("change", loadItems);
+    refreshButton.addEventListener("click", refreshAll);
+
+    refreshAll();
+})();
+</script>
+{% endblock %}

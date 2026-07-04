@@ -1,206 +1,228 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header labels-page-header">
     <div>
         <h1>BPI Labels</h1>
         <p class="page-subtitle">
-            Download and set up the Android Bluetooth label printer app.
+            Set up the Android Bluetooth label printer app and manage label rules.
         </p>
-    </div>
-</div>
-
-<div class="dashboard-grid labels-grid">
-    <div class="card labels-card">
-        <div class="card-header">
-            <div>
-                <h2>Android Printer App</h2>
-                <p>
-                    Stores still print through the Android app using Bluetooth.
-                    BPI Ops is now the setup hub.
-                </p>
-            </div>
-        </div>
-
-        <div class="labels-qr-wrap">
-            <img src="{{ qr_download_url }}" alt="BPI Labels Android app QR code">
-        </div>
-
-        <div class="labels-actions">
-            <a class="button primary" href="{{ android_app_url }}" target="_blank" rel="noopener">
-                Open Download Page
-            </a>
-        </div>
-
-        <div class="labels-note">
-            Scan this QR from the Android device used for label printing.
-        </div>
-    </div>
-
-    <div class="card labels-card">
-        <div class="card-header">
-            <div>
-                <h2>Store Setup</h2>
-                <p>
-                    Use the same setup flow the Android app uses today.
-                </p>
-            </div>
-        </div>
-
-        {% if store_number %}
-            <div class="labels-store-pill">Store {{ store_number }}</div>
-        {% endif %}
-
-        <div class="labels-note-card">
-            <strong>For now:</strong>
-            open the Android BPI Labels app, select the correct store, pair the Bluetooth printer, and print from the app.
-        </div>
-
-        <div class="labels-note-card muted">
-            Store-specific setup QR is coming in the next Android app update.
-        </div>
-    </div>
-
-    <div class="card labels-card labels-wide">
-        <div class="card-header">
-            <div>
-                <h2>Printer Setup Steps</h2>
-                <p>Use the same Bluetooth flow that already works today.</p>
-            </div>
-        </div>
-
-        <ol class="labels-steps">
-            <li>Open this page on the store computer or phone.</li>
-            <li>Scan the Android Printer App QR with the Android device.</li>
-            <li>Install or open the BPI Labels app.</li>
-            <li>Pair the Android device to the Zebra / label printer through Bluetooth.</li>
-            <li>Select the correct store inside the Android app.</li>
-            <li>Print labels from the Android app.</li>
-        </ol>
     </div>
 
     {% if can_admin_labels %}
-    <div class="card labels-card labels-wide">
-        <div class="card-header">
-            <div>
-                <h2>Admin Roadmap</h2>
-                <p>Coming next after the hub is stable.</p>
-            </div>
-        </div>
-
-        <div class="labels-roadmap">
-            <div>
-                <strong>Phase 2</strong>
-                <span>Move label items and expiration rules into BPI Ops.</span>
-            </div>
-            <div>
-                <strong>Phase 3</strong>
-                <span>Have the Android app pull settings from BPI Ops.</span>
-            </div>
-            <div>
-                <strong>Phase 4</strong>
-                <span>Retire the separate BPI Labels admin/backend if no longer needed.</span>
-            </div>
-        </div>
+    <div class="page-actions">
+        <a class="button" href="{{ url_for('labels.admin') }}">Labels Admin</a>
     </div>
     {% endif %}
 </div>
 
+<div class="labels-hub">
+    <div class="card labels-hero-card">
+        <div class="labels-hero-copy">
+            <div class="labels-pill">Android Bluetooth Printing</div>
+            <h2>Download the BPI Labels printer app</h2>
+            <p>
+                Scan this QR from the Android device used for label printing.
+                The Android app still handles Bluetooth printing to the label printer.
+            </p>
+
+            <div class="labels-hero-actions">
+                <a class="button primary" href="{{ android_app_url }}" target="_blank" rel="noopener">
+                    Download Android App
+                </a>
+
+                {% if can_admin_labels %}
+                <a class="button" href="{{ url_for('labels.admin') }}">
+                    Manage Labels
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="labels-qr-panel">
+            <div class="labels-qr-wrap">
+                <img src="{{ qr_download_url }}" alt="BPI Labels Android app QR code">
+            </div>
+            <div class="labels-qr-caption">
+                Latest APK download QR
+            </div>
+        </div>
+    </div>
+
+    <div class="labels-card-grid">
+        <div class="card labels-info-card">
+            <div class="labels-card-icon">🏷</div>
+            <h2>Store Setup</h2>
+            {% if store_number %}
+                <div class="labels-store-pill">Store {{ store_number }}</div>
+            {% endif %}
+            <p>
+                For now, open the Android app, select the correct store, pair the Bluetooth printer,
+                and print from the app.
+            </p>
+        </div>
+
+        <div class="card labels-info-card">
+            <div class="labels-card-icon">🔧</div>
+            <h2>Printer Setup</h2>
+            <ol class="labels-steps">
+                <li>Install or open the Android BPI Labels app.</li>
+                <li>Pair the Android device to the label printer through Bluetooth.</li>
+                <li>Select the correct store inside the app.</li>
+                <li>Print labels from the Android device.</li>
+            </ol>
+        </div>
+
+        <div class="card labels-info-card">
+            <div class="labels-card-icon">⚡</div>
+            <h2>What BPI Ops Handles</h2>
+            <p>
+                BPI Ops is the setup and admin hub. The existing BPI Labels API still manages
+                catalog items, expiration rules, presets, and layout settings.
+            </p>
+        </div>
+    </div>
+</div>
+
 <style>
-.labels-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+.labels-page-header {
+    margin-bottom: 18px;
+}
+
+.labels-hub {
+    display: grid;
     gap: 18px;
 }
 
-.labels-card {
-    padding: 22px;
+.labels-hero-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr);
+    gap: 24px;
+    align-items: center;
+    padding: 28px;
+    overflow: hidden;
 }
 
-.labels-wide {
-    grid-column: 1 / -1;
+.labels-hero-copy h2 {
+    margin: 10px 0 10px;
+    font-size: clamp(1.6rem, 2.4vw, 2.4rem);
+    line-height: 1.05;
+}
+
+.labels-hero-copy p {
+    max-width: 680px;
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.labels-pill {
+    display: inline-flex;
+    width: fit-content;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.1);
+    color: #1d4ed8;
+    font-weight: 900;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+}
+
+.labels-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.labels-qr-panel {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
 }
 
 .labels-qr-wrap {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 18px 0;
+    width: min(260px, 100%);
+    aspect-ratio: 1 / 1;
     padding: 18px;
     background: #fff;
     border: 1px solid rgba(15, 23, 42, 0.08);
-    border-radius: 18px;
+    border-radius: 24px;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
 }
 
 .labels-qr-wrap img {
-    width: 220px;
-    max-width: 100%;
+    width: 100%;
     height: auto;
 }
 
-.labels-actions {
-    display: flex;
-    justify-content: center;
-    margin-top: 12px;
-}
-
-.labels-note,
-.labels-code {
-    margin-top: 12px;
+.labels-qr-caption {
     color: #64748b;
-    font-size: 0.92rem;
+    font-size: 0.9rem;
+    font-weight: 700;
     text-align: center;
 }
 
-.labels-code {
-    word-break: break-all;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    background: rgba(15, 23, 42, 0.04);
-    border-radius: 12px;
-    padding: 10px;
+.labels-card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.labels-info-card {
+    padding: 22px;
+}
+
+.labels-card-icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.05);
+    font-size: 1.35rem;
+    margin-bottom: 14px;
+}
+
+.labels-info-card h2 {
+    margin: 0 0 10px;
+}
+
+.labels-info-card p {
+    color: #64748b;
+    line-height: 1.55;
 }
 
 .labels-store-pill {
     display: inline-flex;
     align-items: center;
+    margin-bottom: 10px;
     padding: 8px 12px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.1);
     color: #1d4ed8;
-    font-weight: 700;
+    font-weight: 900;
 }
 
 .labels-steps {
-    margin: 14px 0 0;
-    padding-left: 22px;
-    color: #334155;
-    line-height: 1.8;
-}
-
-.labels-roadmap {
-    display: grid;
-    gap: 12px;
-    margin-top: 14px;
-}
-
-.labels-roadmap div {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    padding: 14px;
-    border-radius: 16px;
-    background: rgba(15, 23, 42, 0.04);
-}
-
-.labels-roadmap strong {
-    min-width: 78px;
-    color: #0f172a;
-}
-
-.empty-state {
-    padding: 24px;
-    border-radius: 18px;
-    background: rgba(15, 23, 42, 0.04);
+    margin: 0;
+    padding-left: 20px;
     color: #64748b;
+    line-height: 1.75;
+}
+
+@media (max-width: 900px) {
+    .labels-hero-card,
+    .labels-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .labels-hero-card {
+        padding: 22px;
+    }
 }
 </style>
 {% endblock %}

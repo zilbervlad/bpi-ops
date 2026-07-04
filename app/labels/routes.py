@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 from urllib.parse import quote
 
 from flask import Blueprint, render_template, request, session
@@ -42,4 +43,25 @@ def index():
         qr_download_url=qr_download_url,
         can_admin_labels=can_admin_labels,
         generated_at=datetime.now(),
+    )
+
+
+@labels_bp.route("/admin")
+def admin():
+    role = (session.get("account_role") or session.get("role") or "").lower()
+
+    if role not in {"admin", "supervisor"}:
+        return render_template(
+            "labels/admin_denied.html",
+            role=role,
+        ), 403
+
+    labels_api_base = os.getenv(
+        "BPI_LABELS_API_BASE",
+        "https://bpi-labels.onrender.com/api",
+    ).rstrip("/")
+
+    return render_template(
+        "labels/admin.html",
+        labels_api_base=labels_api_base,
     )

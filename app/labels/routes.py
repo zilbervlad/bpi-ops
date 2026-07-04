@@ -21,7 +21,7 @@ def index():
     store_number = request.args.get("store") or _current_store_number()
 
     # Keep this configurable so we can point it to the APK/install page later
-    android_app_url = "https://bpi-labels.onrender.com"
+    android_app_url = "https://expo.dev/artifacts/eas/JjukcTaXS7ck14HyF3NcPBFfONZGims96EtUPiAITDo.apk"
 
     qr_download_url = (
         "https://api.qrserver.com/v1/create-qr-code/"

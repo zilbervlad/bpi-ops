@@ -177,6 +177,14 @@
                     </a>
                     {% endif %}
 
+                    {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager'] %}
+                    <a href="{{ url_for('labels.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('labels') %}active{% endif %}">
+                        <span class="nav-icon">🏷</span>
+                        <span>BPI Labels</span>
+                    </a>
+                    {% endif %}
+
                     {% if access_role in ['admin', 'maintenance', 'hr'] %}
                     <a href="{{ url_for('maintenance.time_cards') }}"
                        class="{% if request.endpoint in ['maintenance.time_card', 'maintenance.time_cards', 'maintenance.time_cards_pdf'] %}active{% endif %}">
@@ -394,6 +402,12 @@
                        class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
                         <span>🔧</span>
                         <small>Fix</small>
+                    </a>
+
+                    <a href="{{ url_for('labels.index') }}"
+                       class="{% if request.endpoint and request.endpoint.startswith('labels') %}active{% endif %}">
+                        <span>🏷</span>
+                        <small>Labels</small>
                     </a>
 
                 {% elif access_role in ['admin', 'supervisor'] %}

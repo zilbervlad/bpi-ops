@@ -5,6 +5,7 @@ from app.config import Config
 from app.extensions import db, migrate
 from app.dwp import dwp_bp
 from app.doughy import doughy_bp
+from app.labels import labels_bp
 
 
 
@@ -94,6 +95,7 @@ def create_app():
     app.register_blueprint(connect_admin_bp)
     app.register_blueprint(dwp_bp)
     app.register_blueprint(doughy_bp)
+    app.register_blueprint(labels_bp)
 
     @app.route("/create-db")
     def create_db():

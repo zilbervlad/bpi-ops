@@ -6,6 +6,7 @@ from app.extensions import db, migrate
 from app.dwp import dwp_bp
 from app.doughy import doughy_bp
 from app.labels import labels_bp
+from flask_compress import Compress
 
 
 
@@ -43,6 +44,19 @@ def create_app():
     from flask import Flask, request, send_from_directory
 
     app = Flask(__name__)
+
+    app.config["COMPRESS_MIMETYPES"] = [
+        "text/html",
+        "text/css",
+        "text/xml",
+        "application/json",
+        "application/javascript",
+        "text/javascript",
+    ]
+    app.config["COMPRESS_LEVEL"] = 6
+    app.config["COMPRESS_MIN_SIZE"] = 500
+
+    Compress(app)
     app.config.from_object(Config)
 
     # -------------------------

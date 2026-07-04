@@ -23,21 +23,14 @@ def index():
     # Keep this configurable so we can point it to the APK/install page later
     android_app_url = "https://bpi-labels.onrender.com"
 
-    setup_url = ""
-    if store_number:
-        setup_url = f"bpilabels://setup?store={quote(str(store_number))}"
-
     qr_download_url = (
         "https://api.qrserver.com/v1/create-qr-code/"
         f"?size=240x240&data={quote(android_app_url, safe='')}"
     )
 
-    qr_setup_url = ""
-    if setup_url:
-        qr_setup_url = (
-            "https://api.qrserver.com/v1/create-qr-code/"
-            f"?size=240x240&data={quote(setup_url, safe='')}"
-        )
+    # Store setup QR will come in Phase 2 after the Android app supports
+    # a real setup/deep-link flow. For now, stores choose their store
+    # inside the Android app like they do today.
 
     can_admin_labels = role in {"admin", "supervisor"}
 
@@ -46,9 +39,7 @@ def index():
         role=role,
         store_number=store_number,
         android_app_url=android_app_url,
-        setup_url=setup_url,
         qr_download_url=qr_download_url,
-        qr_setup_url=qr_setup_url,
         can_admin_labels=can_admin_labels,
         generated_at=datetime.now(),
     )

@@ -40,26 +40,25 @@
     <div class="card labels-card">
         <div class="card-header">
             <div>
-                <h2>Store Setup QR</h2>
+                <h2>Store Setup</h2>
                 <p>
-                    Use this to connect the Android printer app to the store.
+                    Use the same setup flow the Android app uses today.
                 </p>
             </div>
         </div>
 
-        {% if store_number and qr_setup_url %}
+        {% if store_number %}
             <div class="labels-store-pill">Store {{ store_number }}</div>
-
-            <div class="labels-qr-wrap">
-                <img src="{{ qr_setup_url }}" alt="Store setup QR code">
-            </div>
-
-            <div class="labels-code">{{ setup_url }}</div>
-        {% else %}
-            <div class="empty-state">
-                No store selected. Choose a store first, then come back to BPI Labels.
-            </div>
         {% endif %}
+
+        <div class="labels-note-card">
+            <strong>For now:</strong>
+            open the Android BPI Labels app, select the correct store, pair the Bluetooth printer, and print from the app.
+        </div>
+
+        <div class="labels-note-card muted">
+            Store-specific setup QR is coming in the next Android app update.
+        </div>
     </div>
 
     <div class="card labels-card labels-wide">
@@ -75,7 +74,7 @@
             <li>Scan the Android Printer App QR with the Android device.</li>
             <li>Install or open the BPI Labels app.</li>
             <li>Pair the Android device to the Zebra / label printer through Bluetooth.</li>
-            <li>Scan the Store Setup QR so the app knows which store it belongs to.</li>
+            <li>Select the correct store inside the Android app.</li>
             <li>Print labels from the Android app.</li>
         </ol>
     </div>

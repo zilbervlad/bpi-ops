@@ -6,7 +6,7 @@ from app.extensions import db, migrate
 from app.dwp import dwp_bp
 from app.doughy import doughy_bp
 from app.labels import labels_bp
-from flask_compress import Compress
+import gzip
 
 
 
@@ -45,18 +45,54 @@ def create_app():
 
     app = Flask(__name__)
 
-    app.config["COMPRESS_MIMETYPES"] = [
-        "text/html",
-        "text/css",
-        "text/xml",
-        "application/json",
-        "application/javascript",
-        "text/javascript",
-    ]
-    app.config["COMPRESS_LEVEL"] = 6
-    app.config["COMPRESS_MIN_SIZE"] = 500
+    @app.after_request
+    def gzip_text_responses(response):
+        try:
+            if response.direct_passthrough:
+                return response
 
-    Compress(app)
+            if response.status_code != 200:
+                return response
+
+            if response.headers.get("Content-Encoding"):
+                return response
+
+            accept_encoding = request.headers.get("Accept-Encoding", "").lower()
+            if "gzip" not in accept_encoding:
+                return response
+
+            compressible_types = {
+                "text/html",
+                "text/css",
+                "text/xml",
+                "application/json",
+                "application/javascript",
+                "text/javascript",
+            }
+
+            if response.mimetype not in compressible_types:
+                return response
+
+            data = response.get_data()
+            if not data or len(data) < 500:
+                return response
+
+            gzipped = gzip.compress(data, compresslevel=6)
+            response.set_data(gzipped)
+            response.headers["Content-Encoding"] = "gzip"
+            response.headers["Content-Length"] = str(len(gzipped))
+
+            vary = response.headers.get("Vary")
+            if vary:
+                if "Accept-Encoding" not in vary:
+                    response.headers["Vary"] = vary + ", Accept-Encoding"
+            else:
+                response.headers["Vary"] = "Accept-Encoding"
+
+        except Exception:
+            return response
+
+        return response
     app.config.from_object(Config)
 
     # -------------------------

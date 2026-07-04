@@ -128,6 +128,11 @@ def create_app():
             seed_morning_inspection_form()
 
 
+
+    @app.get("/healthz")
+    def healthz():
+        return {"ok": True}, 200
+
     @app.after_request
     def log_large_http_responses(response):
         try:

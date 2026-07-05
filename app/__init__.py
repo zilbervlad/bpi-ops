@@ -6,6 +6,8 @@ from app.extensions import db, migrate
 from app.dwp import dwp_bp
 from app.doughy import doughy_bp
 from app.labels import labels_bp
+from app.perks.routes import perks_bp
+from app.perks.api_routes import perks_api_bp
 import gzip
 
 
@@ -146,6 +148,8 @@ def create_app():
     app.register_blueprint(dwp_bp)
     app.register_blueprint(doughy_bp)
     app.register_blueprint(labels_bp)
+    app.register_blueprint(perks_bp)
+    app.register_blueprint(perks_api_bp)
 
     @app.route("/create-db")
     def create_db():

@@ -128,6 +128,32 @@ def create_app():
     from app.connect_admin import connect_admin_bp
 
     # Register blueprints
+
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
+
+    @app.after_request
+    def tune_response_headers_and_log_size(response):
+        try:
+            path = request.path or ""
+
+            if path.startswith("/static/"):
+                response.headers["Cache-Control"] = "public, max-age=86400"
+
+            size = response.calculate_content_length() or 0
+
+            if size >= 100_000 or path.startswith("/api/") or path.startswith("/static/"):
+                app.logger.info(
+                    "BANDWIDTH path=%s status=%s bytes=%s ua=%s",
+                    path,
+                    response.status_code,
+                    size,
+                    request.headers.get("User-Agent", "-")[:120],
+                )
+        except Exception:
+            pass
+
+        return response
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(checklist_bp)

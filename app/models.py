@@ -918,3 +918,102 @@ class DWPRecord(db.Model):
     @property
     def requires_letter(self):
         return self.discussion_type in ["Written Reminder", "DML - Decision Making Leave"]
+
+class PerkPartner(db.Model):
+    __tablename__ = "perk_partners"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    name = db.Column(db.String(160), nullable=False)
+    category = db.Column(db.String(80), nullable=True)
+
+    logo_url = db.Column(db.String(500), nullable=True)
+    website_url = db.Column(db.String(500), nullable=True)
+
+    contact_name = db.Column(db.String(160), nullable=True)
+    contact_email = db.Column(db.String(255), nullable=True)
+    contact_phone = db.Column(db.String(40), nullable=True)
+
+    status = db.Column(db.String(30), default="active", nullable=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+    offers = db.relationship(
+        "PerkOffer",
+        back_populates="partner",
+        cascade="all, delete-orphan",
+    )
+
+
+class PerkOffer(db.Model):
+    __tablename__ = "perk_offers"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    partner_id = db.Column(
+        db.Integer,
+        db.ForeignKey("perk_partners.id"),
+        nullable=False,
+    )
+
+    title = db.Column(db.String(180), nullable=False)
+    short_description = db.Column(db.String(255), nullable=True)
+    description = db.Column(db.Text, nullable=True)
+
+    category = db.Column(db.String(80), nullable=True)
+    image_url = db.Column(db.String(500), nullable=True)
+
+    button_text = db.Column(db.String(80), default="View Offer", nullable=False)
+    button_url = db.Column(db.String(500), nullable=True)
+    phone_number = db.Column(db.String(40), nullable=True)
+
+    redemption_instructions = db.Column(db.Text, nullable=True)
+    terms = db.Column(db.Text, nullable=True)
+
+    featured = db.Column(db.Boolean, default=False, nullable=False)
+    is_template = db.Column(db.Boolean, default=False, nullable=False)
+    sort_order = db.Column(db.Integer, default=100, nullable=False)
+
+    starts_at = db.Column(db.DateTime, nullable=True)
+    ends_at = db.Column(db.DateTime, nullable=True)
+
+    status = db.Column(db.String(30), default="draft", nullable=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+    partner = db.relationship("PerkPartner", back_populates="offers")
+
+
+class PerkEvent(db.Model):
+    __tablename__ = "perk_events"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    offer_id = db.Column(
+        db.Integer,
+        db.ForeignKey("perk_offers.id"),
+        nullable=False,
+    )
+
+    user_id = db.Column(db.Integer, nullable=True)
+    store_number = db.Column(db.String(20), nullable=True)
+
+    event_type = db.Column(db.String(30), nullable=False)
+    metadata_json = db.Column(db.Text, nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    offer = db.relationship("PerkOffer", backref="events")
+

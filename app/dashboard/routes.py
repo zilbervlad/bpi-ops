@@ -920,6 +920,14 @@ def admin_center():
                 "icon": "💬",
             },
             {
+                "title": "BPI Perks",
+                "eyebrow": "Team Offers",
+                "description": "Manage partner discounts and offers shown in BPI Connect.",
+                "url": url_for("perks.index"),
+                "status": "Admin",
+                "icon": "🎁",
+            },
+            {
                 "title": "Store Admin",
                 "eyebrow": "Company Setup",
                 "description": "Manage store setup and company configuration.",

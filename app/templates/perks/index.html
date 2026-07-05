@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>BPI Perks</h1>
+    <p>Manage partner offers shown in BPI Connect.</p>
+  </div>
+
+  <div class="page-actions">
+    <a class="btn btn-secondary" href="{{ url_for('perks.partners') }}">Partners</a>
+    <a class="btn btn-secondary" href="{{ url_for('perks.offers') }}">Offers</a>
+    <a class="btn btn-primary" href="{{ url_for('perks.new_offer') }}">New Offer</a>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <div class="card">
+    <div class="card-label">Partners</div>
+    <div class="card-value">{{ partners_count }}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Active Offers</div>
+    <div class="card-value">{{ active_offers_count }}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Featured</div>
+    <div class="card-value">{{ featured_count }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Recent Offers</h2>
+    <a class="btn btn-sm" href="{{ url_for('perks.analytics') }}">Analytics</a>
+  </div>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Offer</th>
+          <th>Partner</th>
+          <th>Status</th>
+          <th>Featured</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for offer in recent_offers %}
+        <tr>
+          <td>{{ offer.title }}</td>
+          <td>{{ offer.partner.name }}</td>
+          <td>{{ offer.status }}</td>
+          <td>{{ "Yes" if offer.featured else "No" }}</td>
+          <td>
+            <a href="{{ url_for('perks.edit_offer', offer_id=offer.id) }}">Edit</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5">No offers yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

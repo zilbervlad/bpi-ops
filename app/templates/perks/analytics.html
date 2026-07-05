@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>BPI Perks Analytics</h1>
+    <p>Views, clicks, calls, and redemptions from BPI Connect.</p>
+  </div>
+
+  <div class="page-actions">
+    <a class="btn btn-secondary" href="{{ url_for('perks.index') }}">Back</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Offer</th>
+          <th>Partner</th>
+          <th>Total Events</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for offer, total_events in rows %}
+        <tr>
+          <td>{{ offer.title }}</td>
+          <td>{{ offer.partner.name }}</td>
+          <td>{{ total_events }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="3">No activity yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

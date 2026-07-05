@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Perk Partners</h1>
+    <p>Companies and vendors offering deals to the BPI team.</p>
+  </div>
+
+  <div class="page-actions">
+    <a class="btn btn-secondary" href="{{ url_for('perks.index') }}">Back</a>
+    <a class="btn btn-primary" href="{{ url_for('perks.new_partner') }}">New Partner</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Partner</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Offers</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for partner in partners %}
+        <tr>
+          <td>{{ partner.name }}</td>
+          <td>{{ partner.category or "-" }}</td>
+          <td>{{ partner.status }}</td>
+          <td>{{ partner.offers|length }}</td>
+          <td>
+            <a href="{{ url_for('perks.edit_partner', partner_id=partner.id) }}">Edit</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5">No partners yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

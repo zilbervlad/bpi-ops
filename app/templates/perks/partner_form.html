@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ "Edit Partner" if partner and partner.id else "New Partner" }}</h1>
+    <p>Add a company that offers BPI Perks.</p>
+  </div>
+</div>
+
+<form method="post" class="card form-card">
+  <label>Partner Name</label>
+  <input name="name" value="{{ partner.name if partner else '' }}" required>
+
+  <label>Category</label>
+  <input name="category" value="{{ partner.category if partner else '' }}" placeholder="Fitness, Auto, Food, Insurance">
+
+  <label>Logo URL</label>
+  <input name="logo_url" value="{{ partner.logo_url if partner else '' }}">
+
+  <label>Website URL</label>
+  <input name="website_url" value="{{ partner.website_url if partner else '' }}">
+
+  <label>Contact Name</label>
+  <input name="contact_name" value="{{ partner.contact_name if partner else '' }}">
+
+  <label>Contact Email</label>
+  <input name="contact_email" value="{{ partner.contact_email if partner else '' }}">
+
+  <label>Contact Phone</label>
+  <input name="contact_phone" value="{{ partner.contact_phone if partner else '' }}">
+
+  <label>Status</label>
+  <select name="status">
+    {% set current_status = partner.status if partner else "active" %}
+    <option value="active" {% if current_status == "active" %}selected{% endif %}>Active</option>
+    <option value="inactive" {% if current_status == "inactive" %}selected{% endif %}>Inactive</option>
+  </select>
+
+  <div class="form-actions">
+    <a class="btn btn-secondary" href="{{ url_for('perks.partners') }}">Cancel</a>
+    <button class="btn btn-primary" type="submit">Save Partner</button>
+  </div>
+</form>
+{% endblock %}

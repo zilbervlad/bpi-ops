@@ -11,7 +11,7 @@ perks_bp = Blueprint("perks", __name__, url_prefix="/admin/perks")
 
 def perks_admin_required():
     role = session.get("account_role") or session.get("role")
-    return role in {"admin", "hr"}
+    return role in {"admin", "hr", "supervisor"}
 
 
 def safe_redirect_home():

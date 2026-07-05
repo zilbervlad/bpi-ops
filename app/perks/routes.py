@@ -184,6 +184,35 @@ def new_offer():
     return render_template("perks/offer_form.html", offer=None, partners=partners)
 
 
+
+@perks_bp.post("/offers/<int:offer_id>/status")
+def update_offer_status(offer_id):
+    offer = PerkOffer.query.get_or_404(offer_id)
+
+    new_status = request.form.get("status", "").strip().lower()
+
+    if new_status not in {"draft", "active", "paused", "expired"}:
+        flash("Invalid offer status.", "error")
+        return redirect(url_for("perks.offers"))
+
+    offer.status = new_status
+    offer.updated_at = datetime.utcnow()
+
+    if new_status == "active":
+        offer.starts_at = None
+        offer.ends_at = None
+
+        for field in ["image_url", "button_url", "phone_number"]:
+            value = getattr(offer, field)
+            if value and str(value).strip().lower() in {"none", "null"}:
+                setattr(offer, field, None)
+
+    db.session.commit()
+
+    flash(f"Offer marked {new_status}.", "success")
+    return redirect(url_for("perks.offers"))
+
+
 @perks_bp.route("/offers/<int:offer_id>/edit", methods=["GET", "POST"])
 def edit_offer(offer_id):
     offer = PerkOffer.query.get_or_404(offer_id)

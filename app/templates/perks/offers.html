@@ -37,7 +37,23 @@
           <td>{{ "Yes" if offer.featured else "No" }}</td>
           <td>{{ offer.sort_order }}</td>
           <td>
-            <a href="{{ url_for('perks.edit_offer', offer_id=offer.id) }}">Edit</a>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <a href="{{ url_for('perks.edit_offer', offer_id=offer.id) }}">Edit</a>
+
+              {% if offer.status != "active" %}
+              <form method="post" action="{{ url_for('perks.update_offer_status', offer_id=offer.id) }}" style="display:inline;">
+                <input type="hidden" name="status" value="active">
+                <button type="submit" class="btn btn-sm btn-primary">Activate</button>
+              </form>
+              {% endif %}
+
+              {% if offer.status == "active" %}
+              <form method="post" action="{{ url_for('perks.update_offer_status', offer_id=offer.id) }}" style="display:inline;">
+                <input type="hidden" name="status" value="draft">
+                <button type="submit" class="btn btn-sm btn-secondary">Make Draft</button>
+              </form>
+              {% endif %}
+            </div>
           </td>
         </tr>
         {% else %}

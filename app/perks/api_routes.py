@@ -32,6 +32,19 @@ def offer_is_current(offer):
     return True
 
 
+def clean_api_value(value):
+    if value is None:
+        return None
+
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped or stripped.lower() in {"none", "null"}:
+            return None
+        return stripped
+
+    return value
+
+
 def serialize_offer(offer):
     partner = offer.partner
 
@@ -39,18 +52,18 @@ def serialize_offer(offer):
         "id": offer.id,
         "partner_id": partner.id if partner else None,
         "partner_name": partner.name if partner else "",
-        "partner_logo_url": partner.logo_url if partner else None,
-        "partner_website_url": partner.website_url if partner else None,
+        "partner_logo_url": clean_api_value(partner.logo_url) if partner else None,
+        "partner_website_url": clean_api_value(partner.website_url) if partner else None,
         "title": offer.title,
-        "short_description": offer.short_description,
-        "description": offer.description,
-        "category": offer.category or (partner.category if partner else None),
-        "image_url": offer.image_url,
+        "short_description": clean_api_value(offer.short_description),
+        "description": clean_api_value(offer.description),
+        "category": clean_api_value(offer.category or (partner.category if partner else None)),
+        "image_url": clean_api_value(offer.image_url),
         "button_text": offer.button_text or "View Offer",
-        "button_url": offer.button_url,
-        "phone_number": offer.phone_number,
-        "redemption_instructions": offer.redemption_instructions,
-        "terms": offer.terms,
+        "button_url": clean_api_value(offer.button_url),
+        "phone_number": clean_api_value(offer.phone_number),
+        "redemption_instructions": clean_api_value(offer.redemption_instructions),
+        "terms": clean_api_value(offer.terms),
         "featured": bool(offer.featured),
         "sort_order": offer.sort_order,
     }

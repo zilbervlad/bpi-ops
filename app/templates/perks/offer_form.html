@@ -1,94 +1,333 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-header">
-  <div>
-    <h1>{{ "Edit Offer" if offer and offer.id else "New Offer" }}</h1>
-    <p>Create a BPI Perks card for BPI Connect.</p>
-  </div>
+<style>
+.perks-page {
+    max-width: 1040px;
+    margin: 0 auto;
+}
+
+.perks-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.perks-kicker {
+    color: #38bdf8;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.perks-title {
+    margin: 0;
+    font-size: 34px;
+    line-height: 38px;
+    letter-spacing: -1px;
+}
+
+.perks-subtitle {
+    color: #94a3b8;
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 8px;
+}
+
+.perks-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.72);
+    color: #e5e7eb;
+    text-decoration: none;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.perks-btn.primary {
+    border: none;
+    background: linear-gradient(135deg, #38bdf8, #2563eb);
+    color: white;
+}
+
+.perks-form-card,
+.perks-empty-card {
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 22px;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.22);
+    padding: 20px;
+}
+
+.perks-section {
+    margin-bottom: 22px;
+}
+
+.perks-section-title {
+    color: #f8fafc;
+    font-size: 15px;
+    font-weight: 950;
+    margin-bottom: 12px;
+}
+
+.perks-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.perks-field.full {
+    grid-column: 1 / -1;
+}
+
+.perks-field label,
+.perks-checkbox-label {
+    display: block;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .9px;
+    margin-bottom: 7px;
+}
+
+.perks-field input,
+.perks-field select,
+.perks-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(2, 6, 23, 0.72);
+    color: #f8fafc;
+    padding: 12px 13px;
+    font-size: 14px;
+    font-weight: 700;
+    outline: none;
+}
+
+.perks-field textarea {
+    min-height: 112px;
+    resize: vertical;
+}
+
+.perks-field input:focus,
+.perks-field select:focus,
+.perks-field textarea:focus {
+    border-color: rgba(56, 189, 248, 0.8);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+
+.perks-checkbox-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.perks-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 0 14px;
+    border-radius: 14px;
+    background: rgba(2, 6, 23, 0.52);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    color: #e5e7eb;
+    font-weight: 900;
+}
+
+.perks-checkbox input {
+    width: 18px;
+    height: 18px;
+}
+
+.perks-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 8px;
+}
+
+.perks-note {
+    color: #94a3b8;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 700;
+}
+
+@media (max-width: 760px) {
+    .perks-hero {
+        flex-direction: column;
+    }
+
+    .perks-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .perks-form-actions {
+        justify-content: stretch;
+        flex-direction: column;
+    }
+
+    .perks-btn {
+        width: 100%;
+    }
+}
+</style>
+
+<div class="perks-page">
+    <div class="perks-hero">
+        <div>
+            <div class="perks-kicker">BPI Perks</div>
+            <h1 class="perks-title">{{ "Edit Offer" if offer and offer.id else "New Offer" }}</h1>
+            <div class="perks-subtitle">Create or update the card shown in BPI Connect.</div>
+        </div>
+
+        <a class="perks-btn" href="{{ url_for('perks.offers') }}">Back to Offers</a>
+    </div>
+
+    {% if not partners %}
+    <div class="perks-empty-card">
+        <p class="perks-note">Create a partner before adding an offer.</p>
+        <a class="perks-btn primary" href="{{ url_for('perks.new_partner') }}">Create Partner</a>
+    </div>
+    {% else %}
+    <form method="post" class="perks-form-card">
+        <div class="perks-section">
+            <div class="perks-section-title">Main Details</div>
+
+            <div class="perks-grid">
+                <div class="perks-field">
+                    <label>Partner</label>
+                    <select name="partner_id" required>
+                        {% for partner in partners %}
+                        <option value="{{ partner.id }}" {% if offer and offer.partner_id == partner.id %}selected{% endif %}>
+                            {{ partner.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="perks-field">
+                    <label>Status</label>
+                    {% set current_status = offer.status if offer else "draft" %}
+                    <select name="status">
+                        <option value="draft" {% if current_status == "draft" %}selected{% endif %}>Draft</option>
+                        <option value="active" {% if current_status == "active" %}selected{% endif %}>Active</option>
+                        <option value="paused" {% if current_status == "paused" %}selected{% endif %}>Paused</option>
+                        <option value="expired" {% if current_status == "expired" %}selected{% endif %}>Expired</option>
+                    </select>
+                </div>
+
+                <div class="perks-field">
+                    <label>Title</label>
+                    <input name="title" value="{{ offer.title if offer else '' }}" required>
+                </div>
+
+                <div class="perks-field">
+                    <label>Category</label>
+                    <input name="category" value="{{ offer.category if offer else '' }}" placeholder="Health, Auto, Food, Local">
+                </div>
+
+                <div class="perks-field full">
+                    <label>Short Description</label>
+                    <input name="short_description" value="{{ offer.short_description if offer else '' }}" placeholder="One-line description for the card">
+                </div>
+
+                <div class="perks-field full">
+                    <label>Description</label>
+                    <textarea name="description" placeholder="Longer description shown when the offer is opened">{{ offer.description if offer else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="perks-section">
+            <div class="perks-section-title">Claim Details</div>
+
+            <div class="perks-grid">
+                <div class="perks-field">
+                    <label>Button Text</label>
+                    <input name="button_text" value="{{ offer.button_text if offer else 'View Offer' }}" placeholder="Claim Offer">
+                </div>
+
+                <div class="perks-field">
+                    <label>Button URL</label>
+                    <input name="button_url" value="{{ offer.button_url if offer and offer.button_url else '' }}" placeholder="https://...">
+                </div>
+
+                <div class="perks-field">
+                    <label>Phone Number</label>
+                    <input name="phone_number" value="{{ offer.phone_number if offer and offer.phone_number else '' }}" placeholder="Optional">
+                </div>
+
+                <div class="perks-field">
+                    <label>Image URL</label>
+                    <input name="image_url" value="{{ offer.image_url if offer and offer.image_url else '' }}" placeholder="Optional">
+                </div>
+
+                <div class="perks-field full">
+                    <label>Redemption Instructions</label>
+                    <textarea name="redemption_instructions" placeholder="How should a team member claim this?">{{ offer.redemption_instructions if offer else '' }}</textarea>
+                </div>
+
+                <div class="perks-field full">
+                    <label>Terms</label>
+                    <textarea name="terms" placeholder="Any limitations, expiration, or partner terms">{{ offer.terms if offer else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="perks-section">
+            <div class="perks-section-title">Display Settings</div>
+
+            <div class="perks-grid">
+                <div class="perks-field">
+                    <label>Sort Order</label>
+                    <input type="number" name="sort_order" value="{{ offer.sort_order if offer else 100 }}">
+                </div>
+
+                <div class="perks-field">
+                    <label>Starts At</label>
+                    <input type="datetime-local" name="starts_at" value="{{ offer.starts_at.strftime('%Y-%m-%dT%H:%M') if offer and offer.starts_at else '' }}">
+                </div>
+
+                <div class="perks-field">
+                    <label>Ends At</label>
+                    <input type="datetime-local" name="ends_at" value="{{ offer.ends_at.strftime('%Y-%m-%dT%H:%M') if offer and offer.ends_at else '' }}">
+                </div>
+
+                <div class="perks-field">
+                    <label>Flags</label>
+                    <div class="perks-checkbox-row">
+                        <label class="perks-checkbox">
+                            <input type="checkbox" name="featured" value="1" {% if offer and offer.featured %}checked{% endif %}>
+                            Featured
+                        </label>
+
+                        <label class="perks-checkbox">
+                            <input type="checkbox" name="is_template" value="1" {% if offer and offer.is_template %}checked{% endif %}>
+                            Template
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="perks-form-actions">
+            <a class="perks-btn" href="{{ url_for('perks.offers') }}">Cancel</a>
+            <button class="perks-btn primary" type="submit">Save Offer</button>
+        </div>
+    </form>
+    {% endif %}
 </div>
-
-{% if not partners %}
-<div class="card">
-  <p>You need to create a partner before adding an offer.</p>
-  <a class="btn btn-primary" href="{{ url_for('perks.new_partner') }}">Create Partner</a>
-</div>
-{% else %}
-<form method="post" class="card form-card">
-  <label>Partner</label>
-  <select name="partner_id" required>
-    {% for partner in partners %}
-      <option value="{{ partner.id }}"
-        {% if offer and offer.partner_id == partner.id %}selected{% endif %}>
-        {{ partner.name }}
-      </option>
-    {% endfor %}
-  </select>
-
-  <label>Title</label>
-  <input name="title" value="{{ offer.title if offer else '' }}" required>
-
-  <label>Short Description</label>
-  <input name="short_description" value="{{ offer.short_description if offer else '' }}">
-
-  <label>Description</label>
-  <textarea name="description" rows="4">{{ offer.description if offer else '' }}</textarea>
-
-  <label>Category</label>
-  <input name="category" value="{{ offer.category if offer else '' }}">
-
-  <label>Image URL</label>
-  <input name="image_url" value="{{ offer.image_url if offer else '' }}">
-
-  <label>Button Text</label>
-  <input name="button_text" value="{{ offer.button_text if offer else 'View Offer' }}">
-
-  <label>Button URL</label>
-  <input name="button_url" value="{{ offer.button_url if offer else '' }}">
-
-  <label>Phone Number</label>
-  <input name="phone_number" value="{{ offer.phone_number if offer else '' }}">
-
-  <label>Redemption Instructions</label>
-  <textarea name="redemption_instructions" rows="3">{{ offer.redemption_instructions if offer else '' }}</textarea>
-
-  <label>Terms</label>
-  <textarea name="terms" rows="3">{{ offer.terms if offer else '' }}</textarea>
-
-  <label>Sort Order</label>
-  <input type="number" name="sort_order" value="{{ offer.sort_order if offer else 100 }}">
-
-  <label>Status</label>
-  {% set current_status = offer.status if offer else "draft" %}
-  <select name="status">
-    <option value="draft" {% if current_status == "draft" %}selected{% endif %}>Draft</option>
-    <option value="active" {% if current_status == "active" %}selected{% endif %}>Active</option>
-    <option value="paused" {% if current_status == "paused" %}selected{% endif %}>Paused</option>
-    <option value="expired" {% if current_status == "expired" %}selected{% endif %}>Expired</option>
-  </select>
-
-  <label class="checkbox-row">
-    <input type="checkbox" name="featured" value="1" {% if offer and offer.featured %}checked{% endif %}>
-    Featured offer
-  </label>
-
-  <label class="checkbox-row">
-    <input type="checkbox" name="is_template" value="1" {% if offer and offer.is_template %}checked{% endif %}>
-    Template / placeholder
-  </label>
-
-  <label>Starts At</label>
-  <input type="datetime-local" name="starts_at"
-         value="{{ offer.starts_at.strftime('%Y-%m-%dT%H:%M') if offer and offer.starts_at else '' }}">
-
-  <label>Ends At</label>
-  <input type="datetime-local" name="ends_at"
-         value="{{ offer.ends_at.strftime('%Y-%m-%dT%H:%M') if offer and offer.ends_at else '' }}">
-
-  <div class="form-actions">
-    <a class="btn btn-secondary" href="{{ url_for('perks.offers') }}">Cancel</a>
-    <button class="btn btn-primary" type="submit">Save Offer</button>
-  </div>
-</form>
-{% endif %}
 {% endblock %}

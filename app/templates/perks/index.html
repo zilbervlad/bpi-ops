@@ -1,71 +1,271 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-header">
-  <div>
-    <h1>BPI Perks</h1>
-    <p>Manage partner offers shown in BPI Connect.</p>
-  </div>
+<style>
+.perks-page {
+    max-width: 1180px;
+    margin: 0 auto;
+}
 
-  <div class="page-actions">
-    <a class="btn btn-secondary" href="{{ url_for('perks.partners') }}">Partners</a>
-    <a class="btn btn-secondary" href="{{ url_for('perks.offers') }}">Offers</a>
-    <a class="btn btn-primary" href="{{ url_for('perks.new_offer') }}">New Offer</a>
-  </div>
-</div>
+.perks-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 22px;
+}
 
-<div class="dashboard-grid">
-  <div class="card">
-    <div class="card-label">Partners</div>
-    <div class="card-value">{{ partners_count }}</div>
-  </div>
+.perks-kicker {
+    color: #38bdf8;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
 
-  <div class="card">
-    <div class="card-label">Active Offers</div>
-    <div class="card-value">{{ active_offers_count }}</div>
-  </div>
+.perks-title {
+    margin: 0;
+    font-size: 34px;
+    line-height: 38px;
+    letter-spacing: -1px;
+}
 
-  <div class="card">
-    <div class="card-label">Featured</div>
-    <div class="card-value">{{ featured_count }}</div>
-  </div>
-</div>
+.perks-subtitle {
+    color: #94a3b8;
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 8px;
+}
 
-<div class="card">
-  <div class="card-header">
-    <h2>Recent Offers</h2>
-    <a class="btn btn-sm" href="{{ url_for('perks.analytics') }}">Analytics</a>
-  </div>
+.perks-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
 
-  <div class="table-responsive">
-    <table>
-      <thead>
-        <tr>
-          <th>Offer</th>
-          <th>Partner</th>
-          <th>Status</th>
-          <th>Featured</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for offer in recent_offers %}
-        <tr>
-          <td>{{ offer.title }}</td>
-          <td>{{ offer.partner.name }}</td>
-          <td>{{ offer.status }}</td>
-          <td>{{ "Yes" if offer.featured else "No" }}</td>
-          <td>
-            <a href="{{ url_for('perks.edit_offer', offer_id=offer.id) }}">Edit</a>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="5">No offers yet.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+.perks-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.72);
+    color: #e5e7eb;
+    text-decoration: none;
+    font-weight: 900;
+}
+
+.perks-btn.primary {
+    border: none;
+    background: linear-gradient(135deg, #38bdf8, #2563eb);
+    color: white;
+}
+
+.perks-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.perks-stat-card,
+.perks-card {
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 22px;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.22);
+}
+
+.perks-stat-card {
+    padding: 18px;
+}
+
+.perks-stat-label {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1.1px;
+}
+
+.perks-stat-value {
+    color: #f8fafc;
+    font-size: 34px;
+    font-weight: 950;
+    margin-top: 8px;
+}
+
+.perks-card {
+    overflow: hidden;
+}
+
+.perks-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.perks-card-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.perks-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.perks-table th,
+.perks-table td {
+    padding: 14px 20px;
+    text-align: left;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.perks-table th {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.perks-table td {
+    color: #e5e7eb;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.perks-table tr:last-child td {
+    border-bottom: none;
+}
+
+.perks-status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+}
+
+.perks-status.active {
+    background: rgba(34, 197, 94, 0.14);
+    color: #86efac;
+}
+
+.perks-status.draft {
+    background: rgba(148, 163, 184, 0.14);
+    color: #cbd5e1;
+}
+
+.perks-status.paused,
+.perks-status.expired {
+    background: rgba(251, 191, 36, 0.14);
+    color: #fde68a;
+}
+
+.perks-empty {
+    padding: 28px;
+    color: #94a3b8;
+    font-weight: 800;
+}
+
+@media (max-width: 760px) {
+    .perks-hero {
+        flex-direction: column;
+    }
+
+    .perks-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .perks-table {
+        min-width: 720px;
+    }
+
+    .perks-table-wrap {
+        overflow-x: auto;
+    }
+}
+</style>
+
+<div class="perks-page">
+    <div class="perks-hero">
+        <div>
+            <div class="perks-kicker">BPI Connect</div>
+            <h1 class="perks-title">BPI Perks</h1>
+            <div class="perks-subtitle">Manage partner offers, templates, and team discounts.</div>
+        </div>
+
+        <div class="perks-actions">
+            <a class="perks-btn" href="{{ url_for('perks.partners') }}">Partners</a>
+            <a class="perks-btn" href="{{ url_for('perks.offers') }}">Offers</a>
+            <a class="perks-btn primary" href="{{ url_for('perks.new_offer') }}">New Offer</a>
+        </div>
+    </div>
+
+    <div class="perks-stats">
+        <div class="perks-stat-card">
+            <div class="perks-stat-label">Partners</div>
+            <div class="perks-stat-value">{{ partners_count }}</div>
+        </div>
+
+        <div class="perks-stat-card">
+            <div class="perks-stat-label">Active Offers</div>
+            <div class="perks-stat-value">{{ active_offers_count }}</div>
+        </div>
+
+        <div class="perks-stat-card">
+            <div class="perks-stat-label">Featured</div>
+            <div class="perks-stat-value">{{ featured_count }}</div>
+        </div>
+    </div>
+
+    <div class="perks-card">
+        <div class="perks-card-header">
+            <h2>Recent Offers</h2>
+            <a class="perks-btn" href="{{ url_for('perks.analytics') }}">Analytics</a>
+        </div>
+
+        <div class="perks-table-wrap">
+            <table class="perks-table">
+                <thead>
+                    <tr>
+                        <th>Offer</th>
+                        <th>Partner</th>
+                        <th>Status</th>
+                        <th>Featured</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for offer in recent_offers %}
+                    <tr>
+                        <td>{{ offer.title }}</td>
+                        <td>{{ offer.partner.name }}</td>
+                        <td><span class="perks-status {{ offer.status }}">{{ offer.status }}</span></td>
+                        <td>{{ "Yes" if offer.featured else "No" }}</td>
+                        <td><a class="perks-btn" href="{{ url_for('perks.edit_offer', offer_id=offer.id) }}">Edit</a></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="perks-empty">No offers yet.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}

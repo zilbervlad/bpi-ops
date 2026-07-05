@@ -1,68 +1,276 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-header">
-  <div>
-    <h1>Perk Offers</h1>
-    <p>Deals and discounts shown in BPI Connect.</p>
-  </div>
+<style>
+.perks-page {
+    max-width: 1220px;
+    margin: 0 auto;
+}
 
-  <div class="page-actions">
-    <a class="btn btn-secondary" href="{{ url_for('perks.index') }}">Back</a>
-    <a class="btn btn-primary" href="{{ url_for('perks.new_offer') }}">New Offer</a>
-  </div>
-</div>
+.perks-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 22px;
+}
 
-<div class="card">
-  <div class="table-responsive">
-    <table>
-      <thead>
-        <tr>
-          <th>Offer</th>
-          <th>Partner</th>
-          <th>Status</th>
-          <th>Template</th>
-          <th>Featured</th>
-          <th>Sort</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for offer in offers %}
-        <tr>
-          <td>{{ offer.title }}</td>
-          <td>{{ offer.partner.name }}</td>
-          <td>{{ offer.status }}</td>
-          <td>{{ "Yes" if offer.is_template else "No" }}</td>
-          <td>{{ "Yes" if offer.featured else "No" }}</td>
-          <td>{{ offer.sort_order }}</td>
-          <td>
-            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <a href="{{ url_for('perks.edit_offer', offer_id=offer.id) }}">Edit</a>
+.perks-kicker {
+    color: #38bdf8;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
 
-              {% if offer.status != "active" %}
-              <form method="post" action="{{ url_for('perks.update_offer_status', offer_id=offer.id) }}" style="display:inline;">
-                <input type="hidden" name="status" value="active">
-                <button type="submit" class="btn btn-sm btn-primary">Activate</button>
-              </form>
-              {% endif %}
+.perks-title {
+    margin: 0;
+    font-size: 34px;
+    line-height: 38px;
+    letter-spacing: -1px;
+}
 
-              {% if offer.status == "active" %}
-              <form method="post" action="{{ url_for('perks.update_offer_status', offer_id=offer.id) }}" style="display:inline;">
-                <input type="hidden" name="status" value="draft">
-                <button type="submit" class="btn btn-sm btn-secondary">Make Draft</button>
-              </form>
-              {% endif %}
-            </div>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="7">No offers yet.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+.perks-subtitle {
+    color: #94a3b8;
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 8px;
+}
+
+.perks-actions,
+.perks-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.perks-btn,
+.perks-mini-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.72);
+    color: #e5e7eb;
+    text-decoration: none;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.perks-btn {
+    min-height: 42px;
+    padding: 0 16px;
+}
+
+.perks-mini-btn {
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 12px;
+}
+
+.perks-btn.primary,
+.perks-mini-btn.primary {
+    border: none;
+    background: linear-gradient(135deg, #38bdf8, #2563eb);
+    color: white;
+}
+
+.perks-mini-btn.danger {
+    border: 1px solid rgba(248, 113, 113, 0.28);
+    background: rgba(127, 29, 29, 0.28);
+    color: #fecaca;
+}
+
+.perks-card {
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 22px;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.22);
+    overflow: hidden;
+}
+
+.perks-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.perks-table th,
+.perks-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    vertical-align: middle;
+}
+
+.perks-table th {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.perks-table td {
+    color: #e5e7eb;
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.perks-offer-title {
+    color: #f8fafc;
+    font-size: 15px;
+    font-weight: 950;
+}
+
+.perks-offer-sub {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 3px;
+}
+
+.perks-status,
+.perks-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    white-space: nowrap;
+}
+
+.perks-status.active {
+    background: rgba(34, 197, 94, 0.14);
+    color: #86efac;
+}
+
+.perks-status.draft {
+    background: rgba(148, 163, 184, 0.14);
+    color: #cbd5e1;
+}
+
+.perks-status.paused,
+.perks-status.expired {
+    background: rgba(251, 191, 36, 0.14);
+    color: #fde68a;
+}
+
+.perks-pill.template {
+    background: rgba(56, 189, 248, 0.12);
+    color: #7dd3fc;
+}
+
+.perks-pill.featured {
+    background: rgba(251, 191, 36, 0.14);
+    color: #fde68a;
+}
+
+.perks-empty {
+    padding: 30px;
+    color: #94a3b8;
+    font-weight: 800;
+    text-align: center;
+}
+
+.perks-table-wrap {
+    overflow-x: auto;
+}
+
+@media (max-width: 760px) {
+    .perks-hero {
+        flex-direction: column;
+    }
+
+    .perks-table {
+        min-width: 920px;
+    }
+}
+</style>
+
+<div class="perks-page">
+    <div class="perks-hero">
+        <div>
+            <div class="perks-kicker">BPI Perks</div>
+            <h1 class="perks-title">Offer Library</h1>
+            <div class="perks-subtitle">Activate, edit, or pause the offers shown in BPI Connect.</div>
+        </div>
+
+        <div class="perks-actions">
+            <a class="perks-btn" href="{{ url_for('perks.index') }}">Back</a>
+            <a class="perks-btn primary" href="{{ url_for('perks.new_offer') }}">New Offer</a>
+        </div>
+    </div>
+
+    <div class="perks-card">
+        <div class="perks-table-wrap">
+            <table class="perks-table">
+                <thead>
+                    <tr>
+                        <th>Offer</th>
+                        <th>Partner</th>
+                        <th>Status</th>
+                        <th>Tags</th>
+                        <th>Sort</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for offer in offers %}
+                    <tr>
+                        <td>
+                            <div class="perks-offer-title">{{ offer.title }}</div>
+                            <div class="perks-offer-sub">{{ offer.short_description or offer.category or "No description yet" }}</div>
+                        </td>
+                        <td>{{ offer.partner.name }}</td>
+                        <td><span class="perks-status {{ offer.status }}">{{ offer.status }}</span></td>
+                        <td>
+                            <div class="perks-row-actions">
+                                {% if offer.is_template %}
+                                <span class="perks-pill template">Template</span>
+                                {% endif %}
+
+                                {% if offer.featured %}
+                                <span class="perks-pill featured">Featured</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>{{ offer.sort_order }}</td>
+                        <td>
+                            <div class="perks-row-actions">
+                                <a class="perks-mini-btn" href="{{ url_for('perks.edit_offer', offer_id=offer.id) }}">Edit</a>
+
+                                {% if offer.status != "active" %}
+                                <form method="post" action="{{ url_for('perks.update_offer_status', offer_id=offer.id) }}">
+                                    <input type="hidden" name="status" value="active">
+                                    <button type="submit" class="perks-mini-btn primary">Activate</button>
+                                </form>
+                                {% endif %}
+
+                                {% if offer.status == "active" %}
+                                <form method="post" action="{{ url_for('perks.update_offer_status', offer_id=offer.id) }}">
+                                    <input type="hidden" name="status" value="draft">
+                                    <button type="submit" class="perks-mini-btn danger">Make Draft</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="perks-empty">No offers yet.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}

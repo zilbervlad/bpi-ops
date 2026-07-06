@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 from app.extensions import db
 from app.models import User, Store, HRDocument, HRDocumentRecipient, DWPRecord
 from app.auth.routes import login_required, role_required
-from app.services.email_service import send_email
+from app.services.email_service import send_email, send_bulk_emails
 
 
 hr_documents_bp = Blueprint("hr_documents", __name__, url_prefix="/hr-documents")
@@ -188,6 +188,101 @@ def recipient_query_for_target(target_mode, form):
 
 
 
+def build_hr_document_email_message(document, recipient):
+    to_email = recipient.user.get_notification_email()
+    if not to_email:
+        return None, "No notification email configured."
+
+    document_url = url_for("hr_documents.acknowledge_document", document_id=document.id, _external=True)
+
+    body = f"""Hello {recipient.user.name},
+
+You have a new BPI Ops document to review and acknowledge.
+
+Document: {document.title}
+
+Open it here:
+{document_url}
+
+Please log in and complete the acknowledgment.
+
+Boston Pie, Inc.
+"""
+
+    return {
+        "to_email": to_email,
+        "subject": f"BPI Ops Document Acknowledgment Required: {document.title}",
+        "body": body,
+    }, None
+
+
+def send_hr_document_emails_bulk(document, recipients):
+    messages = []
+    recipient_by_email = {}
+
+    for recipient in recipients:
+        message, error = build_hr_document_email_message(document, recipient)
+
+        if error:
+            recipient.email_error = error
+            continue
+
+        email_key = message["to_email"].strip().lower()
+        messages.append(message)
+        recipient_by_email[email_key] = recipient
+
+    if not messages:
+        return 0, len(recipients)
+
+    try:
+        result = send_bulk_emails(messages)
+    except Exception as exc:
+        error_text = str(exc)
+        for recipient in recipients:
+            if not recipient.email_sent_at:
+                recipient.email_error = error_text
+        return 0, len(recipients)
+
+    sent_count = result.get("sent", 0)
+    failed_count = result.get("failed", 0)
+
+    failed_emails = {
+        (row.get("to_email") or "").strip().lower(): row.get("error") or "Email failed."
+        for row in result.get("errors", [])
+    }
+
+    for message in messages:
+        email_key = message["to_email"].strip().lower()
+        recipient = recipient_by_email.get(email_key)
+        if not recipient:
+            continue
+
+        if email_key in failed_emails:
+            recipient.email_error = failed_emails[email_key]
+        else:
+            recipient.email_sent_at = datetime.utcnow()
+            recipient.email_error = None
+
+    no_email_failures = sum(1 for recipient in recipients if not recipient.user.get_notification_email())
+    failed_count += no_email_failures
+
+    return sent_count, failed_count
+
+
+def notify_hr_document_recipients_connect(document, recipients):
+    notified_count = 0
+
+    for recipient in recipients:
+        try:
+            result = send_hr_document_connect_notification(document, recipient, action="assigned")
+            if isinstance(result, dict) and result.get("success"):
+                notified_count += 1
+        except Exception:
+            pass
+
+    return notified_count
+
+
 def add_recipients_to_document(document, selected_users):
     existing_user_ids = {
         row.user_id
@@ -212,15 +307,8 @@ def add_recipients_to_document(document, selected_users):
 
     db.session.flush()
 
-    sent_count = 0
-    failed_count = 0
-
-    for recipient in added_recipients:
-        if send_hr_document_email(document, recipient):
-            sent_count += 1
-            send_hr_document_connect_notification(document, recipient, action="assigned")
-        else:
-            failed_count += 1
+    sent_count, failed_count = send_hr_document_emails_bulk(document, added_recipients)
+    notify_hr_document_recipients_connect(document, added_recipients)
 
     return added_recipients, skipped_count, sent_count, failed_count
 
@@ -771,19 +859,12 @@ def resend_pending_document_emails(document_id):
         HRDocumentRecipient.status != "acknowledged",
     ).all()
 
-    sent_count = 0
-    failed_count = 0
-
-    for recipient in recipients:
-        if send_hr_document_email(document, recipient):
-            sent_count += 1
-            send_hr_document_connect_notification(document, recipient, action="assigned")
-        else:
-            failed_count += 1
+    sent_count, failed_count = send_hr_document_emails_bulk(document, recipients)
+    notify_hr_document_recipients_connect(document, recipients)
 
     db.session.commit()
 
-    flash(f"Resent pending notifications. Sent: {sent_count}. Failed: {failed_count}.", "success")
+    flash(f"Resent pending notifications. Emails sent: {sent_count}. Failed: {failed_count}.", "success")
     return redirect(url_for("hr_documents.detail", document_id=document.id))
 
 

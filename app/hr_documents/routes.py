@@ -758,7 +758,7 @@ def restore_document(document_id):
 
 @hr_documents_bp.route("/<int:document_id>/add-recipients", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "hr")
+@role_required("admin", "hr", "supervisor")
 def add_recipients(document_id):
     document = HRDocument.query.get_or_404(document_id)
 
@@ -827,7 +827,7 @@ def add_recipients(document_id):
 
 @hr_documents_bp.route("/<int:document_id>/resend/<int:recipient_id>", methods=["POST"])
 @login_required
-@role_required("admin", "hr")
+@role_required("admin", "hr", "supervisor")
 def resend_document_email(document_id, recipient_id):
     document = HRDocument.query.get_or_404(document_id)
     recipient = HRDocumentRecipient.query.get_or_404(recipient_id)
@@ -850,7 +850,7 @@ def resend_document_email(document_id, recipient_id):
 
 @hr_documents_bp.route("/<int:document_id>/resend-pending", methods=["POST"])
 @login_required
-@role_required("admin", "hr")
+@role_required("admin", "hr", "supervisor")
 def resend_pending_document_emails(document_id):
     document = HRDocument.query.get_or_404(document_id)
 

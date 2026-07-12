@@ -12,6 +12,17 @@ OPENAI_MODEL = (os.getenv("OPENAI_MODEL") or os.getenv("DOUGHY_OPENAI_MODEL") or
 OLLAMA_BASE_URL = (os.getenv("OLLAMA_BASE_URL") or "http://localhost:11434").strip().rstrip("/")
 OLLAMA_MODEL = (os.getenv("OLLAMA_MODEL") or "llama3.1:8b").strip()
 
+BRAIN_API_URL = (
+    os.getenv("BRAIN_API_URL")
+    or "https://doughy.bostonpie.net/api/brain/ask"
+).strip()
+
+BRAIN_API_KEY = (
+    os.getenv("BRAIN_API_KEY")
+    or os.getenv("BRAIN_KEY")
+    or ""
+).strip()
+
 
 DOUGHY_SYSTEM_PROMPT = """
 You are Doughy, the BPI Ops assistant.
@@ -48,6 +59,9 @@ Rules:
 
 
 def doughy_ai_enabled() -> bool:
+    if AI_PROVIDER == "brain":
+        return bool(BRAIN_API_URL and BRAIN_API_KEY)
+
     if AI_PROVIDER == "ollama":
         return bool(OLLAMA_BASE_URL and OLLAMA_MODEL)
 
@@ -132,6 +146,56 @@ def _ask_openai(prompt: str, execution_snapshot: dict[str, Any]) -> str:
     return (response.output_text or "").strip()
 
 
+def _ask_brain(
+    prompt: str,
+    execution_snapshot: dict[str, Any],
+) -> str:
+    compact_snapshot = _compact_execution_snapshot(execution_snapshot)
+
+    question = (
+        f"{prompt}\n\n"
+        "Use only this BPI Ops execution snapshot when answering. "
+        "Do not invent missing facts.\n\n"
+        f"EXECUTION SNAPSHOT:\n{json.dumps(compact_snapshot, default=str)}"
+    )
+
+    request_body = {
+        "question": question,
+    }
+
+    request = urllib.request.Request(
+        BRAIN_API_URL,
+        data=json.dumps(request_body).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {BRAIN_API_KEY}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "BPI-Ops-Doughy/1.0",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"Brain API returned HTTP {exc.code}: {error_body[:300]}"
+        ) from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(
+            f"Could not reach Brain API: {exc.reason}"
+        ) from exc
+
+    answer = (data.get("answer") or "").strip()
+
+    if not answer:
+        raise RuntimeError("Brain API returned no answer.")
+
+    return answer
+
+
 def _ask_ollama(prompt: str, execution_snapshot: dict[str, Any]) -> str:
     payload = _build_ai_payload(prompt, execution_snapshot)
 
@@ -169,6 +233,9 @@ def _ask_ollama(prompt: str, execution_snapshot: dict[str, Any]) -> str:
 
 
 def ask_doughy_ai(prompt: str, execution_snapshot: dict[str, Any]) -> str:
+    if AI_PROVIDER == "brain":
+        return _ask_brain(prompt, execution_snapshot)
+
     if AI_PROVIDER == "ollama":
         return _ask_ollama(prompt, execution_snapshot)
 

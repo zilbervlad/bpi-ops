@@ -98,12 +98,37 @@ def live_context():
         "endpoint": "doughy_api.live_context",
     }
 
-    # Dedicated read-only service identity.
-    # Admin scope allows company-wide Boston Pie visibility.
+    # Read-only requester scope supplied by an approved integration.
+    #
+    # The integration key authenticates the calling service.
+    # The requester fields limit which stores the data gateway may return.
+    requester_role = str(
+        payload.get("requesting_role")
+        or request.args.get("requesting_role")
+        or ""
+    ).strip().lower()
+
+    requester_area = str(
+        payload.get("requesting_area")
+        or request.args.get("requesting_area")
+        or ""
+    ).strip() or None
+
+    requester_store = str(
+        payload.get("requesting_store")
+        or request.args.get("requesting_store")
+        or ""
+    ).strip() or None
+
+    # Preserve the existing standalone-admin behavior for older trusted
+    # integrations that have not started sending requester scope yet.
+    if not requester_role:
+        requester_role = "admin"
+
     user_context = {
-        "role": "admin",
-        "user_area": None,
-        "user_store": None,
+        "role": requester_role,
+        "user_area": requester_area,
+        "user_store": requester_store,
     }
 
     context = build_doughy_context(

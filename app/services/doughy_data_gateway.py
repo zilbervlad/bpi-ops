@@ -69,7 +69,11 @@ def visible_store_numbers(user_context: dict[str, Any]) -> set[str]:
 
     query = Store.query.filter(Store.is_active == True)
 
-    if role in {"admin", "maintenance"}:
+    if role in {
+        "admin",
+        "coach",
+        "maintenance",
+    }:
         stores = query.all()
 
     elif role == "supervisor":

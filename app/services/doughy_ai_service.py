@@ -36,10 +36,10 @@ How you talk:
 - Give the answer first.
 - Keep responses tight unless the user asks for detail.
 
-You are answering from a BPI Ops execution snapshot.
+You are answering from permission-filtered, read-only BPI Ops context.
 
 Rules:
-- Use only the provided execution snapshot.
+- Use only the provided BPI Ops context.
 - Do not invent store data, managers, OA points, tasks, dates, or scores.
 - Never say a manager faked, lied, cheated, or pencil-whipped a checklist.
 - Use safe language:
@@ -112,10 +112,10 @@ def _compact_execution_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _build_ai_payload(prompt: str, execution_snapshot: dict[str, Any]) -> dict[str, Any]:
+def _build_ai_payload(prompt: str, context_bundle: dict[str, Any]) -> dict[str, Any]:
     return {
         "user_prompt": prompt,
-        "execution_snapshot": _compact_execution_snapshot(execution_snapshot),
+        "context_bundle": context_bundle,
         "answer_format": {
             "style": "plain text",
             "max_words": 180,
@@ -124,9 +124,9 @@ def _build_ai_payload(prompt: str, execution_snapshot: dict[str, Any]) -> dict[s
     }
 
 
-def _ask_openai(prompt: str, execution_snapshot: dict[str, Any]) -> str:
+def _ask_openai(prompt: str, context_bundle: dict[str, Any]) -> str:
     client = OpenAI()
-    payload = _build_ai_payload(prompt, execution_snapshot)
+    payload = _build_ai_payload(prompt, context_bundle)
 
     response = client.responses.create(
         model=OPENAI_MODEL,
@@ -146,21 +146,246 @@ def _ask_openai(prompt: str, execution_snapshot: dict[str, Any]) -> str:
     return (response.output_text or "").strip()
 
 
+
+def _compact_gateway_context(
+    context_bundle: dict[str, Any],
+) -> dict[str, Any]:
+    """Return a compact, permission-filtered context for the Brain API."""
+    scope = context_bundle.get("scope") or {}
+    page = context_bundle.get("page") or {}
+    requested = context_bundle.get("requested") or {}
+
+    compact: dict[str, Any] = {
+        "mode": context_bundle.get("mode"),
+        "page": {
+            "page": page.get("page"),
+            "path": page.get("path"),
+            "section": page.get("section"),
+            "resource_id": page.get("resource_id"),
+            "endpoint": page.get("endpoint"),
+        },
+        "scope": {
+            "role": scope.get("role"),
+            "user_area": scope.get("user_area"),
+            "user_store": scope.get("user_store"),
+            "visible_store_count": scope.get("visible_store_count"),
+        },
+        "requested": requested,
+    }
+
+    rollup = context_bundle.get("scope_rollup") or {}
+
+    if rollup:
+        nightly = rollup.get("nightly_numbers") or {}
+
+        compact["scope_rollup"] = {
+            "business_date": rollup.get("business_date"),
+            "week_start": rollup.get("week_start"),
+            "week_end": rollup.get("week_end"),
+            "store_count": rollup.get("store_count"),
+            "checklist": rollup.get("checklist") or {},
+            "maintenance": rollup.get("maintenance") or {},
+            "svr": rollup.get("svr") or {},
+            "verification": rollup.get("verification") or {},
+            "nightly_numbers": {
+                "submitted_count": nightly.get("submitted_count"),
+                "missing_stores": (
+                    nightly.get("missing_stores") or []
+                )[:30],
+                "reports": (
+                    nightly.get("reports") or []
+                )[:8],
+            },
+        }
+
+    store_context = context_bundle.get("store_context") or {}
+
+    page_section = str(
+        page.get("section")
+        or page.get("page")
+        or page.get("endpoint")
+        or ""
+    ).strip().lower()
+
+    is_dashboard_page = (
+        page_section in {"", "dashboard", "store-dashboard", "store_dashboard"}
+        or "dashboard" in page_section
+    )
+
+    active_module = "all"
+
+    if "checklist" in page_section:
+        active_module = "checklist"
+    elif "maintenance" in page_section:
+        active_module = "maintenance"
+    elif "svr" in page_section or "store visit" in page_section:
+        active_module = "svr"
+    elif "nightly" in page_section:
+        active_module = "nightly_numbers"
+    elif "verification" in page_section:
+        active_module = "verification"
+    elif "cash" in page_section:
+        active_module = "cash"
+    elif "focus" in page_section:
+        active_module = "weekly_focus"
+    elif is_dashboard_page:
+        active_module = "all"
+
+    compact["active_module"] = active_module
+
+    if store_context:
+        checklist = store_context.get("checklist") or {}
+        doughy_read = checklist.get("doughy_read") or {}
+        maintenance = store_context.get("maintenance") or {}
+        svr = store_context.get("svr") or {}
+        nightly = store_context.get("nightly_numbers") or {}
+        verification = store_context.get("verification") or {}
+        weekly_focus = store_context.get("weekly_focus") or {}
+        cash = store_context.get("cash") or {}
+
+        compact_sections = []
+
+        for section in (checklist.get("sections") or [])[:5]:
+            compact_sections.append({
+                "section_name": section.get("section_name"),
+                "possible_points": section.get("possible_points"),
+                "protected_points": section.get("protected_points"),
+                "questionable_points": section.get("questionable_points"),
+                "at_risk_points": section.get("at_risk_points"),
+                "due_status": section.get("due_status"),
+                "top_risks": (
+                    section.get("top_risks") or []
+                )[:2],
+                "questionable_items": (
+                    section.get("questionable_items") or []
+                )[:2],
+            })
+
+        compact_svrs = []
+
+        for report in (svr.get("recent_reports") or [])[:2]:
+            compact_svrs.append({
+                "id": report.get("id"),
+                "visit_date": report.get("visit_date"),
+                "manager_on_duty": report.get("manager_on_duty"),
+                "supervisor_name": report.get("supervisor_name"),
+                "observations": (
+                    report.get("observations") or []
+                )[:5],
+            })
+
+        compact_verifications = []
+
+        for report in (
+            verification.get("recent_reports") or []
+        )[:2]:
+            compact_verifications.append({
+                "id": report.get("id"),
+                "report_date": report.get("report_date"),
+                "supervisor_name": report.get("supervisor_name"),
+                "responses": (
+                    report.get("responses") or []
+                )[:5],
+            })
+
+        compact_store = {
+            "store_number": store_context.get("store_number"),
+            "business_date": store_context.get("business_date"),
+        }
+
+        if active_module in {"all", "checklist"}:
+            compact_store["checklist"] = {
+                "store_number": checklist.get("store_number"),
+                "checklist_date": checklist.get("checklist_date"),
+                "manager_on_duty": checklist.get("manager_on_duty"),
+                "opening_manager": checklist.get("opening_manager"),
+                "closing_manager": checklist.get("closing_manager"),
+                "status": checklist.get("status"),
+                "percent_complete": checklist.get("percent_complete"),
+                "integrity_score": checklist.get("integrity_score"),
+                "totals": checklist.get("totals") or {},
+                "doughy_read": {
+                    "headline": doughy_read.get("headline"),
+                    "summary": doughy_read.get("summary"),
+                    "review_focus": (
+                        doughy_read.get("review_focus") or []
+                    )[:4],
+                    "current_focus": (
+                        doughy_read.get("current_focus") or []
+                    )[:4],
+                    "future_focus": (
+                        doughy_read.get("future_focus") or []
+                    )[:3],
+                },
+                "sections": compact_sections,
+            } if checklist else None
+
+        if active_module in {"all", "maintenance"}:
+            compact_store["maintenance"] = {
+                "active_count": maintenance.get("active_count"),
+                "status_counts": maintenance.get("status_counts") or {},
+                "oldest_active": (
+                    maintenance.get("oldest_active") or []
+                )[:4],
+            }
+
+        if active_module in {"all", "svr"}:
+            compact_store["svr"] = {
+                "recent_reports": compact_svrs,
+            }
+
+        if active_module in {"all", "nightly_numbers"}:
+            compact_store["nightly_numbers"] = {
+                "recent_reports": (
+                    nightly.get("recent_reports") or []
+                )[:4],
+            }
+
+        if active_module in {"all", "verification"}:
+            compact_store["verification"] = {
+                "recent_reports": compact_verifications,
+            }
+
+        if active_module in {"all", "weekly_focus"}:
+            compact_store["weekly_focus"] = {
+                "open_count": weekly_focus.get("open_count"),
+                "items": (
+                    weekly_focus.get("items") or []
+                )[:6],
+            }
+
+        if active_module in {"all", "cash"}:
+            compact_store["cash"] = {
+                "recent_logs": (
+                    cash.get("recent_logs") or []
+                )[:5],
+            }
+
+        compact["store_context"] = compact_store
+
+    return compact
+
+
 def _ask_brain(
     prompt: str,
-    execution_snapshot: dict[str, Any],
+    context_bundle: dict[str, Any],
 ) -> str:
-    compact_snapshot = _compact_execution_snapshot(execution_snapshot)
+    compact_context = _compact_gateway_context(context_bundle)
 
-    question = (
-        f"{prompt}\n\n"
-        "Use only this BPI Ops execution snapshot when answering. "
-        "Do not invent missing facts.\n\n"
-        f"EXECUTION SNAPSHOT:\n{json.dumps(compact_snapshot, default=str)}"
+    extra_context = (
+        "AUTHORITATIVE LIVE BPI OPS CONTEXT\n\n"
+        "This data is permission-filtered and read-only. "
+        "Use it as the source of truth for current store, checklist, "
+        "SVR, maintenance, verification, nightly numbers, and scope data. "
+        "Do not invent missing facts. Distinguish documented facts from "
+        "operational interpretation.\n\n"
+        f"{json.dumps(compact_context, default=str)}"
     )
 
     request_body = {
-        "question": question,
+        "question": prompt,
+        "extra_context": extra_context,
+        "source": "bpi_ops",
     }
 
     request = urllib.request.Request(
@@ -196,8 +421,8 @@ def _ask_brain(
     return answer
 
 
-def _ask_ollama(prompt: str, execution_snapshot: dict[str, Any]) -> str:
-    payload = _build_ai_payload(prompt, execution_snapshot)
+def _ask_ollama(prompt: str, context_bundle: dict[str, Any]) -> str:
+    payload = _build_ai_payload(prompt, context_bundle)
 
     request_body = {
         "model": OLLAMA_MODEL,
@@ -232,11 +457,11 @@ def _ask_ollama(prompt: str, execution_snapshot: dict[str, Any]) -> str:
     return (message.get("content") or "").strip()
 
 
-def ask_doughy_ai(prompt: str, execution_snapshot: dict[str, Any]) -> str:
+def ask_doughy_ai(prompt: str, context_bundle: dict[str, Any]) -> str:
     if AI_PROVIDER == "brain":
-        return _ask_brain(prompt, execution_snapshot)
+        return _ask_brain(prompt, context_bundle)
 
     if AI_PROVIDER == "ollama":
-        return _ask_ollama(prompt, execution_snapshot)
+        return _ask_ollama(prompt, context_bundle)
 
-    return _ask_openai(prompt, execution_snapshot)
+    return _ask_openai(prompt, context_bundle)

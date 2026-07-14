@@ -3,7 +3,7 @@ import os
 
 from flask import Blueprint, jsonify, request
 
-from app.services.doughy_data_gateway import build_doughy_context
+from app.services.doughy_universal_gateway import build_doughy_universal_context
 
 
 doughy_api_bp = Blueprint(
@@ -81,6 +81,17 @@ def live_context():
         "nightly_numbers",
         "weekly_focus",
         "cash",
+        "users",
+        "dwp",
+        "hr_documents",
+        "forms",
+        "prep",
+        "checklist_history",
+        "maintenance_history",
+        "svr_history",
+        "verification_history",
+        "nightly_history",
+        "cash_history",
     }
 
     if module not in allowed_modules:
@@ -131,11 +142,39 @@ def live_context():
         "user_store": requester_store,
     }
 
-    context = build_doughy_context(
+    context = build_doughy_universal_context(
         user_context=user_context,
         page_context=page_context,
         requested_store=requested_store,
         requested_date=requested_date,
+        date_from=(
+            payload.get("date_from")
+            or request.args.get("date_from")
+        ),
+        date_to=(
+            payload.get("date_to")
+            or request.args.get("date_to")
+        ),
+        status=(
+            payload.get("status")
+            or request.args.get("status")
+            or ""
+        ),
+        employee=(
+            payload.get("employee")
+            or request.args.get("employee")
+            or ""
+        ),
+        query_text=(
+            payload.get("query")
+            or request.args.get("query")
+            or ""
+        ),
+        limit=(
+            payload.get("limit")
+            or request.args.get("limit")
+            or 100
+        ),
     )
 
     status_code = (

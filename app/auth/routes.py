@@ -101,9 +101,28 @@ def supervisor_visible_user_store_numbers():
 
 
 
-def sync_registration_user_to_bpi_connect(user, registration, final_role):
-    api_base = os.getenv("BPI_CONNECT_API_BASE", "").strip().rstrip("/")
-    integration_secret = os.getenv("BPI_CONNECT_INTEGRATION_SECRET", "").strip()
+def sync_user_to_bpi_connect(
+    user,
+    *,
+    phone_number=None,
+    position=None,
+    send_invite=False,
+):
+    """
+    Push the current BPI Ops user record into BPI Connect.
+
+    BPI Ops remains the source of truth. A Connect failure must never
+    roll back or block the BPI Ops user change.
+    """
+    api_base = os.getenv(
+        "BPI_CONNECT_API_BASE",
+        "",
+    ).strip().rstrip("/")
+
+    integration_secret = os.getenv(
+        "BPI_CONNECT_INTEGRATION_SECRET",
+        "",
+    ).strip()
 
     if not api_base or not integration_secret:
         return {
@@ -112,19 +131,51 @@ def sync_registration_user_to_bpi_connect(user, registration, final_role):
             "error": "BPI Connect integration is not configured.",
         }
 
+    email = (
+        getattr(user, "email", None)
+        or getattr(user, "notification_email", None)
+        or ""
+    ).strip()
+
+    if not email:
+        return {
+            "success": False,
+            "skipped": True,
+            "error": (
+                "User does not have an email address, so BPI Connect "
+                "could not be updated."
+            ),
+        }
+
     payload = {
         "bpi_ops_user_id": user.id,
         "name": user.name,
         "username": user.username,
-        "email": user.email,
-        "phone_number": registration.phone,
+        "email": email,
+        "phone_number": (
+            phone_number
+            or getattr(user, "phone_number", None)
+            or ""
+        ),
         "password_hash": user.password_hash,
-        "role": final_role,
-        "position": registration.requested_position,
-        "store_number": user.store_number or registration.store_number,
-        "area": getattr(user, "area_name", None),
+        "role": user.role,
+        "position": (
+            position
+            if position is not None
+            else getattr(user, "position", None)
+        ),
+        "store_number": getattr(
+            user,
+            "store_number",
+            None,
+        ),
+        "area": getattr(
+            user,
+            "area_name",
+            None,
+        ),
         "is_active": bool(user.is_active),
-        "send_invite": True,
+        "send_invite": bool(send_invite),
     }
 
     try:
@@ -134,19 +185,30 @@ def sync_registration_user_to_bpi_connect(user, registration, final_role):
             headers={
                 "X-BPI-Ops-Secret": integration_secret,
             },
-            timeout=5,
+            timeout=8,
         )
 
         try:
             data = response.json()
         except Exception:
-            data = {"raw_response": response.text}
+            data = {
+                "raw_response": response.text[:1000],
+            }
+
+        success = (
+            response.status_code < 400
+            and bool(data.get("success"))
+        )
 
         return {
-            "success": response.status_code < 400 and bool(data.get("success")),
+            "success": success,
             "status_code": response.status_code,
             "data": data,
-            "error": None if response.status_code < 400 else data,
+            "error": (
+                None
+                if success
+                else data.get("error") or data
+            ),
         }
 
     except Exception as error:
@@ -155,6 +217,38 @@ def sync_registration_user_to_bpi_connect(user, registration, final_role):
             "error": str(error),
         }
 
+
+def sync_registration_user_to_bpi_connect(
+    user,
+    registration,
+    final_role,
+):
+    user.role = final_role
+
+    return sync_user_to_bpi_connect(
+        user,
+        phone_number=registration.phone,
+        position=registration.requested_position,
+        send_invite=True,
+    )
+
+
+def flash_connect_sync_warning(sync_result):
+    if sync_result.get("success"):
+        return
+
+    error = sync_result.get("error")
+
+    current_app.logger.warning(
+        "BPI Connect user sync failed: %s",
+        error,
+    )
+
+    flash(
+        "BPI Ops saved the user, but BPI Connect could not be updated. "
+        f"Details: {error}",
+        "warning",
+    )
 
 def current_user_can_review_registration_requests():
     return get_current_account_role() in {"admin", "supervisor", "general_manager", "hr"}
@@ -610,6 +704,12 @@ def manage_users():
                 db.session.add(user)
                 db.session.commit()
 
+                connect_result = sync_user_to_bpi_connect(
+                    user,
+                    send_invite=False,
+                )
+                flash_connect_sync_warning(connect_result)
+
                 flash(f"TM account created for store {gm_store}.", "success")
                 return redirect(url_for("auth.manage_users"))
 
@@ -656,6 +756,12 @@ def manage_users():
 
                 db.session.commit()
 
+                connect_result = sync_user_to_bpi_connect(
+                    user,
+                    send_invite=False,
+                )
+                flash_connect_sync_warning(connect_result)
+
                 flash("TM account updated successfully.", "success")
                 return redirect(url_for("auth.manage_users"))
 
@@ -670,6 +776,12 @@ def manage_users():
                 user.is_active = False
                 db.session.commit()
 
+                connect_result = sync_user_to_bpi_connect(
+                    user,
+                    send_invite=False,
+                )
+                flash_connect_sync_warning(connect_result)
+
                 flash("TM account deactivated.", "success")
                 return redirect(url_for("auth.manage_users"))
 
@@ -683,6 +795,12 @@ def manage_users():
 
                 user.is_active = True
                 db.session.commit()
+
+                connect_result = sync_user_to_bpi_connect(
+                    user,
+                    send_invite=False,
+                )
+                flash_connect_sync_warning(connect_result)
 
                 flash("TM account activated.", "success")
                 return redirect(url_for("auth.manage_users"))
@@ -739,6 +857,12 @@ def manage_users():
             db.session.add(user)
             db.session.commit()
 
+            connect_result = sync_user_to_bpi_connect(
+                user,
+                send_invite=False,
+            )
+            flash_connect_sync_warning(connect_result)
+
             flash("User created successfully.", "success")
             return redirect(url_for("auth.manage_users"))
 
@@ -775,10 +899,30 @@ def manage_users():
                 if new_password:
                     user.set_password(new_password)
                     db.session.commit()
-                    flash("Admin email settings and password updated successfully.", "success")
+
+                    connect_result = sync_user_to_bpi_connect(
+                        user,
+                        send_invite=False,
+                    )
+                    flash_connect_sync_warning(connect_result)
+
+                    flash(
+                        "Admin email settings and password updated successfully.",
+                        "success",
+                    )
                 else:
                     db.session.commit()
-                    flash("Admin email settings updated successfully.", "success")
+
+                    connect_result = sync_user_to_bpi_connect(
+                        user,
+                        send_invite=False,
+                    )
+                    flash_connect_sync_warning(connect_result)
+
+                    flash(
+                        "Admin email settings updated successfully.",
+                        "success",
+                    )
 
                 return redirect(url_for("auth.manage_users"))
 
@@ -811,6 +955,13 @@ def manage_users():
                 user.set_password(new_password)
 
             db.session.commit()
+
+            connect_result = sync_user_to_bpi_connect(
+                user,
+                send_invite=False,
+            )
+            flash_connect_sync_warning(connect_result)
+
             flash("User updated successfully.", "success")
             return redirect(url_for("auth.manage_users"))
 
@@ -832,6 +983,12 @@ def manage_users():
             user.is_active = False
             db.session.commit()
 
+            connect_result = sync_user_to_bpi_connect(
+                user,
+                send_invite=False,
+            )
+            flash_connect_sync_warning(connect_result)
+
             flash("User deactivated.", "success")
             return redirect(url_for("auth.manage_users"))
 
@@ -848,6 +1005,12 @@ def manage_users():
 
             user.is_active = True
             db.session.commit()
+
+            connect_result = sync_user_to_bpi_connect(
+                user,
+                send_invite=False,
+            )
+            flash_connect_sync_warning(connect_result)
 
             flash("User activated.", "success")
             return redirect(url_for("auth.manage_users"))

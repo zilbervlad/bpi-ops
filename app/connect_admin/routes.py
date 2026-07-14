@@ -3,6 +3,15 @@ import requests
 
 from flask import Blueprint, render_template, session, redirect, url_for, flash, request
 
+from app.extensions import db
+from app.models import User, Store
+from app.auth.routes import (
+    VALID_ROLES,
+    clean_access_fields,
+    sync_user_to_bpi_connect,
+    validate_user_access,
+)
+
 
 connect_admin_bp = Blueprint(
     "connect_admin",
@@ -17,6 +26,10 @@ def current_role():
 
 def require_connect_admin_access():
     return current_role() in {"admin", "hr", "supervisor"}
+
+
+def can_manage_connect_users():
+    return current_role() == "admin"
 
 
 def bpi_connect_headers(integration_secret):
@@ -371,6 +384,19 @@ def users():
         if str(user.get("store_number") or "").strip()
     })
 
+    local_store_options = (
+        Store.query
+        .filter_by(is_active=True)
+        .order_by(Store.store_number.asc())
+        .all()
+    )
+
+    manageable_roles = sorted(
+        role
+        for role in VALID_ROLES
+        if role != "admin"
+    )
+
     store_rollup_map = {}
 
     for user in all_users:
@@ -433,10 +459,167 @@ def users():
         inactive_users=inactive_users,
         role_options=role_options,
         store_options=store_options,
+        local_store_options=local_store_options,
+        manageable_roles=manageable_roles,
+        can_manage_users=can_manage_connect_users(),
         store_rollup=store_rollup,
     )
 
 
+
+
+@connect_admin_bp.route(
+    "/users/<int:bpi_ops_user_id>/update",
+    methods=["POST"],
+)
+def update_connect_user(bpi_ops_user_id):
+    if not session.get("user_id"):
+        return redirect(url_for("auth.login"))
+
+    if not can_manage_connect_users():
+        flash(
+            "Only administrators can manage BPI Connect users.",
+            "danger",
+        )
+        return redirect(url_for("connect_admin.users"))
+
+    user = User.query.get_or_404(bpi_ops_user_id)
+
+    if user.role == "admin":
+        flash(
+            "Admin accounts cannot be changed from Connect Admin.",
+            "danger",
+        )
+        return redirect(url_for("connect_admin.users"))
+
+    action = (
+        request.form.get("action")
+        or "update"
+    ).strip().lower()
+
+    return_store = (
+        request.form.get("return_store")
+        or ""
+    ).strip()
+
+    redirect_kwargs = {}
+
+    if return_store:
+        redirect_kwargs["store"] = return_store
+
+    if action == "toggle_active":
+        user.is_active = not bool(user.is_active)
+
+        db.session.commit()
+
+        sync_result = sync_user_to_bpi_connect(
+            user,
+            send_invite=False,
+        )
+
+        if sync_result.get("success"):
+            state = (
+                "activated"
+                if user.is_active
+                else "deactivated"
+            )
+
+            flash(
+                f"{user.name} was {state} in BPI Ops and Connect.",
+                "success",
+            )
+        else:
+            flash(
+                "BPI Ops was updated, but Connect sync failed: "
+                f"{sync_result.get('error')}",
+                "warning",
+            )
+
+        return redirect(
+            url_for(
+                "connect_admin.users",
+                **redirect_kwargs,
+            )
+        )
+
+    role = (
+        request.form.get("role")
+        or user.role
+    ).strip()
+
+    area_name = (
+        request.form.get("area_name")
+        or ""
+    ).strip() or None
+
+    store_number = (
+        request.form.get("store_number")
+        or ""
+    ).strip() or None
+
+    new_password = (
+        request.form.get("password")
+        or ""
+    ).strip()
+
+    is_valid, error_message = validate_user_access(
+        role,
+        area_name,
+        store_number,
+    )
+
+    if not is_valid:
+        flash(
+            error_message
+            or "Choose a valid role and access assignment.",
+            "danger",
+        )
+
+        return redirect(
+            url_for(
+                "connect_admin.users",
+                **redirect_kwargs,
+            )
+        )
+
+    area_name, store_number = clean_access_fields(
+        role,
+        area_name,
+        store_number,
+    )
+
+    user.role = role
+    user.area_name = area_name
+    user.store_number = store_number
+
+    if new_password:
+        user.set_password(new_password)
+
+    db.session.commit()
+
+    sync_result = sync_user_to_bpi_connect(
+        user,
+        send_invite=False,
+    )
+
+    if sync_result.get("success"):
+        flash(
+            f"{user.name} was updated in BPI Ops and Connect.",
+            "success",
+        )
+    else:
+        flash(
+            "BPI Ops was updated, but Connect sync failed: "
+            f"{sync_result.get('error')}",
+            "warning",
+        )
+
+    return redirect(
+        url_for(
+            "connect_admin.users",
+            **redirect_kwargs,
+        )
+    )
 
 
 @connect_admin_bp.route("/announcements/new", methods=["GET", "POST"])

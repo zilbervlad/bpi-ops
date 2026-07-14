@@ -260,6 +260,68 @@
     .badge-blue { background: #dbeafe; color: #1d4ed8; }
     .badge-gray { background: #f1f5f9; color: #334155; }
 
+    .user-management {
+        min-width: 340px;
+    }
+
+    .user-management-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+        align-items: center;
+    }
+
+    .user-management-form select,
+    .user-management-form input {
+        width: 100%;
+        min-width: 0;
+        border: 1px solid #dbe3ef;
+        background: #f8fafc;
+        color: #0f172a;
+        border-radius: 10px;
+        padding: 8px 9px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .management-actions {
+        display: flex;
+        gap: 7px;
+        margin-top: 7px;
+        flex-wrap: wrap;
+    }
+
+    .management-btn {
+        border: 0;
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 11px;
+        font-weight: 950;
+        cursor: pointer;
+    }
+
+    .management-btn-save {
+        background: #0f172a;
+        color: white;
+    }
+
+    .management-btn-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .management-btn-success {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .management-note {
+        margin-top: 5px;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 750;
+    }
+
     .store-rollup-row {
         cursor: pointer;
         transition: background .12s ease, transform .12s ease;
@@ -343,6 +405,9 @@
                     <th>Invite</th>
                     <th>Push</th>
                     <th>Contact</th>
+                    {% if can_manage_users %}
+                        <th>Manage</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -396,6 +461,96 @@
                                 <div class="person-sub">Inactive account</div>
                             {% endif %}
                         </td>
+
+                        {% if can_manage_users %}
+                        <td class="user-management">
+                            {% if user.get("bpi_ops_user_id") %}
+                                <form
+                                    class="user-management-form"
+                                    method="post"
+                                    action="{{ url_for(
+                                        'connect_admin.update_connect_user',
+                                        bpi_ops_user_id=user.get('bpi_ops_user_id')
+                                    ) }}"
+                                >
+                                    <input
+                                        type="hidden"
+                                        name="return_store"
+                                        value="{{ selected_store }}"
+                                    >
+
+                                    <select name="role">
+                                        {% for role in manageable_roles %}
+                                            <option
+                                                value="{{ role }}"
+                                                {% if user.get("role") == role %}selected{% endif %}
+                                            >
+                                                {{ role|replace("_", " ")|title }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <select name="store_number">
+                                        <option value="">No store</option>
+
+                                        {% for store in local_store_options %}
+                                            <option
+                                                value="{{ store.store_number }}"
+                                                {% if user.get("store_number") == store.store_number %}selected{% endif %}
+                                            >
+                                                Store {{ store.store_number }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <input
+                                        type="text"
+                                        name="area_name"
+                                        value="{{ user.get('area') or '' }}"
+                                        placeholder="Area"
+                                    >
+
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        placeholder="New password"
+                                        autocomplete="new-password"
+                                    >
+
+                                    <div class="management-actions">
+                                        <button
+                                            class="management-btn management-btn-save"
+                                            type="submit"
+                                            name="action"
+                                            value="update"
+                                        >
+                                            Save & Sync
+                                        </button>
+
+                                        <button
+                                            class="management-btn {% if user.get('is_active') %}management-btn-danger{% else %}management-btn-success{% endif %}"
+                                            type="submit"
+                                            name="action"
+                                            value="toggle_active"
+                                            onclick="return confirm(
+                                                '{{ 'Deactivate' if user.get('is_active') else 'Activate' }} {{ user.get('name')|e }}?'
+                                            )"
+                                        >
+                                            {{ "Deactivate" if user.get("is_active") else "Activate" }}
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <div class="management-note">
+                                    Saves to BPI Ops and immediately syncs Connect.
+                                </div>
+                            {% else %}
+                                <span class="badge badge-red">
+                                    Not linked to BPI Ops
+                                </span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
             </tbody>
@@ -413,8 +568,8 @@
             <div class="users-eyebrow">BPI Connect Admin</div>
             <h1 class="users-title">Users</h1>
             <div class="users-subtitle">
-                Read-only rollout visibility for Connect users. This page does not resend invites,
-                reset passwords, disable users, or change app access.
+                View Connect rollout status and manage linked users directly from BPI Ops.
+                User changes are saved in BPI Ops first, then synchronized to Connect.
             </div>
         </div>
         <a class="back-link" href="{{ url_for('connect_admin.index') }}">← Back to dashboard</a>

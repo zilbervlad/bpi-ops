@@ -88,6 +88,7 @@ def live_context():
         "prep",
         "checklist_history",
         "maintenance_history",
+        "maintenance_schedule",
         "svr_history",
         "verification_history",
         "nightly_history",

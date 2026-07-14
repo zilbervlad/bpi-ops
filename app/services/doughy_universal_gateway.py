@@ -954,6 +954,171 @@ def _checklist_history(
     }
 
 
+def _maintenance_schedule_context(
+    *,
+    user_context: dict[str, Any],
+    store: str | None,
+    date_from: date | None,
+    date_to: date | None,
+    status: str,
+    employee: str,
+    limit: int,
+) -> dict[str, Any]:
+    allowed_stores = visible_store_numbers(
+        user_context
+    )
+
+    query = (
+        MaintenanceTicket.query
+        .filter(
+            MaintenanceTicket
+            .scheduled_date
+            .isnot(None)
+        )
+    )
+
+    if store:
+        if store not in allowed_stores:
+            return {
+                "ok": False,
+                "module": (
+                    "maintenance_schedule"
+                ),
+                "error": (
+                    "Store is outside the "
+                    "user's visible scope."
+                ),
+            }
+
+        query = query.filter(
+            MaintenanceTicket
+            .store_number
+            == store
+        )
+
+    else:
+        query = query.filter(
+            MaintenanceTicket
+            .store_number
+            .in_(allowed_stores)
+        )
+
+    if date_from:
+        query = query.filter(
+            MaintenanceTicket
+            .scheduled_date
+            >= date_from
+        )
+
+    if date_to:
+        query = query.filter(
+            MaintenanceTicket
+            .scheduled_date
+            <= date_to
+        )
+
+    if status:
+        query = query.filter(
+            MaintenanceTicket.status
+            == status
+        )
+
+    normalized_employee = (
+        employee
+        or ""
+    ).strip()
+
+    if normalized_employee:
+        query = query.filter(
+            MaintenanceTicket
+            .assigned_to
+            .ilike(
+                f"%{normalized_employee}%"
+            )
+        )
+
+    rows = (
+        query
+        .order_by(
+            MaintenanceTicket
+            .scheduled_date
+            .asc(),
+            MaintenanceTicket
+            .scheduled_time
+            .asc()
+            .nulls_last(),
+            MaintenanceTicket
+            .store_number
+            .asc(),
+        )
+        .limit(limit)
+        .all()
+    )
+
+    records = []
+
+    for row in rows:
+        records.append({
+            "id": row.id,
+            "store_number": (
+                row.store_number
+            ),
+            "title": row.title,
+            "details": (
+                row.details
+                or ""
+            ),
+            "status": row.status,
+            "assigned_to": (
+                row.assigned_to
+            ),
+            "scheduled_date": _iso(
+                row.scheduled_date
+            ),
+            "scheduled_time": (
+                row.scheduled_time
+                .isoformat(
+                    timespec="minutes"
+                )
+                if row.scheduled_time
+                else None
+            ),
+            "estimated_minutes": (
+                row.estimated_minutes
+            ),
+            "priority": row.priority,
+            "created_at": _iso(
+                row.created_at
+            ),
+        })
+
+    return {
+        "ok": True,
+        "module": (
+            "maintenance_schedule"
+        ),
+        "count": len(records),
+        "records": records,
+        "filters": {
+            "store": store,
+            "date_from": _iso(
+                date_from
+            ),
+            "date_to": _iso(
+                date_to
+            ),
+            "status": (
+                status
+                or None
+            ),
+            "employee": (
+                normalized_employee
+                or None
+            ),
+        },
+    }
+
+
 def _simple_history_context(
     *,
     module: str,
@@ -1300,6 +1465,17 @@ def build_doughy_universal_context(
             store=store,
             date_from=parsed_from,
             date_to=parsed_to,
+            limit=result_limit,
+        )
+
+    if module == "maintenance_schedule":
+        return _maintenance_schedule_context(
+            user_context=user_context,
+            store=store,
+            date_from=parsed_from,
+            date_to=parsed_to,
+            status=status,
+            employee=employee,
             limit=result_limit,
         )
 

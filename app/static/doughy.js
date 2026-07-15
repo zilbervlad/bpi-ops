@@ -234,7 +234,14 @@ document.addEventListener("DOMContentLoaded", function () {
             body: JSON.stringify({
                 prompt: prompt,
                 store: storeAndDate.store,
-                date: storeAndDate.date
+                date: storeAndDate.date,
+                path: window.location.pathname || "/",
+                endpoint: (
+                    document.getElementById("doughyContextCard") || {}
+                ).dataset?.endpoint || "",
+                page_label: (
+                    document.getElementById("doughyContextCard") || {}
+                ).dataset?.pageLabel || ""
             })
         });
 
@@ -733,3 +740,281 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     document.addEventListener("DOMContentLoaded", loadDoughyContext);
+
+
+/* ==========================================================
+   Doughy floating chat
+   ========================================================== */
+
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("doughyChatForm");
+    const input = document.getElementById("doughyChatInput");
+    const sendButton = document.getElementById("doughyChatSend");
+    const messages = document.getElementById("doughyChatMessages");
+    const suggestions = document.getElementById("doughyChatSuggestions");
+    const contextToggle = document.getElementById("doughyContextToggle");
+    const contextCard = document.getElementById("doughyContextCard");
+
+    if (!form || !input || !messages) {
+        return;
+    }
+
+    let isSending = false;
+
+    function escapeHtml(value) {
+        const div = document.createElement("div");
+        div.textContent = String(value || "");
+        return div.innerHTML;
+    }
+
+    function formatAnswer(value) {
+        return escapeHtml(value)
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\n/g, "<br>");
+    }
+
+    function scrollToBottom() {
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function addUserMessage(value) {
+        const row = document.createElement("div");
+
+        row.className =
+            "doughy-chat-row doughy-chat-row-user";
+
+        row.innerHTML = `
+            <div class="doughy-chat-bubble doughy-chat-bubble-user">
+                ${formatAnswer(value)}
+            </div>
+        `;
+
+        messages.appendChild(row);
+        scrollToBottom();
+    }
+
+    function addAssistantMessage(value, extraClass) {
+        const row = document.createElement("div");
+
+        row.className =
+            "doughy-chat-row doughy-chat-row-assistant";
+
+        row.innerHTML = `
+            <div class="doughy-chat-avatar">
+                <img
+                    src="/static/doughy_happy.png"
+                    alt=""
+                >
+            </div>
+
+            <div class="doughy-chat-bubble doughy-chat-bubble-assistant ${extraClass || ""}">
+                ${formatAnswer(value)}
+            </div>
+        `;
+
+        messages.appendChild(row);
+        scrollToBottom();
+
+        return row;
+    }
+
+    function getCurrentStoreAndDate() {
+        const params = new URLSearchParams(
+            window.location.search
+        );
+
+        let store =
+            params.get("store") ||
+            params.get("store_number") ||
+            "";
+
+        let date =
+            params.get("date") ||
+            params.get("checklist_date") ||
+            params.get("business_date") ||
+            "";
+
+        const storeSelect = document.querySelector(
+            "select[name='store'], " +
+            "select[name='store_number'], " +
+            "#store, #store_number"
+        );
+
+        if (
+            !store &&
+            storeSelect &&
+            storeSelect.value
+        ) {
+            store = storeSelect.value;
+        }
+
+        const dateInput = document.querySelector(
+            "input[name='date'], " +
+            "input[name='checklist_date'], " +
+            "input[name='business_date'], " +
+            "#date, #checklist_date"
+        );
+
+        if (
+            !date &&
+            dateInput &&
+            dateInput.value
+        ) {
+            date = dateInput.value;
+        }
+
+        return {
+            store: store || null,
+            date: date || null
+        };
+    }
+
+    async function sendPrompt(prompt) {
+        prompt = String(prompt || "").trim();
+
+        if (!prompt || isSending) {
+            return;
+        }
+
+        isSending = true;
+        sendButton.disabled = true;
+        input.disabled = true;
+
+        addUserMessage(prompt);
+
+        input.value = "";
+        input.style.height = "auto";
+
+        if (suggestions) {
+            suggestions.hidden = true;
+        }
+
+        const thinkingRow = addAssistantMessage(
+            "Checking BPI Ops...",
+            "doughy-chat-bubble-thinking"
+        );
+
+        try {
+            const scope = getCurrentStoreAndDate();
+
+            const response = await fetch(
+                "/doughy/ask",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        store: scope.store,
+                        date: scope.date,
+                        path:
+                            window.location.pathname ||
+                            "/",
+                        endpoint:
+                            contextCard?.dataset?.endpoint ||
+                            "",
+                        page_label:
+                            contextCard?.dataset?.pageLabel ||
+                            ""
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.ok) {
+                throw new Error(
+                    data.error ||
+                    "Doughy could not answer right now."
+                );
+            }
+
+            thinkingRow.remove();
+
+            addAssistantMessage(
+                data.answer ||
+                "I could not find an answer."
+            );
+        } catch (error) {
+            thinkingRow.remove();
+
+            addAssistantMessage(
+                "I hit a problem loading that answer: " +
+                (
+                    error?.message ||
+                    "Unknown error"
+                )
+            );
+        } finally {
+            isSending = false;
+            sendButton.disabled = false;
+            input.disabled = false;
+            input.focus();
+        }
+    }
+
+    form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        sendPrompt(input.value);
+    });
+
+    input.addEventListener("keydown", function (event) {
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+            event.preventDefault();
+            sendPrompt(input.value);
+        }
+    });
+
+    input.addEventListener("input", function () {
+        input.style.height = "auto";
+
+        input.style.height = (
+            Math.min(
+                input.scrollHeight,
+                130
+            )
+            + "px"
+        );
+    });
+
+    document
+        .querySelectorAll(
+            "[data-doughy-chat-prompt]"
+        )
+        .forEach(function (button) {
+            button.addEventListener(
+                "click",
+                function () {
+                    sendPrompt(
+                        button.dataset
+                            .doughyChatPrompt
+                    );
+                }
+            );
+        });
+
+    if (
+        contextToggle &&
+        contextCard
+    ) {
+        contextToggle.addEventListener(
+            "click",
+            function () {
+                const willOpen =
+                    contextCard.hidden;
+
+                contextCard.hidden =
+                    !willOpen;
+
+                contextToggle.setAttribute(
+                    "aria-expanded",
+                    String(willOpen)
+                );
+            }
+        );
+    }
+});

@@ -143,8 +143,10 @@ def create_app():
             size = response.calculate_content_length() or 0
 
             if size >= 100_000 or path.startswith("/api/") or path.startswith("/static/"):
-                app.logger.info(
-                    "BANDWIDTH path=%s status=%s bytes=%s ua=%s",
+                app.logger.warning(
+                    "BANDWIDTH method=%s host=%s path=%s status=%s bytes=%s ua=%s",
+                    request.method,
+                    request.host,
                     path,
                     response.status_code,
                     size,

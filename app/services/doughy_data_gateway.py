@@ -7,6 +7,7 @@ from typing import Any
 from app.models import (
     CashLog,
     DailyChecklist,
+    DailyChecklistItem,
     MaintenanceTicket,
     NightlyNumbersReport,
     Store,
@@ -492,6 +493,95 @@ def _scope_rollup(
         for report in nightly_rows
     }
 
+    checklist_sections = {
+        "before_open": "Before Open / Before 10:30",
+        "during_dayshift": "During Dayshift",
+        "restock": "3-O'Clock Restock",
+        "manager_walk": "Manager's Walk",
+    }
+
+    section_rollup = {
+        key: {
+            "section_name": section_name,
+            "completed_stores": [],
+            "incomplete_stores": [],
+            "not_started_stores": [],
+        }
+        for key, section_name in checklist_sections.items()
+    }
+
+    for store_number in sorted(store_numbers):
+        checklist_row = latest_checklist_by_store.get(
+            store_number
+        )
+
+        if not checklist_row:
+            for section_data in section_rollup.values():
+                section_data["not_started_stores"].append(
+                    store_number
+                )
+            continue
+
+        items_by_section = {}
+
+        for item in checklist_row.items:
+            items_by_section.setdefault(
+                str(item.section_name),
+                [],
+            ).append(item)
+
+        for section_key, section_name in checklist_sections.items():
+            section_items = items_by_section.get(
+                section_name,
+                [],
+            )
+
+            if not section_items:
+                section_rollup[
+                    section_key
+                ]["not_started_stores"].append(
+                    store_number
+                )
+                continue
+
+            required_items = [
+                item
+                for item in section_items
+                if item.is_required
+            ]
+
+            evaluated_items = (
+                required_items
+                or section_items
+            )
+
+            if all(
+                item.is_completed
+                for item in evaluated_items
+            ):
+                section_rollup[
+                    section_key
+                ]["completed_stores"].append(
+                    store_number
+                )
+            else:
+                section_rollup[
+                    section_key
+                ]["incomplete_stores"].append(
+                    store_number
+                )
+
+    for section_data in section_rollup.values():
+        section_data["completed_count"] = len(
+            section_data["completed_stores"]
+        )
+        section_data["incomplete_count"] = len(
+            section_data["incomplete_stores"]
+        )
+        section_data["not_started_count"] = len(
+            section_data["not_started_stores"]
+        )
+
     low_checklists = []
 
     for store_number, row in latest_checklist_by_store.items():
@@ -521,6 +611,7 @@ def _scope_rollup(
             "missing_stores": sorted(
                 store_numbers - checklist_stores
             ),
+            "sections": section_rollup,
             "needs_attention": sorted(
                 low_checklists,
                 key=lambda row: (

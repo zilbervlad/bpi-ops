@@ -140,7 +140,15 @@ def create_app():
             if path.startswith("/static/"):
                 response.headers["Cache-Control"] = "public, max-age=86400"
 
-            size = response.calculate_content_length() or 0
+            header_size = response.headers.get("Content-Length")
+
+            try:
+                size = int(header_size or 0)
+            except (TypeError, ValueError):
+                size = 0
+
+            if not size:
+                size = response.calculate_content_length() or 0
 
             if size >= 100_000 or path.startswith("/api/") or path.startswith("/static/"):
                 app.logger.warning(

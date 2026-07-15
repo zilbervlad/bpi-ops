@@ -1,5 +1,8 @@
 import hmac
 import os
+import re
+
+from datetime import date, datetime, timedelta
 
 from flask import Blueprint, jsonify, request
 
@@ -11,6 +14,83 @@ doughy_api_bp = Blueprint(
     __name__,
     url_prefix="/api/integrations/doughy",
 )
+
+
+_MONTH_NUMBERS = {
+    "january": 1,
+    "february": 2,
+    "march": 3,
+    "april": 4,
+    "may": 5,
+    "june": 6,
+    "july": 7,
+    "august": 8,
+    "september": 9,
+    "october": 10,
+    "november": 11,
+    "december": 12,
+}
+
+
+def _requested_date_from_text(value: str):
+    """
+    Extract an obvious requested business date from a Doughy question.
+
+    Explicit API date values still take priority. This is only a fallback
+    for natural-language questions such as "How did we do July 14?"
+    """
+    text = str(value or "").strip().lower()
+
+    if not text:
+        return None
+
+    today = date.today()
+
+    if re.search(r"\b(yesterday|last night)\b", text):
+        return (today - timedelta(days=1)).isoformat()
+
+    month_match = re.search(
+        r"\b("
+        + "|".join(_MONTH_NUMBERS)
+        + r")\s+(\d{1,2})(?:st|nd|rd|th)?"
+          r"(?:,?\s+(\d{4}))?\b",
+        text,
+    )
+
+    if month_match:
+        month = _MONTH_NUMBERS[month_match.group(1)]
+        day = int(month_match.group(2))
+        year = int(month_match.group(3) or today.year)
+
+        try:
+            return date(year, month, day).isoformat()
+        except ValueError:
+            return None
+
+    numeric_match = re.search(
+        r"(?<!\d)(\d{1,2})[/-](\d{1,2})"
+        r"(?:[/-](\d{2}|\d{4}))?(?!\d)",
+        text,
+    )
+
+    if numeric_match:
+        month = int(numeric_match.group(1))
+        day = int(numeric_match.group(2))
+        raw_year = numeric_match.group(3)
+
+        if raw_year:
+            year = int(raw_year)
+            if year < 100:
+                year += 2000
+        else:
+            year = today.year
+
+        try:
+            return date(year, month, day).isoformat()
+        except ValueError:
+            return None
+
+    return None
 
 
 def _authorized() -> bool:
@@ -59,9 +139,18 @@ def live_context():
         or ""
     ).strip() or None
 
+    incoming_query = (
+        payload.get("query")
+        or payload.get("question")
+        or request.args.get("query")
+        or request.args.get("question")
+        or ""
+    )
+
     requested_date = (
         payload.get("date")
         or request.args.get("date")
+        or _requested_date_from_text(incoming_query)
         or None
     )
 
@@ -166,11 +255,7 @@ def live_context():
             or request.args.get("employee")
             or ""
         ),
-        query_text=(
-            payload.get("query")
-            or request.args.get("query")
-            or ""
-        ),
+        query_text=incoming_query,
         limit=(
             payload.get("limit")
             or request.args.get("limit")

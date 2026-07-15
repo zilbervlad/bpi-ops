@@ -163,7 +163,7 @@ def _compact_gateway_context(
             or []
         )
 
-        return {
+        compact_gateway = {
             "mode": (
                 "read_only_bpi_universal_gateway"
             ),
@@ -179,6 +179,20 @@ def _compact_gateway_context(
             ),
             "records": records[:100],
         }
+
+        if (
+            context_bundle.get(
+                "manager_walk_summary"
+            )
+            is not None
+        ):
+            compact_gateway[
+                "manager_walk_summary"
+            ] = context_bundle.get(
+                "manager_walk_summary"
+            )
+
+        return compact_gateway
 
     scope = context_bundle.get("scope") or {}
     page = context_bundle.get("page") or {}

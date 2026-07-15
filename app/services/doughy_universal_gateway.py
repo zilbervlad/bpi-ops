@@ -904,7 +904,7 @@ def _checklist_history(
             DailyChecklist.status == status
         )
 
-    rows = (
+    all_rows = (
         query
         .order_by(
             DailyChecklist
@@ -912,14 +912,133 @@ def _checklist_history(
             .desc(),
             DailyChecklist.id.desc(),
         )
-        .limit(limit)
         .all()
+    )
+
+    rows = all_rows[:limit]
+
+    expected_days = None
+
+    if date_from and date_to:
+        expected_days = (
+            date_to - date_from
+        ).days + 1
+
+    manager_walk_by_store = {
+        store_number: {
+            "store_number": store_number,
+            "completed_days": 0,
+            "incomplete_days": 0,
+            "checklist_days": 0,
+            "missing_days": 0,
+        }
+        for store_number in sorted(
+            allowed_stores
+        )
+    }
+
+    manager_walk_details = {}
+
+    for row in all_rows:
+        manager_walk_items = [
+            item
+            for item in row.items
+            if (
+                item.section_name
+                == "Manager's Walk"
+                and item.is_required
+            )
+        ]
+
+        required_count = len(
+            manager_walk_items
+        )
+
+        completed_count = sum(
+            1
+            for item in manager_walk_items
+            if item.is_completed
+        )
+
+        section_complete = (
+            required_count > 0
+            and completed_count
+            == required_count
+        )
+
+        manager_walk_details[row.id] = {
+            "manager_walk_completed": (
+                section_complete
+            ),
+            "manager_walk_required_items": (
+                required_count
+            ),
+            "manager_walk_completed_items": (
+                completed_count
+            ),
+        }
+
+        store_summary = (
+            manager_walk_by_store
+            .setdefault(
+                row.store_number,
+                {
+                    "store_number": (
+                        row.store_number
+                    ),
+                    "completed_days": 0,
+                    "incomplete_days": 0,
+                    "checklist_days": 0,
+                    "missing_days": 0,
+                },
+            )
+        )
+
+        store_summary[
+            "checklist_days"
+        ] += 1
+
+        if section_complete:
+            store_summary[
+                "completed_days"
+            ] += 1
+        else:
+            store_summary[
+                "incomplete_days"
+            ] += 1
+
+    if expected_days is not None:
+        for summary in (
+            manager_walk_by_store
+            .values()
+        ):
+            summary["missing_days"] = max(
+                expected_days
+                - summary["checklist_days"],
+                0,
+            )
+
+    manager_walk_summary = sorted(
+        manager_walk_by_store.values(),
+        key=lambda item: (
+            -item["completed_days"],
+            item["store_number"],
+        ),
     )
 
     return {
         "ok": True,
         "module": "checklist_history",
-        "count": len(rows),
+        "count": len(all_rows),
+        "filters": {
+            "store": store,
+            "date_from": _iso(date_from),
+            "date_to": _iso(date_to),
+            "status": status or None,
+        },
+        "manager_walk_summary": (
+            manager_walk_summary
+        ),
         "records": [
             {
                 "id": row.id,
@@ -944,6 +1063,10 @@ def _checklist_history(
                 ),
                 "integrity_score": (
                     row.integrity_score
+                ),
+                **manager_walk_details.get(
+                    row.id,
+                    {},
                 ),
                 "created_at": _iso(
                     row.created_at

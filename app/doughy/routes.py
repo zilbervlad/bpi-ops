@@ -790,12 +790,36 @@ def ask():
         page_label or _guess_page_from_path(page_path),
     )
 
+    user_role = str(
+        session.get("user_role")
+        or _safe_attr(user, "role", "")
+        or ""
+    ).strip().lower()
+
+    broad_scope_roles = {
+        "admin",
+        "supervisor",
+        "hr",
+        "maintenance",
+    }
+
     requested_store = (
         payload.get("store")
         or path_context.get("store_from_path")
-        or session.get("user_store")
-        or _safe_attr(user, "store_number", None)
     )
+
+    if (
+        not requested_store
+        and user_role not in broad_scope_roles
+    ):
+        requested_store = (
+            session.get("user_store")
+            or _safe_attr(
+                user,
+                "store_number",
+                None,
+            )
+        )
 
     user_context = {
         "user_id": _safe_attr(user, "id", None),

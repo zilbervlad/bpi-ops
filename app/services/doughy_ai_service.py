@@ -151,6 +151,35 @@ def _compact_gateway_context(
     context_bundle: dict[str, Any],
 ) -> dict[str, Any]:
     """Return a compact, permission-filtered context for the Brain API."""
+    # Universal gateway responses return a module
+    # and records directly rather than store_context
+    # or scope_rollup. Preserve those records for Brain.
+    if (
+        context_bundle.get("module")
+        and "records" in context_bundle
+    ):
+        records = (
+            context_bundle.get("records")
+            or []
+        )
+
+        return {
+            "mode": (
+                "read_only_bpi_universal_gateway"
+            ),
+            "module": (
+                context_bundle.get("module")
+            ),
+            "count": (
+                context_bundle.get("count")
+            ),
+            "filters": (
+                context_bundle.get("filters")
+                or {}
+            ),
+            "records": records[:100],
+        }
+
     scope = context_bundle.get("scope") or {}
     page = context_bundle.get("page") or {}
     requested = context_bundle.get("requested") or {}

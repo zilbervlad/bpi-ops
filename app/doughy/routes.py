@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, timedelta
+import re
 
 from flask import jsonify, render_template, request, session
 
@@ -7,6 +8,9 @@ from app.models import DailyChecklist, User
 from app.services.doughy_execution import build_execution_snapshot
 from app.services.doughy_ai_service import ask_doughy_ai, doughy_ai_enabled, doughy_ai_provider
 from app.services.doughy_data_gateway import build_doughy_context
+from app.services.doughy_universal_gateway import (
+    build_doughy_universal_context,
+)
 
 from . import doughy_bp
 
@@ -38,6 +42,411 @@ def _guess_page_from_path(path):
         return "dwp"
 
     return "unknown"
+
+
+
+_MONTHS = {
+    "january": 1,
+    "february": 2,
+    "march": 3,
+    "april": 4,
+    "may": 5,
+    "june": 6,
+    "july": 7,
+    "august": 8,
+    "september": 9,
+    "october": 10,
+    "november": 11,
+    "december": 12,
+}
+
+
+def _doughy_dates_from_question(prompt):
+    text = str(prompt or "").strip().lower()
+    today = date.today()
+
+    result = {
+        "requested_date": None,
+        "date_from": None,
+        "date_to": None,
+    }
+
+    if re.search(r"\b(last week|previous week)\b", text):
+        this_week_start = today - timedelta(
+            days=today.weekday()
+        )
+        start = this_week_start - timedelta(days=7)
+        end = start + timedelta(days=6)
+
+        result["date_from"] = start.isoformat()
+        result["date_to"] = end.isoformat()
+        return result
+
+    if re.search(r"\bthis week\b", text):
+        start = today - timedelta(
+            days=today.weekday()
+        )
+        end = start + timedelta(days=6)
+
+        result["date_from"] = start.isoformat()
+        result["date_to"] = end.isoformat()
+        return result
+
+    if re.search(r"\b(yesterday|last night)\b", text):
+        value = today - timedelta(days=1)
+
+        result["requested_date"] = value.isoformat()
+        result["date_from"] = value.isoformat()
+        result["date_to"] = value.isoformat()
+        return result
+
+    if re.search(r"\btoday\b", text):
+        result["requested_date"] = today.isoformat()
+        result["date_from"] = today.isoformat()
+        result["date_to"] = today.isoformat()
+        return result
+
+    month_match = re.search(
+        r"\b("
+        + "|".join(_MONTHS)
+        + r")\s+(\d{1,2})(?:st|nd|rd|th)?"
+          r"(?:,?\s+(\d{4}))?\b",
+        text,
+    )
+
+    if month_match:
+        month = _MONTHS[
+            month_match.group(1)
+        ]
+        day = int(
+            month_match.group(2)
+        )
+        year = int(
+            month_match.group(3)
+            or today.year
+        )
+
+        try:
+            value = date(
+                year,
+                month,
+                day,
+            )
+
+            result["requested_date"] = (
+                value.isoformat()
+            )
+            result["date_from"] = (
+                value.isoformat()
+            )
+            result["date_to"] = (
+                value.isoformat()
+            )
+        except ValueError:
+            pass
+
+        return result
+
+    numeric_match = re.search(
+        r"(?<!\d)"
+        r"(\d{1,2})[/-](\d{1,2})"
+        r"(?:[/-](\d{2}|\d{4}))?"
+        r"(?!\d)",
+        text,
+    )
+
+    if numeric_match:
+        month = int(
+            numeric_match.group(1)
+        )
+        day = int(
+            numeric_match.group(2)
+        )
+
+        raw_year = (
+            numeric_match.group(3)
+        )
+
+        year = (
+            int(raw_year)
+            if raw_year
+            else today.year
+        )
+
+        if year < 100:
+            year += 2000
+
+        try:
+            value = date(
+                year,
+                month,
+                day,
+            )
+
+            result["requested_date"] = (
+                value.isoformat()
+            )
+            result["date_from"] = (
+                value.isoformat()
+            )
+            result["date_to"] = (
+                value.isoformat()
+            )
+        except ValueError:
+            pass
+
+    return result
+
+
+def _doughy_store_from_question(prompt):
+    match = re.search(
+        r"\b(?:store\s*)?(\d{4})\b",
+        str(prompt or ""),
+        flags=re.IGNORECASE,
+    )
+
+    return (
+        match.group(1)
+        if match
+        else None
+    )
+
+
+def _doughy_employee_from_question(prompt):
+    text = str(
+        prompt or ""
+    ).strip()
+
+    patterns = [
+        r"\bwhat did\s+([a-z][a-z .'-]{0,40}?)\s+"
+        r"(?:complete|do|finish|work on)\b",
+
+        r"\bwhat has\s+([a-z][a-z .'-]{0,40}?)\s+"
+        r"(?:completed|done|finished)\b",
+
+        r"\bassigned to\s+([a-z][a-z .'-]{0,40}?)"
+        r"(?:\s|$)",
+
+        r"\bcompleted by\s+([a-z][a-z .'-]{0,40}?)"
+        r"(?:\s|$)",
+    ]
+
+    for pattern in patterns:
+        match = re.search(
+            pattern,
+            text,
+            flags=re.IGNORECASE,
+        )
+
+        if match:
+            return (
+                match.group(1)
+                .strip()
+                .title()
+            )
+
+    return ""
+
+
+def _doughy_status_from_question(prompt):
+    text = str(
+        prompt or ""
+    ).lower()
+
+    if re.search(
+        r"\b(completed|complete|finished|done)\b",
+        text,
+    ):
+        return "completed"
+
+    if re.search(
+        r"\bverified\b",
+        text,
+    ):
+        return "verified"
+
+    if re.search(
+        r"\bsubmitted\b",
+        text,
+    ):
+        return "submitted"
+
+    if re.search(
+        r"\bin progress\b",
+        text,
+    ):
+        return "in progress"
+
+    if re.search(
+        r"\bopen\b",
+        text,
+    ):
+        return "open"
+
+    return ""
+
+
+def _doughy_module_from_question(
+    prompt,
+    page_name="dashboard",
+):
+    text = str(
+        prompt or ""
+    ).lower()
+
+    has_range = bool(
+        re.search(
+            r"\b("
+            r"last week|this week|"
+            r"between|from .* to|history"
+            r")\b",
+            text,
+        )
+    )
+
+    employee = (
+        _doughy_employee_from_question(
+            prompt
+        )
+    )
+
+    if (
+        "maintenance" in text
+        or employee
+        or re.search(
+            r"\b("
+            r"repair|fixed|fix|ticket|"
+            r"work order"
+            r")\b",
+            text,
+        )
+    ):
+        if (
+            employee
+            or has_range
+            or re.search(
+                r"\b("
+                r"scheduled|schedule|"
+                r"completed|complete|"
+                r"finished|done"
+                r")\b",
+                text,
+            )
+        ):
+            return "maintenance_schedule"
+
+        return "maintenance"
+
+    if (
+        "manager's walk" in text
+        or "manager walk" in text
+        or "checklist" in text
+        or "before open" in text
+        or "dayshift" in text
+        or "restock" in text
+    ):
+        if has_range:
+            return "checklist_history"
+
+        return "checklist"
+
+    if (
+        "nightly" in text
+        or "nightly numbers" in text
+        or "royalty sales" in text
+        or "food variance" in text
+        or "variable labor" in text
+        or re.search(
+            r"\badt\b",
+            text,
+        )
+    ):
+        if has_range:
+            return "nightly_history"
+
+        return "nightly_numbers"
+
+    if (
+        re.search(r"\bsvr\b", text)
+        or "store visit" in text
+    ):
+        return (
+            "svr_history"
+            if has_range
+            else "svr"
+        )
+
+    if "verification" in text:
+        return (
+            "verification_history"
+            if has_range
+            else "verification"
+        )
+
+    if (
+        "cash" in text
+        or "over short" in text
+        or "shortage" in text
+    ):
+        return (
+            "cash_history"
+            if has_range
+            else "cash"
+        )
+
+    if (
+        "hr document" in text
+        or "hr docs" in text
+        or "acknowledg" in text
+    ):
+        return "hr_documents"
+
+    if (
+        "dwp" in text
+        or "write up" in text
+        or "disciplinary" in text
+    ):
+        return "dwp"
+
+    if "form" in text:
+        return "forms"
+
+    if "prep" in text:
+        return "prep"
+
+    if (
+        re.search(
+            r"\b("
+            r"user|users|employee|employees|"
+            r"team member|team members"
+            r")\b",
+            text,
+        )
+    ):
+        return "users"
+
+    page = str(
+        page_name or "dashboard"
+    ).strip().lower()
+
+    known_modules = {
+        "checklist",
+        "maintenance",
+        "svr",
+        "verification",
+        "nightly_numbers",
+        "cash",
+        "forms",
+        "prep",
+        "dwp",
+        "hr_documents",
+    }
+
+    return (
+        page
+        if page in known_modules
+        else "dashboard"
+    )
 
 
 def _safe_attr(obj, name, default=None):
@@ -412,11 +821,82 @@ def ask():
         "endpoint": endpoint,
     }
 
-    context_bundle = build_doughy_context(
-        user_context=user_context,
-        page_context=page_context,
-        requested_store=requested_store,
-        requested_date=payload.get("date"),
+    question_dates = (
+        _doughy_dates_from_question(
+            prompt
+        )
+    )
+
+    question_store = (
+        _doughy_store_from_question(
+            prompt
+        )
+    )
+
+    requested_store = (
+        question_store
+        or requested_store
+    )
+
+    question_module = (
+        _doughy_module_from_question(
+            prompt,
+            page_name=(
+                path_context.get("section")
+                or page_name
+            ),
+        )
+    )
+
+    question_employee = (
+        _doughy_employee_from_question(
+            prompt
+        )
+    )
+
+    question_status = (
+        _doughy_status_from_question(
+            prompt
+        )
+    )
+
+    universal_page_context = {
+        **page_context,
+        "page": question_module,
+        "section": question_module,
+        "source_page": page_name,
+    }
+
+    context_bundle = (
+        build_doughy_universal_context(
+            user_context=user_context,
+            page_context=(
+                universal_page_context
+            ),
+            requested_store=(
+                requested_store
+            ),
+            requested_date=(
+                payload.get("date")
+                or question_dates.get(
+                    "requested_date"
+                )
+            ),
+            date_from=(
+                question_dates.get(
+                    "date_from"
+                )
+            ),
+            date_to=(
+                question_dates.get(
+                    "date_to"
+                )
+            ),
+            status=question_status,
+            employee=question_employee,
+            query_text=prompt,
+            limit=200,
+        )
     )
 
     if not context_bundle.get("ok"):

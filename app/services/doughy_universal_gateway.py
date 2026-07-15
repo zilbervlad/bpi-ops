@@ -1017,10 +1017,25 @@ def _maintenance_schedule_context(
             <= date_to
         )
 
-    if status:
+    normalized_status = str(
+        status or ""
+    ).strip().lower()
+
+    if normalized_status == "completed":
+        query = query.filter(
+            MaintenanceTicket.status.in_(
+                [
+                    "submitted",
+                    "verified",
+                    "completed",
+                    "closed",
+                ]
+            )
+        )
+    elif normalized_status:
         query = query.filter(
             MaintenanceTicket.status
-            == status
+            == normalized_status
         )
 
     normalized_employee = (
@@ -1127,6 +1142,7 @@ def _simple_history_context(
     date_from: date | None,
     date_to: date | None,
     status: str,
+    employee: str = "",
     limit: int,
 ) -> dict[str, Any]:
     allowed_stores = visible_store_numbers(
@@ -1223,10 +1239,39 @@ def _simple_history_context(
                 date_column <= end
             )
 
-        if status:
+        normalized_status = str(
+            status or ""
+        ).strip().lower()
+
+        if normalized_status == "completed":
+            query = query.filter(
+                MaintenanceTicket.status.in_(
+                    [
+                        "complete",
+                        "completed",
+                        "submitted",
+                        "verified",
+                        "closed",
+                    ]
+                )
+            )
+        elif normalized_status:
             query = query.filter(
                 MaintenanceTicket.status
-                == status
+                == normalized_status
+            )
+
+        normalized_employee = str(
+            employee or ""
+        ).strip()
+
+        if normalized_employee:
+            query = query.filter(
+                MaintenanceTicket
+                .assigned_to
+                .ilike(
+                    f"%{normalized_employee}%"
+                )
             )
 
     else:
@@ -1503,6 +1548,7 @@ def build_doughy_universal_context(
             date_from=parsed_from,
             date_to=parsed_to,
             status=status,
+            employee=employee,
             limit=result_limit,
         )
 

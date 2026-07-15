@@ -6,6 +6,7 @@ from app.auth.routes import login_required
 from app.models import DailyChecklist, User
 from app.services.doughy_execution import build_execution_snapshot
 from app.services.doughy_ai_service import ask_doughy_ai, doughy_ai_enabled, doughy_ai_provider
+from app.services.doughy_data_gateway import build_doughy_context
 
 from . import doughy_bp
 
@@ -247,11 +248,17 @@ def checklist_context():
     if not store:
         return jsonify(
             {
-                "ok": False,
-                "error": "No store context found.",
+                "ok": True,
+                "found": False,
+                "store": None,
+                "business_date": checklist_date.isoformat(),
+                "message": (
+                    "No single store is selected. "
+                    "All-store Doughy chat remains available."
+                ),
                 "mode": "read_only_checklist_context",
             }
-        ), 400
+        )
 
     daily = _daily_checklist_query(store, checklist_date, company_id).first()
 
@@ -354,8 +361,6 @@ def ask():
     payload = request.get_json(silent=True) or {}
 
     prompt = (payload.get("prompt") or "").strip()
-    store = (payload.get("store") or request.args.get("store") or "").strip()
-    checklist_date = _parse_date(payload.get("date") or request.args.get("date"))
 
     if not prompt:
         return jsonify({
@@ -366,54 +371,106 @@ def ask():
 
     user = _current_user()
 
-    if not store:
-        store = (
+    page_path = payload.get("path") or request.referrer or "/"
+    endpoint = payload.get("endpoint") or ""
+    page_label = payload.get("page_label") or ""
+
+    path_context = _extract_context_from_path(page_path)
+    page_name = _friendly_page_name(
+        endpoint,
+        page_label or _guess_page_from_path(page_path),
+    )
+
+    requested_store = (
+        payload.get("store")
+        or path_context.get("store_from_path")
+        or session.get("user_store")
+        or _safe_attr(user, "store_number", None)
+    )
+
+    user_context = {
+        "user_id": _safe_attr(user, "id", None),
+        "role": (
+            session.get("user_role")
+            or _safe_attr(user, "role", None)
+        ),
+        "user_area": (
+            session.get("user_area")
+            or _safe_attr(user, "area_name", None)
+        ),
+        "user_store": (
             session.get("user_store")
             or _safe_attr(user, "store_number", None)
-            or _safe_attr(user, "store", None)
-            or _safe_attr(user, "primary_store", None)
-        )
+        ),
+    }
 
-    if not store:
+    page_context = {
+        "page": page_name,
+        "path": path_context.get("path"),
+        "section": path_context.get("section"),
+        "resource_id": path_context.get("resource_id"),
+        "endpoint": endpoint,
+    }
+
+    context_bundle = build_doughy_context(
+        user_context=user_context,
+        page_context=page_context,
+        requested_store=requested_store,
+        requested_date=payload.get("date"),
+    )
+
+    if not context_bundle.get("ok"):
         return jsonify({
             "ok": False,
-            "error": "No store context found.",
+            "error": context_bundle.get("error")
+            or "Doughy context could not be loaded.",
             "mode": "read_only_doughy_ask",
-        }), 400
-
-    execution_snapshot = build_execution_snapshot(str(store), checklist_date)
-
-    checklist_context = {
-        "store": str(store),
-        "business_date": checklist_date.isoformat(),
-        "execution_snapshot": execution_snapshot,
-        "doughy_read": execution_snapshot.get("doughy_read"),
-    }
+        }), 403
 
     uses_ai = False
     ai_error = None
 
     if doughy_ai_enabled():
         try:
-            answer = ask_doughy_ai(prompt, execution_snapshot)
+            answer = ask_doughy_ai(
+                prompt,
+                context_bundle,
+            )
             uses_ai = True
         except Exception as exc:
             ai_error = str(exc)
-            answer = _build_safe_doughy_answer(prompt, checklist_context)
+            answer = (
+                "Doughy loaded the BPI Ops context, but the Brain "
+                "could not answer right now."
+            )
     else:
-        answer = _build_safe_doughy_answer(prompt, checklist_context)
+        answer = (
+            "Doughy loaded the read-only BPI Ops context, but the "
+            "Brain provider is not enabled."
+        )
 
     return jsonify({
         "ok": True,
         "answer": answer,
-        "store": str(store),
-        "business_date": checklist_date.isoformat(),
-        "mode": "read_only_doughy_ask",
+        "mode": "read_only_bpi_data_gateway",
         "uses_ai": uses_ai,
         "ai_provider": doughy_ai_provider() if uses_ai else None,
         "ai_error": ai_error,
-        "execution_snapshot": execution_snapshot,
+        "context_summary": {
+            "page": page_name,
+            "requested_store": requested_store,
+            "visible_store_count": (
+                context_bundle.get("scope") or {}
+            ).get("visible_store_count"),
+            "has_store_context": bool(
+                context_bundle.get("store_context")
+            ),
+            "has_scope_rollup": bool(
+                context_bundle.get("scope_rollup")
+            ),
+        },
     })
+
 
 @doughy_bp.route("/execution-feed")
 @login_required

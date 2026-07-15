@@ -1025,9 +1025,10 @@ def _maintenance_schedule_context(
         query = query.filter(
             MaintenanceTicket.status.in_(
                 [
+                    "complete",
+                    "completed",
                     "submitted",
                     "verified",
-                    "completed",
                     "closed",
                 ]
             )

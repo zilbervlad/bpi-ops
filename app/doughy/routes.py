@@ -803,17 +803,18 @@ def ask():
         "maintenance",
     }
 
-    requested_store = (
-        payload.get("store")
-        or path_context.get("store_from_path")
-    )
-
-    if (
-        not requested_store
-        and user_role not in broad_scope_roles
-    ):
+    # For broad-access roles, the floating Doughy chat searches
+    # the user's full visible scope unless the question explicitly
+    # names a store. Page filters are context hints, not hard limits.
+    if user_role in broad_scope_roles:
         requested_store = (
-            session.get("user_store")
+            path_context.get("store_from_path")
+        )
+    else:
+        requested_store = (
+            payload.get("store")
+            or path_context.get("store_from_path")
+            or session.get("user_store")
             or _safe_attr(
                 user,
                 "store_number",

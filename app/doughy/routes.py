@@ -249,9 +249,14 @@ def _doughy_employee_from_question(prompt):
 
 
 def _doughy_status_from_question(prompt):
-    text = str(
-        prompt or ""
-    ).lower()
+    text = (
+        str(
+            prompt or ""
+        )
+        .lower()
+        .replace("’", "'")
+        .replace("‘", "'")
+    )
 
     if re.search(
         r"\b(completed|complete|finished|done)\b",
@@ -290,9 +295,14 @@ def _doughy_module_from_question(
     prompt,
     page_name="dashboard",
 ):
-    text = str(
-        prompt or ""
-    ).lower()
+    text = (
+        str(
+            prompt or ""
+        )
+        .lower()
+        .replace("’", "'")
+        .replace("‘", "'")
+    )
 
     has_range = bool(
         re.search(

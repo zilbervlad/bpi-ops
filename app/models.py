@@ -1017,3 +1017,47 @@ class PerkEvent(db.Model):
 
     offer = db.relationship("PerkOffer", backref="events")
 
+
+
+class DoughyDailyBriefLog(db.Model):
+    __tablename__ = "doughy_daily_brief_logs"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "brief_date",
+            "recipient_user_id",
+            name="uq_doughy_daily_brief_date_recipient",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    brief_date = db.Column(db.Date, nullable=False, index=True)
+    recipient_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+
+    recipient_email = db.Column(db.String(255), nullable=False)
+    recipient_role = db.Column(db.String(50), nullable=True)
+    scope_label = db.Column(db.String(160), nullable=True)
+
+    status = db.Column(
+        db.String(30),
+        nullable=False,
+        default="pending",
+    )
+    error_message = db.Column(db.Text, nullable=True)
+
+    sent_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    recipient = db.relationship(
+        "User",
+        foreign_keys=[recipient_user_id],
+    )

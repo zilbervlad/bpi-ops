@@ -127,6 +127,7 @@ def create_app():
     from app.forms.routes import forms_bp
     from app.hr_documents.routes import hr_documents_bp
     from app.connect_admin import connect_admin_bp
+    from app.doughy_daily_brief import doughy_daily_brief_bp
 
     # Register blueprints
 
@@ -188,6 +189,7 @@ def create_app():
     app.register_blueprint(perks_bp)
     app.register_blueprint(perks_api_bp)
     app.register_blueprint(doughy_api_bp)
+    app.register_blueprint(doughy_daily_brief_bp)
 
     @app.route("/create-db")
     def create_db():

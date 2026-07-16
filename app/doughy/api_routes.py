@@ -496,9 +496,20 @@ def _ticket_dict(ticket):
         "estimated_minutes": ticket.estimated_minutes,
         "priority": ticket.priority,
         "source_type": ticket.source_type,
+        "completion_note": ticket.completion_note or "",
+        "completed_at": (
+            ticket.completed_at.isoformat()
+            if ticket.completed_at
+            else None
+        ),
         "created_at": (
             ticket.created_at.isoformat()
             if ticket.created_at
+            else None
+        ),
+        "updated_at": (
+            ticket.updated_at.isoformat()
+            if ticket.updated_at
             else None
         ),
     }
@@ -691,6 +702,8 @@ def _action_preview(payload, user):
 
         elif action == "reopen_ticket":
             proposed["status"] = "open"
+            proposed["completion_note"] = None
+            proposed["completed_at"] = None
 
         else:
             if "title" in payload:
@@ -1117,15 +1130,10 @@ def maintenance_action_execute():
                 )
 
                 ticket.status = "complete"
-
-                if completion_note:
-                    existing = ticket.details or ""
-                    divider = "\n\n" if existing else ""
-
-                    ticket.details = (
-                        f"{existing}{divider}"
-                        f"Completion note: {completion_note}"
-                    )
+                ticket.completion_note = (
+                    completion_note or None
+                )
+                ticket.completed_at = datetime.utcnow()
 
             else:
                 ticket.title = proposed["title"]
@@ -1149,6 +1157,10 @@ def maintenance_action_execute():
                     proposed.get("priority")
                     or "normal"
                 )
+
+                if action == "reopen_ticket":
+                    ticket.completion_note = None
+                    ticket.completed_at = None
 
         db.session.flush()
 
@@ -1239,7 +1251,27 @@ def maintenance_equipment():
     if error_response:
         return error_response
 
-    visible_stores = _visible_store_numbers_for_user(user)
+    company_scope = str(
+        payload.get("company_scope") or ""
+    ).strip().lower() in {"1", "true", "yes", "on"}
+
+    if (
+        company_scope
+        and user.role in {
+            "admin",
+            "maintenance",
+            "supervisor",
+        }
+    ):
+        visible_stores = {
+            row.store_number
+            for row in Store.query.filter(
+                Store.is_active == True
+            ).all()
+            if row.store_number
+        }
+    else:
+        visible_stores = _visible_store_numbers_for_user(user)
 
     if request.method == "GET":
         requested_store = _clean_text(

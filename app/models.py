@@ -457,7 +457,16 @@ class MaintenanceTicket(db.Model):
     estimated_minutes = db.Column(db.Integer, nullable=True)
     priority = db.Column(db.String(30), nullable=False, default="normal")
 
+    completion_note = db.Column(db.Text, nullable=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
 
     svr_report = db.relationship("SVRReport")
 

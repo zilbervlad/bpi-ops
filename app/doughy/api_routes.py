@@ -385,9 +385,14 @@ def _resolve_requesting_user(payload):
             user = None
 
     if not user and username:
-        user = User.query.filter_by(
-            username=username,
-        ).first()
+        user = (
+            User.query
+            .filter(
+                db.func.lower(User.username)
+                == username.lower()
+            )
+            .first()
+        )
 
     if not user or not user.is_active:
         return None

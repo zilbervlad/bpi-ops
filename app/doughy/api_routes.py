@@ -890,7 +890,27 @@ def maintenance_tickets():
     if error_response:
         return error_response
 
-    visible_stores = _visible_store_numbers_for_user(user)
+    company_scope = str(
+        payload.get("company_scope") or ""
+    ).strip().lower() in {"1", "true", "yes", "on"}
+
+    if (
+        company_scope
+        and user.role in {
+            "admin",
+            "maintenance",
+            "supervisor",
+        }
+    ):
+        visible_stores = {
+            row.store_number
+            for row in Store.query.filter(
+                Store.is_active == True
+            ).all()
+            if row.store_number
+        }
+    else:
+        visible_stores = _visible_store_numbers_for_user(user)
 
     requested_store = _clean_text(
         payload.get("store_number")

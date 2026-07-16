@@ -1338,12 +1338,12 @@ def render_email_body(
         data.get("maintenance_completed_yesterday") or []
     )
 
-    if maintenance_completed_yesterday:
-        activity_lines.append(
-            "Maintenance completed yesterday: "
-            f"{len(maintenance_completed_yesterday)}"
-        )
+    activity_lines.append(
+        "Maintenance completed yesterday: "
+        f"{len(maintenance_completed_yesterday)}"
+    )
 
+    if maintenance_completed_yesterday:
         activity_lines.extend(
             (
                 f"  - Store {row.store_number}: "
@@ -1351,12 +1351,16 @@ def render_email_body(
             )
             for row in maintenance_completed_yesterday
         )
+    else:
+        activity_lines.append("  - None")
 
-    if data["dwps"]:
-        activity_lines.append(
-            f"DWPs submitted yesterday: {len(data['dwps'])}"
-        )
+    dwps_submitted = data.get("dwps") or []
 
+    activity_lines.append(
+        f"DWPs submitted yesterday: {len(dwps_submitted)}"
+    )
+
+    if dwps_submitted:
         activity_lines.extend(
             (
                 f"  - Store {row.store_number}: "
@@ -1366,8 +1370,10 @@ def render_email_body(
                 f"Submitted by "
                 f"{row.submitted_by_name_snapshot or 'Submitter not listed'}"
             )
-            for row in data["dwps"]
+            for row in dwps_submitted
         )
+    else:
+        activity_lines.append("  - None")
 
     if data["hr_signed"]:
         activity_lines.append(

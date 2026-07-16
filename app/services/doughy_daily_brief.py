@@ -632,15 +632,68 @@ def render_email_body(
     )
 
 def eligible_recipients():
-    return (
+    users = (
         User.query
         .filter(
-            User.role.in_(RECIPIENT_ROLES),
+            User.role.in_(list(RECIPIENT_ROLES)),
             User.is_active.is_(True),
             User.email_enabled.is_(True),
         )
-        .order_by(User.role.asc(), User.name.asc())
+        .order_by(User.id.desc())
         .all()
+    )
+
+    role_priority = {
+        "admin": 0,
+        "hr": 1,
+        "supervisor": 2,
+        "general_manager": 3,
+    }
+
+    selected_by_email = {}
+
+    for user in users:
+        email = (
+            user.get_notification_email() or ""
+        ).strip().lower()
+
+        if not email:
+            continue
+
+        existing = selected_by_email.get(email)
+
+        if existing is None:
+            selected_by_email[email] = user
+            continue
+
+        user_priority = role_priority.get(
+            (user.role or "").strip().lower(),
+            99,
+        )
+        existing_priority = role_priority.get(
+            (existing.role or "").strip().lower(),
+            99,
+        )
+
+        if user_priority < existing_priority:
+            selected_by_email[email] = user
+            continue
+
+        if (
+            user_priority == existing_priority
+            and user.id > existing.id
+        ):
+            selected_by_email[email] = user
+
+    return sorted(
+        selected_by_email.values(),
+        key=lambda user: (
+            role_priority.get(
+                (user.role or "").strip().lower(),
+                99,
+            ),
+            (user.name or "").lower(),
+        ),
     )
 
 
@@ -651,16 +704,30 @@ def reserve_log(
     scope_label: str,
     force: bool,
 ):
-    existing = DoughyDailyBriefLog.query.filter_by(
-        brief_date=brief_date,
-        recipient_user_id=user.id,
-    ).first()
+    normalized_email = (email or "").strip().lower()
 
-    if existing and not force:
+    existing = (
+        DoughyDailyBriefLog.query
+        .filter(
+            DoughyDailyBriefLog.brief_date == brief_date,
+            db.func.lower(
+                DoughyDailyBriefLog.recipient_email
+            ) == normalized_email,
+        )
+        .order_by(DoughyDailyBriefLog.id.desc())
+        .first()
+    )
+
+    if (
+        existing
+        and existing.status == "sent"
+        and not force
+    ):
         return None, "already_sent"
 
     if existing:
-        existing.recipient_email = email
+        existing.recipient_user_id = user.id
+        existing.recipient_email = normalized_email
         existing.recipient_role = user.role
         existing.scope_label = scope_label
         existing.status = "pending"
@@ -672,7 +739,7 @@ def reserve_log(
     log = DoughyDailyBriefLog(
         brief_date=brief_date,
         recipient_user_id=user.id,
-        recipient_email=email,
+        recipient_email=normalized_email,
         recipient_role=user.role,
         scope_label=scope_label,
         status="pending",

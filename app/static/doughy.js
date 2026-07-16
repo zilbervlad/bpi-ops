@@ -901,8 +901,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 "/doughy/ask",
                 {
                     method: "POST",
+                    cache: "no-store",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        "Cache-Control": "no-cache"
                     },
                     body: JSON.stringify({
                         prompt: prompt,

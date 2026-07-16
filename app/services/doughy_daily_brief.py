@@ -487,36 +487,145 @@ def build_doughy_context(
 
 
 def fallback_doughy_take(data: dict) -> str:
-    concerns = []
+    rows = data["checklist_rows"]
 
-    if data["missing_checklists"]:
-        concerns.append(
-            f"{len(data['missing_checklists'])} store(s) had no checklist record"
+    def value(row, key):
+        current = row.get(key)
+        return current if current is not None else 0
+
+    def severity(row):
+        opening = value(row, "opening")
+        restock = value(row, "restock")
+        walk = value(row, "manager_walk")
+        integrity = value(row, "integrity")
+
+        if (
+            integrity < 50
+            or opening < 75
+            or restock < 50
+            or walk < 50
+        ):
+            return 2
+
+        if (
+            integrity < 70
+            or opening < 90
+            or restock < 90
+            or walk < 90
+        ):
+            return 1
+
+        return 0
+
+    priority = sorted(
+        [row for row in rows if severity(row) == 2],
+        key=lambda row: (
+            value(row, "integrity"),
+            value(row, "manager_walk"),
+            value(row, "restock"),
+            value(row, "opening"),
+        ),
+    )
+
+    watch = sorted(
+        [row for row in rows if severity(row) == 1],
+        key=lambda row: (
+            value(row, "integrity"),
+            value(row, "manager_walk"),
+        ),
+    )
+
+    strong = sorted(
+        [row for row in rows if severity(row) == 0],
+        key=lambda row: row["store_number"],
+    )
+
+    sentences = []
+
+    if strong:
+        strong_stores = ", ".join(
+            row["store_number"]
+            for row in strong[:4]
         )
 
-    if data["missed_walks"]:
-        concerns.append(
-            f"{len(data['missed_walks'])} store(s) need Manager's Walk review"
+        sentences.append(
+            f"{strong_stores} delivered the strongest checklist "
+            f"execution yesterday."
+        )
+
+    if priority:
+        top = priority[0]
+
+        problems = []
+
+        if value(top, "opening") < 90:
+            problems.append(
+                f"Open finished at {value(top, 'opening'):.0f}%"
+            )
+
+        if value(top, "restock") < 90:
+            problems.append(
+                f"3 PM Restock finished at "
+                f"{value(top, 'restock'):.0f}%"
+            )
+
+        if value(top, "manager_walk") < 90:
+            problems.append(
+                f"Manager's Walk finished at "
+                f"{value(top, 'manager_walk'):.0f}%"
+            )
+
+        if value(top, "integrity") < 70:
+            problems.append(
+                f"integrity was {value(top, 'integrity'):.1f}"
+            )
+
+        sentences.append(
+            f"Today’s first follow-up should be store "
+            f"{top['store_number']}: "
+            + ", ".join(problems)
+            + "."
+        )
+
+        remaining_priority = [
+            row["store_number"]
+            for row in priority[1:4]
+        ]
+
+        if remaining_priority:
+            sentences.append(
+                "Additional priority stores are "
+                + ", ".join(remaining_priority)
+                + "."
+            )
+
+    elif watch:
+        watch_stores = ", ".join(
+            row["store_number"]
+            for row in watch[:4]
+        )
+
+        sentences.append(
+            f"The main checklist follow-up is with "
+            f"{watch_stores}; these stores were close, but still had "
+            f"section or integrity gaps."
         )
 
     if data["missing_nightly"]:
-        concerns.append(
-            f"{len(data['missing_nightly'])} store(s) missed Nightly Numbers"
+        sentences.append(
+            "Nightly Numbers are missing from "
+            + ", ".join(data["missing_nightly"])
+            + "."
         )
 
-    if not concerns:
+    if not sentences:
         return (
-            "Yesterday was clean across the visible scope. "
-            "No major exception jumped out, so today's job is to "
-            "protect the consistency and close any routine follow-up."
+            "Yesterday’s reporting was complete across the visible "
+            "stores, with no major checklist or Nightly Numbers "
+            "exceptions requiring follow-up."
         )
 
-    return (
-        "Yesterday's main follow-up: "
-        + "; ".join(concerns[:4])
-        + ". Start with the oldest and highest-risk exceptions."
-    )
-
+    return " ".join(sentences)
 
 def generate_doughy_take(
     user: User,
@@ -524,12 +633,16 @@ def generate_doughy_take(
     data: dict,
 ) -> str:
     prompt = (
-        "Write Doughy's morning executive take for this BPI Ops daily email. "
+        "Write Doughy's morning operations take for this BPI Ops email. "
         "Use only the supplied permission-filtered facts. "
-        "Write 1 short paragraph, about 70 to 120 words. "
-        "Call out what went well, the biggest risks, and the top priorities "
-        "for today. Do not recommend discipline. Do not invent explanations. "
-        "Use direct operations language."
+        "Write one concise paragraph of 80 to 130 words. "
+        "Name the strongest stores. Name the two or three stores requiring "
+        "the most urgent follow-up and state the exact checklist, integrity, "
+        "Manager's Walk, 3 PM Restock, or Nightly Numbers facts driving that "
+        "priority. Distinguish a small miss from a serious execution failure. "
+        "End with a practical order of follow-up for today. "
+        "Do not use generic phrases such as 'some stores need review.' "
+        "Do not recommend discipline and do not invent causes."
     )
 
     try:
@@ -654,151 +767,187 @@ def render_email_body(
             else "Not recorded"
         )
 
-    def checklist_needs_review(row):
-        return (
-            row["opening"] is None
-            or row["opening"] < 100
-            or row["restock"] is None
-            or row["restock"] < 100
-            or row["manager_walk"] is None
-            or row["manager_walk"] < 100
-            or row["integrity"] < 70
+    def severity(row):
+        opening = row["opening"] if row["opening"] is not None else 0
+        restock = row["restock"] if row["restock"] is not None else 0
+        walk = (
+            row["manager_walk"]
+            if row["manager_walk"] is not None
+            else 0
         )
+        integrity = row["integrity"]
 
-    ordered_checklists = sorted(
-        data["checklist_rows"],
+        if (
+            integrity < 50
+            or opening < 75
+            or restock < 50
+            or walk < 50
+        ):
+            return "PRIORITY"
+
+        if (
+            integrity < 70
+            or opening < 90
+            or restock < 90
+            or walk < 90
+        ):
+            return "WATCH"
+
+        return "STRONG"
+
+    priority_rows = sorted(
+        [
+            row
+            for row in data["checklist_rows"]
+            if severity(row) == "PRIORITY"
+        ],
         key=lambda row: (
-            not checklist_needs_review(row),
             row["integrity"],
             row["manager_walk"]
             if row["manager_walk"] is not None
             else -1,
+            row["restock"]
+            if row["restock"] is not None
+            else -1,
+        ),
+    )
+
+    watch_rows = sorted(
+        [
+            row
+            for row in data["checklist_rows"]
+            if severity(row) == "WATCH"
+        ],
+        key=lambda row: (
+            row["integrity"],
             row["store_number"],
         ),
     )
 
-    checklist_lines = []
-
-    for row in ordered_checklists:
-        label = (
-            "REVIEW"
-            if checklist_needs_review(row)
-            else "GOOD"
-        )
-
-        checklist_lines.extend([
-            f"{row['store_number']} — {label}",
-            (
-                f"  Open {pct(row['opening'])}  ·  "
-                f"3 PM {pct(row['restock'])}  ·  "
-                f"Manager's Walk {pct(row['manager_walk'])}  ·  "
-                f"Integrity {row['integrity']:.1f}"
-            ),
-        ])
-
-    nightly_lines = []
-
-    for report in data["nightly_reports"]:
-        nightly_lines.extend([
-            (
-                f"{report.store_number} — "
-                f"Sales {format_optional_number(report.royalty_sales)}  ·  "
-                f"Labor {format_optional_number(report.variable_labor, '%')}  ·  "
-                f"Food {format_optional_number(report.food_variance, '%')}"
-            ),
-            (
-                f"  ADT {format_optional_number(report.adt)}  ·  "
-                f"Load {report.load_time or '—'}  ·  "
-                f"Cash {format_optional_number(report.cash_diff)}"
-            ),
-        ])
-
-    svr_lines = [
-        (
-            f"- Store {row.store_number}: "
-            f"{row.supervisor_name or 'Supervisor not listed'}"
-        )
-        for row in data["svr_reports"]
-    ]
-
-    maintenance_lines = [
-        f"- Store {row.store_number}: {row.title}"
-        for row in data["completed_maintenance"]
-    ]
-
-    dwp_lines = [
-        (
-            f"- Store {row.store_number}: "
-            f"{row.team_member_name_snapshot} — "
-            f"{row.discussion_type} / {row.category} "
-            f"({row.submitted_by_name_snapshot})"
-        )
-        for row in data["dwps"]
-    ]
-
-    signed_lines = [
-        (
-            f"- Store {row.user.store_number or '—'}: "
-            f"{row.user.name} signed "
-            f"“{row.document.title}”"
-        )
-        for row in data["hr_signed"]
-    ]
-
-    review_count = sum(
-        1
-        for row in data["checklist_rows"]
-        if checklist_needs_review(row)
+    strong_rows = sorted(
+        [
+            row
+            for row in data["checklist_rows"]
+            if severity(row) == "STRONG"
+        ],
+        key=lambda row: row["store_number"],
     )
 
-    good_count = (
-        len(data["checklist_rows"])
-        - review_count
+    def checklist_block(row):
+        return (
+            f"{row['store_number']}\n"
+            f"  Open: {pct(row['opening'])}\n"
+            f"  3 PM Restock: {pct(row['restock'])}\n"
+            f"  Manager's Walk: {pct(row['manager_walk'])}\n"
+            f"  Integrity: {row['integrity']:.1f}"
+        )
+
+    priority_text = "\n\n".join(
+        checklist_block(row)
+        for row in priority_rows
     )
+
+    watch_text = "\n\n".join(
+        checklist_block(row)
+        for row in watch_rows
+    )
+
+    strong_text = "\n".join(
+        (
+            f"- {row['store_number']}: "
+            f"Open {pct(row['opening'])}, "
+            f"3 PM {pct(row['restock'])}, "
+            f"Walk {pct(row['manager_walk'])}, "
+            f"Integrity {row['integrity']:.1f}"
+        )
+        for row in strong_rows
+    )
+
+    nightly_lines = [
+        (
+            f"{report.store_number}\n"
+            f"  Sales: "
+            f"{format_optional_number(report.royalty_sales)}\n"
+            f"  Labor: "
+            f"{format_optional_number(report.variable_labor, '%')}  |  "
+            f"Food: "
+            f"{format_optional_number(report.food_variance, '%')}\n"
+            f"  ADT: {format_optional_number(report.adt)}  |  "
+            f"Load: {report.load_time or '—'}  |  "
+            f"Cash: {format_optional_number(report.cash_diff)}"
+        )
+        for report in data["nightly_reports"]
+    ]
+
+    activity_lines = []
+
+    if data["svr_reports"]:
+        activity_lines.append(
+            f"SVRs completed: {len(data['svr_reports'])}"
+        )
+
+        activity_lines.extend(
+            (
+                f"  - Store {row.store_number}: "
+                f"{row.supervisor_name or 'Supervisor not listed'}"
+            )
+            for row in data["svr_reports"]
+        )
+
+    if data["completed_maintenance"]:
+        activity_lines.append(
+            f"Maintenance completed: "
+            f"{len(data['completed_maintenance'])}"
+        )
+
+        activity_lines.extend(
+            f"  - Store {row.store_number}: {row.title}"
+            for row in data["completed_maintenance"]
+        )
+
+    if data["dwps"]:
+        activity_lines.append(
+            f"DWPs submitted: {len(data['dwps'])}"
+        )
+
+    if data["hr_signed"]:
+        activity_lines.append(
+            f"HR documents signed: {len(data['hr_signed'])}"
+        )
 
     return (
         f"Good morning {user.name},\n\n"
 
         f"DOUGHY'S MORNING BRIEF\n"
         f"{date_label}\n"
-        f"{scope_label}\n\n"
+        f"Scope: {scope_label}\n\n"
 
         f"DOUGHY'S TAKE\n"
         f"{doughy_take}\n\n"
 
-        f"AT A GLANCE\n"
-        f"Stores in scope: {len(data['stores'])}\n"
-        f"Checklist good: {good_count}\n"
-        f"Checklist needing review: {review_count}\n"
-        f"Nightly Numbers submitted: "
-        f"{len(data['nightly_reports'])}/{len(data['stores'])}\n"
-        f"SVRs completed: {len(data['svr_reports'])}\n"
-        f"Maintenance completed: {len(data['completed_maintenance'])}\n"
-        f"DWPs submitted: {len(data['dwps'])}\n"
-        f"HR documents signed: {len(data['hr_signed'])}\n\n"
-
-        f"CHECKLIST HEALTH\n"
-        f"Missing records: "
-        f"{render_store_list(data['missing_checklists'])}\n"
-        f"Stores needing review are listed first.\n\n"
-        f"{chr(10).join(checklist_lines) if checklist_lines else '- No checklist records'}\n\n"
-
-        f"NIGHTLY NUMBERS\n"
-        f"Missing: "
+        f"EXECUTIVE SNAPSHOT\n"
+        f"Priority stores: {len(priority_rows)}\n"
+        f"Watch stores: {len(watch_rows)}\n"
+        f"Strong stores: {len(strong_rows)}\n"
+        f"Nightly Numbers: "
+        f"{len(data['nightly_reports'])}/{len(data['stores'])} submitted\n"
+        f"Missing Nightly Numbers: "
         f"{render_store_list(data['missing_nightly'])}\n\n"
+
+        f"PRIORITY FOLLOW-UP\n"
+        f"{priority_text if priority_text else '- None'}\n\n"
+
+        f"WATCH LIST\n"
+        f"{watch_text if watch_text else '- None'}\n\n"
+
+        f"STRONG EXECUTION\n"
+        f"{strong_text if strong_text else '- None'}\n\n"
+
+        f"NIGHTLY NUMBERS DETAIL\n"
         f"{chr(10).join(nightly_lines) if nightly_lines else '- None submitted'}\n\n"
 
-        f"SVRs COMPLETED\n"
-        f"{chr(10).join(svr_lines) if svr_lines else '- None'}\n\n"
-
-        f"MAINTENANCE COMPLETED\n"
-        f"{chr(10).join(maintenance_lines) if maintenance_lines else '- None'}\n\n"
-
-        f"DWPs SUBMITTED\n"
-        f"{chr(10).join(dwp_lines) if dwp_lines else '- None'}\n\n"
-
-        f"HR DOCUMENTS SIGNED\n"
-        f"{chr(10).join(signed_lines) if signed_lines else '- None'}\n\n"
+        f"OTHER ACTIVITY\n"
+        f"{chr(10).join(activity_lines) if activity_lines else '- None'}\n\n"
 
         f"- Doughy\n"
         f"BPI Ops"

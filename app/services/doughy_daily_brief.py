@@ -114,18 +114,29 @@ def recipient_scope_label(user: User, stores: list[Store]) -> str:
     return f"{len(stores)} store(s)"
 
 
-def manager_walk_percent(checklist: DailyChecklist):
+def checklist_section_percent(
+    checklist: DailyChecklist,
+    section_name: str,
+):
     items = [
         item
         for item in checklist.items
-        if item.section_name == "Manager's Walk"
+        if item.section_name == section_name
     ]
 
     if not items:
         return None
 
-    completed = sum(1 for item in items if item.is_completed)
-    return round((completed / len(items)) * 100, 1)
+    completed = sum(
+        1
+        for item in items
+        if item.is_completed
+    )
+
+    return round(
+        (completed / len(items)) * 100,
+        1,
+    )
 
 
 def format_optional_number(value, suffix=""):
@@ -214,23 +225,6 @@ def collect_scope_data(
         else []
     )
 
-    open_maintenance = (
-        MaintenanceTicket.query
-        .filter(
-            MaintenanceTicket.store_number.in_(store_numbers),
-            ~MaintenanceTicket.status.in_(
-                ["verified", "cancelled"]
-            ),
-        )
-        .order_by(
-            MaintenanceTicket.priority.desc(),
-            MaintenanceTicket.created_at.asc(),
-        )
-        .all()
-        if store_numbers
-        else []
-    )
-
     dwps = (
         DWPRecord.query
         .filter(
@@ -274,21 +268,12 @@ def collect_scope_data(
         else []
     )
 
-    hr_pending = (
-        hr_base
-        .filter(
-            HRDocument.is_active.is_(True),
-            HRDocumentRecipient.status != "acknowledged",
-        )
-        .order_by(
-            HRDocument.due_date.asc().nullslast(),
-            User.store_number.asc(),
-            HRDocumentRecipient.assigned_at.asc(),
-        )
-        .all()
-        if store_numbers
-        else []
-    )
+    completed_maintenance = [
+        row
+        for row in maintenance_created
+        if (row.status or "").strip().lower()
+        in {"complete", "completed", "verified"}
+    ]
 
     checklist_by_store = {
         row.store_number: row
@@ -321,41 +306,40 @@ def collect_scope_data(
         if checklist:
             checklist_rows.append({
                 "store_number": store.store_number,
-                "completion": round(
-                    checklist.percent_complete or 0,
-                    1,
+                "opening": checklist_section_percent(
+                    checklist,
+                    "Before Open / Before 10:30",
+                ),
+                "restock": checklist_section_percent(
+                    checklist,
+                    "3-O'Clock Restock",
+                ),
+                "manager_walk": checklist_section_percent(
+                    checklist,
+                    "Manager's Walk",
                 ),
                 "integrity": round(
                     checklist.integrity_score or 0,
                     1,
                 ),
-                "manager_walk": manager_walk_percent(checklist),
                 "status": checklist.status,
             })
         elif exception:
             checklist_rows.append({
                 "store_number": store.store_number,
-                "completion": round(
-                    exception.percent_complete or 0,
-                    1,
-                ),
-                "integrity": round(
-                    exception.integrity_score or 0,
-                    1,
-                ),
+                "opening": None,
+                "restock": None,
                 "manager_walk": (
                     0.0
                     if exception.manager_walk_missed
                     else None
                 ),
+                "integrity": round(
+                    exception.integrity_score or 0,
+                    1,
+                ),
                 "status": "auto closed",
             })
-
-    completed_checklists = sum(
-        1
-        for row in checklist_rows
-        if row["completion"] >= 100
-    )
 
     low_integrity = [
         row
@@ -368,14 +352,6 @@ def collect_scope_data(
         for row in checklist_rows
         if row["manager_walk"] is None
         or row["manager_walk"] < 100
-    ]
-
-    overdue_hr = [
-        row
-        for row in hr_pending
-        if row.document
-        and row.document.due_date
-        and row.document.due_date < now_et().date()
     ]
 
     nightly_rows = []
@@ -396,7 +372,6 @@ def collect_scope_data(
         "stores": stores,
         "store_numbers": store_numbers,
         "checklist_rows": checklist_rows,
-        "completed_checklists": completed_checklists,
         "missing_checklists": missing_checklists,
         "low_integrity": low_integrity,
         "missed_walks": missed_walks,
@@ -404,12 +379,9 @@ def collect_scope_data(
         "nightly_rows": nightly_rows,
         "missing_nightly": missing_nightly,
         "svr_reports": svr_reports,
-        "maintenance_created": maintenance_created,
-        "open_maintenance": open_maintenance,
+        "completed_maintenance": completed_maintenance,
         "dwps": dwps,
         "hr_signed": hr_signed,
-        "hr_pending": hr_pending,
-        "hr_overdue": overdue_hr,
     }
 
 
@@ -429,7 +401,6 @@ def build_doughy_context(
         "business_date": data["brief_date"].isoformat(),
         "summary": {
             "visible_stores": len(data["stores"]),
-            "checklists_completed": data["completed_checklists"],
             "checklists_missing": data["missing_checklists"],
             "low_integrity_stores": [
                 row["store_number"]
@@ -444,16 +415,11 @@ def build_doughy_context(
             ),
             "nightly_numbers_missing": data["missing_nightly"],
             "svrs_completed": len(data["svr_reports"]),
-            "maintenance_created": len(
-                data["maintenance_created"]
-            ),
-            "open_maintenance": len(
-                data["open_maintenance"]
+            "maintenance_completed": len(
+                data["completed_maintenance"]
             ),
             "dwps_submitted": len(data["dwps"]),
             "hr_documents_signed": len(data["hr_signed"]),
-            "hr_documents_pending": len(data["hr_pending"]),
-            "hr_documents_overdue": len(data["hr_overdue"]),
         },
         "checklists": data["checklist_rows"][:40],
         "nightly_numbers": data["nightly_rows"][:40],
@@ -468,19 +434,6 @@ def build_doughy_context(
             }
             for row in data["dwps"][:30]
         ],
-        "hr_pending": [
-            {
-                "store_number": row.user.store_number,
-                "employee": row.user.name,
-                "document": row.document.title,
-                "due_date": (
-                    row.document.due_date.isoformat()
-                    if row.document.due_date
-                    else None
-                ),
-            }
-            for row in data["hr_pending"][:40]
-        ],
         "maintenance": [
             {
                 "store_number": row.store_number,
@@ -488,7 +441,7 @@ def build_doughy_context(
                 "status": row.status,
                 "priority": row.priority,
             }
-            for row in data["open_maintenance"][:30]
+            for row in data["completed_maintenance"][:30]
         ],
     }
 
@@ -509,16 +462,6 @@ def fallback_doughy_take(data: dict) -> str:
     if data["missing_nightly"]:
         concerns.append(
             f"{len(data['missing_nightly'])} store(s) missed Nightly Numbers"
-        )
-
-    if data["hr_overdue"]:
-        concerns.append(
-            f"{len(data['hr_overdue'])} HR acknowledgment(s) are overdue"
-        )
-
-    if data["open_maintenance"]:
-        concerns.append(
-            f"{len(data['open_maintenance'])} maintenance ticket(s) remain open"
         )
 
     if not concerns:
@@ -578,30 +521,32 @@ def render_email_body(
     data: dict,
     doughy_take: str,
 ):
-    date_label = data["brief_date"].strftime("%A, %B %d, %Y")
+    date_label = data["brief_date"].strftime(
+        "%A, %B %d, %Y"
+    )
 
-    checklist_lines = []
-
-    for row in data["checklist_rows"]:
-        walk = (
-            f"{row['manager_walk']}%"
-            if row["manager_walk"] is not None
+    def pct(value):
+        return (
+            f"{value:.0f}%"
+            if value is not None
             else "Not recorded"
         )
 
-        checklist_lines.append(
-            f"- Store {row['store_number']}: "
-            f"{row['completion']}% complete | "
-            f"Integrity {row['integrity']} | "
-            f"Manager's Walk {walk}"
+    checklist_lines = [
+        (
+            f"- Store {row['store_number']} | "
+            f"Open {pct(row['opening'])} | "
+            f"3 PM {pct(row['restock'])} | "
+            f"Manager's Walk {pct(row['manager_walk'])} | "
+            f"Integrity {row['integrity']:.1f}"
         )
+        for row in data["checklist_rows"]
+    ]
 
-    nightly_lines = []
-
-    for report in data["nightly_reports"]:
-        nightly_lines.append(
-            f"- Store {report.store_number}: "
-            f"Sales {format_optional_number(report.royalty_sales, '')} | "
+    nightly_lines = [
+        (
+            f"- Store {report.store_number} | "
+            f"Sales {format_optional_number(report.royalty_sales)} | "
             f"Variance to Ideal "
             f"{format_optional_number(report.variable_labor, '%')} | "
             f"Food {format_optional_number(report.food_variance, '%')} | "
@@ -609,91 +554,82 @@ def render_email_body(
             f"Load {report.load_time or '—'} | "
             f"Cash {format_optional_number(report.cash_diff)}"
         )
+        for report in data["nightly_reports"]
+    ]
 
     svr_lines = [
-        f"- Store {row.store_number}: "
-        f"{row.supervisor_name or 'Supervisor not listed'}"
+        (
+            f"- Store {row.store_number} | "
+            f"{row.supervisor_name or 'Supervisor not listed'}"
+        )
         for row in data["svr_reports"]
     ]
 
     maintenance_lines = [
-        f"- Store {row.store_number}: "
-        f"[{(row.priority or 'normal').upper()}] "
-        f"{row.title} — {row.status.replace('_', ' ').title()}"
-        for row in data["open_maintenance"][:25]
+        (
+            f"- Store {row.store_number} | "
+            f"{row.title}"
+        )
+        for row in data["completed_maintenance"]
     ]
 
     dwp_lines = [
-        f"- Store {row.store_number}: "
-        f"{row.team_member_name_snapshot} — "
-        f"{row.discussion_type} / {row.category} — "
-        f"submitted by {row.submitted_by_name_snapshot} — "
-        f"{'Acknowledged' if row.acknowledged_at else 'Pending acknowledgment'}"
+        (
+            f"- Store {row.store_number} | "
+            f"{row.team_member_name_snapshot} | "
+            f"{row.discussion_type} / {row.category} | "
+            f"Submitted by {row.submitted_by_name_snapshot}"
+        )
         for row in data["dwps"]
     ]
 
     signed_lines = [
-        f"- Store {row.user.store_number or '—'}: "
-        f"{row.user.name} signed “{row.document.title}”"
+        (
+            f"- Store {row.user.store_number or '—'} | "
+            f"{row.user.name} signed "
+            f"“{row.document.title}”"
+        )
         for row in data["hr_signed"]
     ]
-
-    pending_lines = []
-
-    for row in data["hr_pending"][:40]:
-        due_text = "No due date"
-
-        if row.document.due_date:
-            due_text = f"Due {row.document.due_date.strftime('%m/%d/%Y')}"
-
-            if row.document.due_date < now_et().date():
-                due_text += " — OVERDUE"
-
-        pending_lines.append(
-            f"- Store {row.user.store_number or '—'}: "
-            f"{row.user.name} — {row.document.title} — {due_text}"
-        )
 
     return (
         f"Good morning {user.name},\n\n"
         f"DOUGHY'S TAKE\n"
         f"{doughy_take}\n\n"
-        f"REPORT DATE\n"
+
+        f"YESTERDAY AT A GLANCE\n"
         f"{date_label}\n"
         f"Scope: {scope_label}\n"
-        f"Visible stores: {len(data['stores'])}\n\n"
+        f"Stores: {len(data['stores'])}\n\n"
+
         f"CHECKLIST EXECUTION\n"
-        f"Completed at 100%: "
-        f"{data['completed_checklists']}/{len(data['stores'])}\n"
-        f"No checklist record: "
-        f"{render_store_list(data['missing_checklists'])}\n"
-        f"Integrity below 70: "
-        f"{render_store_list([row['store_number'] for row in data['low_integrity']])}\n"
-        f"Manager's Walk needs review: "
-        f"{render_store_list([row['store_number'] for row in data['missed_walks']])}\n\n"
-        f"{chr(10).join(checklist_lines) if checklist_lines else '- No checklist activity'}\n\n"
+        f"Open = Before Open / Before 10:30\n"
+        f"Missing checklist records: "
+        f"{render_store_list(data['missing_checklists'])}\n\n"
+        f"{chr(10).join(checklist_lines) if checklist_lines else '- No checklist records'}\n\n"
+
         f"NIGHTLY NUMBERS\n"
-        f"Submitted: {len(data['nightly_reports'])}/{len(data['stores'])}\n"
-        f"Missing: {render_store_list(data['missing_nightly'])}\n\n"
-        f"{chr(10).join(nightly_lines) if nightly_lines else '- No Nightly Numbers submitted'}\n\n"
+        f"Submitted: "
+        f"{len(data['nightly_reports'])}/{len(data['stores'])}\n"
+        f"Missing: "
+        f"{render_store_list(data['missing_nightly'])}\n"
+        f"{chr(10).join(nightly_lines) if nightly_lines else '- None submitted'}\n\n"
+
         f"SVRs COMPLETED\n"
         f"{chr(10).join(svr_lines) if svr_lines else '- None'}\n\n"
-        f"MAINTENANCE\n"
-        f"Created yesterday: {len(data['maintenance_created'])}\n"
-        f"Currently open/in progress: {len(data['open_maintenance'])}\n"
-        f"{chr(10).join(maintenance_lines) if maintenance_lines else '- No open maintenance tickets'}\n\n"
+
+        f"MAINTENANCE COMPLETED\n"
+        f"{chr(10).join(maintenance_lines) if maintenance_lines else '- None'}\n\n"
+
         f"DWPs SUBMITTED\n"
         f"{chr(10).join(dwp_lines) if dwp_lines else '- None'}\n\n"
+
         f"HR DOCUMENTS SIGNED\n"
         f"{chr(10).join(signed_lines) if signed_lines else '- None'}\n\n"
-        f"HR DOCUMENTS PENDING\n"
-        f"Pending: {len(data['hr_pending'])}\n"
-        f"Overdue: {len(data['hr_overdue'])}\n"
-        f"{chr(10).join(pending_lines) if pending_lines else '- None'}\n\n"
+
         f"- Doughy\n"
         f"BPI Ops"
     )
-
 
 def eligible_recipients():
     return (

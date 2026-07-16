@@ -632,37 +632,79 @@ def generate_doughy_take(
     scope_label: str,
     data: dict,
 ) -> str:
+    operations_context = {
+        "module": "bpi_ops_daily_operations_summary",
+        "request_type": "executive_operations_summary",
+        "permission_filtered": True,
+        "recipient": {
+            "name": user.name,
+            "role": user.role,
+            "scope": scope_label,
+        },
+        "business_date": data["brief_date"].isoformat(),
+        "stores": [
+            {
+                "store_number": row["store_number"],
+                "opening_percent": row["opening"],
+                "three_pm_restock_percent": row["restock"],
+                "manager_walk_percent": row["manager_walk"],
+                "integrity_score": row["integrity"],
+            }
+            for row in data["checklist_rows"]
+        ],
+        "missing_checklist_records": data["missing_checklists"],
+        "missing_nightly_numbers": data["missing_nightly"],
+        "nightly_numbers": data["nightly_rows"],
+        "svrs_completed": [
+            {
+                "store_number": row.store_number,
+                "supervisor": row.supervisor_name,
+            }
+            for row in data["svr_reports"]
+        ],
+    }
+
     prompt = (
-        "Write Doughy's morning operations take for this BPI Ops email. "
-        "Use only the supplied permission-filtered facts. "
-        "Write one concise paragraph of 80 to 130 words. "
-        "Name the strongest stores. Name the two or three stores requiring "
-        "the most urgent follow-up and state the exact checklist, integrity, "
-        "Manager's Walk, 3 PM Restock, or Nightly Numbers facts driving that "
-        "priority. Distinguish a small miss from a serious execution failure. "
+        "This is an executive BPI operations summary, not a DWP, HR, "
+        "maintenance, or database lookup request. "
+        "Write Doughy's morning operations take using only the supplied "
+        "permission-filtered operations facts. "
+        "Write one concise paragraph of 90 to 140 words. "
+        "Name the strongest stores and the three stores requiring the most "
+        "urgent follow-up. Cite the exact Open, 3 PM Restock, Manager's Walk, "
+        "integrity, or missing Nightly Numbers facts that justify the priority. "
+        "Distinguish minor misses from serious failures. "
         "End with a practical order of follow-up for today. "
-        "Do not use generic phrases such as 'some stores need review.' "
-        "Do not recommend discipline and do not invent causes."
+        "Do not discuss DWPs or HR documents. "
+        "Do not answer with 'no records were found.' "
+        "Do not invent causes."
     )
 
     try:
         answer = ask_doughy_ai(
             prompt,
-            build_doughy_context(
-                user=user,
-                scope_label=scope_label,
-                data=data,
-            ),
+            operations_context,
         )
 
         if answer:
-            return answer.strip()
+            cleaned = answer.strip()
+
+            rejected_phrases = (
+                "no dwp records",
+                "no records were found",
+                "requested period",
+            )
+
+            if not any(
+                phrase in cleaned.lower()
+                for phrase in rejected_phrases
+            ):
+                return cleaned
 
     except Exception:
         pass
 
     return fallback_doughy_take(data)
-
 
 def render_store_list(values):
     return ", ".join(values) if values else "None"
@@ -842,10 +884,22 @@ def render_email_body(
             f"  Integrity: {row['integrity']:.1f}"
         )
 
+    detailed_priority_rows = priority_rows[:6]
+    remaining_priority_rows = priority_rows[6:]
+
     priority_text = "\n\n".join(
         checklist_block(row)
-        for row in priority_rows
+        for row in detailed_priority_rows
     )
+
+    if remaining_priority_rows:
+        priority_text += (
+            "\n\nAdditional priority stores: "
+            + ", ".join(
+                row["store_number"]
+                for row in remaining_priority_rows
+            )
+        )
 
     watch_text = "\n\n".join(
         checklist_block(row)
@@ -863,21 +917,49 @@ def render_email_body(
         for row in strong_rows
     )
 
-    nightly_lines = [
-        (
-            f"{report.store_number}\n"
-            f"  Sales: "
-            f"{format_optional_number(report.royalty_sales)}\n"
-            f"  Labor: "
-            f"{format_optional_number(report.variable_labor, '%')}  |  "
-            f"Food: "
-            f"{format_optional_number(report.food_variance, '%')}\n"
-            f"  ADT: {format_optional_number(report.adt)}  |  "
-            f"Load: {report.load_time or '—'}  |  "
-            f"Cash: {format_optional_number(report.cash_diff)}"
-        )
-        for report in data["nightly_reports"]
-    ]
+    nightly_exception_lines = []
+
+    for report in data["nightly_reports"]:
+        issues = []
+
+        if report.adt is not None and report.adt > 25:
+            issues.append(
+                f"ADT {format_optional_number(report.adt)}"
+            )
+
+        load_value = report.load_time
+
+        try:
+            normalized_load = float(load_value)
+        except (TypeError, ValueError):
+            normalized_load = None
+
+        if normalized_load is not None and normalized_load > 3.5:
+            issues.append(f"Load {load_value}")
+
+        if (
+            report.food_variance is not None
+            and abs(report.food_variance) > 0.5
+        ):
+            issues.append(
+                f"Food "
+                f"{format_optional_number(report.food_variance, '%')}"
+            )
+
+        if (
+            report.cash_diff is not None
+            and abs(report.cash_diff) > 5
+        ):
+            issues.append(
+                f"Cash {format_optional_number(report.cash_diff)}"
+            )
+
+        if issues:
+            nightly_exception_lines.append(
+                f"- Store {report.store_number}: "
+                + " · ".join(issues)
+            )
+
 
     activity_lines = []
 
@@ -943,8 +1025,10 @@ def render_email_body(
         f"STRONG EXECUTION\n"
         f"{strong_text if strong_text else '- None'}\n\n"
 
-        f"NIGHTLY NUMBERS DETAIL\n"
-        f"{chr(10).join(nightly_lines) if nightly_lines else '- None submitted'}\n\n"
+        f"NIGHTLY NUMBERS EXCEPTIONS\n"
+        f"Missing submissions: "
+        f"{render_store_list(data['missing_nightly'])}\n"
+        f"{chr(10).join(nightly_exception_lines) if nightly_exception_lines else '- No submitted-store exceptions'}\n\n"
 
         f"OTHER ACTIVITY\n"
         f"{chr(10).join(activity_lines) if activity_lines else '- None'}\n\n"

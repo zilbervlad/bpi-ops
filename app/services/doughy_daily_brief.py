@@ -1056,6 +1056,11 @@ def render_email_body(
                     "Complete the full Manager's Walk."
                 )
 
+            if not nightly_report:
+                priorities.append(
+                    "Submit Nightly Numbers."
+                )
+
             if (
                 checklist_row["restock"] is None
                 or checklist_row["restock"] < 100
@@ -1077,8 +1082,10 @@ def render_email_body(
                     "Review checklist timing and improve integrity."
                 )
 
-        if not nightly_report:
-            priorities.append("Submit Nightly Numbers.")
+        if not checklist_row and not nightly_report:
+            priorities.append(
+                "Submit Nightly Numbers."
+            )
 
         if not priorities:
             priorities.append(

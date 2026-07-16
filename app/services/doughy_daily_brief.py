@@ -228,13 +228,52 @@ def collect_scope_data(
 
     today_et = now_et().date()
 
-    maintenance_scheduled_today = (
+    maintenance_scheduled_query = (
         MaintenanceTicket.query
         .filter(
             MaintenanceTicket.store_number.in_(store_numbers),
             MaintenanceTicket.scheduled_date == today_et,
             MaintenanceTicket.status != "complete",
         )
+        if store_numbers
+        else None
+    )
+
+    maintenance_completed_query = (
+        MaintenanceTicket.query
+        .filter(
+            MaintenanceTicket.store_number.in_(store_numbers),
+            MaintenanceTicket.scheduled_date == brief_date,
+            MaintenanceTicket.status == "complete",
+        )
+        if store_numbers
+        else None
+    )
+
+    if (
+        (user.role or "").strip().lower() == "maintenance"
+        and user.name
+    ):
+        technician_name = user.name.strip()
+
+        maintenance_scheduled_query = (
+            maintenance_scheduled_query.filter(
+                MaintenanceTicket.assigned_to == technician_name,
+            )
+            if maintenance_scheduled_query is not None
+            else None
+        )
+
+        maintenance_completed_query = (
+            maintenance_completed_query.filter(
+                MaintenanceTicket.assigned_to == technician_name,
+            )
+            if maintenance_completed_query is not None
+            else None
+        )
+
+    maintenance_scheduled_today = (
+        maintenance_scheduled_query
         .order_by(
             MaintenanceTicket.scheduled_time.asc().nullslast(),
             MaintenanceTicket.priority.desc(),
@@ -242,24 +281,19 @@ def collect_scope_data(
             MaintenanceTicket.id.asc(),
         )
         .all()
-        if store_numbers
+        if maintenance_scheduled_query is not None
         else []
     )
 
     maintenance_completed_yesterday = (
-        MaintenanceTicket.query
-        .filter(
-            MaintenanceTicket.store_number.in_(store_numbers),
-            MaintenanceTicket.scheduled_date == brief_date,
-            MaintenanceTicket.status == "complete",
-        )
+        maintenance_completed_query
         .order_by(
             MaintenanceTicket.scheduled_time.asc().nullslast(),
             MaintenanceTicket.store_number.asc(),
             MaintenanceTicket.id.asc(),
         )
         .all()
-        if store_numbers
+        if maintenance_completed_query is not None
         else []
     )
 

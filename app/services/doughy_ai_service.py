@@ -413,7 +413,64 @@ def _ask_brain(
     prompt: str,
     context_bundle: dict[str, Any],
 ) -> str:
-    compact_context = _compact_gateway_context(context_bundle)
+    normalized_prompt = str(prompt or "").strip().lower()
+
+    product_knowledge_terms = (
+        "pepperoni",
+        "topping",
+        "toppings",
+        "pizza",
+        "cheese",
+        "sauce",
+        "portion",
+        "portions",
+        "recipe",
+        "meatzza",
+        "extravaganzza",
+        "ultimate pepperoni",
+        "buffalo chicken",
+        "philly",
+        "pacific veggie",
+    )
+
+    live_ops_terms = (
+        "store",
+        "stores",
+        "today",
+        "yesterday",
+        "checklist",
+        "manager's walk",
+        "managers walk",
+        "restock",
+        "nightly numbers",
+        "maintenance",
+        "svr",
+        "verification",
+        "dwp",
+        "employee",
+        "employees",
+        "user",
+        "users",
+        "who missed",
+        "what needs attention",
+    )
+
+    is_product_knowledge_question = (
+        any(
+            term in normalized_prompt
+            for term in product_knowledge_terms
+        )
+        and not any(
+            term in normalized_prompt
+            for term in live_ops_terms
+        )
+    )
+
+    compact_context = (
+        {}
+        if is_product_knowledge_question
+        else _compact_gateway_context(context_bundle)
+    )
 
     extra_context = (
         "AUTHORITATIVE LIVE BPI OPS CONTEXT\n\n"
@@ -424,6 +481,16 @@ def _ask_brain(
         "operational interpretation.\n\n"
         f"{json.dumps(compact_context, default=str)}"
     )
+
+    if is_product_knowledge_question:
+        extra_context = (
+            "PRODUCT KNOWLEDGE QUESTION\n\n"
+            "Answer from the local Domino's knowledge base. "
+            "Do not use live BPI Ops checklist, maintenance, SVR, "
+            "nightly-number, employee, or store data. "
+            "For topping portions, prefer the official Topping Portions "
+            "guide over specialty recipe cards or general model knowledge."
+        )
 
     request_body = {
         "question": prompt,

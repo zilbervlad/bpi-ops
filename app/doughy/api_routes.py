@@ -564,7 +564,34 @@ def _action_preview(payload, user):
         80,
     ).lower()
 
-    visible_stores = _visible_store_numbers_for_user(user)
+    company_scope = str(
+        payload.get("company_scope") or ""
+    ).strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+    if (
+        company_scope
+        and user.role in {
+            "admin",
+            "maintenance",
+            "supervisor",
+        }
+    ):
+        visible_stores = {
+            row.store_number
+            for row in Store.query.filter(
+                Store.is_active == True
+            ).all()
+            if row.store_number
+        }
+    else:
+        visible_stores = (
+            _visible_store_numbers_for_user(user)
+        )
 
     if action == "create_ticket":
         store_number = _clean_text(

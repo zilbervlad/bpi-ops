@@ -664,8 +664,19 @@ def generate_doughy_take(
         ],
     }
 
+    recipient_instruction = (
+        "This recipient manages one store. Focus entirely on that store. "
+        "Explain exactly what happened yesterday and give a short, ordered "
+        "action plan for today. Do not compare it with other stores. "
+        if (user.role or "").strip().lower() == "general_manager"
+        else
+        "This recipient oversees multiple stores. Compare execution across "
+        "their visible stores and prioritize the most important follow-up. "
+    )
+
     prompt = (
-        "This is an executive BPI operations summary, not a DWP, HR, "
+        recipient_instruction
+        + "This is an executive BPI operations summary, not a DWP, HR, "
         "maintenance, or database lookup request. "
         "Write Doughy's morning operations take using only the supplied "
         "permission-filtered operations facts. "
@@ -797,6 +808,344 @@ def render_email_body(
 
             f"HR DOCUMENTS SIGNED\n"
             f"{chr(10).join(signed_lines) if signed_lines else '- None'}\n\n"
+
+            f"- Doughy\n"
+            f"BPI Ops"
+        )
+
+    if user.role == "general_manager":
+        row = (
+            data["checklist_rows"][0]
+            if data["checklist_rows"]
+            else None
+        )
+
+        store_number = (
+            str(user.store_number)
+            if user.store_number
+            else (
+                data["store_numbers"][0]
+                if data["store_numbers"]
+                else "Assigned store"
+            )
+        )
+
+        def store_pct(value):
+            return (
+                f"{value:.0f}%"
+                if value is not None
+                else "Not recorded"
+            )
+
+        priorities = []
+
+        if not row:
+            priorities.append(
+                "Complete and submit today's checklist."
+            )
+        else:
+            if (
+                row["opening"] is None
+                or row["opening"] < 100
+            ):
+                priorities.append(
+                    "Close the remaining opening checklist gap."
+                )
+
+            if (
+                row["restock"] is None
+                or row["restock"] < 100
+            ):
+                priorities.append(
+                    "Complete the full 3 PM Restock."
+                )
+
+            if (
+                row["manager_walk"] is None
+                or row["manager_walk"] < 100
+            ):
+                priorities.append(
+                    "Complete the full Manager's Walk."
+                )
+
+            if row["integrity"] < 70:
+                priorities.append(
+                    "Review checklist timing and integrity."
+                )
+
+        nightly_report = (
+            data["nightly_reports"][0]
+            if data["nightly_reports"]
+            else None
+        )
+
+        if not nightly_report:
+            priorities.append(
+                "Submit Nightly Numbers."
+            )
+
+        if not priorities:
+            priorities.append(
+                "Repeat yesterday's strong execution."
+            )
+
+        priority_lines = [
+            f"{index}. {priority}"
+            for index, priority in enumerate(
+                priorities,
+                start=1,
+            )
+        ]
+
+        if row:
+            checklist_text = (
+                f"Open: {store_pct(row['opening'])}\n"
+                f"3 PM Restock: {store_pct(row['restock'])}\n"
+                f"Manager's Walk: "
+                f"{store_pct(row['manager_walk'])}\n"
+                f"Integrity: {row['integrity']:.1f}"
+            )
+        else:
+            checklist_text = "No checklist record found."
+
+        if nightly_report:
+            nightly_text = (
+                f"Sales: "
+                f"{format_optional_number(nightly_report.royalty_sales)}\n"
+                f"Labor: "
+                f"{format_optional_number(nightly_report.variable_labor, '%')}\n"
+                f"Food: "
+                f"{format_optional_number(nightly_report.food_variance, '%')}\n"
+                f"ADT: "
+                f"{format_optional_number(nightly_report.adt)}\n"
+                f"Load: {nightly_report.load_time or '—'}\n"
+                f"Cash: "
+                f"{format_optional_number(nightly_report.cash_diff)}"
+            )
+        else:
+            nightly_text = "Not submitted."
+
+        svr_lines = [
+            (
+                f"- Completed by "
+                f"{report.supervisor_name or 'Supervisor'}"
+            )
+            for report in data["svr_reports"]
+        ]
+
+        maintenance_lines = [
+            f"- {ticket.title}"
+            for ticket in data["completed_maintenance"]
+        ]
+
+        activity_sections = []
+
+        if svr_lines:
+            activity_sections.append(
+                "SVR\n" + "\n".join(svr_lines)
+            )
+
+        if maintenance_lines:
+            activity_sections.append(
+                "MAINTENANCE COMPLETED\n"
+                + "\n".join(maintenance_lines)
+            )
+
+        activity_text = (
+            "\n\n".join(activity_sections)
+            if activity_sections
+            else "No additional activity recorded."
+        )
+
+        return (
+            f"Good morning {user.name},\n\n"
+
+            f"STORE {store_number} DAILY BRIEF\n"
+            f"{date_label}\n\n"
+
+            f"DOUGHY'S TAKE\n"
+            f"{doughy_take}\n\n"
+
+            f"YESTERDAY'S CHECKLIST\n"
+            f"{checklist_text}\n\n"
+
+            f"NIGHTLY NUMBERS\n"
+            f"{nightly_text}\n\n"
+
+            f"TODAY'S PRIORITIES\n"
+            f"{chr(10).join(priority_lines)}\n\n"
+
+            f"OTHER STORE ACTIVITY\n"
+            f"{activity_text}\n\n"
+
+            f"- Doughy\n"
+            f"BPI Ops"
+        )
+
+    if (user.role or "").strip().lower() == "general_manager":
+        checklist_row = (
+            data["checklist_rows"][0]
+            if data["checklist_rows"]
+            else None
+        )
+
+        nightly_report = (
+            data["nightly_reports"][0]
+            if data["nightly_reports"]
+            else None
+        )
+
+        store_number = (
+            str(user.store_number)
+            if user.store_number
+            else (
+                data["store_numbers"][0]
+                if data["store_numbers"]
+                else "Assigned Store"
+            )
+        )
+
+        def store_pct(value):
+            return (
+                f"{value:.0f}%"
+                if value is not None
+                else "Not recorded"
+            )
+
+        if checklist_row:
+            checklist_text = (
+                f"Open: {store_pct(checklist_row['opening'])}\n"
+                f"3 PM Restock: "
+                f"{store_pct(checklist_row['restock'])}\n"
+                f"Manager's Walk: "
+                f"{store_pct(checklist_row['manager_walk'])}\n"
+                f"Integrity: {checklist_row['integrity']:.1f}"
+            )
+        else:
+            checklist_text = "No checklist record was found."
+
+        if nightly_report:
+            nightly_text = (
+                f"Sales: "
+                f"{format_optional_number(nightly_report.royalty_sales)}\n"
+                f"Variance to Ideal: "
+                f"{format_optional_number(nightly_report.variable_labor, '%')}\n"
+                f"Food: "
+                f"{format_optional_number(nightly_report.food_variance, '%')}\n"
+                f"ADT: "
+                f"{format_optional_number(nightly_report.adt)}\n"
+                f"Load: {nightly_report.load_time or '—'}\n"
+                f"Cash: "
+                f"{format_optional_number(nightly_report.cash_diff)}"
+            )
+        else:
+            nightly_text = "Not submitted."
+
+        priorities = []
+
+        if not checklist_row:
+            priorities.append(
+                "Complete and submit the full daily checklist."
+            )
+        else:
+            if (
+                checklist_row["manager_walk"] is None
+                or checklist_row["manager_walk"] < 100
+            ):
+                priorities.append(
+                    "Complete the full Manager's Walk."
+                )
+
+            if (
+                checklist_row["restock"] is None
+                or checklist_row["restock"] < 100
+            ):
+                priorities.append(
+                    "Complete the full 3 PM Restock."
+                )
+
+            if (
+                checklist_row["opening"] is None
+                or checklist_row["opening"] < 100
+            ):
+                priorities.append(
+                    "Close the remaining opening checklist gap."
+                )
+
+            if checklist_row["integrity"] < 70:
+                priorities.append(
+                    "Review checklist timing and improve integrity."
+                )
+
+        if not nightly_report:
+            priorities.append("Submit Nightly Numbers.")
+
+        if not priorities:
+            priorities.append(
+                "Repeat yesterday's strong execution."
+            )
+
+        priority_lines = [
+            f"{index}. {priority}"
+            for index, priority in enumerate(
+                priorities,
+                start=1,
+            )
+        ]
+
+        svr_lines = [
+            (
+                f"- Completed by "
+                f"{report.supervisor_name or 'Supervisor'}"
+            )
+            for report in data["svr_reports"]
+        ]
+
+        maintenance_lines = [
+            f"- {ticket.title}"
+            for ticket in data["completed_maintenance"]
+        ]
+
+        activity_sections = []
+
+        if svr_lines:
+            activity_sections.append(
+                "SVR COMPLETED\n"
+                + "\n".join(svr_lines)
+            )
+
+        if maintenance_lines:
+            activity_sections.append(
+                "MAINTENANCE COMPLETED\n"
+                + "\n".join(maintenance_lines)
+            )
+
+        activity_text = (
+            "\n\n".join(activity_sections)
+            if activity_sections
+            else "No additional store activity recorded."
+        )
+
+        return (
+            f"Good morning {user.name},\n\n"
+
+            f"STORE {store_number} MORNING BRIEF\n"
+            f"{date_label}\n\n"
+
+            f"DOUGHY'S TAKE\n"
+            f"{doughy_take}\n\n"
+
+            f"YESTERDAY'S CHECKLIST\n"
+            f"{checklist_text}\n\n"
+
+            f"NIGHTLY NUMBERS\n"
+            f"{nightly_text}\n\n"
+
+            f"TODAY'S PRIORITIES\n"
+            f"{chr(10).join(priority_lines)}\n\n"
+
+            f"OTHER STORE ACTIVITY\n"
+            f"{activity_text}\n\n"
 
             f"- Doughy\n"
             f"BPI Ops"

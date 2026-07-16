@@ -33,6 +33,7 @@ RECIPIENT_ROLES = {
     "hr",
     "supervisor",
     "general_manager",
+    "maintenance",
 }
 
 
@@ -71,7 +72,7 @@ def visible_stores_for_user(user: User) -> list[Store]:
 
     query = Store.query.filter(Store.is_active.is_(True))
 
-    if role in {"admin", "hr"}:
+    if role in {"admin", "hr", "maintenance"}:
         return query.order_by(Store.store_number.asc()).all()
 
     if role == "supervisor":
@@ -102,7 +103,7 @@ def visible_stores_for_user(user: User) -> list[Store]:
 def recipient_scope_label(user: User, stores: list[Store]) -> str:
     role = (user.role or "").strip().lower()
 
-    if role in {"admin", "hr"}:
+    if role in {"admin", "hr", "maintenance"}:
         return "All active BPI stores"
 
     if role == "supervisor":
@@ -219,6 +220,43 @@ def collect_scope_data(
         .order_by(
             MaintenanceTicket.priority.desc(),
             MaintenanceTicket.store_number.asc(),
+        )
+        .all()
+        if store_numbers
+        else []
+    )
+
+    today_et = now_et().date()
+
+    maintenance_scheduled_today = (
+        MaintenanceTicket.query
+        .filter(
+            MaintenanceTicket.store_number.in_(store_numbers),
+            MaintenanceTicket.scheduled_date == today_et,
+            MaintenanceTicket.status != "complete",
+        )
+        .order_by(
+            MaintenanceTicket.scheduled_time.asc().nullslast(),
+            MaintenanceTicket.priority.desc(),
+            MaintenanceTicket.store_number.asc(),
+            MaintenanceTicket.id.asc(),
+        )
+        .all()
+        if store_numbers
+        else []
+    )
+
+    maintenance_completed_yesterday = (
+        MaintenanceTicket.query
+        .filter(
+            MaintenanceTicket.store_number.in_(store_numbers),
+            MaintenanceTicket.scheduled_date == brief_date,
+            MaintenanceTicket.status == "complete",
+        )
+        .order_by(
+            MaintenanceTicket.scheduled_time.asc().nullslast(),
+            MaintenanceTicket.store_number.asc(),
+            MaintenanceTicket.id.asc(),
         )
         .all()
         if store_numbers
@@ -380,6 +418,8 @@ def collect_scope_data(
         "missing_nightly": missing_nightly,
         "svr_reports": svr_reports,
         "completed_maintenance": completed_maintenance,
+        "maintenance_scheduled_today": maintenance_scheduled_today,
+        "maintenance_completed_yesterday": maintenance_completed_yesterday,
         "dwps": dwps,
         "hr_signed": hr_signed,
     }
@@ -524,6 +564,52 @@ def render_email_body(
     date_label = data["brief_date"].strftime(
         "%A, %B %d, %Y"
     )
+
+    if user.role == "maintenance":
+        def maintenance_time(ticket):
+            if not ticket.scheduled_time:
+                return "Time not set"
+
+            hour = ticket.scheduled_time.hour
+            minute = ticket.scheduled_time.minute
+            suffix = "AM" if hour < 12 else "PM"
+            display_hour = hour % 12 or 12
+
+            return f"{display_hour}:{minute:02d} {suffix}"
+
+        scheduled_lines = [
+            (
+                f"- Store {ticket.store_number} | "
+                f"{maintenance_time(ticket)} | "
+                f"{ticket.title} | "
+                f"{(ticket.priority or 'normal').upper()}"
+            )
+            for ticket in data["maintenance_scheduled_today"]
+        ]
+
+        completed_lines = [
+            (
+                f"- Store {ticket.store_number} | "
+                f"{ticket.title}"
+            )
+            for ticket in data["maintenance_completed_yesterday"]
+        ]
+
+        return (
+            f"Good morning {user.name},\n\n"
+            f"MAINTENANCE DAILY BRIEF\n"
+            f"{date_label}\n"
+            f"Scope: {scope_label}\n\n"
+
+            f"SCHEDULED FOR TODAY\n"
+            f"{chr(10).join(scheduled_lines) if scheduled_lines else '- None'}\n\n"
+
+            f"COMPLETED YESTERDAY\n"
+            f"{chr(10).join(completed_lines) if completed_lines else '- None'}\n\n"
+
+            f"- Doughy\n"
+            f"BPI Ops"
+        )
 
     if user.role == "hr":
         dwp_lines = [
@@ -683,7 +769,8 @@ def eligible_recipients():
         "admin": 0,
         "hr": 1,
         "supervisor": 2,
-        "general_manager": 3,
+        "maintenance": 3,
+        "general_manager": 4,
     }
 
     selected_by_email = {}

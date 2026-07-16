@@ -654,87 +654,138 @@ def render_email_body(
             else "Not recorded"
         )
 
-    checklist_lines = [
-        (
-            f"- Store {row['store_number']} | "
-            f"Open {pct(row['opening'])} | "
-            f"3 PM {pct(row['restock'])} | "
-            f"Manager's Walk {pct(row['manager_walk'])} | "
-            f"Integrity {row['integrity']:.1f}"
+    def checklist_needs_review(row):
+        return (
+            row["opening"] is None
+            or row["opening"] < 100
+            or row["restock"] is None
+            or row["restock"] < 100
+            or row["manager_walk"] is None
+            or row["manager_walk"] < 100
+            or row["integrity"] < 70
         )
-        for row in data["checklist_rows"]
-    ]
 
-    nightly_lines = [
-        (
-            f"- Store {report.store_number} | "
-            f"Sales {format_optional_number(report.royalty_sales)} | "
-            f"Variance to Ideal "
-            f"{format_optional_number(report.variable_labor, '%')} | "
-            f"Food {format_optional_number(report.food_variance, '%')} | "
-            f"ADT {format_optional_number(report.adt)} | "
-            f"Load {report.load_time or '—'} | "
-            f"Cash {format_optional_number(report.cash_diff)}"
+    ordered_checklists = sorted(
+        data["checklist_rows"],
+        key=lambda row: (
+            not checklist_needs_review(row),
+            row["integrity"],
+            row["manager_walk"]
+            if row["manager_walk"] is not None
+            else -1,
+            row["store_number"],
+        ),
+    )
+
+    checklist_lines = []
+
+    for row in ordered_checklists:
+        label = (
+            "REVIEW"
+            if checklist_needs_review(row)
+            else "GOOD"
         )
-        for report in data["nightly_reports"]
-    ]
+
+        checklist_lines.extend([
+            f"{row['store_number']} — {label}",
+            (
+                f"  Open {pct(row['opening'])}  ·  "
+                f"3 PM {pct(row['restock'])}  ·  "
+                f"Manager's Walk {pct(row['manager_walk'])}  ·  "
+                f"Integrity {row['integrity']:.1f}"
+            ),
+        ])
+
+    nightly_lines = []
+
+    for report in data["nightly_reports"]:
+        nightly_lines.extend([
+            (
+                f"{report.store_number} — "
+                f"Sales {format_optional_number(report.royalty_sales)}  ·  "
+                f"Labor {format_optional_number(report.variable_labor, '%')}  ·  "
+                f"Food {format_optional_number(report.food_variance, '%')}"
+            ),
+            (
+                f"  ADT {format_optional_number(report.adt)}  ·  "
+                f"Load {report.load_time or '—'}  ·  "
+                f"Cash {format_optional_number(report.cash_diff)}"
+            ),
+        ])
 
     svr_lines = [
         (
-            f"- Store {row.store_number} | "
+            f"- Store {row.store_number}: "
             f"{row.supervisor_name or 'Supervisor not listed'}"
         )
         for row in data["svr_reports"]
     ]
 
     maintenance_lines = [
-        (
-            f"- Store {row.store_number} | "
-            f"{row.title}"
-        )
+        f"- Store {row.store_number}: {row.title}"
         for row in data["completed_maintenance"]
     ]
 
     dwp_lines = [
         (
-            f"- Store {row.store_number} | "
-            f"{row.team_member_name_snapshot} | "
-            f"{row.discussion_type} / {row.category} | "
-            f"Submitted by {row.submitted_by_name_snapshot}"
+            f"- Store {row.store_number}: "
+            f"{row.team_member_name_snapshot} — "
+            f"{row.discussion_type} / {row.category} "
+            f"({row.submitted_by_name_snapshot})"
         )
         for row in data["dwps"]
     ]
 
     signed_lines = [
         (
-            f"- Store {row.user.store_number or '—'} | "
+            f"- Store {row.user.store_number or '—'}: "
             f"{row.user.name} signed "
             f"“{row.document.title}”"
         )
         for row in data["hr_signed"]
     ]
 
+    review_count = sum(
+        1
+        for row in data["checklist_rows"]
+        if checklist_needs_review(row)
+    )
+
+    good_count = (
+        len(data["checklist_rows"])
+        - review_count
+    )
+
     return (
         f"Good morning {user.name},\n\n"
+
+        f"DOUGHY'S MORNING BRIEF\n"
+        f"{date_label}\n"
+        f"{scope_label}\n\n"
+
         f"DOUGHY'S TAKE\n"
         f"{doughy_take}\n\n"
 
-        f"YESTERDAY AT A GLANCE\n"
-        f"{date_label}\n"
-        f"Scope: {scope_label}\n"
-        f"Stores: {len(data['stores'])}\n\n"
+        f"AT A GLANCE\n"
+        f"Stores in scope: {len(data['stores'])}\n"
+        f"Checklist good: {good_count}\n"
+        f"Checklist needing review: {review_count}\n"
+        f"Nightly Numbers submitted: "
+        f"{len(data['nightly_reports'])}/{len(data['stores'])}\n"
+        f"SVRs completed: {len(data['svr_reports'])}\n"
+        f"Maintenance completed: {len(data['completed_maintenance'])}\n"
+        f"DWPs submitted: {len(data['dwps'])}\n"
+        f"HR documents signed: {len(data['hr_signed'])}\n\n"
 
-        f"CHECKLIST EXECUTION\n"
-        f"Open = Before Open / Before 10:30\n"
-        f"Missing checklist records: "
-        f"{render_store_list(data['missing_checklists'])}\n\n"
+        f"CHECKLIST HEALTH\n"
+        f"Missing records: "
+        f"{render_store_list(data['missing_checklists'])}\n"
+        f"Stores needing review are listed first.\n\n"
         f"{chr(10).join(checklist_lines) if checklist_lines else '- No checklist records'}\n\n"
 
         f"NIGHTLY NUMBERS\n"
-        f"Submitted: "
-        f"{len(data['nightly_reports'])}/{len(data['stores'])}\n"
         f"Missing: "
-        f"{render_store_list(data['missing_nightly'])}\n"
+        f"{render_store_list(data['missing_nightly'])}\n\n"
         f"{chr(10).join(nightly_lines) if nightly_lines else '- None submitted'}\n\n"
 
         f"SVRs COMPLETED\n"

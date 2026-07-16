@@ -1235,6 +1235,7 @@ def render_email_body(
         return (
             f"{row['store_number']}\n"
             f"  Open: {pct(row['opening'])}\n"
+            f"  During Dayshift: {pct(row.get('dayshift'))}\n"
             f"  3 PM Restock: {pct(row['restock'])}\n"
             f"  Manager's Walk: {pct(row['manager_walk'])}\n"
             f"  Integrity: {row['integrity']:.1f}"
@@ -1266,6 +1267,7 @@ def render_email_body(
         (
             f"- {row['store_number']}: "
             f"Open {pct(row['opening'])}, "
+            f"Dayshift {pct(row.get('dayshift'))}, "
             f"3 PM {pct(row['restock'])}, "
             f"Walk {pct(row['manager_walk'])}, "
             f"Integrity {row['integrity']:.1f}"
@@ -1321,7 +1323,7 @@ def render_email_body(
 
     if data["svr_reports"]:
         activity_lines.append(
-            f"SVRs completed: {len(data['svr_reports'])}"
+            f"SVRs completed yesterday: {len(data['svr_reports'])}"
         )
 
         activity_lines.extend(
@@ -1332,26 +1334,57 @@ def render_email_body(
             for row in data["svr_reports"]
         )
 
-    if data["completed_maintenance"]:
+    maintenance_completed_yesterday = (
+        data.get("maintenance_completed_yesterday") or []
+    )
+
+    if maintenance_completed_yesterday:
         activity_lines.append(
-            f"Maintenance completed: "
-            f"{len(data['completed_maintenance'])}"
+            "Maintenance completed yesterday: "
+            f"{len(maintenance_completed_yesterday)}"
         )
 
         activity_lines.extend(
-            f"  - Store {row.store_number}: {row.title}"
-            for row in data["completed_maintenance"]
+            (
+                f"  - Store {row.store_number}: "
+                f"{row.title}"
+            )
+            for row in maintenance_completed_yesterday
         )
 
     if data["dwps"]:
         activity_lines.append(
-            f"DWPs submitted: {len(data['dwps'])}"
+            f"DWPs submitted yesterday: {len(data['dwps'])}"
+        )
+
+        activity_lines.extend(
+            (
+                f"  - Store {row.store_number}: "
+                f"{row.team_member_name_snapshot or 'Team member not listed'} | "
+                f"{row.discussion_type or 'Type not listed'}"
+                f"{' / ' + row.category if row.category else ''} | "
+                f"Submitted by "
+                f"{row.submitted_by_name_snapshot or 'Submitter not listed'}"
+            )
+            for row in data["dwps"]
         )
 
     if data["hr_signed"]:
         activity_lines.append(
-            f"HR documents signed: {len(data['hr_signed'])}"
+            f"HR documents signed yesterday: "
+            f"{len(data['hr_signed'])}"
         )
+
+    data_quality_lines = []
+
+    for report in data["nightly_reports"]:
+        if report.adt is not None and report.adt >= 120:
+            data_quality_lines.append(
+                f"- Store {report.store_number}: "
+                f"ADT entered as "
+                f"{format_optional_number(report.adt)}; "
+                f"confirm this is not a data-entry error."
+            )
 
     return (
         f"Good morning {user.name},\n\n"
@@ -1385,6 +1418,9 @@ def render_email_body(
         f"Missing submissions: "
         f"{render_store_list(data['missing_nightly'])}\n"
         f"{chr(10).join(nightly_exception_lines) if nightly_exception_lines else '- No submitted-store exceptions'}\n\n"
+
+        f"DATA QUALITY REVIEW\n"
+        f"{chr(10).join(data_quality_lines) if data_quality_lines else '- None'}\n\n"
 
         f"OTHER ACTIVITY\n"
         f"{chr(10).join(activity_lines) if activity_lines else '- None'}\n\n"

@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+
+{% block title %}Equipment | BPI Ops{% endblock %}
+{% block header %}Maintenance Equipment{% endblock %}
+
+{% block content %}
+<div class="equipment-page">
+
+    <div class="command-bar panel">
+        <div class="command-bar-left">
+            <div class="command-eyebrow">MAINTENANCE</div>
+            <h2 class="command-title">Equipment Registry</h2>
+            <p class="command-subtitle">
+                Track store equipment, serial numbers, warranty details,
+                vendors, and repair history.
+            </p>
+        </div>
+
+        <div class="command-bar-right">
+            <a
+                href="{{ url_for('maintenance.index') }}"
+                class="command-chip"
+            >
+                Tickets
+            </a>
+
+            <a
+                href="{{ url_for('maintenance.calendar') }}"
+                class="command-chip"
+            >
+                Calendar
+            </a>
+
+            <span class="command-chip">
+                {{ equipment_rows|length }} Equipment
+            </span>
+        </div>
+    </div>
+
+    <div class="equipment-grid">
+
+        {% if can_manage %}
+        <section class="panel premium-panel">
+            <button
+                type="button"
+                id="equipment-create-toggle"
+                class="equipment-section-toggle"
+                aria-expanded="false"
+            >
+                <span>
+                    <strong>Add Equipment</strong>
+                    <small>
+                        Add a real asset to a store registry
+                    </small>
+                </span>
+                <span id="equipment-create-label">Show ▼</span>
+            </button>
+
+            <div
+                id="equipment-create-body"
+                style="display: none; margin-top: 18px;"
+            >
+                <form method="POST" class="login-form">
+                    <div class="equipment-form-grid">
+                        <div class="form-group">
+                            <label>Store</label>
+                            <select
+                                name="store_number"
+                                required
+                            >
+                                {% for store in stores %}
+                                <option
+                                    value="{{ store.store_number }}"
+                                >
+                                    {{ store.store_number }}
+                                    {% if store.area_name %}
+                                    — {{ store.area_name }}
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Equipment Type</label>
+                            <input
+                                name="equipment_type"
+                                placeholder="Makeline, Oven, Walk-In"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Equipment Name</label>
+                            <input
+                                name="equipment_name"
+                                placeholder="Main Makeline"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Brand</label>
+                            <input
+                                name="brand"
+                                placeholder="Turbo Air"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Model Number</label>
+                            <input name="model_number">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Serial Number</label>
+                            <input name="serial_number">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Install Date</label>
+                            <input
+                                type="date"
+                                name="install_date"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Warranty Expires</label>
+                            <input
+                                type="date"
+                                name="warranty_expires_on"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Vendor</label>
+                            <input name="vendor_name">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea
+                            name="notes"
+                            rows="4"
+                            placeholder="Location, condition, parts, service notes..."
+                        ></textarea>
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="btn-primary"
+                    >
+                        Add Equipment
+                    </button>
+                </form>
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="panel premium-panel">
+            <form
+                method="GET"
+                class="equipment-filter-grid"
+            >
+                <div class="form-group">
+                    <label>Store</label>
+                    <select name="store">
+                        <option value="">All Stores</option>
+                        {% for store in stores %}
+                        <option
+                            value="{{ store.store_number }}"
+                            {% if store_filter == store.store_number %}
+                            selected
+                            {% endif %}
+                        >
+                            {{ store.store_number }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Type</label>
+                    <select name="type">
+                        <option value="">All Types</option>
+                        {% for equipment_type in available_types %}
+                        <option
+                            value="{{ equipment_type }}"
+                            {% if type_filter == equipment_type %}
+                            selected
+                            {% endif %}
+                        >
+                            {{ equipment_type }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="active">
+                        <option
+                            value="active"
+                            {% if active_filter == 'active' %}
+                            selected
+                            {% endif %}
+                        >
+                            Active
+                        </option>
+                        <option
+                            value="all"
+                            {% if active_filter == 'all' %}
+                            selected
+                            {% endif %}
+                        >
+                            All
+                        </option>
+                        <option
+                            value="inactive"
+                            {% if active_filter == 'inactive' %}
+                            selected
+                            {% endif %}
+                        >
+                            Inactive
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Search</label>
+                    <input
+                        name="q"
+                        value="{{ search_text }}"
+                        placeholder="Name, model, serial, vendor..."
+                    >
+                </div>
+
+                <div class="equipment-filter-actions">
+                    <button
+                        type="submit"
+                        class="btn-primary"
+                    >
+                        Apply
+                    </button>
+
+                    <a
+                        href="{{ url_for('maintenance.equipment') }}"
+                        class="action-btn"
+                    >
+                        Reset
+                    </a>
+                </div>
+            </form>
+        </section>
+
+        <section class="equipment-list">
+            {% if equipment_rows %}
+                {% for row in equipment_rows %}
+                <a
+                    href="{{ url_for('maintenance.equipment_detail', equipment_id=row.id) }}"
+                    class="equipment-card panel"
+                >
+                    <div class="equipment-card-top">
+                        <div>
+                            <div class="equipment-store">
+                                Store {{ row.store_number }}
+                            </div>
+
+                            <h3>
+                                {{ row.equipment_name }}
+                            </h3>
+
+                            <div class="equipment-type">
+                                {{ row.equipment_type }}
+                            </div>
+                        </div>
+
+                        <span
+                            class="equipment-status
+                            {% if not row.is_active %}
+                            equipment-status-inactive
+                            {% endif %}"
+                        >
+                            {{ 'Active' if row.is_active else 'Inactive' }}
+                        </span>
+                    </div>
+
+                    <div class="equipment-meta">
+                        <div>
+                            <span>Brand</span>
+                            <strong>
+                                {{ row.brand or 'Not entered' }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Model</span>
+                            <strong>
+                                {{ row.model_number or 'Not entered' }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Serial</span>
+                            <strong>
+                                {{ row.serial_number or 'Not entered' }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Warranty</span>
+                            <strong>
+                                {% if row.warranty_expires_on %}
+                                    {% if row.warranty_expires_on >= today %}
+                                        Through {{ row.warranty_expires_on }}
+                                    {% else %}
+                                        Expired {{ row.warranty_expires_on }}
+                                    {% endif %}
+                                {% else %}
+                                    Not entered
+                                {% endif %}
+                            </strong>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="panel empty-state">
+                    <h3>No equipment records yet</h3>
+                    <p>
+                        Add the first real equipment record using
+                        the form above.
+                    </p>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+<style>
+.equipment-page {
+    display: grid;
+    gap: 22px;
+}
+
+.equipment-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.equipment-section-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.equipment-section-toggle span:first-child {
+    display: grid;
+    gap: 4px;
+}
+
+.equipment-section-toggle small {
+    color: var(--text-muted);
+}
+
+.equipment-form-grid,
+.equipment-filter-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.equipment-filter-actions {
+    display: flex;
+    align-items: end;
+    gap: 10px;
+}
+
+.equipment-list {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.equipment-card {
+    color: inherit;
+    text-decoration: none;
+    padding: 18px;
+    transition:
+        transform 0.14s ease,
+        border-color 0.14s ease;
+}
+
+.equipment-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(56, 189, 248, 0.32);
+}
+
+.equipment-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.equipment-card h3 {
+    margin: 4px 0;
+}
+
+.equipment-store,
+.equipment-type {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.equipment-status {
+    height: fit-content;
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.12);
+    color: #86efac;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.equipment-status-inactive {
+    background: rgba(148, 163, 184, 0.14);
+    color: #cbd5e1;
+}
+
+.equipment-meta {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.equipment-meta div {
+    display: grid;
+    gap: 3px;
+}
+
+.equipment-meta span {
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.equipment-meta strong {
+    overflow-wrap: anywhere;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    padding: 32px;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .equipment-form-grid,
+    .equipment-filter-grid,
+    .equipment-list {
+        grid-template-columns: 1fr;
+    }
+
+    .equipment-filter-actions {
+        align-items: stretch;
+    }
+}
+</style>
+
+<script>
+const equipmentToggle =
+    document.getElementById("equipment-create-toggle");
+
+if (equipmentToggle) {
+    equipmentToggle.addEventListener("click", () => {
+        const body =
+            document.getElementById("equipment-create-body");
+        const label =
+            document.getElementById("equipment-create-label");
+        const isOpen = body.style.display !== "none";
+
+        body.style.display = isOpen ? "none" : "block";
+        label.textContent = isOpen ? "Show ▼" : "Hide ▲";
+        equipmentToggle.setAttribute(
+            "aria-expanded",
+            String(!isOpen)
+        );
+    });
+}
+</script>
+{% endblock %}

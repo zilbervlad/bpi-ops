@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+
+{% block title %}{{ equipment.equipment_name }} | BPI Ops{% endblock %}
+{% block header %}Equipment Detail{% endblock %}
+
+{% block content %}
+<div class="equipment-detail-page">
+
+    <div class="command-bar panel">
+        <div class="command-bar-left">
+            <div class="command-eyebrow">
+                STORE {{ equipment.store_number }}
+            </div>
+
+            <h2 class="command-title">
+                {{ equipment.equipment_name }}
+            </h2>
+
+            <p class="command-subtitle">
+                {{ equipment.equipment_type }}
+                {% if equipment.brand %}
+                · {{ equipment.brand }}
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="command-bar-right">
+            <a
+                href="{{ url_for('maintenance.equipment') }}"
+                class="command-chip"
+            >
+                ← Equipment
+            </a>
+
+            <span class="command-chip">
+                {{ 'Active' if equipment.is_active else 'Inactive' }}
+            </span>
+        </div>
+    </div>
+
+    <div class="equipment-detail-grid">
+
+        <section class="panel premium-panel">
+            <div class="panel-head">
+                <div>
+                    <h3>Equipment Information</h3>
+                    <div class="area-subtitle">
+                        Registry and warranty details
+                    </div>
+                </div>
+            </div>
+
+            {% if can_manage %}
+            <form method="POST" class="login-form">
+                <input
+                    type="hidden"
+                    name="action"
+                    value="update"
+                >
+
+                <div class="equipment-edit-grid">
+                    <div class="form-group">
+                        <label>Store</label>
+                        <select
+                            name="store_number"
+                            required
+                        >
+                            {% for store in stores %}
+                            <option
+                                value="{{ store.store_number }}"
+                                {% if equipment.store_number == store.store_number %}
+                                selected
+                                {% endif %}
+                            >
+                                {{ store.store_number }}
+                                {% if store.area_name %}
+                                — {{ store.area_name }}
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Equipment Type</label>
+                        <input
+                            name="equipment_type"
+                            value="{{ equipment.equipment_type }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Equipment Name</label>
+                        <input
+                            name="equipment_name"
+                            value="{{ equipment.equipment_name }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Brand</label>
+                        <input
+                            name="brand"
+                            value="{{ equipment.brand or '' }}"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Model Number</label>
+                        <input
+                            name="model_number"
+                            value="{{ equipment.model_number or '' }}"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Serial Number</label>
+                        <input
+                            name="serial_number"
+                            value="{{ equipment.serial_number or '' }}"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Install Date</label>
+                        <input
+                            type="date"
+                            name="install_date"
+                            value="{{ equipment.install_date or '' }}"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Warranty Expires</label>
+                        <input
+                            type="date"
+                            name="warranty_expires_on"
+                            value="{{ equipment.warranty_expires_on or '' }}"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vendor</label>
+                        <input
+                            name="vendor_name"
+                            value="{{ equipment.vendor_name or '' }}"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea
+                        name="notes"
+                        rows="5"
+                    >{{ equipment.notes or '' }}</textarea>
+                </div>
+
+                <button
+                    type="submit"
+                    class="btn-primary"
+                >
+                    Save Equipment
+                </button>
+            </form>
+
+            <form
+                method="POST"
+                style="margin-top: 14px;"
+            >
+                <input
+                    type="hidden"
+                    name="action"
+                    value="toggle_active"
+                >
+
+                <button
+                    type="submit"
+                    class="action-btn"
+                >
+                    {% if equipment.is_active %}
+                    Mark Inactive
+                    {% else %}
+                    Reactivate Equipment
+                    {% endif %}
+                </button>
+            </form>
+            {% else %}
+            <div class="equipment-read-grid">
+                <div>
+                    <span>Brand</span>
+                    <strong>
+                        {{ equipment.brand or 'Not entered' }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Model</span>
+                    <strong>
+                        {{ equipment.model_number or 'Not entered' }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Serial</span>
+                    <strong>
+                        {{ equipment.serial_number or 'Not entered' }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Installed</span>
+                    <strong>
+                        {{ equipment.install_date or 'Not entered' }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Warranty</span>
+                    <strong>
+                        {{ equipment.warranty_expires_on or 'Not entered' }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Vendor</span>
+                    <strong>
+                        {{ equipment.vendor_name or 'Not entered' }}
+                    </strong>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="panel premium-panel">
+            <div class="panel-head">
+                <div>
+                    <h3>Service History</h3>
+                    <div class="area-subtitle">
+                        Matching maintenance tickets at
+                        Store {{ equipment.store_number }}
+                    </div>
+                </div>
+
+                <span class="summary-pill">
+                    {{ matching_tickets|length }}
+                </span>
+            </div>
+
+            {% if matching_tickets %}
+            <div class="service-history-list">
+                {% for ticket in matching_tickets %}
+                <div class="service-history-row">
+                    <div>
+                        <strong>{{ ticket.title }}</strong>
+
+                        <div class="area-subtitle">
+                            Ticket #{{ ticket.id }}
+                            · {{ ticket.status|replace('_', ' ')|title }}
+                            {% if ticket.assigned_to %}
+                            · {{ ticket.assigned_to }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="service-date">
+                        {% if ticket.completed_at %}
+                            {{ ticket.completed_at.strftime('%Y-%m-%d') }}
+                        {% elif ticket.scheduled_date %}
+                            Scheduled {{ ticket.scheduled_date }}
+                        {% else %}
+                            {{ ticket.created_at.strftime('%Y-%m-%d') if ticket.created_at else 'Date unavailable' }}
+                        {% endif %}
+                    </div>
+
+                    {% if ticket.completion_note %}
+                    <p>
+                        {{ ticket.completion_note }}
+                    </p>
+                    {% elif ticket.details %}
+                    <p>
+                        {{ ticket.details }}
+                    </p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-service-history">
+                <h4>No matching service history yet</h4>
+                <p>
+                    Tickets will appear here when their title or
+                    details match this equipment.
+                </p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+<style>
+.equipment-detail-page {
+    display: grid;
+    gap: 22px;
+}
+
+.equipment-detail-grid {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1.2fr)
+        minmax(320px, 0.8fr);
+    gap: 20px;
+}
+
+.equipment-edit-grid,
+.equipment-read-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.equipment-read-grid div {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+}
+
+.equipment-read-grid span {
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.service-history-list {
+    display: grid;
+    gap: 12px;
+}
+
+.service-history-row {
+    padding: 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 13px;
+    background: rgba(255,255,255,0.02);
+}
+
+.service-history-row p {
+    margin: 10px 0 0;
+    color: var(--text-muted);
+}
+
+.service-date {
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.empty-service-history {
+    padding: 28px 12px;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .equipment-detail-grid,
+    .equipment-edit-grid,
+    .equipment-read-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

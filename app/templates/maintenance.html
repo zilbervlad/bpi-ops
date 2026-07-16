@@ -39,6 +39,11 @@
             <span class="tile-label">Calendar</span>
         </a>
 
+        <a class="command-chip maintenance-command-tile" href="{{ url_for('maintenance.equipment') }}">
+            <span class="tile-number">⚙</span>
+            <span class="tile-label">Equipment</span>
+        </a>
+
         {% if user_role in ['admin', 'supervisor'] %}
         <a class="command-chip maintenance-command-tile" href="{{ url_for('maintenance.time_cards') }}">
             <span class="tile-number">⏱</span>

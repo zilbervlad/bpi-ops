@@ -15,7 +15,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 
 from app.auth.routes import login_required, role_required
 from app.extensions import db
-from app.models import MaintenanceTicket, MaintenanceTimeCard, Store, User
+from app.models import MaintenanceEquipment, MaintenanceTicket, MaintenanceTimeCard, Store, User
 
 maintenance_bp = Blueprint("maintenance", __name__, url_prefix="/maintenance")
 
@@ -842,6 +842,480 @@ def index():
         store_counts=store_counts,
         all_visible_tickets=all_visible_tickets,
         user_role=role,
+    )
+
+
+
+@maintenance_bp.route("/equipment", methods=["GET", "POST"])
+@login_required
+@role_required("admin", "supervisor", "maintenance", "manager")
+def equipment():
+    role = get_current_role()
+    visible_stores = get_visible_stores()
+    visible_store_numbers = {
+        store.store_number
+        for store in visible_stores
+    }
+
+    can_manage = role in {
+        "admin",
+        "supervisor",
+        "maintenance",
+    }
+
+    if request.method == "POST":
+        if not can_manage:
+            flash(
+                "You do not have permission to add equipment.",
+                "error",
+            )
+            return redirect(
+                url_for("maintenance.equipment")
+            )
+
+        store_number = (
+            request.form.get("store_number", "")
+            .strip()
+        )
+
+        equipment_type = (
+            request.form.get("equipment_type", "")
+            .strip()
+        )
+
+        equipment_name = (
+            request.form.get("equipment_name", "")
+            .strip()
+        )
+
+        if store_number not in visible_store_numbers:
+            flash(
+                "Invalid or unauthorized store.",
+                "error",
+            )
+            return redirect(
+                url_for("maintenance.equipment")
+            )
+
+        if not equipment_type or not equipment_name:
+            flash(
+                "Equipment type and equipment name "
+                "are required.",
+                "error",
+            )
+            return redirect(
+                url_for("maintenance.equipment")
+            )
+
+        current_user = get_current_user_record()
+
+        row = MaintenanceEquipment(
+            store_number=store_number,
+            equipment_type=equipment_type,
+            equipment_name=equipment_name,
+            brand=(
+                request.form.get("brand", "").strip()
+                or None
+            ),
+            model_number=(
+                request.form.get(
+                    "model_number",
+                    "",
+                ).strip()
+                or None
+            ),
+            serial_number=(
+                request.form.get(
+                    "serial_number",
+                    "",
+                ).strip()
+                or None
+            ),
+            install_date=parse_optional_date(
+                request.form.get(
+                    "install_date",
+                    "",
+                ).strip()
+            ),
+            warranty_expires_on=parse_optional_date(
+                request.form.get(
+                    "warranty_expires_on",
+                    "",
+                ).strip()
+            ),
+            vendor_name=(
+                request.form.get(
+                    "vendor_name",
+                    "",
+                ).strip()
+                or None
+            ),
+            notes=(
+                request.form.get("notes", "").strip()
+                or None
+            ),
+            is_active=True,
+            created_by_user_id=(
+                current_user.id
+                if current_user
+                else None
+            ),
+        )
+
+        db.session.add(row)
+        db.session.commit()
+
+        flash(
+            f"{equipment_name} was added to "
+            f"Store {store_number}.",
+            "success",
+        )
+
+        return redirect(
+            url_for(
+                "maintenance.equipment_detail",
+                equipment_id=row.id,
+            )
+        )
+
+    store_filter = (
+        request.args.get("store", "").strip()
+    )
+
+    type_filter = (
+        request.args.get("type", "").strip()
+    )
+
+    search_text = (
+        request.args.get("q", "").strip()
+    )
+
+    active_filter = (
+        request.args.get("active", "active")
+        .strip()
+        .lower()
+    )
+
+    query = MaintenanceEquipment.query.filter(
+        MaintenanceEquipment.store_number.in_(
+            visible_store_numbers
+        )
+    )
+
+    if store_filter:
+        if store_filter in visible_store_numbers:
+            query = query.filter(
+                MaintenanceEquipment.store_number
+                == store_filter
+            )
+        else:
+            query = query.filter(db.text("1 = 0"))
+
+    if type_filter:
+        query = query.filter(
+            MaintenanceEquipment.equipment_type
+            == type_filter
+        )
+
+    if active_filter == "active":
+        query = query.filter(
+            MaintenanceEquipment.is_active == True
+        )
+    elif active_filter == "inactive":
+        query = query.filter(
+            MaintenanceEquipment.is_active == False
+        )
+
+    if search_text:
+        search_pattern = f"%{search_text}%"
+
+        query = query.filter(
+            db.or_(
+                MaintenanceEquipment.equipment_name
+                .ilike(search_pattern),
+                MaintenanceEquipment.equipment_type
+                .ilike(search_pattern),
+                MaintenanceEquipment.brand
+                .ilike(search_pattern),
+                MaintenanceEquipment.model_number
+                .ilike(search_pattern),
+                MaintenanceEquipment.serial_number
+                .ilike(search_pattern),
+                MaintenanceEquipment.vendor_name
+                .ilike(search_pattern),
+                MaintenanceEquipment.notes
+                .ilike(search_pattern),
+            )
+        )
+
+    rows = (
+        query
+        .order_by(
+            MaintenanceEquipment.store_number.asc(),
+            MaintenanceEquipment.equipment_type.asc(),
+            MaintenanceEquipment.equipment_name.asc(),
+        )
+        .all()
+    )
+
+    available_types = [
+        value[0]
+        for value in (
+            db.session.query(
+                MaintenanceEquipment.equipment_type
+            )
+            .filter(
+                MaintenanceEquipment.store_number.in_(
+                    visible_store_numbers
+                )
+            )
+            .distinct()
+            .order_by(
+                MaintenanceEquipment.equipment_type.asc()
+            )
+            .all()
+        )
+        if value[0]
+    ]
+
+    today = today_et_local()
+
+    return render_template(
+        "maintenance_equipment.html",
+        equipment_rows=rows,
+        stores=visible_stores,
+        available_types=available_types,
+        store_filter=store_filter,
+        type_filter=type_filter,
+        search_text=search_text,
+        active_filter=active_filter,
+        can_manage=can_manage,
+        user_role=role,
+        today=today,
+    )
+
+
+@maintenance_bp.route(
+    "/equipment/<int:equipment_id>",
+    methods=["GET", "POST"],
+)
+@login_required
+@role_required("admin", "supervisor", "maintenance", "manager")
+def equipment_detail(equipment_id):
+    role = get_current_role()
+    visible_stores = get_visible_stores()
+    visible_store_numbers = {
+        store.store_number
+        for store in visible_stores
+    }
+
+    row = MaintenanceEquipment.query.get_or_404(
+        equipment_id
+    )
+
+    if row.store_number not in visible_store_numbers:
+        flash(
+            "You do not have access to this equipment.",
+            "error",
+        )
+        return redirect(
+            url_for("maintenance.equipment")
+        )
+
+    can_manage = role in {
+        "admin",
+        "supervisor",
+        "maintenance",
+    }
+
+    if request.method == "POST":
+        if not can_manage:
+            flash(
+                "You do not have permission to edit equipment.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "maintenance.equipment_detail",
+                    equipment_id=row.id,
+                )
+            )
+
+        action = (
+            request.form.get("action", "update")
+            .strip()
+            .lower()
+        )
+
+        if action == "toggle_active":
+            row.is_active = not row.is_active
+            db.session.commit()
+
+            flash(
+                (
+                    f"{row.equipment_name} is now active."
+                    if row.is_active
+                    else (
+                        f"{row.equipment_name} "
+                        "was marked inactive."
+                    )
+                ),
+                "success",
+            )
+
+            return redirect(
+                url_for(
+                    "maintenance.equipment_detail",
+                    equipment_id=row.id,
+                )
+            )
+
+        store_number = (
+            request.form.get("store_number", "")
+            .strip()
+        )
+
+        equipment_type = (
+            request.form.get("equipment_type", "")
+            .strip()
+        )
+
+        equipment_name = (
+            request.form.get("equipment_name", "")
+            .strip()
+        )
+
+        if store_number not in visible_store_numbers:
+            flash(
+                "Invalid or unauthorized store.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "maintenance.equipment_detail",
+                    equipment_id=row.id,
+                )
+            )
+
+        if not equipment_type or not equipment_name:
+            flash(
+                "Equipment type and equipment name "
+                "are required.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "maintenance.equipment_detail",
+                    equipment_id=row.id,
+                )
+            )
+
+        row.store_number = store_number
+        row.equipment_type = equipment_type
+        row.equipment_name = equipment_name
+        row.brand = (
+            request.form.get("brand", "").strip()
+            or None
+        )
+        row.model_number = (
+            request.form.get(
+                "model_number",
+                "",
+            ).strip()
+            or None
+        )
+        row.serial_number = (
+            request.form.get(
+                "serial_number",
+                "",
+            ).strip()
+            or None
+        )
+        row.install_date = parse_optional_date(
+            request.form.get(
+                "install_date",
+                "",
+            ).strip()
+        )
+        row.warranty_expires_on = parse_optional_date(
+            request.form.get(
+                "warranty_expires_on",
+                "",
+            ).strip()
+        )
+        row.vendor_name = (
+            request.form.get(
+                "vendor_name",
+                "",
+            ).strip()
+            or None
+        )
+        row.notes = (
+            request.form.get("notes", "").strip()
+            or None
+        )
+
+        db.session.commit()
+
+        flash(
+            f"{row.equipment_name} was updated.",
+            "success",
+        )
+
+        return redirect(
+            url_for(
+                "maintenance.equipment_detail",
+                equipment_id=row.id,
+            )
+        )
+
+    related_tickets = (
+        MaintenanceTicket.query
+        .filter(
+            MaintenanceTicket.store_number
+            == row.store_number
+        )
+        .order_by(
+            MaintenanceTicket.completed_at.desc(),
+            MaintenanceTicket.created_at.desc(),
+            MaintenanceTicket.id.desc(),
+        )
+        .limit(100)
+        .all()
+    )
+
+    equipment_words = {
+        word.lower()
+        for word in (
+            f"{row.equipment_type or ''} "
+            f"{row.equipment_name or ''}"
+        ).split()
+        if len(word) >= 3
+    }
+
+    matching_tickets = []
+
+    for ticket in related_tickets:
+        ticket_text = (
+            f"{ticket.title or ''} "
+            f"{ticket.details or ''} "
+            f"{ticket.completion_note or ''}"
+        ).lower()
+
+        if any(
+            word in ticket_text
+            for word in equipment_words
+        ):
+            matching_tickets.append(ticket)
+
+    return render_template(
+        "maintenance_equipment_detail.html",
+        equipment=row,
+        stores=visible_stores,
+        can_manage=can_manage,
+        user_role=role,
+        matching_tickets=matching_tickets,
+        today=today_et_local(),
     )
 
 

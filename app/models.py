@@ -462,6 +462,145 @@ class MaintenanceTicket(db.Model):
     svr_report = db.relationship("SVRReport")
 
 
+class MaintenanceEquipment(db.Model):
+    __tablename__ = "maintenance_equipment"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    store_number = db.Column(db.String(10), nullable=False, index=True)
+    equipment_type = db.Column(db.String(100), nullable=False)
+    equipment_name = db.Column(db.String(160), nullable=False)
+
+    brand = db.Column(db.String(120), nullable=True)
+    model_number = db.Column(db.String(120), nullable=True)
+    serial_number = db.Column(db.String(160), nullable=True)
+
+    install_date = db.Column(db.Date, nullable=True)
+    warranty_expires_on = db.Column(db.Date, nullable=True)
+
+    vendor_name = db.Column(db.String(160), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+
+    created_by_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=True,
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+    created_by = db.relationship(
+        "User",
+        foreign_keys=[created_by_user_id],
+    )
+
+
+class MaintenanceAgentAction(db.Model):
+    __tablename__ = "maintenance_agent_actions"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    requesting_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=True,
+    )
+
+    requesting_username = db.Column(
+        db.String(80),
+        nullable=True,
+    )
+
+    requesting_role = db.Column(
+        db.String(50),
+        nullable=False,
+    )
+
+    source = db.Column(
+        db.String(50),
+        nullable=False,
+        default="doughy",
+    )
+
+    action_type = db.Column(
+        db.String(80),
+        nullable=False,
+    )
+
+    target_type = db.Column(
+        db.String(80),
+        nullable=False,
+        default="maintenance_ticket",
+    )
+
+    target_id = db.Column(
+        db.Integer,
+        nullable=True,
+    )
+
+    store_number = db.Column(
+        db.String(10),
+        nullable=True,
+        index=True,
+    )
+
+    original_message = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    request_json = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    before_json = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    after_json = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    status = db.Column(
+        db.String(30),
+        nullable=False,
+        default="completed",
+    )
+
+    error_message = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+    requesting_user = db.relationship(
+        "User",
+        foreign_keys=[requesting_user_id],
+    )
+
+
+
 class MaintenanceTimeCard(db.Model):
     __tablename__ = "maintenance_time_cards"
 

@@ -525,6 +525,42 @@ def render_email_body(
         "%A, %B %d, %Y"
     )
 
+    if user.role == "hr":
+        dwp_lines = [
+            (
+                f"- Store {row.store_number} | "
+                f"{row.team_member_name_snapshot} | "
+                f"{row.discussion_type} / {row.category} | "
+                f"Submitted by {row.submitted_by_name_snapshot}"
+            )
+            for row in data["dwps"]
+        ]
+
+        signed_lines = [
+            (
+                f"- Store {row.user.store_number or '—'} | "
+                f"{row.user.name} signed "
+                f"“{row.document.title}”"
+            )
+            for row in data["hr_signed"]
+        ]
+
+        return (
+            f"Good morning {user.name},\n\n"
+            f"HR DAILY BRIEF\n"
+            f"{date_label}\n"
+            f"Scope: {scope_label}\n\n"
+
+            f"DWPs SUBMITTED\n"
+            f"{chr(10).join(dwp_lines) if dwp_lines else '- None'}\n\n"
+
+            f"HR DOCUMENTS SIGNED\n"
+            f"{chr(10).join(signed_lines) if signed_lines else '- None'}\n\n"
+
+            f"- Doughy\n"
+            f"BPI Ops"
+        )
+
     def pct(value):
         return (
             f"{value:.0f}%"

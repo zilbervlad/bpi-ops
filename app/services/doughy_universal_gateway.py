@@ -1533,12 +1533,38 @@ def _simple_history_context(
                 ),
             })
 
-    return {
+    response = {
         "ok": True,
         "module": module,
         "count": len(results),
         "records": results,
     }
+
+    if module == "nightly_history":
+        response["requested"] = {
+            "date_from": (
+                date_from.isoformat()
+                if date_from
+                else None
+            ),
+            "date_to": (
+                date_to.isoformat()
+                if date_to
+                else None
+            ),
+        }
+
+        response["visible_stores"] = sorted(
+            str(store_number)
+            for store_number in allowed_stores
+        )
+
+        response["result_limit"] = limit
+        response["truncated"] = (
+            len(results) >= limit
+        )
+
+    return response
 
 
 def build_doughy_universal_context(
@@ -1586,6 +1612,16 @@ def build_doughy_universal_context(
     result_limit = _limit(
         limit
     )
+
+    if (
+        module == "nightly_history"
+        and parsed_from
+        and parsed_to
+    ):
+        result_limit = max(
+            result_limit,
+            1000,
+        )
 
     if module == "users":
         return _users_context(

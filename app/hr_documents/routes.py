@@ -4,7 +4,7 @@ import requests
 from datetime import datetime, date
 from collections import Counter
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, abort, Response
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, abort, Response, jsonify
 from io import BytesIO, StringIO
 from werkzeug.utils import secure_filename
 
@@ -83,6 +83,32 @@ def scoped_recipient_query(document_id=None):
 
     return query
 
+
+
+def require_connect_integration_secret():
+    expected_secret = os.getenv(
+        "BPI_CONNECT_INTEGRATION_SECRET",
+        "",
+    ).strip()
+
+    provided_secret = (
+        request.headers.get("X-BPI-Connect-Secret", "").strip()
+        or request.headers.get("X-Integration-Secret", "").strip()
+    )
+
+    if not expected_secret:
+        return jsonify({
+            "success": False,
+            "error": "BPI_CONNECT_INTEGRATION_SECRET is not configured.",
+        }), 403
+
+    if provided_secret != expected_secret:
+        return jsonify({
+            "success": False,
+            "error": "Unauthorized BPI Connect integration request.",
+        }), 403
+
+    return None
 
 
 def parse_due_date(value):
@@ -989,3 +1015,236 @@ def acknowledge_document(document_id):
         recipient=recipient,
         user=user,
     )
+
+
+# CONNECT_IN_APP_HR_DOCUMENT_API_20260718
+
+@hr_documents_bp.route(
+    "/api/connect/users/<int:user_id>/documents",
+    methods=["GET"],
+)
+def connect_user_documents(user_id):
+    auth_error = require_connect_integration_secret()
+    if auth_error:
+        return auth_error
+
+    user = User.query.get(user_id)
+    if not user or not user.is_active:
+        return jsonify({
+            "success": False,
+            "error": "BPI Ops user not found or inactive.",
+        }), 404
+
+    recipients = (
+        HRDocumentRecipient.query
+        .join(HRDocument)
+        .filter(
+            HRDocumentRecipient.user_id == user.id,
+            HRDocument.is_active == True,
+        )
+        .order_by(
+            HRDocumentRecipient.status == "acknowledged",
+            HRDocumentRecipient.assigned_at.desc(),
+        )
+        .all()
+    )
+
+    documents = []
+
+    for recipient in recipients:
+        document = recipient.document
+
+        documents.append({
+            "recipient_id": recipient.id,
+            "document_id": document.id,
+            "title": document.title,
+            "description": document.description or "",
+            "original_filename": document.original_filename,
+            "content_type": document.content_type or "application/octet-stream",
+            "file_size": document.file_size or 0,
+            "due_date": (
+                document.due_date.isoformat()
+                if document.due_date
+                else None
+            ),
+            "status": recipient.status,
+            "assigned_at": (
+                recipient.assigned_at.isoformat()
+                if recipient.assigned_at
+                else None
+            ),
+            "acknowledged_at": (
+                recipient.acknowledged_at.isoformat()
+                if recipient.acknowledged_at
+                else None
+            ),
+            "acknowledged_name": recipient.acknowledged_name,
+        })
+
+    return jsonify({
+        "success": True,
+        "user": {
+            "id": user.id,
+            "name": user.name,
+        },
+        "documents": documents,
+    })
+
+
+@hr_documents_bp.route(
+    "/api/connect/recipients/<int:recipient_id>/file",
+    methods=["GET"],
+)
+def connect_document_file(recipient_id):
+    auth_error = require_connect_integration_secret()
+    if auth_error:
+        return auth_error
+
+    requested_user_id = request.args.get(
+        "bpi_ops_user_id",
+        type=int,
+    )
+
+    if not requested_user_id:
+        return jsonify({
+            "success": False,
+            "error": "bpi_ops_user_id is required.",
+        }), 400
+
+    recipient = HRDocumentRecipient.query.get(recipient_id)
+
+    if not recipient or recipient.user_id != requested_user_id:
+        return jsonify({
+            "success": False,
+            "error": "Document assignment not found.",
+        }), 404
+
+    document = recipient.document
+
+    if not document or not document.is_active:
+        return jsonify({
+            "success": False,
+            "error": "Document is unavailable.",
+        }), 404
+
+    response = send_file(
+        BytesIO(document.file_data),
+        mimetype=document.content_type or "application/octet-stream",
+        as_attachment=False,
+        download_name=document.original_filename,
+    )
+
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+    return response
+
+
+@hr_documents_bp.route(
+    "/api/connect/recipients/<int:recipient_id>/acknowledge",
+    methods=["POST"],
+)
+def connect_acknowledge_document(recipient_id):
+    auth_error = require_connect_integration_secret()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json(silent=True) or {}
+
+    try:
+        requested_user_id = int(
+            data.get("bpi_ops_user_id")
+            or 0
+        )
+    except (TypeError, ValueError):
+        requested_user_id = 0
+
+    acknowledged_name = (
+        data.get("acknowledged_name")
+        or ""
+    ).strip()
+
+    confirmed = data.get("confirmed") is True
+
+    if not requested_user_id:
+        return jsonify({
+            "success": False,
+            "error": "bpi_ops_user_id is required.",
+        }), 400
+
+    if not acknowledged_name:
+        return jsonify({
+            "success": False,
+            "error": "Please type your name.",
+        }), 400
+
+    if not confirmed:
+        return jsonify({
+            "success": False,
+            "error": "Document acknowledgement must be confirmed.",
+        }), 400
+
+    recipient = HRDocumentRecipient.query.get(recipient_id)
+
+    if not recipient or recipient.user_id != requested_user_id:
+        return jsonify({
+            "success": False,
+            "error": "Document assignment not found.",
+        }), 404
+
+    user = User.query.get(requested_user_id)
+
+    if not user or not user.is_active:
+        return jsonify({
+            "success": False,
+            "error": "BPI Ops user not found or inactive.",
+        }), 404
+
+    if recipient.status == "acknowledged":
+        return jsonify({
+            "success": True,
+            "already_acknowledged": True,
+            "recipient": {
+                "id": recipient.id,
+                "status": recipient.status,
+                "acknowledged_at": (
+                    recipient.acknowledged_at.isoformat()
+                    if recipient.acknowledged_at
+                    else None
+                ),
+                "acknowledged_name": recipient.acknowledged_name,
+            },
+        })
+
+    forwarded_ip = (
+        request.headers.get("X-Connect-Client-IP", "").strip()
+        or request.headers.get("X-Forwarded-For", "").strip()
+        or request.remote_addr
+        or ""
+    )
+
+    forwarded_user_agent = (
+        request.headers.get("X-Connect-User-Agent", "").strip()
+        or request.user_agent.string
+        or ""
+    )
+
+    recipient.status = "acknowledged"
+    recipient.acknowledged_at = datetime.utcnow()
+    recipient.acknowledged_name = acknowledged_name
+    recipient.acknowledged_ip = forwarded_ip[:80]
+    recipient.acknowledged_user_agent = forwarded_user_agent[:255]
+
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "already_acknowledged": False,
+        "recipient": {
+            "id": recipient.id,
+            "status": recipient.status,
+            "acknowledged_at": recipient.acknowledged_at.isoformat(),
+            "acknowledged_name": recipient.acknowledged_name,
+        },
+    })
+

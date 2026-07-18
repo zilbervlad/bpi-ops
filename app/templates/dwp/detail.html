@@ -312,6 +312,56 @@
         font-size: 11px;
     }
 }
+
+/* DWP acknowledgement readability fix */
+.ack-box {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #111827 !important;
+}
+
+.ack-box,
+.ack-box .ack-title,
+.ack-box .ack-text,
+.ack-box .ack-confirm,
+.ack-box .ack-confirm span,
+.ack-box .ack-row label,
+.ack-box .section-label {
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    opacity: 1 !important;
+}
+
+.ack-box .ack-title {
+    font-weight: 950 !important;
+}
+
+.ack-box input[type="text"],
+.ack-box textarea {
+    width: 100%;
+    background: #ffffff !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    border: 1px solid #cbd5e1 !important;
+    opacity: 1 !important;
+}
+
+.ack-box input[type="text"]::placeholder,
+.ack-box textarea::placeholder {
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    opacity: 1 !important;
+}
+
+.ack-box textarea {
+    min-height: 96px;
+}
+
+.ack-box input[type="checkbox"] {
+    opacity: 1 !important;
+    accent-color: #2563eb;
+}
+
 </style>
 
 <div class="dwp-detail-page">

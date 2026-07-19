@@ -1559,11 +1559,71 @@ def collect_weekly_scope_data(
             "walk_values": [],
             "integrity_values": [],
             "nightly_submissions": 0,
+            "missing_nightly_dates": [],
+            "missing_checklist_dates": [],
+            "zero_section_dates": [],
             "svrs": 0,
             "maintenance_completed": 0,
             "dwps": 0,
             "hr_signed": 0,
         }
+
+    for daily in daily_rows:
+        daily_date = daily["brief_date"]
+
+        checklist_by_store = {
+            str(row["store_number"]): row
+            for row in daily.get("checklist_rows") or []
+        }
+
+        nightly_store_numbers = {
+            str(report.store_number)
+            for report in daily.get("nightly_reports") or []
+        }
+
+        for store_number, summary in store_summary.items():
+            checklist_row = checklist_by_store.get(
+                store_number
+            )
+
+            if checklist_row is None:
+                summary["missing_checklist_dates"].append(
+                    daily_date
+                )
+            else:
+                zero_sections = []
+
+                section_fields = (
+                    ("Open", "opening"),
+                    ("During Dayshift", "dayshift"),
+                    ("3 PM Restock", "restock"),
+                    ("Manager's Walk", "manager_walk"),
+                )
+
+                for section_label, field_name in section_fields:
+                    value = checklist_row.get(field_name)
+
+                    if value is not None:
+                        try:
+                            is_zero = float(value) == 0
+                        except (TypeError, ValueError):
+                            is_zero = False
+
+                        if is_zero:
+                            zero_sections.append(
+                                section_label
+                            )
+
+                if zero_sections:
+                    summary["zero_section_dates"].append({
+                        "date": daily_date,
+                        "sections": zero_sections,
+                    })
+
+            if store_number not in nightly_store_numbers:
+                summary["missing_nightly_dates"].append(
+                    daily_date
+                )
 
     for row in checklist_rows:
         store_number = str(row["store_number"])
@@ -1577,6 +1637,9 @@ def collect_weekly_scope_data(
                 "walk_values": [],
                 "integrity_values": [],
                 "nightly_submissions": 0,
+            "missing_nightly_dates": [],
+            "missing_checklist_dates": [],
+            "zero_section_dates": [],
                 "svrs": 0,
                 "maintenance_completed": 0,
                 "dwps": 0,
@@ -1815,13 +1878,49 @@ def render_weekly_email_body(
     role = (user.role or "").strip().lower()
 
     if role == "maintenance":
-        completed_lines = [
-            (
-                f"- Store {ticket.store_number} | "
-                f"{ticket.title}"
+        completed_by_date = defaultdict(list)
+
+        for ticket in data["maintenance_completed"]:
+            completed_date = (
+                ticket.scheduled_date
+                or week_start
             )
-            for ticket in data["maintenance_completed"]
-        ]
+
+            completed_by_date[completed_date].append(
+                ticket
+            )
+
+        completed_day_sections = []
+        completed_date = week_start
+
+        while completed_date <= week_end:
+            day_tickets = completed_by_date.get(
+                completed_date,
+                [],
+            )
+
+            completed_day_sections.append(
+                completed_date.strftime(
+                    "%A, %B %d"
+                ).upper()
+            )
+
+            if day_tickets:
+                completed_day_sections.extend(
+                    (
+                        f"- Store {ticket.store_number} | "
+                        f"{ticket.title}"
+                    )
+                    for ticket in day_tickets
+                )
+            else:
+                completed_day_sections.append("- None")
+
+            completed_date += timedelta(days=1)
+
+        completed_text = "\n".join(
+            completed_day_sections
+        )
 
         scheduled_lines = []
 
@@ -1855,8 +1954,8 @@ def render_weekly_email_body(
             f"Scheduled today: "
             f"{len(data['maintenance_scheduled_today'])}\n\n"
 
-            f"COMPLETED LAST WEEK\n"
-            f"{chr(10).join(completed_lines) if completed_lines else '- None'}\n\n"
+            f"COMPLETED LAST WEEK — BY DAY\n"
+            f"{completed_text}\n\n"
 
             f"SCHEDULED FOR TODAY\n"
             f"{chr(10).join(scheduled_lines) if scheduled_lines else '- None'}\n\n"
@@ -1963,22 +2062,93 @@ def render_weekly_email_body(
         reverse=True,
     )
 
+    def short_day_label(value):
+        return value.strftime("%a %m/%d")
+
     def store_week_block(row):
-        return (
-            f"{row['store_number']}\n"
-            f"  Checklist days: "
-            f"{row['checklist_days']}/7\n"
-            f"  Open average: "
-            f"{weekly_pct(row['opening_average'])}\n"
-            f"  3 PM Restock average: "
-            f"{weekly_pct(row['restock_average'])}\n"
-            f"  Manager's Walk average: "
-            f"{weekly_pct(row['walk_average'])}\n"
-            f"  Integrity average: "
-            f"{weekly_pct(row['integrity_average'])}\n"
-            f"  Nightly Numbers: "
-            f"{row['nightly_submissions']}/7"
+        lines = [
+            f"{row['store_number']}",
+            (
+                f"  Checklist days: "
+                f"{row['checklist_days']}/7"
+            ),
+            (
+                f"  Open average: "
+                f"{weekly_pct(row['opening_average'])}"
+            ),
+            (
+                f"  3 PM Restock average: "
+                f"{weekly_pct(row['restock_average'])}"
+            ),
+            (
+                f"  Manager's Walk average: "
+                f"{weekly_pct(row['walk_average'])}"
+            ),
+            (
+                f"  Integrity average: "
+                f"{weekly_pct(row['integrity_average'])}"
+            ),
+            (
+                f"  Nightly Numbers: "
+                f"{row['nightly_submissions']}/7"
+            ),
+        ]
+
+        missing_nightly_dates = (
+            row.get("missing_nightly_dates") or []
         )
+
+        if missing_nightly_dates:
+            lines.append(
+                "  Missing Nightly Numbers: "
+                + ", ".join(
+                    short_day_label(value)
+                    for value in missing_nightly_dates
+                )
+            )
+        else:
+            lines.append(
+                "  Missing Nightly Numbers: None"
+            )
+
+        missing_checklist_dates = (
+            row.get("missing_checklist_dates") or []
+        )
+
+        if missing_checklist_dates:
+            lines.append(
+                "  Missing checklist days: "
+                + ", ".join(
+                    short_day_label(value)
+                    for value in missing_checklist_dates
+                )
+            )
+        else:
+            lines.append(
+                "  Missing checklist days: None"
+            )
+
+        zero_section_dates = (
+            row.get("zero_section_dates") or []
+        )
+
+        if zero_section_dates:
+            lines.append("  0% checklist sections:")
+
+            lines.extend(
+                (
+                    "    - "
+                    f"{short_day_label(item['date'])}: "
+                    + ", ".join(item["sections"])
+                )
+                for item in zero_section_dates
+            )
+        else:
+            lines.append(
+                "  0% checklist sections: None"
+            )
+
+        return "\n".join(lines)
 
     priority_text = "\n\n".join(
         store_week_block(row)

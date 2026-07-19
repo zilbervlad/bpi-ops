@@ -1469,6 +1469,621 @@ def render_email_body(
         f"BPI Ops"
     )
 
+
+def previous_week_range(reference_time: datetime | None = None):
+    current = reference_time or now_et()
+    today = current.date()
+
+    current_week_monday = today - timedelta(
+        days=today.weekday()
+    )
+
+    previous_monday = (
+        current_week_monday - timedelta(days=7)
+    )
+    previous_sunday = (
+        current_week_monday - timedelta(days=1)
+    )
+
+    return previous_monday, previous_sunday
+
+
+def collect_weekly_scope_data(
+    user: User,
+    stores: list[Store],
+    week_start,
+    week_end,
+):
+    daily_rows = []
+    current_date = week_start
+
+    while current_date <= week_end:
+        daily_rows.append(
+            collect_scope_data(
+                user=user,
+                stores=stores,
+                brief_date=current_date,
+            )
+        )
+        current_date += timedelta(days=1)
+
+    checklist_rows = []
+    nightly_reports = []
+    svr_reports = []
+    maintenance_completed = []
+    dwps = []
+    hr_signed = []
+
+    for daily in daily_rows:
+        checklist_rows.extend(
+            daily.get("checklist_rows") or []
+        )
+        nightly_reports.extend(
+            daily.get("nightly_reports") or []
+        )
+        svr_reports.extend(
+            daily.get("svr_reports") or []
+        )
+        maintenance_completed.extend(
+            daily.get("maintenance_completed_yesterday") or []
+        )
+        dwps.extend(
+            daily.get("dwps") or []
+        )
+        hr_signed.extend(
+            daily.get("hr_signed") or []
+        )
+
+    # collect_scope_data() always calculates this using the
+    # real current date, so one daily result is enough.
+    today_data = (
+        daily_rows[-1]
+        if daily_rows
+        else collect_scope_data(
+            user=user,
+            stores=stores,
+            brief_date=week_end,
+        )
+    )
+
+    store_summary = {}
+
+    for store in stores:
+        store_number = str(store.store_number)
+
+        store_summary[store_number] = {
+            "store_number": store_number,
+            "checklist_days": 0,
+            "opening_values": [],
+            "restock_values": [],
+            "walk_values": [],
+            "integrity_values": [],
+            "nightly_submissions": 0,
+            "svrs": 0,
+            "maintenance_completed": 0,
+            "dwps": 0,
+            "hr_signed": 0,
+        }
+
+    for row in checklist_rows:
+        store_number = str(row["store_number"])
+        summary = store_summary.setdefault(
+            store_number,
+            {
+                "store_number": store_number,
+                "checklist_days": 0,
+                "opening_values": [],
+                "restock_values": [],
+                "walk_values": [],
+                "integrity_values": [],
+                "nightly_submissions": 0,
+                "svrs": 0,
+                "maintenance_completed": 0,
+                "dwps": 0,
+                "hr_signed": 0,
+            },
+        )
+
+        summary["checklist_days"] += 1
+
+        if row.get("opening") is not None:
+            summary["opening_values"].append(
+                float(row["opening"])
+            )
+
+        if row.get("restock") is not None:
+            summary["restock_values"].append(
+                float(row["restock"])
+            )
+
+        if row.get("manager_walk") is not None:
+            summary["walk_values"].append(
+                float(row["manager_walk"])
+            )
+
+        if row.get("integrity") is not None:
+            summary["integrity_values"].append(
+                float(row["integrity"])
+            )
+
+    for report in nightly_reports:
+        store_number = str(report.store_number)
+
+        if store_number in store_summary:
+            store_summary[store_number][
+                "nightly_submissions"
+            ] += 1
+
+    for report in svr_reports:
+        store_number = str(report.store_number)
+
+        if store_number in store_summary:
+            store_summary[store_number]["svrs"] += 1
+
+    for ticket in maintenance_completed:
+        store_number = str(ticket.store_number)
+
+        if store_number in store_summary:
+            store_summary[store_number][
+                "maintenance_completed"
+            ] += 1
+
+    for row in dwps:
+        store_number = str(row.store_number)
+
+        if store_number in store_summary:
+            store_summary[store_number]["dwps"] += 1
+
+    for row in hr_signed:
+        store_number = str(
+            row.user.store_number or ""
+        )
+
+        if store_number in store_summary:
+            store_summary[store_number][
+                "hr_signed"
+            ] += 1
+
+    def average(values):
+        if not values:
+            return None
+
+        return round(sum(values) / len(values), 1)
+
+    store_rows = []
+
+    for summary in store_summary.values():
+        summary["opening_average"] = average(
+            summary.pop("opening_values")
+        )
+        summary["restock_average"] = average(
+            summary.pop("restock_values")
+        )
+        summary["walk_average"] = average(
+            summary.pop("walk_values")
+        )
+        summary["integrity_average"] = average(
+            summary.pop("integrity_values")
+        )
+
+        store_rows.append(summary)
+
+    store_rows.sort(
+        key=lambda row: row["store_number"]
+    )
+
+    return {
+        "week_start": week_start,
+        "week_end": week_end,
+        "stores": stores,
+        "store_numbers": [
+            str(store.store_number)
+            for store in stores
+        ],
+        "daily_rows": daily_rows,
+        "store_rows": store_rows,
+        "checklist_rows": checklist_rows,
+        "nightly_reports": nightly_reports,
+        "svr_reports": svr_reports,
+        "maintenance_completed": maintenance_completed,
+        "maintenance_scheduled_today": (
+            today_data.get(
+                "maintenance_scheduled_today"
+            )
+            or []
+        ),
+        "dwps": dwps,
+        "hr_signed": hr_signed,
+    }
+
+
+def generate_weekly_doughy_take(
+    user: User,
+    data: dict,
+):
+    role = (user.role or "").strip().lower()
+
+    if role == "maintenance":
+        completed_count = len(
+            data["maintenance_completed"]
+        )
+        scheduled_count = len(
+            data["maintenance_scheduled_today"]
+        )
+
+        return (
+            f"You completed {completed_count} maintenance "
+            f"item(s) last week. You have "
+            f"{scheduled_count} item(s) scheduled today."
+        )
+
+    if role == "hr":
+        return (
+            f"Last week included {len(data['dwps'])} DWP "
+            f"submission(s) and "
+            f"{len(data['hr_signed'])} signed HR "
+            f"document(s)."
+        )
+
+    store_rows = data["store_rows"]
+
+    ranked_rows = sorted(
+        store_rows,
+        key=lambda row: (
+            row["integrity_average"]
+            if row["integrity_average"] is not None
+            else -1,
+            row["opening_average"]
+            if row["opening_average"] is not None
+            else -1,
+        ),
+        reverse=True,
+    )
+
+    strongest = [
+        row["store_number"]
+        for row in ranked_rows[:4]
+        if row["integrity_average"] is not None
+    ]
+
+    priority_rows = sorted(
+        [
+            row
+            for row in store_rows
+            if (
+                row["integrity_average"] is None
+                or row["integrity_average"] < 70
+                or row["opening_average"] is None
+                or row["opening_average"] < 90
+                or row["restock_average"] is None
+                or row["restock_average"] < 90
+                or row["walk_average"] is None
+                or row["walk_average"] < 90
+            )
+        ],
+        key=lambda row: (
+            row["integrity_average"]
+            if row["integrity_average"] is not None
+            else -1
+        ),
+    )
+
+    priority = [
+        row["store_number"]
+        for row in priority_rows[:5]
+    ]
+
+    strongest_text = (
+        ", ".join(strongest)
+        if strongest
+        else "No stores"
+    )
+
+    priority_text = (
+        ", ".join(priority)
+        if priority
+        else "none"
+    )
+
+    return (
+        f"{strongest_text} delivered the strongest overall "
+        f"checklist execution last week. The first stores "
+        f"requiring follow-up this week are "
+        f"{priority_text}. Across the scope, "
+        f"{len(data['nightly_reports'])} Nightly Numbers "
+        f"reports were submitted, {len(data['svr_reports'])} "
+        f"SVRs were completed, and "
+        f"{len(data['maintenance_completed'])} maintenance "
+        f"items were completed."
+    )
+
+
+def render_weekly_email_body(
+    user: User,
+    scope_label: str,
+    data: dict,
+    doughy_take: str,
+):
+    week_start = data["week_start"]
+    week_end = data["week_end"]
+
+    date_label = (
+        f"{week_start.strftime('%B %d')}–"
+        f"{week_end.strftime('%B %d, %Y')}"
+    )
+
+    role = (user.role or "").strip().lower()
+
+    if role == "maintenance":
+        completed_lines = [
+            (
+                f"- Store {ticket.store_number} | "
+                f"{ticket.title}"
+            )
+            for ticket in data["maintenance_completed"]
+        ]
+
+        scheduled_lines = []
+
+        for ticket in data["maintenance_scheduled_today"]:
+            if ticket.scheduled_time:
+                hour = ticket.scheduled_time.hour
+                minute = ticket.scheduled_time.minute
+                suffix = "AM" if hour < 12 else "PM"
+                display_hour = hour % 12 or 12
+                time_label = (
+                    f"{display_hour}:{minute:02d} {suffix}"
+                )
+            else:
+                time_label = "Time not set"
+
+            scheduled_lines.append(
+                f"- Store {ticket.store_number} | "
+                f"{time_label} | {ticket.title} | "
+                f"{(ticket.priority or 'normal').upper()}"
+            )
+
+        return (
+            f"Good morning {user.name},\n\n"
+            f"MAINTENANCE WEEKLY RECAP\n"
+            f"{date_label}\n"
+            f"Scope: Your assigned maintenance work\n\n"
+
+            f"LAST WEEK'S SNAPSHOT\n"
+            f"Completed: "
+            f"{len(data['maintenance_completed'])}\n"
+            f"Scheduled today: "
+            f"{len(data['maintenance_scheduled_today'])}\n\n"
+
+            f"COMPLETED LAST WEEK\n"
+            f"{chr(10).join(completed_lines) if completed_lines else '- None'}\n\n"
+
+            f"SCHEDULED FOR TODAY\n"
+            f"{chr(10).join(scheduled_lines) if scheduled_lines else '- None'}\n\n"
+
+            f"- Doughy\n"
+            f"BPI Ops"
+        )
+
+    if role == "hr":
+        dwp_lines = [
+            (
+                f"- Store {row.store_number} | "
+                f"{row.team_member_name_snapshot or 'Team member'} | "
+                f"{row.discussion_type or 'Type not listed'}"
+                f"{' / ' + row.category if row.category else ''} | "
+                f"Submitted by "
+                f"{row.submitted_by_name_snapshot or 'Not listed'}"
+            )
+            for row in data["dwps"]
+        ]
+
+        signed_lines = [
+            (
+                f"- Store {row.user.store_number or '—'} | "
+                f"{row.user.name} signed "
+                f"“{row.document.title}”"
+            )
+            for row in data["hr_signed"]
+        ]
+
+        return (
+            f"Good morning {user.name},\n\n"
+            f"HR WEEKLY RECAP\n"
+            f"{date_label}\n"
+            f"Scope: {scope_label}\n\n"
+
+            f"EXECUTIVE SNAPSHOT\n"
+            f"DWPs submitted: {len(data['dwps'])}\n"
+            f"HR documents signed: "
+            f"{len(data['hr_signed'])}\n\n"
+
+            f"DWPs SUBMITTED LAST WEEK\n"
+            f"{chr(10).join(dwp_lines) if dwp_lines else '- None'}\n\n"
+
+            f"HR DOCUMENTS SIGNED LAST WEEK\n"
+            f"{chr(10).join(signed_lines) if signed_lines else '- None'}\n\n"
+
+            f"- Doughy\n"
+            f"BPI Ops"
+        )
+
+    def weekly_pct(value):
+        return (
+            f"{value:.1f}%"
+            if value is not None
+            else "Not recorded"
+        )
+
+    store_rows = data["store_rows"]
+
+    priority_rows = sorted(
+        [
+            row
+            for row in store_rows
+            if (
+                row["integrity_average"] is None
+                or row["integrity_average"] < 70
+                or row["opening_average"] is None
+                or row["opening_average"] < 90
+                or row["restock_average"] is None
+                or row["restock_average"] < 90
+                or row["walk_average"] is None
+                or row["walk_average"] < 90
+                or row["nightly_submissions"] < 7
+            )
+        ],
+        key=lambda row: (
+            row["integrity_average"]
+            if row["integrity_average"] is not None
+            else -1,
+            row["nightly_submissions"],
+        ),
+    )
+
+    strong_rows = sorted(
+        [
+            row
+            for row in store_rows
+            if (
+                row["integrity_average"] is not None
+                and row["integrity_average"] >= 90
+                and row["opening_average"] is not None
+                and row["opening_average"] >= 95
+                and row["restock_average"] is not None
+                and row["restock_average"] >= 95
+                and row["walk_average"] is not None
+                and row["walk_average"] >= 95
+            )
+        ],
+        key=lambda row: (
+            row["integrity_average"],
+            row["store_number"],
+        ),
+        reverse=True,
+    )
+
+    def store_week_block(row):
+        return (
+            f"{row['store_number']}\n"
+            f"  Checklist days: "
+            f"{row['checklist_days']}/7\n"
+            f"  Open average: "
+            f"{weekly_pct(row['opening_average'])}\n"
+            f"  3 PM Restock average: "
+            f"{weekly_pct(row['restock_average'])}\n"
+            f"  Manager's Walk average: "
+            f"{weekly_pct(row['walk_average'])}\n"
+            f"  Integrity average: "
+            f"{weekly_pct(row['integrity_average'])}\n"
+            f"  Nightly Numbers: "
+            f"{row['nightly_submissions']}/7"
+        )
+
+    priority_text = "\n\n".join(
+        store_week_block(row)
+        for row in priority_rows[:10]
+    )
+
+    if len(priority_rows) > 10:
+        priority_text += (
+            "\n\nAdditional priority stores: "
+            + ", ".join(
+                row["store_number"]
+                for row in priority_rows[10:]
+            )
+        )
+
+    strong_text = "\n".join(
+        (
+            f"- {row['store_number']}: "
+            f"Open {weekly_pct(row['opening_average'])}, "
+            f"3 PM {weekly_pct(row['restock_average'])}, "
+            f"Walk {weekly_pct(row['walk_average'])}, "
+            f"Integrity {weekly_pct(row['integrity_average'])}, "
+            f"Nightly {row['nightly_submissions']}/7"
+        )
+        for row in strong_rows
+    )
+
+    activity_lines = [
+        f"SVRs completed: {len(data['svr_reports'])}",
+        f"Maintenance completed: "
+        f"{len(data['maintenance_completed'])}",
+        f"DWPs submitted: {len(data['dwps'])}",
+        f"HR documents signed: {len(data['hr_signed'])}",
+    ]
+
+    if role == "general_manager":
+        row = (
+            store_rows[0]
+            if store_rows
+            else None
+        )
+
+        if row:
+            store_text = store_week_block(row)
+        else:
+            store_text = (
+                "No weekly store records were found."
+            )
+
+        return (
+            f"Good morning {user.name},\n\n"
+            f"STORE {user.store_number or ''} WEEKLY RECAP\n"
+            f"{date_label}\n\n"
+
+            f"DOUGHY'S TAKE\n"
+            f"{doughy_take}\n\n"
+
+            f"LAST WEEK'S EXECUTION\n"
+            f"{store_text}\n\n"
+
+            f"OTHER STORE ACTIVITY\n"
+            f"{chr(10).join(activity_lines)}\n\n"
+
+            f"THIS WEEK'S FOCUS\n"
+            f"1. Recover any checklist section below 100%.\n"
+            f"2. Submit Nightly Numbers every operating day.\n"
+            f"3. Review any repeated integrity or service exceptions.\n\n"
+
+            f"- Doughy\n"
+            f"BPI Ops"
+        )
+
+    return (
+        f"Good morning {user.name},\n\n"
+        f"DOUGHY'S WEEKLY RECAP\n"
+        f"{date_label}\n"
+        f"Scope: {scope_label}\n\n"
+
+        f"DOUGHY'S TAKE\n"
+        f"{doughy_take}\n\n"
+
+        f"EXECUTIVE SNAPSHOT\n"
+        f"Stores: {len(data['stores'])}\n"
+        f"Checklist records: "
+        f"{len(data['checklist_rows'])}/"
+        f"{len(data['stores']) * 7}\n"
+        f"Nightly Numbers: "
+        f"{len(data['nightly_reports'])}/"
+        f"{len(data['stores']) * 7}\n"
+        f"Priority stores: {len(priority_rows)}\n"
+        f"Strong stores: {len(strong_rows)}\n\n"
+
+        f"PRIORITY FOLLOW-UP\n"
+        f"{priority_text if priority_text else '- None'}\n\n"
+
+        f"STRONG EXECUTION\n"
+        f"{strong_text if strong_text else '- None'}\n\n"
+
+        f"WEEKLY ACTIVITY\n"
+        f"{chr(10).join(activity_lines)}\n\n"
+
+        f"- Doughy\n"
+        f"BPI Ops"
+    )
+
 def eligible_recipients():
     users = (
         User.query
@@ -1600,10 +2215,26 @@ def send_daily_briefs(
     force: bool = False,
     test_email: str | None = None,
 ):
-    brief_date = completed_ops_date()
+    current_time = now_et()
+    is_weekly_recap = current_time.weekday() == 0
+
+    if is_weekly_recap:
+        week_start, week_end = previous_week_range(
+            current_time
+        )
+        brief_date = week_end
+    else:
+        week_start = None
+        week_end = None
+        brief_date = completed_ops_date(current_time)
 
     results = {
         "ok": True,
+        "brief_type": (
+            "weekly"
+            if is_weekly_recap
+            else "daily"
+        ),
         "brief_date": brief_date.isoformat(),
         "sent": [],
         "skipped": [],
@@ -1652,33 +2283,64 @@ def send_daily_briefs(
         delivery_email = test_email or configured_email
 
         try:
-            data = collect_scope_data(
-                user=user,
-                stores=stores,
-                brief_date=brief_date,
-            )
+            if is_weekly_recap:
+                data = collect_weekly_scope_data(
+                    user=user,
+                    stores=stores,
+                    week_start=week_start,
+                    week_end=week_end,
+                )
 
-            doughy_take = generate_doughy_take(
-                user=user,
-                scope_label=scope_label,
-                data=data,
-            )
+                doughy_take = (
+                    generate_weekly_doughy_take(
+                        user=user,
+                        data=data,
+                    )
+                )
 
-            body = render_email_body(
-                user=user,
-                scope_label=scope_label,
-                data=data,
-                doughy_take=doughy_take,
-            )
+                body = render_weekly_email_body(
+                    user=user,
+                    scope_label=scope_label,
+                    data=data,
+                    doughy_take=doughy_take,
+                )
+            else:
+                data = collect_scope_data(
+                    user=user,
+                    stores=stores,
+                    brief_date=brief_date,
+                )
+
+                doughy_take = generate_doughy_take(
+                    user=user,
+                    scope_label=scope_label,
+                    data=data,
+                )
+
+                body = render_email_body(
+                    user=user,
+                    scope_label=scope_label,
+                    data=data,
+                    doughy_take=doughy_take,
+                )
 
             subject_prefix = "[TEST] " if test_email else ""
 
-            send_email(
-                to_email=delivery_email,
-                subject=(
+            if is_weekly_recap:
+                subject = (
+                    f"{subject_prefix}Doughy's BPI Ops Weekly Recap — "
+                    f"{week_start.strftime('%b %d')}–"
+                    f"{week_end.strftime('%b %d, %Y')}"
+                )
+            else:
+                subject = (
                     f"{subject_prefix}Doughy's BPI Ops Daily Brief — "
                     f"{brief_date.strftime('%b %d, %Y')}"
-                ),
+                )
+
+            send_email(
+                to_email=delivery_email,
+                subject=subject,
                 body=body,
             )
 

@@ -936,6 +936,14 @@ def admin_center():
                 "icon": "🏪",
             },
             {
+                "title": "DWP Email Settings",
+                "eyebrow": "Human Resources",
+                "description": "Choose who automatically receives submitted DWP PDFs.",
+                "url": url_for("dwp.email_settings"),
+                "status": "Admin",
+                "icon": "✉",
+            },
+            {
                 "title": "Module Access",
                 "eyebrow": "Permissions",
                 "description": "Choose which account roles can see and use each module.",

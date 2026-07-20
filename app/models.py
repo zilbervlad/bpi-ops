@@ -321,6 +321,22 @@ class ChecklistAutoEmailSettings(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class DWPEmailSettings(db.Model):
+    __tablename__ = "dwp_email_settings"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    enabled = db.Column(db.Boolean, nullable=False, default=True)
+    recipients_text = db.Column(db.Text, nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
+
+
 class ChecklistAutoEmailLog(db.Model):
     __tablename__ = "checklist_auto_email_logs"
 

@@ -1,7 +1,9 @@
 from datetime import datetime, date
+import re
 
 from flask import (
     abort,
+    current_app,
     flash,
     redirect,
     render_template,
@@ -29,7 +31,14 @@ from reportlab.platypus import (
 
 from app import db
 from app.dwp import dwp_bp
-from app.models import DWPRecord, User, Store, HRDocument, HRDocumentRecipient
+from app.models import (
+    DWPRecord,
+    DWPEmailSettings,
+    User,
+    Store,
+    HRDocument,
+    HRDocumentRecipient,
+)
 from app.services.email_service import send_email
 
 
@@ -222,21 +231,119 @@ def allowed_file(filename):
     ext = filename.rsplit(".", 1)[1].lower()
     return ext in ALLOWED_LETTER_EXTENSIONS
 
+EMAIL_PATTERN = re.compile(
+    r"^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@"
+    r"[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?"
+    r"(?:\\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$",
+    re.IGNORECASE,
+)
+
+
+def current_account_is_admin():
+    roles = {
+        str(value).strip().lower()
+        for value in [
+            session.get("access_role"),
+            session.get("role"),
+            session.get("account_role"),
+            session.get("user_role"),
+        ]
+        if value
+    }
+    return "admin" in roles
+
+
+def get_or_create_dwp_email_settings():
+    settings = DWPEmailSettings.query.first()
+
+    if not settings:
+        settings = DWPEmailSettings(
+            enabled=True,
+            recipients_text="",
+        )
+        db.session.add(settings)
+        db.session.commit()
+
+    return settings
+
+
+def parse_dwp_recipient_emails(value):
+    raw_values = re.split(r"[,;\\n\\r]+", value or "")
+
+    recipients = []
+    seen = set()
+    invalid = []
+
+    for raw_value in raw_values:
+        email = raw_value.strip()
+
+        if not email:
+            continue
+
+        normalized = email.lower()
+
+        if not EMAIL_PATTERN.fullmatch(email):
+            invalid.append(email)
+            continue
+
+        if normalized in seen:
+            continue
+
+        seen.add(normalized)
+        recipients.append(email)
+
+    return recipients, invalid
+
+
+def safe_send_dwp_email(**kwargs):
+    try:
+        send_email(**kwargs)
+        return True
+    except Exception:
+        current_app.logger.exception(
+            "DWP email delivery failed for recipient=%s",
+            kwargs.get("to_email"),
+        )
+        return False
+
+
 def send_dwp_created_emails(record):
-    team_member = User.query.get(record.team_member_id)
-    submitter = User.query.get(record.submitted_by_id)
+    team_member = db.session.get(User, record.team_member_id)
+    submitter = db.session.get(User, record.submitted_by_id)
 
-    record_url = url_for("dwp.detail", record_id=record.id, _external=True)
-    tm_name = record.team_member_name_snapshot or user_display_name(team_member)
-    submitter_name = record.submitted_by_name_snapshot or user_display_name(submitter)
+    record_url = url_for(
+        "dwp.detail",
+        record_id=record.id,
+        _external=True,
+    )
 
-    tm_email = team_member.get_notification_email() if team_member else None
-    submitter_email = submitter.get_notification_email() if submitter else None
+    tm_name = (
+        record.team_member_name_snapshot
+        or user_display_name(team_member)
+    )
+
+    submitter_name = (
+        record.submitted_by_name_snapshot
+        or user_display_name(submitter)
+    )
+
+    tm_email = (
+        team_member.get_notification_email()
+        if team_member
+        else None
+    )
+
+    submitter_email = (
+        submitter.get_notification_email()
+        if submitter
+        else None
+    )
 
     sent_count = 0
+    failed_count = 0
 
     if tm_email:
-        body = f"""Hi {tm_name},
+        tm_body = f"""Hi {tm_name},
 
 A DWP record has been created for you in BPI Ops.
 
@@ -254,15 +361,20 @@ Thank you,
 BPI Ops
 """
 
-        send_email(
+        if safe_send_dwp_email(
             to_email=tm_email,
             subject=f"DWP Record Created - {record.discussion_type}",
-            body=body,
-        )
-        sent_count += 1
+            body=tm_body,
+        ):
+            sent_count += 1
+        else:
+            failed_count += 1
 
-    if submitter_email and submitter_email != tm_email:
-        body = f"""Hi {submitter_name},
+    if submitter_email and (
+        not tm_email
+        or submitter_email.lower() != tm_email.lower()
+    ):
+        submitter_body = f"""Hi {submitter_name},
 
 Your DWP record was submitted successfully.
 
@@ -279,16 +391,137 @@ Thank you,
 BPI Ops
 """
 
-        send_email(
+        if safe_send_dwp_email(
             to_email=submitter_email,
             subject=f"DWP Submitted - {tm_name}",
-            body=body,
+            body=submitter_body,
+        ):
+            sent_count += 1
+        else:
+            failed_count += 1
+
+    settings = DWPEmailSettings.query.first()
+
+    if settings and settings.enabled:
+        pdf_recipients, invalid_emails = parse_dwp_recipient_emails(
+            settings.recipients_text
         )
-        sent_count += 1
 
-    return sent_count
+        if invalid_emails:
+            current_app.logger.warning(
+                "Ignoring invalid DWP PDF recipient emails: %s",
+                ", ".join(invalid_emails),
+            )
+
+        if pdf_recipients:
+            pdf_buffer = make_dwp_pdf(record)
+            pdf_content = pdf_buffer.getvalue()
+
+            pdf_filename = secure_filename(
+                f"DWP-{record.store_number}-"
+                f"{record.team_member_name_snapshot}-"
+                f"Record-{record.id}.pdf"
+            )
+
+            pdf_body = f"""A new DWP record was submitted in BPI Ops.
+
+Team Member: {tm_name}
+Store: {record.store_number}
+Type: {record.discussion_type}
+Category: {record.category}
+Date of Conversation: {record.conversation_date.strftime('%m/%d/%Y')}
+Date of Infraction: {record.infraction_date.strftime('%m/%d/%Y')}
+Submitted By: {submitter_name}
+Record ID: DWP-{record.id}
+
+The official DWP PDF is attached.
+
+View the record in BPI Ops:
+{record_url}
+
+Confidential HR Record
+Boston Pie, Inc.
+"""
+
+            attachment = {
+                "filename": pdf_filename,
+                "content": pdf_content,
+                "mime_type": "application/pdf",
+            }
+
+            for recipient in pdf_recipients:
+                if safe_send_dwp_email(
+                    to_email=recipient,
+                    subject=(
+                        f"DWP PDF Submitted - "
+                        f"{tm_name} - Store {record.store_number}"
+                    ),
+                    body=pdf_body,
+                    attachments=[attachment],
+                ):
+                    sent_count += 1
+                else:
+                    failed_count += 1
+
+    return sent_count, failed_count
 
 
+
+
+@dwp_bp.route("/admin/email-settings", methods=["GET", "POST"])
+def email_settings():
+    login_required_user()
+
+    if not current_account_is_admin():
+        flash(
+            "Only administrators can manage DWP email settings.",
+            "error",
+        )
+        return redirect(url_for("dashboard.admin_center"))
+
+    settings = get_or_create_dwp_email_settings()
+
+    if request.method == "POST":
+        enabled = request.form.get("enabled") == "on"
+        recipients_text = (
+            request.form.get("recipients_text")
+            or ""
+        ).strip()
+
+        recipients, invalid = parse_dwp_recipient_emails(
+            recipients_text
+        )
+
+        if invalid:
+            flash(
+                "Please correct these invalid email addresses: "
+                + ", ".join(invalid),
+                "error",
+            )
+            return render_template(
+                "dwp/email_settings.html",
+                settings=settings,
+                recipients_text=recipients_text,
+            )
+
+        settings.enabled = enabled
+        settings.recipients_text = "\n".join(recipients)
+
+        db.session.commit()
+
+        flash(
+            f"DWP PDF email settings saved. "
+            f"{len(recipients)} recipient(s) configured.",
+            "success",
+        )
+
+        return redirect(url_for("dwp.email_settings"))
+
+    return render_template(
+        "dwp/email_settings.html",
+        settings=settings,
+        recipients_text=settings.recipients_text or "",
+    )
 
 
 @dwp_bp.route("/my")
@@ -508,13 +741,38 @@ def new():
             db.session.commit()
 
             try:
-                email_count = send_dwp_created_emails(record)
+                email_count, email_failed_count = send_dwp_created_emails(
+                    record
+                )
+
                 if email_count:
-                    flash(f"DWP record created. Email notification sent to {email_count} recipient(s).", "success")
+                    flash(
+                        f"DWP record created. Email sent to "
+                        f"{email_count} recipient(s).",
+                        "success",
+                    )
                 else:
-                    flash("DWP record created. No email notification was sent because no notification email was available.", "success")
+                    flash(
+                        "DWP record created. No email notification was sent.",
+                        "success",
+                    )
+
+                if email_failed_count:
+                    flash(
+                        f"{email_failed_count} DWP email delivery attempt(s) "
+                        f"failed. The DWP record was still saved.",
+                        "warning",
+                    )
+
             except Exception as email_exc:
-                flash(f"DWP record created, but email notification failed: {email_exc}", "warning")
+                current_app.logger.exception(
+                    "Unexpected DWP email processing failure"
+                )
+                flash(
+                    f"DWP record created, but email notification failed: "
+                    f"{email_exc}",
+                    "warning",
+                )
 
             return redirect(url_for("dwp.detail", record_id=record.id))
 

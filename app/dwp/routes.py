@@ -345,7 +345,7 @@ def send_dwp_created_emails(record):
     if tm_email:
         tm_body = f"""Hi {tm_name},
 
-A DWP record has been created for you in BPI Ops.
+A completed DWP record has been filed for you in BPI Ops.
 
 Store: {record.store_number}
 Type: {record.discussion_type}
@@ -354,7 +354,7 @@ Date of Conversation: {record.conversation_date.strftime('%m/%d/%Y')}
 Date of Infraction: {record.infraction_date.strftime('%m/%d/%Y')}
 Submitted By: {submitter_name}
 
-Please review and acknowledge the record here:
+You can review the completed record here:
 {record_url}
 
 Thank you,
@@ -672,6 +672,20 @@ def new():
             logical_consequence = (request.form.get("logical_consequence") or "").strip()
             team_member_agrees_to = (request.form.get("team_member_agrees_to") or "").strip()
 
+            acknowledgement_confirmed = (
+                request.form.get("acknowledgement_confirmed") == "on"
+            )
+            acknowledgement_note = (
+                request.form.get("acknowledgement_note")
+                or ""
+            ).strip()
+
+            if not acknowledgement_confirmed:
+                raise ValueError(
+                    "Team member acknowledgement is required before "
+                    "submitting the DWP."
+                )
+
             required_text_fields = [
                 (expected_performance, "Expected Performance"),
                 (actual_performance, "Actual Performance"),
@@ -735,6 +749,10 @@ def new():
                 letter_content_type=letter_content_type,
                 letter_data=letter_data,
                 letter_uploaded_at=letter_uploaded_at,
+                acknowledged_at=datetime.utcnow(),
+                acknowledged_by_id=team_member.id,
+                acknowledged_name=user_display_name(team_member),
+                acknowledgement_note=acknowledgement_note,
             )
 
             db.session.add(record)

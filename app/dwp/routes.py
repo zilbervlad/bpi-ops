@@ -234,7 +234,7 @@ def allowed_file(filename):
 EMAIL_PATTERN = re.compile(
     r"^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@"
     r"[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?"
-    r"(?:\\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$",
+    r"(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$",
     re.IGNORECASE,
 )
 
@@ -268,7 +268,7 @@ def get_or_create_dwp_email_settings():
 
 
 def parse_dwp_recipient_emails(value):
-    raw_values = re.split(r"[,;\\n\\r]+", value or "")
+    raw_values = re.split(r"[,;\n\r]+", value or "")
 
     recipients = []
     seen = set()

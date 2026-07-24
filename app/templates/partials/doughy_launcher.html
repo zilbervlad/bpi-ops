@@ -469,8 +469,13 @@
         <div class="doughy-mini-brand">
             <img src="{{ url_for('static', filename='doughy_happy.png') }}" alt="" class="doughy-header-icon">
             <div>
+                {% if request.endpoint == "dwp.new" %}
+                <strong>Doughy DWP Coach</strong>
+                <small>DWP documentation helper</small>
+                {% else %}
                 <strong>Doughy</strong>
                 <small>Ops helper</small>
+                {% endif %}
             </div>
         </div>
         <button type="button" class="doughy-mini-close" id="doughyMiniClose" aria-label="Close Doughy">×</button>
@@ -479,8 +484,13 @@
     <div class="doughy-mini-body doughy-chat-shell">
         <div class="doughy-chat-intro">
             <div>
+                {% if request.endpoint == "dwp.new" %}
+                <strong>Build a stronger DWP</strong>
+                <span>Level guidance, missing facts, wording, and conversation preparation</span>
+                {% else %}
                 <strong>Ask anything about BPI Ops</strong>
                 <span>Live, read-only operational data</span>
+                {% endif %}
             </div>
 
             <button
@@ -498,6 +508,7 @@
             id="doughyContextCard"
             data-endpoint="{{ request.endpoint|default('', true) }}"
             data-page-label="{{ request.endpoint|default('Current page', true)|replace('_', ' ')|replace('.', ' / ')|title }}"
+            data-forced-agent="{% if request.endpoint == 'dwp.new' %}dwp_coach{% endif %}"
             hidden
         >
             <div id="doughyContextBody" class="doughy-context-muted">
@@ -519,14 +530,49 @@
                 </div>
 
                 <div class="doughy-chat-bubble doughy-chat-bubble-assistant">
+                    {% if request.endpoint == "dwp.new" %}
+                    I’m your DWP Coach. Fill in whatever facts you know, then
+                    ask me to recommend a level, identify missing information,
+                    improve the wording, or prepare the conversation.
+                    {% else %}
                     Hey! Ask me about stores, checklists, Manager's Walk,
                     nightly numbers, SVRs, maintenance, verification,
                     people, or historical performance.
+                    {% endif %}
                 </div>
             </div>
         </div>
 
         <div class="doughy-chat-suggestions" id="doughyChatSuggestions">
+            {% if request.endpoint == "dwp.new" %}
+            <button
+                type="button"
+                data-doughy-chat-prompt="Based on the form so far, recommend the appropriate DWP level and explain what facts are still needed."
+            >
+                Recommend level
+            </button>
+
+            <button
+                type="button"
+                data-doughy-chat-prompt="Review the form and tell me what facts or documentation are missing."
+            >
+                Find missing facts
+            </button>
+
+            <button
+                type="button"
+                data-doughy-chat-prompt="Rewrite the DWP form wording so it is factual, neutral, clear, and consistent with the DWP process."
+            >
+                Improve wording
+            </button>
+
+            <button
+                type="button"
+                data-doughy-chat-prompt="Help me prepare for the DWP conversation using the information currently entered in the form."
+            >
+                Prepare conversation
+            </button>
+            {% else %}
             <button
                 type="button"
                 data-doughy-chat-prompt="What needs attention today?"
@@ -547,6 +593,7 @@
             >
                 Oldest maintenance
             </button>
+            {% endif %}
         </div>
 
         <form class="doughy-chat-composer" id="doughyChatForm">
@@ -554,7 +601,7 @@
                 id="doughyChatInput"
                 rows="1"
                 maxlength="2000"
-                placeholder="Ask Doughy anything..."
+                placeholder="{% if request.endpoint == 'dwp.new' %}Ask the DWP Coach...{% else %}Ask Doughy anything...{% endif %}"
                 autocomplete="off"
             ></textarea>
 

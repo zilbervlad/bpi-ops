@@ -412,6 +412,8 @@ def _compact_gateway_context(
 def _ask_brain(
     prompt: str,
     context_bundle: dict[str, Any],
+    forced_agent: str = "",
+    page_form_context: dict[str, Any] | None = None,
 ) -> str:
     normalized_prompt = str(prompt or "").strip().lower()
 
@@ -492,10 +494,28 @@ def _ask_brain(
             "guide over specialty recipe cards or general model knowledge."
         )
 
+    if forced_agent == "dwp_coach":
+        safe_form_context = (
+            page_form_context
+            if isinstance(page_form_context, dict)
+            else {}
+        )
+
+        extra_context = (
+            "AUTHORIZED BPI OPS DWP FORM CONTEXT\n\n"
+            "The following values come from the DWP form currently being "
+            "completed by the logged-in manager. Empty values mean the field "
+            "has not been completed. Treat entered values as manager-provided "
+            "facts, but identify uncertainty and missing documentation. "
+            "Do not submit, modify, or finalize the DWP.\n\n"
+            f"{json.dumps(safe_form_context, default=str)}"
+        )
+
     request_body = {
         "question": prompt,
         "extra_context": extra_context,
         "source": "bpi_ops",
+        "forced_agent": forced_agent,
     }
 
     request = urllib.request.Request(
@@ -567,9 +587,19 @@ def _ask_ollama(prompt: str, context_bundle: dict[str, Any]) -> str:
     return (message.get("content") or "").strip()
 
 
-def ask_doughy_ai(prompt: str, context_bundle: dict[str, Any]) -> str:
+def ask_doughy_ai(
+    prompt: str,
+    context_bundle: dict[str, Any],
+    forced_agent: str = "",
+    page_form_context: dict[str, Any] | None = None,
+) -> str:
     if AI_PROVIDER == "brain":
-        return _ask_brain(prompt, context_bundle)
+        return _ask_brain(
+            prompt,
+            context_bundle,
+            forced_agent=forced_agent,
+            page_form_context=page_form_context,
+        )
 
     if AI_PROVIDER == "ollama":
         return _ask_ollama(prompt, context_bundle)

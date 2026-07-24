@@ -869,6 +869,55 @@ document.addEventListener("DOMContentLoaded", function () {
         };
     }
 
+    function getDwpFormContext() {
+        const endpoint =
+            contextCard?.dataset?.endpoint ||
+            "";
+
+        const isDwpPage =
+            endpoint === "dwp.new" ||
+            window.location.pathname === "/dwp/new" ||
+            window.location.pathname.endsWith("/dwp/new");
+
+        if (!isDwpPage) {
+            return null;
+        }
+
+        const value = (selector) => {
+            const element = document.querySelector(selector);
+
+            if (!element) {
+                return "";
+            }
+
+            return String(element.value || "").trim();
+        };
+
+        const selectedEmployee =
+            document.getElementById("selectedEmployeeText")
+                ?.textContent
+                ?.replace(/^Selected:\s*/i, "")
+                ?.trim() || "";
+
+        return {
+            team_member_id: value('[name="team_member_id"]'),
+            team_member: selectedEmployee,
+            conversation_date: value('[name="conversation_date"]'),
+            infraction_date: value('[name="infraction_date"]'),
+            discussion_type: value('[name="discussion_type"]'),
+            category: value('[name="category"]'),
+            previous_conversations: value('[name="previous_conversations"]'),
+            expected_performance: value('[name="expected_performance"]'),
+            actual_performance: value('[name="actual_performance"]'),
+            team_member_statement: value('[name="team_member_statement"]'),
+            business_reason: value('[name="business_reason"]'),
+            logical_consequence: value('[name="logical_consequence"]'),
+            team_member_agrees_to: value('[name="team_member_agrees_to"]'),
+            additional_comments: value('[name="additional_comments"]'),
+            acknowledgement_note: value('[name="acknowledgement_note"]')
+        };
+    }
+
     async function sendPrompt(prompt) {
         prompt = String(prompt || "").trim();
 
@@ -918,7 +967,12 @@ document.addEventListener("DOMContentLoaded", function () {
                             "",
                         page_label:
                             contextCard?.dataset?.pageLabel ||
-                            ""
+                            "",
+                        forced_agent:
+                            contextCard?.dataset?.forcedAgent ||
+                            "",
+                        dwp_form_context:
+                            getDwpFormContext()
                     })
                 }
             );

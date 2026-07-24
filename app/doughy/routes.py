@@ -794,6 +794,20 @@ def ask():
     endpoint = payload.get("endpoint") or ""
     page_label = payload.get("page_label") or ""
 
+    forced_agent = (
+        payload.get("forced_agent")
+        or ""
+    ).strip().lower()
+
+    # Only the DWP form may force the dedicated DWP Coach.
+    if endpoint != "dwp.new" or forced_agent != "dwp_coach":
+        forced_agent = ""
+
+    dwp_form_context = payload.get("dwp_form_context")
+
+    if not isinstance(dwp_form_context, dict):
+        dwp_form_context = {}
+
     path_context = _extract_context_from_path(page_path)
     page_name = _friendly_page_name(
         endpoint,
@@ -950,6 +964,8 @@ def ask():
             answer = ask_doughy_ai(
                 prompt,
                 context_bundle,
+                forced_agent=forced_agent,
+                page_form_context=dwp_form_context,
             )
             uses_ai = True
         except Exception as exc:

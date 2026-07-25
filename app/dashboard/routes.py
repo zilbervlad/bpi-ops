@@ -17,7 +17,12 @@ from app.models import (
     WeeklyFocusItem, ModuleAccessSetting,
     ChecklistException,
     CashLog,
+    ChecklistTemplateItem,
+    ChecklistOAMapping,
 )
+
+from app.services.doughy_execution import _find_questionable_daily_item_ids
+
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -209,6 +214,44 @@ def build_dashboard_data():
 
     today = business_date_et()
 
+    preopen_section_name = "Before Open / Before 10:30"
+
+    preopen_template_items = (
+        ChecklistTemplateItem.query
+        .filter_by(
+            section_name=preopen_section_name,
+            is_active=True,
+        )
+        .all()
+    )
+
+    preopen_template_ids = {
+        item.id
+        for item in preopen_template_items
+    }
+
+    preopen_mappings = (
+        ChecklistOAMapping.query
+        .filter(
+            ChecklistOAMapping.is_active.is_(True),
+            ChecklistOAMapping.checklist_template_item_id.in_(preopen_template_ids),
+        )
+        .all()
+        if preopen_template_ids
+        else []
+    )
+
+    preopen_points_by_template_id = {
+        mapping.checklist_template_item_id: float(mapping.oa_points or 0)
+        for mapping in preopen_mappings
+        if float(mapping.oa_points or 0) > 0
+    }
+
+    preopen_oa_possible = round(
+        sum(preopen_points_by_template_id.values()),
+        2,
+    )
+
     manager_cash_summary = None
     if user_role == "manager" and user_store:
         manager_cash_summary = build_manager_cash_summary(user_store, today)
@@ -235,6 +278,66 @@ def build_dashboard_data():
         restock_percent = calculate_section_percent(daily, "3-O'Clock Restock")
         manager_walk_percent = calculate_section_percent(daily, "Manager's Walk")
 
+        preopen_oa_protected = 0.0
+        preopen_oa_questionable = 0.0
+        preopen_completed_mapped_items = 0
+
+        if daily:
+            daily_items = list(daily.items or [])
+
+            integrity_result = _find_questionable_daily_item_ids(daily_items)
+            questionable_daily_item_ids = (
+                integrity_result[0]
+                if integrity_result
+                else set()
+            )
+
+            for daily_item in daily_items:
+                template_item_id = daily_item.template_item_id
+                points = preopen_points_by_template_id.get(template_item_id, 0)
+
+                if points <= 0 or not daily_item.is_completed:
+                    continue
+
+                preopen_completed_mapped_items += 1
+
+                if daily_item.id in questionable_daily_item_ids:
+                    preopen_oa_questionable += points
+                else:
+                    preopen_oa_protected += points
+
+        preopen_oa_protected = round(preopen_oa_protected, 2)
+        preopen_oa_questionable = round(preopen_oa_questionable, 2)
+        preopen_oa_at_risk = round(
+            max(
+                preopen_oa_possible
+                - preopen_oa_protected
+                - preopen_oa_questionable,
+                0,
+            ),
+            2,
+        )
+
+        preopen_oa_percent = round(
+            (
+                preopen_oa_protected
+                / preopen_oa_possible
+                * 100
+            )
+            if preopen_oa_possible
+            else 0,
+            1,
+        )
+
+        if preopen_completed_mapped_items == 0:
+            preopen_oa_status = "not_started"
+        elif preopen_oa_percent >= 90:
+            preopen_oa_status = "strong"
+        elif preopen_oa_percent >= 70:
+            preopen_oa_status = "progress"
+        else:
+            preopen_oa_status = "risk"
+
         if status == "completed":
             completed_today += 1
         elif status == "in_progress":
@@ -258,6 +361,12 @@ def build_dashboard_data():
             "restock_percent": restock_percent,
             "manager_walk_percent": manager_walk_percent,
             "status": status,
+            "preopen_oa_possible": preopen_oa_possible,
+            "preopen_oa_protected": preopen_oa_protected,
+            "preopen_oa_questionable": preopen_oa_questionable,
+            "preopen_oa_at_risk": preopen_oa_at_risk,
+            "preopen_oa_percent": preopen_oa_percent,
+            "preopen_oa_status": preopen_oa_status,
         }
 
         area_groups[store.area_name].append(store_payload)
@@ -274,6 +383,7 @@ def build_dashboard_data():
             "area_name": store.area_name,
             "store": store_payload,
             "status": heatmap_status,
+            "oa_status": preopen_oa_status,
         })
 
         opening_progress.append({

@@ -105,6 +105,39 @@
                     </div>
                 </div>
 
+                <section
+                    id="preopen-oa-risks"
+                    class="panel preopen-oa-panel"
+                    hidden
+                    aria-labelledby="preopen-oa-title"
+                >
+                    <div class="preopen-oa-header">
+                        <div>
+                            <div class="command-eyebrow">PRE-OPEN OA</div>
+                            <h3 id="preopen-oa-title">
+                                Highest-Risk Opening Items
+                            </h3>
+                            <div
+                                id="preopen-oa-summary"
+                                class="area-subtitle"
+                            >
+                                Loading mapped OA opportunities...
+                            </div>
+                        </div>
+
+                        <div class="preopen-oa-total">
+                            <span>At Risk</span>
+                            <strong id="preopen-oa-total-points">0</strong>
+                            <small>points</small>
+                        </div>
+                    </div>
+
+                    <div
+                        id="preopen-oa-risk-list"
+                        class="preopen-oa-risk-list"
+                    ></div>
+                </section>
+
                 {% for section, items in grouped_items.items() %}
                     {% set section_index = loop.index0 %}
                     {% set completed_count = items | selectattr('is_completed') | list | length %}
@@ -142,7 +175,15 @@
                                 data-section-name="{{ section }}"
                             >
                                 {% for item in items %}
-                                <div class="checklist-item-card mobile-checklist-item-card mobile-checklist-card {% if item.is_completed %}is-completed{% endif %}" data-item-card-id="{{ item.id }}">
+                                {% set oa_mapping = item.template_item.oa_mapping if item.template_item else none %}
+                                <div
+                                    class="checklist-item-card mobile-checklist-item-card mobile-checklist-card {% if item.is_completed %}is-completed{% endif %}"
+                                    data-item-card-id="{{ item.id }}"
+                                    data-template-item-id="{{ item.template_item_id }}"
+                                    data-oa-points="{{ oa_mapping.oa_points if oa_mapping and oa_mapping.is_active else 0 }}"
+                                    data-oa-section="{{ oa_mapping.oa_section if oa_mapping and oa_mapping.is_active else '' }}"
+                                    data-oa-item="{{ oa_mapping.oa_item_name if oa_mapping and oa_mapping.is_active else '' }}"
+                                >
                                     <div class="checklist-item-main mobile-checklist-item-main">
                                         <div class="checklist-row-top">
                                             <label class="checklist-checkbox-row mobile-checklist-checkbox-row">
@@ -308,6 +349,156 @@
 {% endif %}
 
 <style>
+.preopen-oa-panel {
+    margin-bottom: 24px;
+    padding: 18px;
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(37, 99, 235, 0.14),
+            transparent 38%
+        ),
+        rgba(8, 18, 34, 0.94);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        0 14px 38px rgba(0, 0, 0, 0.22);
+}
+
+.preopen-oa-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.preopen-oa-header h3 {
+    margin: 6px 0 4px;
+}
+
+.preopen-oa-total {
+    min-width: 92px;
+    padding: 10px 12px;
+    border-radius: 15px;
+    border: 1px solid rgba(248, 113, 113, 0.22);
+    background: rgba(127, 29, 29, 0.26);
+    text-align: center;
+}
+
+.preopen-oa-total span,
+.preopen-oa-total small {
+    display: block;
+    color: rgba(254, 202, 202, 0.78);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.preopen-oa-total strong {
+    display: block;
+    margin: 3px 0;
+    color: #ffffff;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.preopen-oa-risk-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.preopen-oa-risk-item {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 13px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.72);
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        border-color 150ms ease,
+        background 150ms ease,
+        transform 150ms ease;
+}
+
+.preopen-oa-risk-item:hover {
+    border-color: rgba(56, 189, 248, 0.42);
+    background: rgba(15, 40, 68, 0.82);
+    transform: translateY(-1px);
+}
+
+.preopen-oa-risk-copy {
+    min-width: 0;
+}
+
+.preopen-oa-risk-task {
+    display: block;
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.35;
+}
+
+.preopen-oa-risk-meta {
+    display: block;
+    margin-top: 4px;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.preopen-oa-risk-points {
+    white-space: nowrap;
+    color: #fecaca;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.preopen-oa-empty {
+    padding: 14px;
+    border: 1px solid rgba(34, 197, 94, 0.18);
+    border-radius: 14px;
+    background: rgba(20, 83, 45, 0.18);
+    color: #bbf7d0;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.checklist-item-card.oa-risk-highlight {
+    border-color: rgba(56, 189, 248, 0.92) !important;
+    box-shadow:
+        0 0 0 3px rgba(56, 189, 248, 0.14),
+        0 12px 32px rgba(2, 132, 199, 0.18) !important;
+    animation: oaRiskPulse 1.5s ease-in-out 2;
+}
+
+@keyframes oaRiskPulse {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-2px);
+    }
+}
+
+@media (max-width: 720px) {
+    .preopen-oa-header {
+        align-items: stretch;
+    }
+
+    .preopen-oa-total {
+        min-width: 76px;
+    }
+}
+
 .burst-warning-modal {
     position: fixed;
     inset: 0;
@@ -489,11 +680,183 @@ document.addEventListener("DOMContentLoaded", function () {
     const oneWayProofModal = document.getElementById("one-way-proof-modal");
     const oneWayProofYes = document.getElementById("one-way-proof-yes");
     const oneWayProofNo = document.getElementById("one-way-proof-no");
+    const preopenOaPanel = document.getElementById("preopen-oa-risks");
+    const preopenOaList = document.getElementById("preopen-oa-risk-list");
+    const preopenOaSummary = document.getElementById("preopen-oa-summary");
+    const preopenOaTotalPoints = document.getElementById("preopen-oa-total-points");
 
     let oneWayProofResolve = null;
 
     const storeNumber = "{{ store_number }}";
     const selectedDate = "{{ selected_date }}";
+    const checklistView = new URLSearchParams(
+        window.location.search
+    ).get("view");
+
+    function formatOaPoints(value) {
+        const number = Number(value) || 0;
+
+        if (Number.isInteger(number)) {
+            return String(number);
+        }
+
+        return number.toFixed(1);
+    }
+
+    function scrollToOaTask(itemId) {
+        const card = document.querySelector(
+            `[data-item-card-id="${itemId}"]`
+        );
+
+        if (!card) return;
+
+        const section = card.closest("details");
+        if (section) {
+            section.open = true;
+        }
+
+        document
+            .querySelectorAll(".oa-risk-highlight")
+            .forEach((element) => {
+                element.classList.remove("oa-risk-highlight");
+            });
+
+        card.classList.add("oa-risk-highlight");
+
+        card.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+        });
+
+        window.setTimeout(() => {
+            card.classList.remove("oa-risk-highlight");
+        }, 4200);
+    }
+
+    function buildPreopenOaRiskPanel() {
+        if (
+            !preopenOaPanel
+            || !preopenOaList
+            || checklistView !== "preopen-oa"
+        ) {
+            return;
+        }
+
+        const preopenCards = Array.from(
+            document.querySelectorAll(
+                '.checklist-items[data-section-name="Before Open / Before 10:30"] .checklist-item-card'
+            )
+        );
+
+        const risks = preopenCards
+            .map((card) => {
+                const checkbox = card.querySelector(
+                    ".live-checklist-box"
+                );
+                const taskElement = card.querySelector(
+                    ".checklist-task-text"
+                );
+
+                return {
+                    itemId: card.dataset.itemCardId,
+                    points: Number(card.dataset.oaPoints) || 0,
+                    oaSection: card.dataset.oaSection || "",
+                    oaItem: card.dataset.oaItem || "",
+                    task: taskElement
+                        ? taskElement.textContent.trim()
+                        : "Checklist item",
+                    completed: checkbox
+                        ? checkbox.checked
+                        : card.classList.contains("is-completed"),
+                };
+            })
+            .filter((item) => {
+                return item.points > 0 && !item.completed;
+            })
+            .sort((a, b) => {
+                if (b.points !== a.points) {
+                    return b.points - a.points;
+                }
+
+                return a.task.localeCompare(b.task);
+            });
+
+        const totalPoints = risks.reduce(
+            (sum, item) => sum + item.points,
+            0
+        );
+
+        preopenOaPanel.hidden = false;
+        preopenOaList.innerHTML = "";
+
+        if (preopenOaTotalPoints) {
+            preopenOaTotalPoints.textContent =
+                formatOaPoints(totalPoints);
+        }
+
+        if (preopenOaSummary) {
+            preopenOaSummary.textContent = risks.length
+                ? `${risks.length} mapped opening item${risks.length === 1 ? "" : "s"} can recover ${formatOaPoints(totalPoints)} OA points.`
+                : "All mapped pre-open OA items are currently complete.";
+        }
+
+        if (!risks.length) {
+            const empty = document.createElement("div");
+            empty.className = "preopen-oa-empty";
+            empty.textContent =
+                "No incomplete mapped pre-open OA items right now.";
+            preopenOaList.appendChild(empty);
+        } else {
+            risks.forEach((risk, index) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "preopen-oa-risk-item";
+
+                const copy = document.createElement("span");
+                copy.className = "preopen-oa-risk-copy";
+
+                const task = document.createElement("span");
+                task.className = "preopen-oa-risk-task";
+                task.textContent = `${index + 1}. ${risk.task}`;
+
+                const meta = document.createElement("span");
+                meta.className = "preopen-oa-risk-meta";
+                meta.textContent = [
+                    risk.oaSection,
+                    risk.oaItem,
+                ].filter(Boolean).join(" · ");
+
+                const points = document.createElement("span");
+                points.className = "preopen-oa-risk-points";
+                points.textContent =
+                    `${formatOaPoints(risk.points)} pts`;
+
+                copy.appendChild(task);
+
+                if (meta.textContent) {
+                    copy.appendChild(meta);
+                }
+
+                button.appendChild(copy);
+                button.appendChild(points);
+
+                button.addEventListener("click", () => {
+                    scrollToOaTask(risk.itemId);
+                });
+
+                preopenOaList.appendChild(button);
+            });
+        }
+
+        window.setTimeout(() => {
+            preopenOaPanel.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }, 180);
+    }
+
+    buildPreopenOaRiskPanel();
 
     function openManagerNameModalIfNeeded() {
         if (!managerNameModal || !openingManagerInput) return;
@@ -695,6 +1058,10 @@ document.addEventListener("DOMContentLoaded", function () {
             const hasNote = noteInput.value.trim().length > 0;
             noteButton.classList.toggle("has-note", hasNote);
             noteButton.textContent = hasNote ? "Notes added" : "Add note";
+        }
+
+        if (checklistView === "preopen-oa") {
+            buildPreopenOaRiskPanel();
         }
     }
 

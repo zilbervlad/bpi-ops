@@ -379,6 +379,81 @@
         font-weight: 800 !important;
     }
 
+    .heatmap-view-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .heatmap-view-toggle {
+        display: inline-flex;
+        padding: 3px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(15, 23, 42, 0.58);
+    }
+
+    .heatmap-view-button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: rgba(226, 232, 240, 0.68);
+        padding: 7px 11px;
+        font-size: 10px;
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        transition:
+            background 160ms ease,
+            color 160ms ease,
+            transform 160ms ease;
+    }
+
+    .heatmap-view-button:hover {
+        color: #ffffff;
+    }
+
+    .heatmap-view-button.is-active {
+        color: #ffffff;
+        background: rgba(37, 99, 235, 0.92);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.24);
+    }
+
+    .heatmap-view-button:active {
+        transform: scale(0.98);
+    }
+
+    .heatmap-metrics-oa {
+        display: none !important;
+    }
+
+    .heatmap-tile[data-heatmap-view="oa"] .heatmap-metrics-checklist {
+        display: none !important;
+    }
+
+    .heatmap-tile[data-heatmap-view="oa"] .heatmap-metrics-oa {
+        display: grid !important;
+    }
+
+    .heatmap-oa-risk {
+        color: rgba(254, 226, 226, 0.98) !important;
+    }
+
+    .heatmap-oa-questionable {
+        color: rgba(254, 240, 138, 0.98) !important;
+    }
+
+    @media (max-width: 760px) {
+        .heatmap-view-controls {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+
     .quick-actions-panel {
         align-self: start;
     }
@@ -885,13 +960,42 @@
     <div class="panel-head">
         <div>
             <h3>Store Heat Map</h3>
-            <div class="area-subtitle">Tap any store to open its checklist</div>
+            <div id="heatmap-subtitle" class="area-subtitle">
+                Tap any store to open its checklist
+            </div>
         </div>
-        <div class="heatmap-legend">
-            <span class="legend-chip legend-green">Strong</span>
-            <span class="legend-chip legend-yellow">In Progress</span>
-            <span class="legend-chip legend-red">At Risk</span>
-            <span class="legend-chip legend-gray">Not Started</span>
+
+        <div class="heatmap-view-controls">
+            <div
+                class="heatmap-view-toggle"
+                role="group"
+                aria-label="Heat map view"
+            >
+                <button
+                    type="button"
+                    class="heatmap-view-button is-active"
+                    data-heatmap-mode="checklist"
+                    aria-pressed="true"
+                >
+                    Checklist
+                </button>
+
+                <button
+                    type="button"
+                    class="heatmap-view-button"
+                    data-heatmap-mode="oa"
+                    aria-pressed="false"
+                >
+                    Pre-Open OA
+                </button>
+            </div>
+
+            <div class="heatmap-legend">
+                <span class="legend-chip legend-green">Strong</span>
+                <span class="legend-chip legend-yellow">In Progress</span>
+                <span class="legend-chip legend-red">At Risk</span>
+                <span class="legend-chip legend-gray">Not Started</span>
+            </div>
         </div>
     </div>
 
@@ -899,17 +1003,46 @@
         {% for item in heatmap_items %}
         {% set area_name = item.area_name %}
         {% set store = item.store %}
+
         <a
             href="{{ url_for('checklist.index', store=store.store_number) }}"
             class="heatmap-link"
             aria-label="Open checklist for store {{ store.store_number }}"
+            data-checklist-url="{{ url_for('checklist.index', store=store.store_number) }}"
+            data-oa-url="{{ url_for('checklist.index', store=store.store_number, view='preopen-oa') }}#preopen-oa-risks"
+            data-store-number="{{ store.store_number }}"
+            data-store-sort="{{ store.store_number|int if store.store_number|string|int else 99999 }}"
+            data-checklist-status="{{ item.status }}"
+            data-oa-status="{{ item.oa_status }}"
+            data-oa-risk="{{ store.preopen_oa_at_risk }}"
         >
-            <div class="heatmap-tile {% if item.status == 'risk' %}tile-red{% elif item.status == 'progress' %}tile-yellow{% elif item.status == 'not_started' %}tile-gray{% else %}tile-green{% endif %}">
+            <div
+                class="heatmap-tile {% if item.status == 'risk' %}tile-red{% elif item.status == 'progress' %}tile-yellow{% elif item.status == 'not_started' %}tile-gray{% else %}tile-green{% endif %}"
+                data-heatmap-view="checklist"
+            >
                 <div class="heatmap-store">{{ store.store_number }}</div>
                 <div class="heatmap-area">{{ area_name }}</div>
-                <div class="heatmap-metrics">
+
+                <div class="heatmap-metrics heatmap-metrics-checklist">
                     <span>Open {{ store.opening_percent }}%</span>
                     <span>Int {{ store.integrity_score }}%</span>
+                </div>
+
+                <div class="heatmap-metrics heatmap-metrics-oa">
+                    <span>
+                        OA {{ store.preopen_oa_percent }}%
+                        · {{ store.preopen_oa_protected|round(1) }}/{{ store.preopen_oa_possible|round(1) }} pts
+                    </span>
+
+                    <span class="heatmap-oa-risk">
+                        {{ store.preopen_oa_at_risk|round(1) }} pts at risk
+                    </span>
+
+                    {% if store.preopen_oa_questionable > 0 %}
+                    <span class="heatmap-oa-questionable">
+                        {{ store.preopen_oa_questionable|round(1) }} pts need review
+                    </span>
+                    {% endif %}
                 </div>
             </div>
         </a>
@@ -1186,6 +1319,108 @@ document.addEventListener("DOMContentLoaded", function () {
             el.appendChild(span);
         });
     }
+
+    const heatmapWrapper = document.getElementById("heatmap-wrapper");
+    const heatmapSubtitle = document.getElementById("heatmap-subtitle");
+    const heatmapModeButtons = document.querySelectorAll("[data-heatmap-mode]");
+
+    function heatmapTileClass(status) {
+        if (status === "risk") return "tile-red";
+        if (status === "progress") return "tile-yellow";
+        if (status === "not_started") return "tile-gray";
+        return "tile-green";
+    }
+
+    function applyHeatmapMode(mode) {
+        if (!heatmapWrapper) return;
+
+        const selectedMode = mode === "oa" ? "oa" : "checklist";
+        const links = Array.from(
+            heatmapWrapper.querySelectorAll(".heatmap-link")
+        );
+
+        heatmapModeButtons.forEach((button) => {
+            const isActive = button.dataset.heatmapMode === selectedMode;
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+
+        links.forEach((link) => {
+            const tile = link.querySelector(".heatmap-tile");
+            if (!tile) return;
+
+            link.href = selectedMode === "oa"
+                ? link.dataset.oaUrl
+                : link.dataset.checklistUrl;
+
+            const status = selectedMode === "oa"
+                ? link.dataset.oaStatus
+                : link.dataset.checklistStatus;
+
+            tile.classList.remove(
+                "tile-green",
+                "tile-yellow",
+                "tile-red",
+                "tile-gray"
+            );
+
+            tile.classList.add(heatmapTileClass(status));
+            tile.dataset.heatmapView = selectedMode;
+        });
+
+        links.sort((a, b) => {
+            if (selectedMode === "oa") {
+                const riskDifference =
+                    (Number(b.dataset.oaRisk) || 0)
+                    - (Number(a.dataset.oaRisk) || 0);
+
+                if (riskDifference !== 0) {
+                    return riskDifference;
+                }
+            }
+
+            return (
+                (Number(a.dataset.storeSort) || 99999)
+                - (Number(b.dataset.storeSort) || 99999)
+            );
+        });
+
+        links.forEach((link) => heatmapWrapper.appendChild(link));
+
+        if (heatmapSubtitle) {
+            heatmapSubtitle.textContent = selectedMode === "oa"
+                ? "Pre-open OA points protected — highest risk stores shown first"
+                : "Tap any store to open its checklist";
+        }
+
+        try {
+            window.localStorage.setItem(
+                "bpi-dashboard-heatmap-mode",
+                selectedMode
+            );
+        } catch (error) {
+            console.debug("Heat-map preference was not saved.", error);
+        }
+    }
+
+    heatmapModeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            applyHeatmapMode(button.dataset.heatmapMode);
+        });
+    });
+
+    let initialHeatmapMode = "checklist";
+
+    try {
+        initialHeatmapMode =
+            window.localStorage.getItem("bpi-dashboard-heatmap-mode")
+            || "checklist";
+    } catch (error) {
+        initialHeatmapMode = "checklist";
+    }
+
+    applyHeatmapMode(initialHeatmapMode);
+
 
     function updateRefreshChip(text) {
         const chip = document.getElementById("last-refresh-chip");

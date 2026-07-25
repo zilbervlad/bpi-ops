@@ -22,6 +22,12 @@
     <div class="layout">
         <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay"></div>
 
+        <div
+            class="desktop-sidebar-hover-zone"
+            id="desktop-sidebar-hover-zone"
+            aria-hidden="true">
+        </div>
+
         <aside class="sidebar" id="sidebar">
             <div class="brand brand-mobile-row" style="display:flex; align-items:center; gap:12px;">
                 <img src="{{ url_for('static', filename='bpi-logo.png') }}"
@@ -32,6 +38,15 @@
                     <h1 style="margin:0; font-size:18px;">BPI Ops</h1>
                     <p style="margin:0; font-size:12px; opacity:0.7;">Operations Platform</p>
                 </div>
+                <button
+                    class="desktop-sidebar-pin"
+                    id="desktop-sidebar-pin"
+                    type="button"
+                    aria-label="Pin sidebar open"
+                    title="Pin sidebar open">
+                    ◉
+                </button>
+
                 <button class="mobile-nav-close" id="mobile-nav-close" type="button" aria-label="Close menu" style="margin-left:auto;">
                     ✕
                 </button>
@@ -467,31 +482,188 @@
         const openBtn = document.getElementById("mobile-nav-toggle");
         const closeBtn = document.getElementById("mobile-nav-close");
         const mobileBottomMore = document.getElementById("mobile-bottom-more");
+        const hoverZone = document.getElementById("desktop-sidebar-hover-zone");
+        const pinBtn = document.getElementById("desktop-sidebar-pin");
 
-        function openSidebar() {
+        const desktopBreakpoint = 861;
+        const pinStorageKey = "bpiDesktopSidebarPinned";
+
+        let desktopCloseTimer = null;
+        let desktopOpenTimer = null;
+
+        function isDesktop() {
+            return window.innerWidth >= desktopBreakpoint;
+        }
+
+        function openMobileSidebar() {
             body.classList.add("mobile-nav-open");
         }
 
-        function closeSidebar() {
+        function closeMobileSidebar() {
             body.classList.remove("mobile-nav-open");
         }
 
-        if (openBtn) openBtn.addEventListener("click", openSidebar);
-        if (mobileBottomMore) mobileBottomMore.addEventListener("click", openSidebar);
-        if (closeBtn) closeBtn.addEventListener("click", closeSidebar);
-        if (overlay) overlay.addEventListener("click", closeSidebar);
+        function clearDesktopTimers() {
+            window.clearTimeout(desktopCloseTimer);
+            window.clearTimeout(desktopOpenTimer);
+            desktopCloseTimer = null;
+            desktopOpenTimer = null;
+        }
+
+        function isPinned() {
+            return body.classList.contains("desktop-sidebar-pinned");
+        }
+
+        function openDesktopSidebar() {
+            if (!isDesktop()) return;
+
+            clearDesktopTimers();
+            body.classList.add("desktop-sidebar-open");
+        }
+
+        function scheduleDesktopOpen() {
+            if (!isDesktop()) return;
+
+            window.clearTimeout(desktopCloseTimer);
+            window.clearTimeout(desktopOpenTimer);
+
+            desktopOpenTimer = window.setTimeout(function () {
+                openDesktopSidebar();
+            }, 90);
+        }
+
+        function closeDesktopSidebar() {
+            if (!isDesktop() || isPinned()) return;
+
+            clearDesktopTimers();
+            body.classList.remove("desktop-sidebar-open");
+        }
+
+        function scheduleDesktopClose() {
+            if (!isDesktop() || isPinned()) return;
+
+            window.clearTimeout(desktopOpenTimer);
+            window.clearTimeout(desktopCloseTimer);
+
+            desktopCloseTimer = window.setTimeout(function () {
+                closeDesktopSidebar();
+            }, 425);
+        }
+
+        function updatePinButton() {
+            if (!pinBtn) return;
+
+            const pinned = isPinned();
+
+            pinBtn.classList.toggle("is-pinned", pinned);
+            pinBtn.setAttribute(
+                "aria-label",
+                pinned ? "Unpin sidebar" : "Pin sidebar open"
+            );
+            pinBtn.setAttribute(
+                "title",
+                pinned ? "Unpin sidebar" : "Pin sidebar open"
+            );
+            pinBtn.textContent = pinned ? "●" : "○";
+        }
+
+        function setPinned(pinned) {
+            body.classList.toggle("desktop-sidebar-pinned", pinned);
+
+            if (pinned) {
+                body.classList.add("desktop-sidebar-open");
+                localStorage.setItem(pinStorageKey, "true");
+            } else {
+                localStorage.removeItem(pinStorageKey);
+            }
+
+            updatePinButton();
+        }
+
+        function restoreDesktopPreference() {
+            const pinned = localStorage.getItem(pinStorageKey) === "true";
+
+            body.classList.toggle("desktop-sidebar-pinned", pinned);
+            body.classList.toggle("desktop-sidebar-open", pinned);
+
+            updatePinButton();
+        }
+
+        if (openBtn) {
+            openBtn.addEventListener("click", openMobileSidebar);
+        }
+
+        if (mobileBottomMore) {
+            mobileBottomMore.addEventListener("click", openMobileSidebar);
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener("click", closeMobileSidebar);
+        }
+
+        if (overlay) {
+            overlay.addEventListener("click", closeMobileSidebar);
+        }
+
+        if (hoverZone) {
+            hoverZone.addEventListener("mouseenter", scheduleDesktopOpen);
+        }
 
         if (sidebar) {
-            sidebar.querySelectorAll("a").forEach(link => {
-                link.addEventListener("click", closeSidebar);
+            sidebar.addEventListener("mouseenter", function () {
+                if (isDesktop()) {
+                    openDesktopSidebar();
+                }
+            });
+
+            sidebar.addEventListener("mouseleave", scheduleDesktopClose);
+
+            sidebar.querySelectorAll("a").forEach(function (link) {
+                link.addEventListener("click", function () {
+                    if (!isDesktop()) {
+                        closeMobileSidebar();
+                    }
+                });
             });
         }
 
-        window.addEventListener("resize", function () {
-            if (window.innerWidth > 800) {
-                closeSidebar();
+        if (pinBtn) {
+            pinBtn.addEventListener("click", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                setPinned(!isPinned());
+            });
+        }
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key !== "Escape") return;
+
+            if (isDesktop()) {
+                if (!isPinned()) {
+                    closeDesktopSidebar();
+                }
+            } else {
+                closeMobileSidebar();
             }
         });
+
+        window.addEventListener("resize", function () {
+            clearDesktopTimers();
+
+            if (isDesktop()) {
+                closeMobileSidebar();
+                restoreDesktopPreference();
+            } else {
+                body.classList.remove(
+                    "desktop-sidebar-open",
+                    "desktop-sidebar-pinned"
+                );
+            }
+        });
+
+        restoreDesktopPreference();
+        body.classList.add("sidebar-hover-ready");
     });
     </script>
 

@@ -1506,3 +1506,172 @@ th:last-child {
     }
 }
 
+
+/* =========================================================
+   Desktop hover-to-open sidebar
+   Added 2026-07-25
+   ========================================================= */
+
+@media (min-width: 861px) {
+    :root {
+        --desktop-sidebar-width: 286px;
+        --desktop-sidebar-hover-zone: 14px;
+        --desktop-sidebar-transition: 240ms cubic-bezier(.22, .8, .24, 1);
+    }
+
+    .layout {
+        display: block !important;
+        position: relative !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
+        overflow: hidden !important;
+    }
+
+    .main-content {
+        position: relative !important;
+        width: 100% !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        min-width: 0 !important;
+        margin-left: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        transition:
+            margin-left var(--desktop-sidebar-transition),
+            width var(--desktop-sidebar-transition) !important;
+    }
+
+    .sidebar {
+        position: fixed !important;
+        z-index: 1000 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: var(--desktop-sidebar-width) !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        transform: translateX(calc(-1 * var(--desktop-sidebar-width))) !important;
+        visibility: hidden;
+        pointer-events: none;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        transition:
+            transform var(--desktop-sidebar-transition),
+            visibility 0s linear 240ms !important;
+        box-shadow:
+            20px 0 50px rgba(2, 6, 23, 0.42),
+            1px 0 0 rgba(148, 163, 184, 0.10) !important;
+        will-change: transform;
+    }
+
+    body.sidebar-hover-ready .sidebar {
+        visibility: visible;
+    }
+
+    body.desktop-sidebar-open .sidebar,
+    body.desktop-sidebar-pinned .sidebar {
+        transform: translateX(0) !important;
+        visibility: visible;
+        pointer-events: auto;
+        transition:
+            transform var(--desktop-sidebar-transition),
+            visibility 0s linear 0s !important;
+    }
+
+    .desktop-sidebar-hover-zone {
+        display: block;
+        position: fixed;
+        z-index: 999;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: var(--desktop-sidebar-hover-zone);
+        background: transparent;
+    }
+
+    .desktop-sidebar-hover-zone::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 3px;
+        width: 3px;
+        height: 54px;
+        border-radius: 999px;
+        background: rgba(96, 165, 250, 0.22);
+        opacity: 0;
+        transform: translateY(-50%);
+        transition: opacity 160ms ease;
+    }
+
+    .desktop-sidebar-hover-zone:hover::after {
+        opacity: 1;
+    }
+
+    .desktop-sidebar-pin {
+        display: grid !important;
+        place-items: center;
+        width: 30px;
+        min-width: 30px;
+        height: 30px;
+        margin-left: auto;
+        padding: 0;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 9px;
+        background: rgba(15, 23, 42, 0.72);
+        color: rgba(203, 213, 225, 0.75);
+        font-size: 17px;
+        line-height: 1;
+        cursor: pointer;
+        transition:
+            background 150ms ease,
+            border-color 150ms ease,
+            color 150ms ease,
+            transform 150ms ease;
+    }
+
+    .desktop-sidebar-pin:hover {
+        color: #ffffff;
+        background: rgba(59, 130, 246, 0.20);
+        border-color: rgba(96, 165, 250, 0.38);
+        transform: scale(1.04);
+    }
+
+    .desktop-sidebar-pin.is-pinned {
+        color: #bfdbfe;
+        background: rgba(37, 99, 235, 0.24);
+        border-color: rgba(96, 165, 250, 0.44);
+    }
+
+    .mobile-nav-close {
+        display: none !important;
+    }
+
+    body.desktop-sidebar-pinned .main-content {
+        width: calc(100% - var(--desktop-sidebar-width)) !important;
+        margin-left: var(--desktop-sidebar-width) !important;
+    }
+
+    body.desktop-sidebar-open:not(.desktop-sidebar-pinned)::after {
+        content: "";
+        position: fixed;
+        z-index: 990;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.08);
+        pointer-events: none;
+    }
+}
+
+/* Touch/mobile keeps the existing drawer system */
+@media (max-width: 860px) {
+    .desktop-sidebar-hover-zone,
+    .desktop-sidebar-pin {
+        display: none !important;
+    }
+}
+
+/* Disable hover automation for devices that do not truly support hover */
+@media (min-width: 861px) and (hover: none) {
+    .desktop-sidebar-hover-zone {
+        display: none !important;
+    }
+}

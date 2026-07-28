@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}HR Forms · BPI Ops{% endblock %}
+{% block content %}
+<style>
+.hrf-page{max-width:1300px;margin:0 auto;padding:10px 12px 40px}.hrf-hero{background:linear-gradient(135deg,#111827,#1f2937);color:#fff;border-radius:22px;padding:24px;display:flex;justify-content:space-between;gap:16px;align-items:center}.hrf-hero h1{margin:0;font-size:30px}.hrf-hero p{margin:7px 0 0;color:#d1d5db;font-weight:700}.hrf-actions{display:flex;gap:10px;flex-wrap:wrap}.hrf-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:0;border-radius:999px;padding:11px 16px;font-weight:900;cursor:pointer}.hrf-primary{background:#2563eb;color:#fff}.hrf-light{background:#fff;color:#111827}.hrf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}.hrf-card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:16px}.hrf-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:900}.hrf-value{font-size:28px;font-weight:950;color:#111827;margin-top:6px}.hrf-panel{background:#fff;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;margin-top:14px}.hrf-panel h2{font-size:17px;margin:0;padding:15px 16px;border-bottom:1px solid #e5e7eb}.hrf-table{width:100%;border-collapse:collapse}.hrf-table th{background:#f8fafc;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-size:10px;text-align:left;padding:11px 13px}.hrf-table td{padding:13px;border-top:1px solid #f1f5f9;vertical-align:top}.hrf-pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;background:#eef2ff;color:#3730a3}.hrf-link{font-weight:900;color:#2563eb;text-decoration:none}.hrf-empty{padding:24px;text-align:center;color:#64748b;font-weight:800}@media(max-width:800px){.hrf-hero{display:block}.hrf-actions{margin-top:14px}.hrf-grid{grid-template-columns:1fr}.hrf-panel{overflow-x:auto}.hrf-table{min-width:760px}}
+</style>
+<div class="hrf-page">
+  <div class="hrf-hero">
+    <div><h1>HR Forms</h1><p>Submit, approve, and track employee forms without chasing paper around the building.</p></div>
+    <div class="hrf-actions">
+      <a class="hrf-btn hrf-light" href="{{ url_for('dwp.hr_time_off_new') }}">Request Time Off</a>
+      {% if can_pay_change %}<a class="hrf-btn hrf-primary" href="{{ url_for('dwp.hr_pay_change_new') }}">Position / Rate / Store Change</a>{% endif %}
+    </div>
+  </div>
+  <div class="hrf-grid">
+    <div class="hrf-card"><div class="hrf-label">My Visible Forms</div><div class="hrf-value">{{ forms|length }}</div></div>
+    <div class="hrf-card"><div class="hrf-label">Waiting on Me</div><div class="hrf-value">{{ approvals|length }}</div></div>
+    <div class="hrf-card"><div class="hrf-label">Approved / Completed</div><div class="hrf-value">{{ forms|selectattr('status','in',['approved','completed'])|list|length }}</div></div>
+  </div>
+  {% if approvals %}
+  <div class="hrf-panel"><h2>Approval Queue</h2><table class="hrf-table"><thead><tr><th>Form</th><th>Team Member</th><th>Store</th><th>Status</th><th>Submitted</th><th></th></tr></thead><tbody>{% for form in approvals %}<tr><td>{{ form.form_type|replace('_',' ')|title }}</td><td>{{ form.subject_user.name }}</td><td>{{ form.store_number or '—' }}</td><td><span class="hrf-pill">{{ form.status|replace('_',' ')|title }}</span></td><td>{{ form.created_at.strftime('%m/%d/%Y %I:%M %p') }}</td><td><a class="hrf-link" href="{{ url_for('dwp.hr_form_detail',form_id=form.id) }}">Review</a></td></tr>{% endfor %}</tbody></table></div>
+  {% endif %}
+  <div class="hrf-panel"><h2>Forms</h2>{% if forms %}<table class="hrf-table"><thead><tr><th>Form</th><th>Team Member</th><th>Store</th><th>Status</th><th>Submitted By</th><th>Date</th><th></th></tr></thead><tbody>{% for form in forms %}<tr><td>{{ form.form_type|replace('_',' ')|title }}</td><td>{{ form.subject_user.name }}</td><td>{{ form.store_number or '—' }}</td><td><span class="hrf-pill">{{ form.status|replace('_',' ')|title }}</span></td><td>{{ form.submitter.name }}</td><td>{{ form.created_at.strftime('%m/%d/%Y') }}</td><td><a class="hrf-link" href="{{ url_for('dwp.hr_form_detail',form_id=form.id) }}">View</a></td></tr>{% endfor %}</tbody></table>{% else %}<div class="hrf-empty">No forms yet.</div>{% endif %}</div>
+</div>
+{% endblock %}

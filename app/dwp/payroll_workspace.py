@@ -83,13 +83,17 @@ def _admin_hr_or_payroll(user):
 dwp_routes.is_admin_like = _admin_hr_or_payroll
 
 
-@dwp_bp.after_request
 def build_payroll_dashboard(response):
+    """Rewrite the dashboard response for payroll accounts.
+
+    This must be registered on the Flask app, not only on the DWP blueprint,
+    because the dashboard response belongs to dashboard_bp.
+    """
     if (
         response.status_code != 200
         or not response.content_type.startswith("text/html")
         or not _is_payroll()
-        or request.path not in {"/", "/dashboard", "/dashboard/"}
+        or request.endpoint != "dashboard.home"
     ):
         return response
 
@@ -140,3 +144,11 @@ def build_payroll_dashboard(response):
     response.set_data(html)
     response.headers["Content-Length"] = len(response.get_data())
     return response
+
+
+@dwp_bp.record_once
+def register_payroll_dashboard_rewrite(state):
+    app = state.app
+    if not getattr(app, "_payroll_dashboard_rewrite_installed", False):
+        app.after_request(build_payroll_dashboard)
+        app._payroll_dashboard_rewrite_installed = True

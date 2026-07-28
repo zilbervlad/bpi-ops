@@ -168,3 +168,4 @@ def add_hr_forms_shortcut(response):
 from app.dwp import routes  # noqa: E402,F401
 from app.dwp import hr_forms  # noqa: E402,F401
 from app.dwp import hr_forms_enhancements  # noqa: E402,F401
+from app.dwp import hr_forms_pdf_email  # noqa: E402,F401

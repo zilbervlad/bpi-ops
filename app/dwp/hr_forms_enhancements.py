@@ -6,6 +6,7 @@ from flask import abort, flash, redirect, request, session, url_for
 from app import db
 from app.dwp import dwp_bp
 from app.models import User
+import app.dwp.hr_forms as hr_forms_module
 from app.dwp.hr_forms import (
     HRFormRequest,
     HR_EMAIL,
@@ -15,7 +16,6 @@ from app.dwp.hr_forms import (
     _email,
     _name,
     _next_time_off_status,
-    _role,
     _safe_email,
     _user,
 )
@@ -24,9 +24,35 @@ from app.dwp.hr_forms import (
 TIME_OFF_PROXY_ROLES = {"manager", "general_manager", "admin", "hr"}
 
 
+def _role(user=None):
+    """Use the active account/session role before the underlying user row role."""
+    user = user or _user()
+    return (
+        session.get("account_role")
+        or session.get("user_role")
+        or getattr(user, "role", None)
+        or ""
+    ).strip().lower()
+
+
+# Make the original HR Forms module use the same role resolution. This matters
+# for admin accounts whose underlying user row may still carry a store role.
+hr_forms_module._role = _role
+
+
 def _proxy_subjects(user):
     if _role(user) not in TIME_OFF_PROXY_ROLES:
         return []
+
+    role = _role(user)
+    if role in {"admin", "hr"}:
+        return (
+            User.query
+            .filter(User.is_active.is_(True))
+            .order_by(User.store_number.asc(), User.name.asc())
+            .all()
+        )
+
     return _active_users_for(user)
 
 
@@ -194,10 +220,31 @@ def register_global_hr_navigation(state):
             or ""
         ).strip().lower()
 
+        endpoint = request.endpoint or ""
+        my_docs_active = " active" if endpoint.startswith("hr_documents") and endpoint not in {
+            "hr_documents.index",
+            "hr_documents.new_document",
+            "hr_documents.detail",
+        } else ""
+        hr_forms_active = " active" if endpoint in {
+            "dwp.hr_forms_home",
+            "dwp.hr_time_off_new",
+            "dwp.hr_pay_change_new",
+            "dwp.hr_form_detail",
+            "dwp.hr_form_decision",
+            "dwp.hr_form_acknowledge",
+        } else ""
+        manage_docs_active = " active" if endpoint in {
+            "hr_documents.index",
+            "hr_documents.new_document",
+            "hr_documents.detail",
+            "hr_documents.add_recipients",
+        } else ""
+
         admin_link = ""
         if role in {"admin", "hr", "supervisor"}:
-            admin_link = """
-            <a href="/hr-documents/" class="global-hr-admin-link">
+            admin_link = f"""
+            <a href="/hr-documents/" class="global-hr-admin-link{manage_docs_active}">
                 <span class="nav-icon">◆</span>
                 <span>Manage Documents</span>
             </a>
@@ -206,11 +253,11 @@ def register_global_hr_navigation(state):
         nav = f"""
         <div class="nav-section global-hr-nav" data-global-hr-nav="1">
             <div class="nav-section-label">HR</div>
-            <a href="/hr-documents/my">
+            <a href="/hr-documents/my" class="global-hr-my-documents{my_docs_active}">
                 <span class="nav-icon">◨</span>
                 <span>My Documents</span>
             </a>
-            <a href="/dwp/hr-forms">
+            <a href="/dwp/hr-forms" class="global-hr-forms{hr_forms_active}">
                 <span class="nav-icon">□</span>
                 <span>HR Forms</span>
             </a>
@@ -228,6 +275,7 @@ def register_global_hr_navigation(state):
         document.addEventListener("DOMContentLoaded", function () {
             const globalNav = document.querySelector(".global-hr-nav");
             if (!globalNav) return;
+
             document.querySelectorAll('.sidebar a[href="/hr-documents/my"], .sidebar a[href="/hr-documents/"]').forEach(function (link) {
                 if (!globalNav.contains(link)) {
                     const section = link.closest(".nav-section");
@@ -235,6 +283,17 @@ def register_global_hr_navigation(state):
                     if (section && !section.querySelector("a")) section.remove();
                 }
             });
+
+            const hrEndpoints = [
+                "/dwp/hr-forms",
+                "/dwp/hr-forms/time-off/new",
+                "/dwp/hr-forms/pay-change/new"
+            ];
+            if (hrEndpoints.some(function (path) { return window.location.pathname === path || window.location.pathname.startsWith("/dwp/hr-forms/"); })) {
+                document.querySelectorAll('.sidebar a[href="/dwp/"]').forEach(function (link) {
+                    link.classList.remove("active");
+                });
+            }
         });
         </script>
         """

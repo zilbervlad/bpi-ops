@@ -174,3 +174,4 @@ from app.dwp import connect_unified_documents_events_fix  # noqa: E402,F401
 from app.dwp import pay_change_state_variants  # noqa: E402,F401
 from app.dwp import pay_change_ack_flow  # noqa: E402,F401
 from app.dwp import connect_duplicate_identity_fix  # noqa: E402,F401
+from app.dwp import team_member_hr_forms_file  # noqa: E402,F401

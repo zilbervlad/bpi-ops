@@ -6,3 +6,7 @@ __pycache__/
 .DS_Store
 instance/
 uploads/
+
+# Local manual backup files
+*.backup-before-*
+*.backup-*

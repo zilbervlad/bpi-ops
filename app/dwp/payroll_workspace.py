@@ -17,9 +17,21 @@ def _current_user():
 
 
 def _is_payroll(user=None):
+    """Recognize payroll from either the database role or any active session role."""
     user = user or _current_user()
-    role = str(getattr(user, "role", "") or session.get("account_role") or session.get("user_role") or "").strip().lower()
-    return role in PAYROLL_ROLES
+    roles = {
+        str(value).strip().lower()
+        for value in [
+            getattr(user, "role", None) if user else None,
+            session.get("account_role"),
+            session.get("user_role"),
+            session.get("access_role"),
+            session.get("role"),
+            session.get("role_label"),
+        ]
+        if value
+    }
+    return bool(roles & PAYROLL_ROLES) or any("payroll" in role for role in roles)
 
 
 @dwp_bp.route("/team-members")
@@ -74,10 +86,10 @@ dwp_routes.is_admin_like = _admin_hr_or_payroll
 @dwp_bp.after_request
 def build_payroll_dashboard(response):
     if (
-        request.endpoint != "dashboard.index"
-        or response.status_code != 200
+        response.status_code != 200
         or not response.content_type.startswith("text/html")
         or not _is_payroll()
+        or request.path not in {"/", "/dashboard", "/dashboard/"}
     ):
         return response
 

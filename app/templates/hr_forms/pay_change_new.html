@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Position / Rate / Store Change · BPI Ops{% endblock %}
+{% block content %}
+<style>
+.hrf-form{max-width:980px;margin:0 auto;padding:10px 12px 40px}.hrf-head{background:linear-gradient(135deg,#111827,#1f2937);color:#fff;border-radius:20px;padding:22px;margin-bottom:14px}.hrf-head h1{margin:0;font-size:28px}.hrf-head p{margin:7px 0 0;color:#d1d5db;font-weight:700}.hrf-card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:18px}.hrf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:900;color:#111827;margin-bottom:6px}.field input,.field select,.field textarea{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:12px;padding:11px 12px;font:inherit;color:#111827;background:#fff}.field textarea{min-height:90px;resize:vertical}.section-title{font-size:14px;font-weight:950;color:#111827;border-top:1px solid #e5e7eb;padding-top:16px;margin:4px 0 14px}.note{font-size:12px;color:#64748b;line-height:1.45}.notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:14px;padding:13px;margin:12px 0;font-size:12px;font-weight:750;line-height:1.45}.actions{display:flex;justify-content:space-between;gap:10px;margin-top:16px}.btn{border:0;border-radius:999px;padding:11px 17px;font-weight:900;text-decoration:none;cursor:pointer}.primary{background:#2563eb;color:#fff}.muted{background:#f3f4f6;color:#111827}@media(max-width:700px){.hrf-grid{grid-template-columns:1fr}.actions{flex-direction:column-reverse}.btn{width:100%;text-align:center}}
+</style>
+<div class="hrf-form">
+  <div class="hrf-head"><h1>Position / Rate / Store Change</h1><p>Select the team member from BPI Ops. A copy is sent automatically to the employee, HR, and Payroll.</p></div>
+  <form class="hrf-card" method="POST">
+    <div class="field"><label>Team Member</label><select name="subject_user_id" required><option value="">Select an active team member...</option>{% for employee in users %}<option value="{{ employee.id }}">Store {{ employee.store_number or '—' }} · {{ employee.name }} · {{ employee.position or employee.role|replace('_',' ')|title }}</option>{% endfor %}</select></div>
+    <div class="hrf-grid">
+      <div class="field"><label>Change Type</label><select name="change_type" required><option value="">Select...</option><option value="rate_only">Rate only</option><option value="position_and_rate">Position and rate</option><option value="position_added">Additional position added</option><option value="store_transfer">Store transfer</option><option value="personal_time_change">Start / stop personal time</option></select></div>
+      <div class="field"><label>Effective Date</label><input type="date" name="effective_date" required></div>
+    </div>
+    <div class="section-title">Change From / Change To</div>
+    <div class="hrf-grid">
+      <div class="field"><label>Position From</label><input name="from_position"></div><div class="field"><label>Position To</label><input name="to_position"></div>
+      <div class="field"><label>Rate From</label><input name="from_rate" inputmode="decimal" placeholder="$0.00"></div><div class="field"><label>Rate To</label><input name="to_rate" inputmode="decimal" placeholder="$0.00"></div>
+      <div class="field"><label>Store From</label><input name="from_store"></div><div class="field"><label>Store To</label><input name="to_store"></div>
+    </div>
+    <div class="field"><label>Personal Time Action</label><select name="personal_time_action"><option value="">Not applicable</option><option value="start">Start personal time</option><option value="stop">Stop personal time</option></select></div>
+    <div class="section-title">Reason and Comments</div>
+    <div class="field"><label>Reason for Change</label><select name="reason"><option value="store_transfer">Store Transfer</option><option value="rehired">Rehired</option><option value="promotion_merit">Promotion / Merit</option><option value="other">Other</option></select></div>
+    <div class="field"><label>Comments</label><textarea name="comments"></textarea></div>
+    <div class="section-title">Tip Credit, when applicable</div>
+    <div class="hrf-grid"><div class="field"><label>Cash Hourly Driving Wage</label><input name="cash_hourly_wage" inputmode="decimal" placeholder="$0.00"></div><div class="field"><label>Tip Credit</label><input name="tip_credit" inputmode="decimal" placeholder="$0.00"></div></div>
+    <div class="notice">For tipped employees, the team member will acknowledge the company tip-credit notice when reviewing this form. This form does not alter the at-will employment relationship.</div>
+    <div class="field"><label>Manager / Supervisor Electronic Signature</label><input name="manager_signature" required placeholder="Type your full name"><div class="note">Submitting sends the form immediately to the selected team member, HR, and Payroll.</div></div>
+    <div class="actions"><a class="btn muted" href="{{ url_for('dwp.hr_forms_home') }}">Cancel</a><button class="btn primary" type="submit">Send Form</button></div>
+  </form>
+</div>
+{% endblock %}

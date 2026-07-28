@@ -118,4 +118,52 @@ document.addEventListener("DOMContentLoaded", function () {{
     return response
 
 
+@dwp_bp.after_request
+def add_hr_forms_shortcut(response):
+    """Expose HR Forms from every DWP page without changing role-specific navigation."""
+    if (
+        response.status_code != 200
+        or not response.content_type.startswith("text/html")
+        or not session.get("user_id")
+        or request.endpoint in {
+            "dwp.hr_forms_home",
+            "dwp.hr_time_off_new",
+            "dwp.hr_pay_change_new",
+            "dwp.hr_form_detail",
+        }
+    ):
+        return response
+
+    html = response.get_data(as_text=True)
+    shortcut_url = url_for("dwp.hr_forms_home")
+    shortcut = f"""
+<style>
+.hr-forms-shortcut {{
+    position: fixed;
+    right: 18px;
+    bottom: 88px;
+    z-index: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 16px;
+    border-radius: 999px;
+    background: #111827;
+    color: #fff !important;
+    text-decoration: none;
+    font-weight: 950;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, .28);
+}}
+.hr-forms-shortcut:hover {{ background: #2563eb; }}
+</style>
+<a class="hr-forms-shortcut" href="{shortcut_url}">HR Forms</a>
+"""
+    if "</body>" in html and "hr-forms-shortcut" not in html:
+        html = html.replace("</body>", shortcut + "\n</body>", 1)
+        response.set_data(html)
+        response.headers["Content-Length"] = len(response.get_data())
+    return response
+
+
 from app.dwp import routes  # noqa: E402,F401
+from app.dwp import hr_forms  # noqa: E402,F401

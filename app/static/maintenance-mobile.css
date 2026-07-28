@@ -1,0 +1,225 @@
+/* Mobile field-use improvements for the maintenance calendar. */
+@media (max-width: 900px) {
+    .maintenance-calendar-page {
+        padding-bottom: calc(108px + env(safe-area-inset-bottom));
+    }
+
+    .maintenance-calendar-page .command-bar {
+        margin-bottom: 14px !important;
+        padding: 16px;
+    }
+
+    .maintenance-calendar-page .command-title {
+        font-size: 22px;
+        line-height: 1.15;
+    }
+
+    .maintenance-calendar-page .command-subtitle {
+        display: none;
+    }
+
+    .maintenance-calendar-page .command-bar-right {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .maintenance-calendar-page .command-bar-right > * {
+        width: 100% !important;
+        max-width: none !important;
+        min-height: 44px;
+    }
+
+    .maintenance-tech-filter-bar {
+        align-items: stretch;
+    }
+
+    .maintenance-tech-chips {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+    }
+
+    .maintenance-tech-chip {
+        min-height: 44px;
+        font-size: 13px;
+    }
+
+    .maintenance-calendar-layout {
+        display: block;
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+    }
+
+    .maintenance-calendar-layout > section.panel {
+        padding: 12px;
+        overflow: visible;
+    }
+
+    .maintenance-calendar-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        overflow: visible;
+        padding: 0;
+    }
+
+    .maintenance-day-card {
+        min-height: 0;
+        height: auto;
+        padding: 12px;
+        border-radius: 16px;
+        overflow: visible;
+    }
+
+    .maintenance-day-header {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        margin: -12px -12px 12px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.97);
+        color: #0f172a;
+    }
+
+    .maintenance-day-name {
+        font-size: 15px;
+    }
+
+    .maintenance-day-date,
+    .maintenance-time-label,
+    .maintenance-anytime-label {
+        color: #475569 !important;
+        opacity: 1 !important;
+    }
+
+    .maintenance-time-label {
+        font-size: 13px;
+        margin-bottom: 7px;
+    }
+
+    .maintenance-time-slot {
+        padding: 10px 0;
+    }
+
+    .maintenance-time-slot.is-empty {
+        min-height: 18px;
+        padding: 4px 0;
+    }
+
+    .maintenance-time-slot.is-empty .maintenance-slot-body {
+        min-height: 0;
+    }
+
+    .maintenance-event-card {
+        min-height: 112px;
+        padding: 13px 14px;
+        margin-bottom: 9px;
+        border-radius: 16px;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #dbe2ea;
+        border-left-width: 6px;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .maintenance-event-card:active {
+        transform: scale(0.99);
+    }
+
+    .maintenance-event-card.status-open {
+        border-left-color: #ef4444;
+    }
+
+    .maintenance-event-card.status-assigned {
+        border-left-color: #f59e0b;
+    }
+
+    .maintenance-event-card.status-in_progress {
+        border-left-color: #3b82f6;
+    }
+
+    .maintenance-event-card.status-complete {
+        background: #f0fdf4 !important;
+        border-color: #bbf7d0;
+        border-left-color: #22c55e;
+    }
+
+    .maintenance-event-time {
+        color: #64748b !important;
+        opacity: 1 !important;
+        font-size: 12px;
+        line-height: 1.2;
+        margin-bottom: 7px;
+    }
+
+    .maintenance-event-title {
+        color: #0f172a !important;
+        -webkit-text-fill-color: #0f172a !important;
+        opacity: 1 !important;
+        font-size: 17px !important;
+        font-weight: 850;
+        line-height: 1.28;
+        margin-bottom: 10px;
+        letter-spacing: -0.01em;
+    }
+
+    .maintenance-event-meta {
+        color: #475569 !important;
+        opacity: 1 !important;
+        font-size: 13px;
+        line-height: 1.35;
+    }
+
+    .maintenance-assignee-badge,
+    .maintenance-status-pill,
+    .maintenance-priority-pill {
+        min-height: 32px;
+        padding: 6px 11px;
+        font-size: 12px !important;
+        letter-spacing: 0.01em;
+        text-transform: none;
+    }
+
+    .maintenance-pill-row {
+        gap: 8px;
+        margin-top: 9px;
+    }
+
+    .maintenance-side-panel {
+        position: relative;
+        top: auto;
+        width: 100%;
+        min-width: 0;
+        max-height: none;
+        margin-top: 16px;
+    }
+
+    .maintenance-unscheduled-drop {
+        max-height: none;
+        overflow: visible;
+    }
+
+    .maintenance-calendar-page .doughy-mini-launcher {
+        bottom: calc(104px + env(safe-area-inset-bottom));
+    }
+}
+
+@media (max-width: 480px) {
+    .maintenance-calendar-page .command-bar-right {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-tech-chips {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .maintenance-event-title {
+        font-size: 18px !important;
+    }
+}

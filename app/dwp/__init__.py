@@ -170,3 +170,4 @@ from app.dwp import hr_forms  # noqa: E402,F401
 from app.dwp import hr_forms_enhancements  # noqa: E402,F401
 from app.dwp import hr_forms_pdf_email  # noqa: E402,F401
 from app.dwp import connect_unified_documents  # noqa: E402,F401
+from app.dwp import connect_unified_documents_events_fix  # noqa: E402,F401

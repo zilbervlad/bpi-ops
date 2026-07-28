@@ -1,4 +1,6 @@
-from flask import url_for
+import json
+
+from flask import abort, flash, redirect, request, url_for
 
 from app import db
 from app.dwp import dwp_bp
@@ -87,6 +89,78 @@ def _notify_decision_after_ack_flow(form):
     return _original_notify_decision(form)
 
 
+@dwp_bp.before_request
+def submit_pay_change_acknowledgement_first():
+    """Create pay-change forms without routing them to Payroll/HR/Admin before TM acknowledgement."""
+    if request.endpoint != "dwp.hr_pay_change_new" or request.method != "POST":
+        return None
+
+    user = hr_forms._user()
+    if hr_forms._role(user) not in hr_forms.MANAGEMENT_ROLES:
+        abort(403)
+
+    users = hr_forms._active_users_for(user)
+    subject_id = request.form.get("subject_user_id", type=int)
+    subject = next((row for row in users if row.id == subject_id), None)
+    if not subject:
+        flash("Choose a valid active team member.", "error")
+        return redirect(url_for("dwp.hr_pay_change_new"))
+
+    payload = {key: request.form.get(key, "").strip() for key in [
+        "change_type", "effective_date", "from_position", "to_position", "from_rate", "to_rate",
+        "from_store", "to_store", "personal_time_action", "reason", "comments", "cash_hourly_wage",
+        "tip_credit", "manager_signature",
+    ]}
+
+    if not payload["change_type"] or not payload["effective_date"] or not payload["manager_signature"]:
+        flash("Change type, effective date, and manager signature are required.", "error")
+        return redirect(url_for("dwp.hr_pay_change_new"))
+
+    form = hr_forms.HRFormRequest(
+        form_type="pay_change",
+        submitter_id=user.id,
+        subject_user_id=subject.id,
+        store_number=subject.store_number,
+        status="pending_tm_acknowledgement",
+        approval_role=None,
+        data_json=json.dumps(payload),
+    )
+    db.session.add(form)
+    db.session.flush()
+    hr_forms._add_event(
+        form,
+        user,
+        "submitted",
+        "Sent to team member for acknowledgement before Payroll, HR, and Admin routing",
+    )
+    db.session.commit()
+
+    hr_forms._notify_submission(form)
+    flash(
+        "Position/rate/store change sent to the team member for acknowledgement. Payroll, HR, and Admin will receive it after it is signed.",
+        "success",
+    )
+    return redirect(url_for("dwp.hr_form_detail", form_id=form.id))
+
+
+@dwp_bp.after_request
+def show_pay_change_acknowledgement_first_language(response):
+    if (
+        request.endpoint == "dwp.hr_pay_change_new"
+        and request.method == "GET"
+        and response.status_code == 200
+        and response.content_type.startswith("text/html")
+    ):
+        html = response.get_data(as_text=True)
+        html = html.replace(
+            "Submitting sends the form immediately to the selected team member, HR, and Payroll. The team member must review and acknowledge the full notice above.",
+            "Submitting sends the form to the selected team member for acknowledgement in BPI Connect or BPI Ops. Payroll, HR, and Admin receive the completed signed PDF only after acknowledgement.",
+        )
+        response.set_data(html)
+        response.headers["Content-Length"] = len(response.get_data())
+    return response
+
+
 def connect_acknowledge_after_ack_flow(recipient_id):
     kind, item_id = connect_unified_documents._decode_item_id(recipient_id)
     should_send_final = False
@@ -104,6 +178,13 @@ def connect_acknowledge_after_ack_flow(recipient_id):
     if should_send_final:
         form_after = db.session.get(hr_forms.HRFormRequest, item_id)
         if form_after and form_after.subject_acknowledged_at and form_after.status == "completed":
+            hr_forms._add_event(
+                form_after,
+                form_after.subject_user,
+                "routed_after_acknowledgement",
+                "Completed PDF emailed to Payroll, HR, and Admin",
+            )
+            db.session.commit()
             _notify_pay_change_final(form_after)
 
     return response

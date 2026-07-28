@@ -310,6 +310,12 @@
     box-shadow: 0 12px 24px rgba(37, 99, 235, .22);
 }
 
+.dwp-btn-primary:disabled {
+    cursor: wait;
+    opacity: .72;
+    box-shadow: none;
+}
+
 .dwp-btn-muted {
     background: #f3f4f6;
     color: #111827;
@@ -397,7 +403,7 @@
         <p>Select an existing team member account. Written Reminder and DML require an uploaded letter.</p>
     </div>
 
-    <form class="dwp-form-card" method="POST" enctype="multipart/form-data">
+    <form class="dwp-form-card" id="dwpForm" method="POST" enctype="multipart/form-data">
         <div class="dwp-form-grid">
             <div class="dwp-field">
                 <label>Date of Conversation</label>
@@ -563,7 +569,7 @@
 
         <div class="dwp-actions">
             <a class="dwp-local-btn dwp-btn-muted" href="{{ url_for('dwp.index') }}">Cancel</a>
-            <button class="dwp-local-btn dwp-btn-primary" type="submit">Finalize and Submit DWP</button>
+            <button class="dwp-local-btn dwp-btn-primary" id="dwpSubmitButton" type="submit">Finalize and Submit DWP</button>
         </div>
     </form>
 </div>
@@ -579,6 +585,9 @@
     const teamMemberId = document.getElementById("teamMemberId");
     const employeeSearchCount = document.getElementById("employeeSearchCount");
     const selectedEmployeeText = document.getElementById("selectedEmployeeText");
+    const dwpForm = document.getElementById("dwpForm");
+    const submitButton = document.getElementById("dwpSubmitButton");
+    let isSubmitting = false;
 
     function selectEmployee(option) {
         if (!option || !teamMemberId) return;
@@ -630,6 +639,24 @@
     if (employeeSearch) {
         employeeSearch.addEventListener("input", filterEmployees);
         filterEmployees();
+    }
+
+    if (dwpForm && submitButton) {
+        dwpForm.addEventListener("submit", event => {
+            if (isSubmitting) {
+                event.preventDefault();
+                return;
+            }
+
+            if (!dwpForm.checkValidity()) {
+                return;
+            }
+
+            isSubmitting = true;
+            submitButton.disabled = true;
+            submitButton.setAttribute("aria-busy", "true");
+            submitButton.textContent = "Submitting DWP…";
+        });
     }
 
     discussionType.addEventListener("change", syncLetterRequirement);

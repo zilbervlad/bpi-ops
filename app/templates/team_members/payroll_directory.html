@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Team Member Files · BPI Ops{% endblock %}
+{% block content %}
+<style>
+.payroll-directory{max-width:1240px;margin:0 auto;padding:10px 12px 40px}.payroll-hero{background:linear-gradient(135deg,#111827,#1f2937);border:1px solid rgba(96,165,250,.18);border-radius:22px;padding:24px;color:#fff;margin-bottom:16px}.payroll-hero h1{margin:0;font-size:30px;letter-spacing:-.045em}.payroll-hero p{margin:8px 0 0;color:#cbd5e1;font-weight:750}.search-card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:16px;margin-bottom:14px}.search-row{display:grid;grid-template-columns:1fr auto auto;gap:10px}.search-row input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:12px;padding:11px 12px;font:inherit;color:#111827;background:#fff}.btn{border:0;border-radius:12px;padding:11px 15px;font-weight:900;text-decoration:none;cursor:pointer}.btn-primary{background:#2563eb;color:#fff}.btn-muted{background:#f1f5f9;color:#111827}.directory-card{background:#fff;border:1px solid #e5e7eb;border-radius:20px;overflow:hidden}.directory-head{display:grid;grid-template-columns:1.5fr .7fr 1fr .8fr auto;gap:12px;padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e5e7eb;color:#64748b;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}.employee-row{display:grid;grid-template-columns:1.5fr .7fr 1fr .8fr auto;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid #f1f5f9}.employee-row:last-child{border-bottom:0}.employee-name{font-weight:950;color:#111827}.employee-sub{font-size:12px;color:#64748b;margin-top:3px}.pill{display:inline-flex;border-radius:999px;padding:6px 9px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:900}.open-link{color:#2563eb;font-weight:950;text-decoration:none}.empty{padding:42px 18px;text-align:center;color:#64748b}@media(max-width:760px){.search-row{grid-template-columns:1fr}.directory-head{display:none}.employee-row{grid-template-columns:1fr;gap:7px}.open-link{display:inline-flex;margin-top:5px}}
+</style>
+<div class="payroll-directory">
+  <div class="payroll-hero">
+    <h1>Team Member Files</h1>
+    <p>Search company-wide employee files, HR documents, payroll forms, and DWP history.</p>
+  </div>
+
+  <form class="search-card" method="GET">
+    <div class="search-row">
+      <input type="search" name="search" value="{{ search }}" placeholder="Search name, store, email, username, or position..." autofocus>
+      <button class="btn btn-primary" type="submit">Search</button>
+      <a class="btn btn-muted" href="{{ url_for('dwp.payroll_team_members') }}">Clear</a>
+    </div>
+  </form>
+
+  <div class="directory-card">
+    <div class="directory-head"><div>Team Member</div><div>Store</div><div>Position</div><div>Role</div><div></div></div>
+    {% if employees %}
+      {% for employee in employees %}
+      <div class="employee-row">
+        <div><div class="employee-name">{{ employee.name }}</div><div class="employee-sub">{{ employee.email or employee.username or 'No email on file' }}</div></div>
+        <div><span class="pill">Store {{ employee.store_number or '—' }}</span></div>
+        <div>{{ employee.position or '—' }}</div>
+        <div>{{ employee.role|replace('_',' ')|title }}</div>
+        <div><a class="open-link" href="{{ url_for('dwp.team_member_file', user_id=employee.id) }}">Open File →</a></div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">No matching active team members found.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

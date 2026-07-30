@@ -223,3 +223,114 @@
         font-size: 18px !important;
     }
 }
+
+/* Compact sidebar navigation groups.
+   Command and active groups stay open; other groups expand on hover/focus/tap. */
+.sidebar .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sidebar .nav-section {
+    margin-bottom: 0 !important;
+    padding: 3px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    transition: background 150ms ease, border-color 150ms ease;
+}
+
+.sidebar .nav-section-label {
+    position: relative;
+    min-height: 30px;
+    margin: 0 !important;
+    padding: 8px 30px 7px 9px;
+    border-radius: 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: color 150ms ease, background 150ms ease;
+}
+
+.sidebar .nav-section-label::after {
+    content: "›";
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    color: rgba(148, 163, 184, 0.66);
+    font-size: 17px;
+    line-height: 1;
+    transform: translateY(-52%) rotate(0deg);
+    transition: transform 150ms ease, color 150ms ease;
+}
+
+.sidebar .nav-section:not(:first-child):not(.nav-logout-section) > a {
+    display: none;
+}
+
+.sidebar .nav-section:first-child > a,
+.sidebar .nav-section:hover > a,
+.sidebar .nav-section:focus-within > a,
+.sidebar .nav-section:has(> a.active) > a {
+    display: flex;
+}
+
+.sidebar .nav-section:hover,
+.sidebar .nav-section:focus-within,
+.sidebar .nav-section:has(> a.active) {
+    border-color: rgba(148, 163, 184, 0.12);
+    background: rgba(15, 23, 42, 0.42);
+}
+
+.sidebar .nav-section:hover > .nav-section-label,
+.sidebar .nav-section:focus-within > .nav-section-label,
+.sidebar .nav-section:has(> a.active) > .nav-section-label {
+    color: rgba(226, 232, 240, 0.9);
+    background: rgba(148, 163, 184, 0.055);
+}
+
+.sidebar .nav-section:first-child > .nav-section-label::after,
+.sidebar .nav-section:hover > .nav-section-label::after,
+.sidebar .nav-section:focus-within > .nav-section-label::after,
+.sidebar .nav-section:has(> a.active) > .nav-section-label::after {
+    color: #7dd3fc;
+    transform: translateY(-52%) rotate(90deg);
+}
+
+/* One-link groups do not need a category header. */
+.sidebar .nav-section:has(> .nav-section-label + a:last-child) {
+    padding: 0 3px;
+    border-color: transparent;
+    background: transparent;
+}
+
+.sidebar .nav-section:has(> .nav-section-label + a:last-child) > .nav-section-label {
+    display: none;
+}
+
+.sidebar .nav-section:has(> .nav-section-label + a:last-child) > a {
+    display: flex;
+}
+
+.sidebar .nav-logout-section {
+    margin-top: auto !important;
+    padding-top: 10px;
+}
+
+@media (max-width: 860px) {
+    .sidebar .nav-section:not(:first-child):not(.nav-logout-section) > a {
+        display: none;
+    }
+
+    .sidebar .nav-section:hover > a,
+    .sidebar .nav-section:focus-within > a,
+    .sidebar .nav-section:has(> a.active) > a,
+    .sidebar .nav-section:has(> .nav-section-label + a:last-child) > a {
+        display: flex;
+    }
+
+    .sidebar .nav-section-label {
+        min-height: 38px;
+        padding-top: 11px;
+        padding-bottom: 10px;
+    }
+}

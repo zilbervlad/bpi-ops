@@ -1675,3 +1675,120 @@ th:last-child {
         display: none !important;
     }
 }
+
+/* === REAL SIDEBAR ACCORDION === */
+
+.sidebar .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sidebar .nav-section {
+    margin-bottom: 0 !important;
+    padding: 3px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+}
+
+.sidebar .nav-section-label {
+    position: relative;
+    min-height: 31px;
+    margin: 0 !important;
+    padding: 8px 31px 7px 9px;
+    border-radius: 10px;
+    user-select: none;
+}
+
+/*
+ * Override the earlier CSS-only hover experiment.
+ */
+.sidebar .nav-section.is-collapsible:not(.is-open) > a {
+    display: none !important;
+}
+
+.sidebar .nav-section.is-collapsible.is-open > a,
+.sidebar .nav-section.is-fixed-open > a,
+.sidebar .nav-section.is-single-link > a {
+    display: flex !important;
+}
+
+.sidebar .nav-section.is-collapsible > .nav-section-label {
+    cursor: pointer;
+}
+
+.sidebar .nav-section.is-collapsible > .nav-section-label::after {
+    content: "›";
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    color: rgba(148, 163, 184, 0.68);
+    font-size: 17px;
+    line-height: 1;
+    transform: translateY(-52%);
+    transition:
+        transform 150ms ease,
+        color 150ms ease;
+}
+
+.sidebar .nav-section.is-collapsible.is-open {
+    border-color: rgba(148, 163, 184, 0.13);
+    background: rgba(15, 23, 42, 0.43);
+}
+
+.sidebar .nav-section.is-collapsible.is-open >
+.nav-section-label {
+    color: rgba(226, 232, 240, 0.94);
+    background: rgba(148, 163, 184, 0.06);
+}
+
+.sidebar .nav-section.is-collapsible.is-open >
+.nav-section-label::after {
+    color: #7dd3fc;
+    transform: translateY(-52%) rotate(90deg);
+}
+
+.sidebar .nav-section.is-collapsible >
+.nav-section-label:hover {
+    color: rgba(226, 232, 240, 0.94);
+    background: rgba(148, 163, 184, 0.055);
+}
+
+.sidebar .nav-section.is-collapsible >
+.nav-section-label:focus-visible {
+    outline: 2px solid rgba(96, 165, 250, 0.55);
+    outline-offset: 1px;
+}
+
+.sidebar .nav-section.is-single-link {
+    padding: 0 3px;
+    border-color: transparent !important;
+    background: transparent !important;
+}
+
+.sidebar .nav-section.is-single-link >
+.nav-section-label {
+    display: none !important;
+}
+
+.sidebar .nav-section.is-fixed-open >
+.nav-section-label::after,
+.sidebar .nav-section.is-single-link >
+.nav-section-label::after,
+.sidebar .nav-logout-section >
+.nav-section-label::after {
+    display: none !important;
+}
+
+.sidebar .nav-logout-section {
+    margin-top: auto !important;
+    padding-top: 10px;
+}
+
+@media (max-width: 860px) {
+    .sidebar .nav-section-label {
+        min-height: 40px;
+        padding-top: 12px;
+        padding-bottom: 11px;
+    }
+}

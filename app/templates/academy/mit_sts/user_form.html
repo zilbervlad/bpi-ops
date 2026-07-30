@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="academy-page">
+<link rel="stylesheet" href="{{ url_for('static', filename='academy/css/style.css') }}">
+<div class="page-header">
+    <div>
+        <p class="eyebrow">MIT STS</p>
+        <h2>{{ page_title }}</h2>
+        <p class="subtle">Create or update a platform user.</p>
+    </div>
+</div>
+
+<div class="card form-card">
+    <form method="POST" class="form-grid">
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" name="name" value="{{ request.form.get('name', user_item.name if user_item else '') }}" required>
+        </div>
+
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" name="username" value="{{ request.form.get('username', user_item.username if user_item else '') }}" required>
+        </div>
+
+        <div class="form-group">
+            <label>Role</label>
+            {% set current_role = request.form.get('role', user_item.role if user_item else 'mit') %}
+            <select name="role" required>
+                {% for role_value in roles %}
+                <option value="{{ role_value }}" {% if current_role == role_value %}selected{% endif %}>
+                    {{ role_value.replace('_', ' ').title() }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Store Number</label>
+            <input type="text" name="store_number" value="{{ request.form.get('store_number', user_item.store_number if user_item else '') }}" placeholder="Example: 3209">
+        </div>
+
+        <div class="form-group form-group-full">
+            <label>
+                {% if user_item %}
+                    New Password
+                {% else %}
+                    Password
+                {% endif %}
+            </label>
+            <input
+                type="text"
+                name="password"
+                {% if not user_item %}required{% endif %}
+                placeholder="{% if user_item %}Leave blank to keep current password{% else %}Set initial password{% endif %}">
+        </div>
+
+        <div class="form-group form-group-full">
+            <label style="display:flex; align-items:center; gap:8px; font-weight:600;">
+                <input type="checkbox" name="is_active_user" value="1"
+                    {% if request.form.get('is_active_user') == '1' or (user_item and user_item.is_active_user) or (not user_item and request.method != 'POST') %}checked{% endif %}>
+                Active User
+            </label>
+        </div>
+
+        <div class="form-actions form-group-full">
+            <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
+            <a href="{{ url_for('mit_sts.list_users') }}" class="btn btn-secondary">Back</a>
+        </div>
+    </form>
+</div>
+
+</div>
+{% endblock %}

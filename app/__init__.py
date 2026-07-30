@@ -128,6 +128,7 @@ def create_app():
     from app.hr_documents.routes import hr_documents_bp
     from app.connect_admin import connect_admin_bp
     from app.doughy_daily_brief import doughy_daily_brief_bp
+    from app.academy import academy_bp, mit_sts_bp
 
     # Register blueprints
 
@@ -190,6 +191,8 @@ def create_app():
     app.register_blueprint(perks_api_bp)
     app.register_blueprint(doughy_api_bp)
     app.register_blueprint(doughy_daily_brief_bp)
+    app.register_blueprint(academy_bp)
+    app.register_blueprint(mit_sts_bp)
 
     @app.route("/create-db")
     def create_db():
@@ -198,6 +201,10 @@ def create_app():
         from app.forms import routes as forms_routes
 
         db.create_all()
+
+        # === BPI ACADEMY CURRICULUM SEED ===
+        from app.academy.seed_data import ensure_academy_seed_data
+        ensure_academy_seed_data()
         ensure_user_position_column()
         ensure_hr_document_due_date_column()
         return "Database tables created"

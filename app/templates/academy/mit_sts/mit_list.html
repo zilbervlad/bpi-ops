@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}All MITs | BPI Academy{% endblock %}
+
+{% block content %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='academy/css/style.css') }}">
+
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='academy/mit-directory.css', v='20260730-0845') }}">
+
+<div class="academy-page mit-directory-page">
+
+    <header class="mit-directory-header">
+        <div>
+            <div class="mit-directory-eyebrow">BPI Academy · MIT STS</div>
+            <h1>All MITs</h1>
+            <p>Search, review, and manage MIT development profiles.</p>
+        </div>
+
+        <div class="mit-directory-header-actions">
+            <a class="mit-directory-btn secondary"
+               href="{{ url_for('mit_sts.dashboard') }}">
+                Dashboard
+            </a>
+
+            <a class="mit-directory-btn primary"
+               href="{{ url_for('mit_sts.new_mit') }}">
+                + New MIT
+            </a>
+        </div>
+    </header>
+
+    <section class="mit-filter-card">
+        <div class="mit-filter-card-header">
+            <div>
+                <h2>Filters</h2>
+                <p>Search by name or narrow the directory.</p>
+            </div>
+
+            <button type="button"
+                    class="mit-filter-toggle"
+                    id="mit-filter-toggle"
+                    aria-expanded="true">
+                Hide filters
+            </button>
+        </div>
+
+        <form method="GET"
+              action="{{ url_for('mit_sts.list_mits') }}"
+              class="mit-filter-form"
+              id="mit-filter-form">
+
+            <div class="mit-filter-field mit-filter-search">
+                <label for="mit-search">Search</label>
+
+                <input id="mit-search"
+                       type="search"
+                       name="q"
+                       value="{{ q }}"
+                       placeholder="MIT name">
+            </div>
+
+            <div class="mit-filter-field">
+                <label for="mit-store">Store</label>
+
+                <select id="mit-store" name="store">
+                    <option value="">All stores</option>
+
+                    {% for store_number in stores %}
+                        <option value="{{ store_number }}"
+                                {% if selected_store == store_number %}selected{% endif %}>
+                            {{ store_number }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mit-filter-field">
+                <label for="mit-level">Level</label>
+
+                <select id="mit-level" name="level">
+                    <option value="">All levels</option>
+                    <option value="1" {% if selected_level == "1" %}selected{% endif %}>Level 1</option>
+                    <option value="2" {% if selected_level == "2" %}selected{% endif %}>Level 2</option>
+                    <option value="3" {% if selected_level == "3" %}selected{% endif %}>Level 3</option>
+                </select>
+            </div>
+
+            <div class="mit-filter-field">
+                <label for="mit-status">Status</label>
+
+                <select id="mit-status" name="status">
+                    <option value="">All statuses</option>
+                    <option value="on_track" {% if selected_status == "on_track" %}selected{% endif %}>On track</option>
+                    <option value="ready" {% if selected_status == "ready" %}selected{% endif %}>Ready</option>
+                    <option value="blocked" {% if selected_status == "blocked" %}selected{% endif %}>Blocked</option>
+                    <option value="promoted" {% if selected_status == "promoted" %}selected{% endif %}>Promoted</option>
+                </select>
+            </div>
+
+            <div class="mit-filter-field">
+                <label for="mit-coach">Coach</label>
+
+                <select id="mit-coach" name="coach">
+                    <option value="">All coaches</option>
+
+                    {% for coach_user in coaches %}
+                        <option value="{{ coach_user.id }}"
+                                {% if selected_coach|string == coach_user.id|string %}selected{% endif %}>
+                            {{ coach_user.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mit-filter-field">
+                <label for="mit-task-filter">Tasks</label>
+
+                <select id="mit-task-filter" name="task_filter">
+                    <option value="">All tasks</option>
+                    <option value="open" {% if selected_task_filter == "open" %}selected{% endif %}>Open</option>
+                    <option value="overdue" {% if selected_task_filter == "overdue" %}selected{% endif %}>Overdue</option>
+                    <option value="submitted" {% if selected_task_filter == "submitted" %}selected{% endif %}>Awaiting review</option>
+                </select>
+            </div>
+
+            <div class="mit-filter-actions">
+                <button type="submit"
+                        class="mit-directory-btn primary">
+                    Apply
+                </button>
+
+                <a class="mit-directory-btn secondary"
+                   href="{{ url_for('mit_sts.list_mits') }}">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </section>
+
+    {% if doughy_message %}
+        <div class="mit-doughy-strip">
+            <div class="mit-doughy-icon">🍕</div>
+
+            <div>
+                <strong>Doughy</strong>
+                <span>{{ doughy_message }}</span>
+            </div>
+        </div>
+    {% endif %}
+
+    <section class="mit-directory-card">
+        <div class="mit-directory-card-header">
+            <div>
+                <h2>MIT Directory</h2>
+                <p>{{ mits|length }} MIT{% if mits|length != 1 %}s{% endif %} matched the current filters.</p>
+            </div>
+
+            <span class="mit-live-badge">Live view</span>
+        </div>
+
+        {% if mits %}
+            <div class="mit-directory-table-wrap">
+                <table class="mit-directory-table">
+                    <thead>
+                        <tr>
+                            <th>MIT</th>
+                            <th>Store</th>
+                            <th>Coach</th>
+                            <th>Level</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Tasks</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for mit in mits %}
+                            {% set task_counts = task_counts_map.get(mit.id, {}) %}
+                            {% set progress = progress_map.get(mit.id, 0) %}
+
+                            <tr>
+                                <td class="mit-person-cell">
+                                    <a href="{{ url_for('mit_sts.view_mit', mit_id=mit.id) }}">
+                                        {{ mit.mit_user.name }}
+                                    </a>
+
+                                    {% if mit.next_review_date %}
+                                        <small>
+                                            Review {{ mit.next_review_date.strftime("%b %-d") }}
+                                        </small>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {{ mit.store_number or "—" }}
+                                </td>
+
+                                <td>
+                                    {{ mit.coach_user.name if mit.coach_user else "Unassigned" }}
+                                </td>
+
+                                <td>
+                                    <span class="mit-level-badge">
+                                        L{{ mit.current_level }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="mit-status-badge status-{{ mit.sts_status or 'on_track' }}">
+                                        {{ (mit.sts_status or "on_track")|replace("_", " ")|title }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="mit-progress-cell">
+                                        <div class="mit-progress-track">
+                                            <div class="mit-progress-fill"
+                                                 style="width: {{ progress }}%">
+                                            </div>
+                                        </div>
+
+                                        <strong>{{ progress }}%</strong>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="mit-task-summary">
+                                        {% if task_counts.get("overdue", 0) %}
+                                            <span class="mit-task-chip overdue">
+                                                {{ task_counts.get("overdue", 0) }} overdue
+                                            </span>
+                                        {% endif %}
+
+                                        {% if task_counts.get("submitted", 0) %}
+                                            <span class="mit-task-chip submitted">
+                                                {{ task_counts.get("submitted", 0) }} review
+                                            </span>
+                                        {% endif %}
+
+                                        {% if task_counts.get("open", 0) %}
+                                            <span class="mit-task-chip open">
+                                                {{ task_counts.get("open", 0) }} open
+                                            </span>
+                                        {% endif %}
+
+                                        {% if not task_counts.get("open", 0)
+                                              and not task_counts.get("overdue", 0)
+                                              and not task_counts.get("submitted", 0) %}
+                                            <span class="mit-task-chip clean">
+                                                Clear
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+
+                                <td class="mit-directory-actions">
+                                    <a class="mit-row-button"
+                                       href="{{ url_for('mit_sts.view_mit', mit_id=mit.id) }}">
+                                        Open
+                                    </a>
+
+                                    <a class="mit-row-button subtle"
+                                       href="{{ url_for('mit_sts.edit_mit', mit_id=mit.id) }}">
+                                        Edit
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="mit-directory-empty">
+                <strong>No MITs matched those filters.</strong>
+                <span>Clear the filters or create a new MIT profile.</span>
+
+                <div>
+                    <a class="mit-directory-btn secondary"
+                       href="{{ url_for('mit_sts.list_mits') }}">
+                        Clear filters
+                    </a>
+
+                    <a class="mit-directory-btn primary"
+                       href="{{ url_for('mit_sts.new_mit') }}">
+                        + New MIT
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+</div>
+
+<script>
+(() => {
+    const toggle = document.getElementById("mit-filter-toggle");
+    const form = document.getElementById("mit-filter-form");
+    const key = "bpiAcademyMitFiltersOpen";
+
+    if (!toggle || !form) {
+        return;
+    }
+
+    function setOpen(open) {
+        form.classList.toggle("collapsed", !open);
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        toggle.textContent = open ? "Hide filters" : "Show filters";
+        sessionStorage.setItem(key, open ? "1" : "0");
+    }
+
+    toggle.addEventListener("click", () => {
+        setOpen(toggle.getAttribute("aria-expanded") !== "true");
+    });
+
+    if (window.innerWidth <= 720) {
+        const remembered = sessionStorage.getItem(key);
+        setOpen(remembered === "1");
+    }
+})();
+</script>
+{% endblock %}

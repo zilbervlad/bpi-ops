@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}STS Curriculum | BPI Academy{% endblock %}
+
+{% block content %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='academy/css/style.css') }}">
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='academy/sts-library.css', v='20260730-0835') }}">
+
+<div class="academy-page sts-library-page">
+
+    <div class="sts-library-header">
+        <div>
+            <div class="eyebrow">STS Curriculum</div>
+            <h1>STS Item Library</h1>
+            <p>
+                Drag items to reorder them. Changes save automatically.
+            </p>
+        </div>
+
+        <div class="sts-header-actions">
+            <div id="sts-save-status"
+                 class="sts-save-status"
+                 aria-live="polite">
+                Saved
+            </div>
+
+            <a class="btn btn-primary"
+               href="{{ url_for('mit_sts.new_template_item') }}"
+               data-preserve-scroll>
+                + New STS Item
+            </a>
+
+            <a class="btn btn-secondary"
+               href="{{ url_for('mit_sts.dashboard') }}">
+                Back
+            </a>
+        </div>
+    </div>
+
+    <div class="sts-level-tabs" role="tablist">
+        {% for level_number in [1, 2, 3] %}
+            <button type="button"
+                    class="sts-level-tab {% if loop.first %}active{% endif %}"
+                    data-level-target="{{ level_number }}">
+                Level {{ level_number }}
+                <span>{{ grouped_templates.get(level_number, [])|length }}</span>
+            </button>
+        {% endfor %}
+    </div>
+
+    {% for level_number in [1, 2, 3] %}
+        {% set level_items = grouped_templates.get(level_number, []) %}
+
+        <section class="sts-level-panel {% if loop.first %}active{% endif %}"
+                 data-level-panel="{{ level_number }}">
+
+            <div class="sts-level-panel-header">
+                <div>
+                    <h2>Level {{ level_number }}</h2>
+                    <span>{{ level_items|length }} items</span>
+                </div>
+
+                <div class="sts-drag-help">
+                    <span class="sts-drag-icon">↕</span>
+                    Drag to reorder
+                </div>
+            </div>
+
+            {% if level_items %}
+                <div class="sts-sortable-list"
+                     data-level="{{ level_number }}">
+
+                    {% for item in level_items %}
+                        <article class="sts-compact-row"
+                                 id="sts-item-{{ item.id }}"
+                                 data-item-id="{{ item.id }}">
+
+                            <button type="button"
+                                    class="sts-drag-handle"
+                                    aria-label="Drag {{ item.item_name }}"
+                                    title="Drag to reorder">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </button>
+
+                            <div class="sts-order-number">
+                                {{ loop.index }}
+                            </div>
+
+                            <div class="sts-item-main">
+                                <div class="sts-item-title">
+                                    {{ item.item_name }}
+                                </div>
+
+                                <div class="sts-item-meta">
+                                    <span>{{ item.category or "Uncategorized" }}</span>
+
+                                    {% if item.source_ref %}
+                                        <span>{{ item.source_ref }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="sts-item-flags">
+                                {% if item.is_required %}
+                                    <span class="sts-required-badge">
+                                        Required
+                                    </span>
+                                {% else %}
+                                    <span class="sts-optional-badge">
+                                        Optional
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="sts-row-actions">
+                                <a class="sts-action-button sts-edit-button"
+                                   href="{{ url_for('mit_sts.edit_template_item', item_id=item.id) }}"
+                                   data-preserve-scroll>
+                                    Edit
+                                </a>
+
+                                <form method="POST"
+                                      action="{{ url_for('mit_sts.delete_template_item', item_id=item.id) }}"
+                                      data-preserve-scroll-form
+                                      onsubmit="return confirm('Delete this STS item?');">
+                                    <button type="submit"
+                                            class="sts-action-button sts-delete-button">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="sts-empty-level">
+                    <strong>No Level {{ level_number }} items yet</strong>
+                    <a href="{{ url_for('mit_sts.new_template_item') }}"
+                       data-preserve-scroll>
+                        Add the first item
+                    </a>
+                </div>
+            {% endif %}
+        </section>
+    {% endfor %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+
+<script>
+(() => {
+    const scrollStorageKey = "bpiAcademyStsLibraryScroll";
+    const levelStorageKey = "bpiAcademyStsLibraryLevel";
+    const saveStatus = document.getElementById("sts-save-status");
+    const reorderUrl = {{ url_for("mit_sts.reorder_template_items")|tojson }};
+
+    function saveScrollPosition() {
+        sessionStorage.setItem(
+            scrollStorageKey,
+            String(window.scrollY || document.documentElement.scrollTop || 0)
+        );
+    }
+
+    function restoreScrollPosition() {
+        const stored = sessionStorage.getItem(scrollStorageKey);
+
+        if (stored === null) {
+            return;
+        }
+
+        sessionStorage.removeItem(scrollStorageKey);
+
+        const target = Number(stored);
+
+        if (!Number.isFinite(target)) {
+            return;
+        }
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                window.scrollTo({
+                    top: target,
+                    left: 0,
+                    behavior: "instant"
+                });
+            });
+        });
+    }
+
+    function showStatus(message, state = "saved") {
+        if (!saveStatus) {
+            return;
+        }
+
+        saveStatus.textContent = message;
+        saveStatus.dataset.state = state;
+    }
+
+    function renumberList(list) {
+        list.querySelectorAll(".sts-compact-row").forEach((row, index) => {
+            const number = row.querySelector(".sts-order-number");
+
+            if (number) {
+                number.textContent = String(index + 1);
+            }
+        });
+    }
+
+    async function saveOrder(list) {
+        const levelNumber = Number(list.dataset.level);
+        const itemIds = Array.from(
+            list.querySelectorAll(".sts-compact-row")
+        ).map((row) => Number(row.dataset.itemId));
+
+        showStatus("Saving…", "saving");
+
+        try {
+            const response = await fetch(reorderUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                credentials: "same-origin",
+                body: JSON.stringify({
+                    level_number: levelNumber,
+                    item_ids: itemIds
+                })
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || !data.ok) {
+                throw new Error(data.error || "Could not save the new order.");
+            }
+
+            showStatus("Saved", "saved");
+        } catch (error) {
+            console.error(error);
+            showStatus("Save failed — refresh", "error");
+        }
+    }
+
+    document.querySelectorAll(".sts-sortable-list").forEach((list) => {
+        if (typeof Sortable === "undefined") {
+            showStatus("Drag unavailable", "error");
+            return;
+        }
+
+        Sortable.create(list, {
+            animation: 160,
+            handle: ".sts-drag-handle",
+            draggable: ".sts-compact-row",
+            ghostClass: "sts-row-ghost",
+            chosenClass: "sts-row-chosen",
+            dragClass: "sts-row-dragging",
+            forceFallback: false,
+            fallbackTolerance: 4,
+            scroll: true,
+            scrollSensitivity: 80,
+            scrollSpeed: 12,
+
+            onStart() {
+                showStatus("Reordering…", "saving");
+            },
+
+            onEnd() {
+                renumberList(list);
+                saveOrder(list);
+            }
+        });
+    });
+
+    const tabs = Array.from(
+        document.querySelectorAll(".sts-level-tab")
+    );
+
+    const panels = Array.from(
+        document.querySelectorAll(".sts-level-panel")
+    );
+
+    function activateLevel(levelNumber) {
+        const normalized = String(levelNumber);
+
+        tabs.forEach((tab) => {
+            tab.classList.toggle(
+                "active",
+                tab.dataset.levelTarget === normalized
+            );
+        });
+
+        panels.forEach((panel) => {
+            panel.classList.toggle(
+                "active",
+                panel.dataset.levelPanel === normalized
+            );
+        });
+
+        sessionStorage.setItem(levelStorageKey, normalized);
+    }
+
+    tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+            activateLevel(tab.dataset.levelTarget);
+        });
+    });
+
+    const rememberedLevel = sessionStorage.getItem(levelStorageKey);
+
+    if (
+        rememberedLevel &&
+        tabs.some((tab) => tab.dataset.levelTarget === rememberedLevel)
+    ) {
+        activateLevel(rememberedLevel);
+    }
+
+    document.querySelectorAll("[data-preserve-scroll]").forEach((link) => {
+        link.addEventListener("click", saveScrollPosition);
+    });
+
+    document.querySelectorAll("[data-preserve-scroll-form]").forEach((form) => {
+        form.addEventListener("submit", saveScrollPosition);
+    });
+
+    restoreScrollPosition();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | BPI Academy{% endblock %}
+
+{% block content %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='academy/mit-form.css', v='20260730-0905') }}">
+
+<div class="mit-form-page">
+
+    <header class="mit-form-header">
+        <div>
+            <div class="mit-form-eyebrow">BPI Academy · MIT STS</div>
+
+            <h1>{{ page_title }}</h1>
+
+            <p>
+                Create or update the MIT assignment, coach, level, and review schedule.
+            </p>
+        </div>
+
+        <a class="mit-form-btn secondary"
+           href="{{ url_for('mit_sts.list_mits') }}">
+            Back to MIT List
+        </a>
+    </header>
+
+    <form method="POST" class="mit-form-card">
+
+        <section class="mit-form-section">
+            <div class="mit-form-section-header">
+                <div>
+                    <h2>MIT Assignment</h2>
+                    <p>Select the employee, store, coach, and current development level.</p>
+                </div>
+            </div>
+
+            <div class="mit-form-grid">
+                <div class="mit-form-field mit-form-field-wide">
+                    <label for="mit-user">MIT User</label>
+
+                    <select id="mit-user" name="user_id" required>
+                        <option value="">Select user</option>
+
+                        {% for item in users %}
+                            <option value="{{ item.id }}"
+                                {% if mit and mit.user_id == item.id %}selected{% endif %}>
+                                {{ item.name }}
+                                {% if item.email %} · {{ item.email }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mit-form-field">
+                    <label for="store-number">Store Number</label>
+
+                    <input id="store-number"
+                           type="text"
+                           name="store_number"
+                           value="{{ mit.store_number if mit else '' }}"
+                           placeholder="Example: 3209"
+                           inputmode="numeric">
+                </div>
+
+                <div class="mit-form-field">
+                    <label for="coach-user">Coach</label>
+
+                    <select id="coach-user" name="coach_user_id">
+                        <option value="">Unassigned</option>
+
+                        {% for coach in coaches %}
+                            <option value="{{ coach.id }}"
+                                {% if mit and mit.coach_user_id == coach.id %}selected{% endif %}>
+                                {{ coach.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mit-form-field">
+                    <label for="current-level">Current Level</label>
+
+                    <select id="current-level"
+                            name="current_level"
+                            required>
+                        <option value="1"
+                            {% if not mit or mit.current_level == 1 %}selected{% endif %}>
+                            Level 1
+                        </option>
+
+                        <option value="2"
+                            {% if mit and mit.current_level == 2 %}selected{% endif %}>
+                            Level 2
+                        </option>
+
+                        <option value="3"
+                            {% if mit and mit.current_level == 3 %}selected{% endif %}>
+                            Level 3
+                        </option>
+                    </select>
+                </div>
+
+                <div class="mit-form-field">
+                    <label for="sts-status">Status</label>
+
+                    {% set current_status = mit.sts_status if mit else 'on_track' %}
+
+                    <select id="sts-status" name="sts_status">
+                        <option value="on_track"
+                            {% if current_status == 'on_track' %}selected{% endif %}>
+                            On Track
+                        </option>
+
+                        <option value="blocked"
+                            {% if current_status == 'blocked' %}selected{% endif %}>
+                            Blocked
+                        </option>
+
+                        <option value="ready"
+                            {% if current_status == 'ready' %}selected{% endif %}>
+                            Ready
+                        </option>
+
+                        <option value="promoted"
+                            {% if current_status == 'promoted' %}selected{% endif %}>
+                            Promoted
+                        </option>
+
+                        <option value="inactive"
+                            {% if current_status == 'inactive' %}selected{% endif %}>
+                            Inactive
+                        </option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <section class="mit-form-section">
+            <div class="mit-form-section-header">
+                <div>
+                    <h2>Development Timeline</h2>
+                    <p>Set the training start date and next formal review.</p>
+                </div>
+            </div>
+
+            <div class="mit-form-grid">
+                <div class="mit-form-field">
+                    <label for="start-date">Start Date</label>
+
+                    <input id="start-date"
+                           type="date"
+                           name="start_date"
+                           value="{{ mit.start_date.strftime('%Y-%m-%d') if mit and mit.start_date else '' }}">
+                </div>
+
+                <div class="mit-form-field">
+                    <label for="next-review-date">Next Review Date</label>
+
+                    <input id="next-review-date"
+                           type="date"
+                           name="next_review_date"
+                           value="{{ mit.next_review_date.strftime('%Y-%m-%d') if mit and mit.next_review_date else '' }}">
+                </div>
+
+                <div class="mit-form-field mit-form-field-full">
+                    <label for="mit-notes">Notes</label>
+
+                    <textarea id="mit-notes"
+                              name="notes"
+                              rows="4"
+                              placeholder="General MIT notes, expectations, or development context...">{{ mit.notes if mit and mit.notes else '' }}</textarea>
+                </div>
+            </div>
+        </section>
+
+        <div class="mit-form-actions">
+            <a class="mit-form-btn secondary"
+               href="{{ url_for('mit_sts.list_mits') }}">
+                Cancel
+            </a>
+
+            <button type="submit"
+                    class="mit-form-btn primary">
+                {{ submit_label }}
+            </button>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

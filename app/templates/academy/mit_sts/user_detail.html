@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile{% endblock %}
+
+{% block content %}
+<div class="academy-page">
+<link rel="stylesheet" href="{{ url_for('static', filename='academy/css/style.css') }}">
+<div class="page-header">
+    <div>
+        <p class="eyebrow">MIT STS</p>
+        <h2>{{ user_item.name }}</h2>
+        <p class="subtle">User profile and linked MIT information.</p>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="{{ url_for('mit_sts.edit_user', user_id=user_item.id) }}" class="btn btn-secondary">Edit User</a>
+
+        {% if mit_profile %}
+        <a href="{{ url_for('mit_sts.view_mit', mit_id=mit_profile.id) }}" class="btn btn-primary">Open MIT</a>
+        {% elif user_item.role == "mit" %}
+        <a href="{{ url_for('mit_sts.new_mit') }}" class="btn btn-primary">Create MIT</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="card stat-card">
+        <p class="stat-label">Name</p>
+        <h3 class="stat-value">{{ user_item.name }}</h3>
+    </div>
+
+    <div class="card stat-card">
+        <p class="stat-label">Username</p>
+        <h3 class="stat-value">{{ user_item.username }}</h3>
+    </div>
+
+    <div class="card stat-card">
+        <p class="stat-label">Role</p>
+        <h3 class="stat-value">{{ user_item.role.replace('_', ' ').title() }}</h3>
+    </div>
+
+    <div class="card stat-card">
+        <p class="stat-label">Store</p>
+        <h3 class="stat-value">{{ user_item.store_number or "-" }}</h3>
+    </div>
+
+    <div class="card stat-card">
+        <p class="stat-label">Status</p>
+        <h3 class="stat-value">{{ "Active" if user_item.is_active_user else "Inactive" }}</h3>
+    </div>
+
+    <div class="card stat-card">
+        <p class="stat-label">MIT Profile</p>
+        <h3 class="stat-value">{{ "Yes" if mit_profile else "No" }}</h3>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 24px;">
+    <h3 style="margin-top:0;">User Summary</h3>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label>Full Name</label>
+            <div class="readonly-field">{{ user_item.name }}</div>
+        </div>
+
+        <div class="form-group">
+            <label>Username</label>
+            <div class="readonly-field">{{ user_item.username }}</div>
+        </div>
+
+        <div class="form-group">
+            <label>Role</label>
+            <div class="readonly-field">{{ user_item.role.replace('_', ' ').title() }}</div>
+        </div>
+
+        <div class="form-group">
+            <label>Store Number</label>
+            <div class="readonly-field">{{ user_item.store_number or "-" }}</div>
+        </div>
+
+        <div class="form-group form-group-full">
+            <label>Account Status</label>
+            <div class="readonly-field">{{ "Active" if user_item.is_active_user else "Inactive" }}</div>
+        </div>
+    </div>
+</div>
+
+{% if mit_profile %}
+<div class="card" style="margin-top: 24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div>
+            <h3 style="margin:0;">Linked MIT Profile</h3>
+            <p class="subtle" style="margin:6px 0 0 0;">This user is enrolled in MIT STS.</p>
+        </div>
+
+        <a href="{{ url_for('mit_sts.view_mit', mit_id=mit_profile.id) }}" class="btn btn-secondary">Open MIT Profile</a>
+    </div>
+
+    <div class="table-wrap" style="margin-top: 18px;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Store</th>
+                    <th>Coach</th>
+                    <th>Level</th>
+                    <th>Status</th>
+                    <th>Next Review</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ mit_profile.store_number or "-" }}</td>
+                    <td>{{ mit_profile.coach_user.name if mit_profile.coach_user else "-" }}</td>
+                    <td>Level {{ mit_profile.current_level or 1 }}</td>
+                    <td>{{ mit_profile.sts_status.replace('_', ' ').title() if mit_profile.sts_status else "-" }}</td>
+                    <td>{{ mit_profile.next_review_date.strftime('%Y-%m-%d') if mit_profile.next_review_date else "-" }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card" style="margin-top: 24px;">
+    <h3 style="margin-top:0;">Linked MIT Profile</h3>
+    <p class="subtle">This user does not have an MIT profile yet.</p>
+
+    {% if user_item.role == "mit" %}
+    <a href="{{ url_for('mit_sts.new_mit') }}" class="btn btn-primary" style="margin-top: 12px;">Create MIT Profile</a>
+    {% endif %}
+</div>
+{% endif %}
+
+</div>
+{% endblock %}

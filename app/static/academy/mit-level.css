@@ -1,0 +1,325 @@
+
+/* Compact MIT STS Level + Verification Page */
+
+.mit-level-page {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+}
+
+/* Belt-and-suspenders: old Binder UI stays hidden. */
+.mit-level-page [class*="binder"],
+.mit-level-page a[href*="/binder/"] {
+    display: none !important;
+}
+
+/* ------------------------------------------------------------
+   PAGE HEADER
+   ------------------------------------------------------------ */
+
+.mit-level-page .page-header,
+.mit-level-page .page-header-tight,
+.mit-level-page [class*="page-header"] {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+    gap: 18px !important;
+    margin: 0 0 15px !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.mit-level-page .eyebrow {
+    margin: 0 0 6px !important;
+    color: #60a5fa !important;
+    -webkit-text-fill-color: #60a5fa !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+}
+
+.mit-level-page .page-header h1,
+.mit-level-page .page-header h2,
+.mit-level-page > h1,
+.mit-level-page > h2 {
+    margin: 0 0 5px !important;
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+    font-size: 29px !important;
+    line-height: 1.08 !important;
+}
+
+.mit-level-page .page-header p,
+.mit-level-page .subtle {
+    margin: 0 !important;
+    color: #aeb8c7 !important;
+    -webkit-text-fill-color: #aeb8c7 !important;
+    font-size: 13px !important;
+}
+
+.mit-level-page .track-actions,
+.mit-level-page .page-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+}
+
+.mit-level-page .track-actions .btn,
+.mit-level-page .page-actions .btn {
+    min-height: 38px !important;
+    padding: 7px 13px !important;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+    font-weight: 850 !important;
+}
+
+/* ------------------------------------------------------------
+   LEVEL SUMMARY
+   ------------------------------------------------------------ */
+
+.mit-level-page .level-summary-card {
+    margin: 0 0 12px !important;
+    padding: 0 !important;
+    border: 1px solid #d7dee8 !important;
+    border-radius: 15px !important;
+    background: #ffffff !important;
+}
+
+.mit-level-page .level-summary-card .card-header {
+    padding: 13px 16px 8px !important;
+}
+
+.mit-level-page .level-summary-card .card-header h3 {
+    margin: 0 0 2px !important;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 16px !important;
+}
+
+.mit-level-page .level-summary-card .card-header p {
+    margin: 0 !important;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 11px !important;
+}
+
+.mit-level-page .level-summary-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    margin: 0 !important;
+    padding: 0 16px 10px !important;
+}
+
+.mit-level-page .level-summary-stat {
+    padding: 9px 10px !important;
+    border-top: 1px solid #edf1f6 !important;
+}
+
+.mit-level-page .stat-label {
+    margin-bottom: 4px !important;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+}
+
+.mit-level-page .level-summary-value,
+.mit-level-page .stat-value {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 19px !important;
+    font-weight: 850 !important;
+}
+
+.mit-level-page .progress-bar {
+    height: 6px !important;
+    border-radius: 999px !important;
+    background: #e2e8f0 !important;
+}
+
+.mit-level-page .progress-fill {
+    height: 100% !important;
+    border-radius: inherit !important;
+    background: #22c55e !important;
+}
+
+/* ------------------------------------------------------------
+   STS ITEMS CARD
+   ------------------------------------------------------------ */
+
+.mit-level-page > .card,
+.mit-level-page .sts-items-card {
+    margin-top: 12px !important;
+    border: 1px solid #d7dee8 !important;
+    border-radius: 15px !important;
+    background: #ffffff !important;
+}
+
+.mit-level-page > .card > .card-header,
+.mit-level-page .sts-items-card > .card-header {
+    padding: 13px 16px 9px !important;
+}
+
+.mit-level-page .card-header h3 {
+    margin: 0 0 2px !important;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 16px !important;
+}
+
+.mit-level-page .card-header p {
+    margin: 0 !important;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 11px !important;
+}
+
+/* Category sections */
+.mit-level-page [class*="category"] {
+    color: #111827;
+}
+
+.mit-level-page .category-section,
+.mit-level-page .sts-category-section {
+    margin: 0 !important;
+    padding: 0 14px 10px !important;
+}
+
+.mit-level-page .category-section h3,
+.mit-level-page .category-section h4,
+.mit-level-page .sts-category-title {
+    margin: 9px 0 5px !important;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 14px !important;
+}
+
+.mit-level-page .category-section > p,
+.mit-level-page .category-count {
+    margin: 0 0 5px !important;
+    color: #94a3b8 !important;
+    -webkit-text-fill-color: #94a3b8 !important;
+    font-size: 10px !important;
+}
+
+/* ------------------------------------------------------------
+   STS ITEM ROWS
+   ------------------------------------------------------------ */
+
+.mit-level-page .level-review-table,
+.mit-level-page .data-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    background: #ffffff !important;
+}
+
+.mit-level-page .level-review-table th,
+.mit-level-page .data-table th {
+    padding: 7px 9px !important;
+    border-bottom: 1px solid #dbe3ed !important;
+    background: #f8fafc !important;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 8px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+}
+
+.mit-level-page .level-review-table td,
+.mit-level-page .data-table td {
+    padding: 8px 9px !important;
+    border-bottom: 1px solid #e5eaf1 !important;
+    color: #334155 !important;
+    -webkit-text-fill-color: #334155 !important;
+    font-size: 10px !important;
+    vertical-align: middle !important;
+}
+
+.mit-level-page .review-item-title {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 11px !important;
+    font-weight: 850 !important;
+}
+
+.mit-level-page .review-item-description,
+.mit-level-page .review-item-meta {
+    margin-top: 2px !important;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 9px !important;
+}
+
+/* Buttons and forms inside rows */
+.mit-level-page form {
+    margin: 0 !important;
+}
+
+.mit-level-page .review-actions,
+.mit-level-page [class*="task-actions"] {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+}
+
+.mit-level-page .btn-sm,
+.mit-level-page .review-actions .btn,
+.mit-level-page td button,
+.mit-level-page td .btn {
+    min-height: 29px !important;
+    padding: 4px 8px !important;
+    border-radius: 7px !important;
+    font-size: 9px !important;
+    font-weight: 850 !important;
+}
+
+/* Status pills */
+.mit-level-page .pill,
+.mit-level-page [class*="status-pill"],
+.mit-level-page [class*="badge"] {
+    display: inline-flex !important;
+    min-height: 22px !important;
+    align-items: center !important;
+    padding: 3px 7px !important;
+    border-radius: 999px !important;
+    font-size: 8px !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+}
+
+/* ------------------------------------------------------------
+   MOBILE
+   ------------------------------------------------------------ */
+
+@media (max-width: 900px) {
+    .mit-level-page .level-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 720px) {
+    .mit-level-page .page-header,
+    .mit-level-page [class*="page-header"] {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    .mit-level-page .track-actions {
+        justify-content: flex-start !important;
+    }
+
+    .mit-level-page .track-actions .btn {
+        flex: 1 1 140px !important;
+    }
+
+    .mit-level-page .table-wrapper {
+        overflow-x: auto !important;
+    }
+}

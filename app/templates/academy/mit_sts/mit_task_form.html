@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="academy-page">
+<link rel="stylesheet" href="{{ url_for('static', filename='academy/css/style.css') }}">
+<div class="page-header">
+    <div>
+        <p class="eyebrow">MIT STS</p>
+        <h2>{{ page_title }}</h2>
+        <p class="subtle">Assign, update, and clean up linked STS tasks without touching the MIT profile form.</p>
+    </div>
+
+    <div class="track-actions">
+        <a class="btn btn-secondary" href="{{ url_for('mit_sts.view_mit', mit_id=mit.id) }}">Back to MIT Profile</a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 18px;">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+        <div>
+            <h3 style="margin-bottom: 6px;">{{ mit.mit_user.name }}</h3>
+            <p class="subtle" style="margin:0;">
+                Store {{ mit.store_number or 'Not set' }} • Current Level {{ mit.current_level }} •
+                Coach {{ mit.coach_user.name if mit.coach_user else 'Not assigned' }}
+            </p>
+        </div>
+
+        <div class="badge">
+            Task Board
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap:16px; margin-top:18px;">
+        <div class="stat-card" style="padding:18px;">
+            <div class="stat-label">Open Tasks</div>
+            <div class="stat-value">{{ open_tasks_count }}</div>
+        </div>
+        <div class="stat-card" style="padding:18px;">
+            <div class="stat-label">Overdue</div>
+            <div class="stat-value">{{ overdue_tasks_count }}</div>
+        </div>
+        <div class="stat-card" style="padding:18px;">
+            <div class="stat-label">Submitted</div>
+            <div class="stat-value">{{ submitted_tasks_count }}</div>
+        </div>
+        <div class="stat-card" style="padding:18px;">
+            <div class="stat-label">Levels Loaded</div>
+            <div class="stat-value">{{ grouped_template_items|length }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+        <div>
+            <h3>STS Assignment Board</h3>
+            <p>Assign work by STS item. One active linked task per item keeps the board clean.</p>
+        </div>
+    </div>
+
+    {% if grouped_template_items %}
+        {% for level_number, items in grouped_template_items.items() %}
+        <details {% if level_number == mit.current_level %}open{% endif %} style="margin-top:{% if loop.first %}0{% else %}18px{% endif %}; border:1px solid rgba(15, 23, 42, 0.08); border-radius:16px; overflow:hidden;">
+            <summary style="list-style:none; cursor:pointer; padding:18px 20px; background:#f8fafc; display:flex; justify-content:space-between; align-items:center; gap:16px;">
+                <div>
+                    <strong style="font-size:18px;">Level {{ level_number }}</strong>
+                    <span class="subtle" style="margin-left:10px;">{{ items|length }} STS item{{ '' if items|length == 1 else 's' }}</span>
+                </div>
+
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    {% if mit.current_level == level_number %}
+                    <span class="pill pill-info">Current Level</span>
+                    {% endif %}
+                    <span class="pill pill-muted">Click to {{ 'hide' if level_number == mit.current_level else 'open' }}</span>
+                </div>
+            </summary>
+
+            <div style="padding:18px 20px 20px 20px;">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 260px;">STS Item</th>
+                                <th style="min-width: 120px;">Progress</th>
+                                <th style="min-width: 180px;">Linked Task</th>
+                                <th style="min-width: 340px;">Manage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            {% set progress = progress_map.get(item.id) %}
+                            {% set linked_task = active_task_map.get(item.id) %}
+                            {% set last_task = all_linked_task_map.get(item.id) %}
+                            <tr>
+                                <td>
+                                    <div style="display:flex; flex-direction:column; gap:6px;">
+                                        <strong>{{ item.item_name }}</strong>
+                                        {% if item.category %}
+                                        <span class="subtle" style="font-size:12px;">{{ item.category }}</span>
+                                        {% endif %}
+                                        {% if item.item_description %}
+                                        <span style="font-size:12px; color:#64748b; line-height:1.5;">{{ item.item_description }}</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% if progress and progress.status == 'complete' %}
+                                        <span class="pill pill-success">Complete</span>
+                                    {% elif progress and progress.status == 'in_progress' %}
+                                        <span class="pill pill-warning">In Progress</span>
+                                    {% else %}
+                                        <span class="pill pill-muted">Not Started</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if linked_task %}
+                                        <div style="display:flex; flex-direction:column; gap:6px;">
+                                            <span class="pill pill-info">{{ task_display_status(linked_task)|replace('_', ' ')|title }}</span>
+                                            <strong style="font-size:13px;">{{ linked_task.title }}</strong>
+                                            {% if linked_task.due_date %}
+                                            <span class="subtle" style="font-size:12px;">Due {{ linked_task.due_date.strftime('%Y-%m-%d') }}</span>
+                                            {% endif %}
+                                        </div>
+                                    {% elif last_task and last_task.status == 'verified' %}
+                                        <div style="display:flex; flex-direction:column; gap:6px;">
+                                            <span class="pill pill-success">Last Task Verified</span>
+                                            <strong style="font-size:13px;">{{ last_task.title }}</strong>
+                                        </div>
+                                    {% elif last_task and last_task.status == 'cancelled' %}
+                                        <div style="display:flex; flex-direction:column; gap:6px;">
+                                            <span class="pill pill-muted">Last Task Cancelled</span>
+                                            <strong style="font-size:13px;">{{ last_task.title }}</strong>
+                                        </div>
+                                    {% else %}
+                                        <span class="pill pill-muted">No Active Task</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if linked_task %}
+                                    <form method="POST" action="{{ url_for('mit_sts.manage_board_task', task_id=linked_task.id, mit_id=mit.id) }}" style="margin:0;">
+                                        <div style="display:grid; grid-template-columns: 1.4fr 110px 140px 1fr auto; gap:10px; align-items:end;">
+                                            <div>
+                                                <label style="font-size:12px; font-weight:600;">Title</label>
+                                                <input type="text" name="title" value="{{ linked_task.title }}">
+                                            </div>
+
+                                            <div>
+                                                <label style="font-size:12px; font-weight:600;">Priority</label>
+                                                <select name="priority">
+                                                    <option value="low" {% if linked_task.priority == 'low' %}selected{% endif %}>Low</option>
+                                                    <option value="medium" {% if linked_task.priority == 'medium' %}selected{% endif %}>Medium</option>
+                                                    <option value="high" {% if linked_task.priority == 'high' %}selected{% endif %}>High</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label style="font-size:12px; font-weight:600;">Due Date</label>
+                                                <input type="date" name="due_date" value="{{ linked_task.due_date.strftime('%Y-%m-%d') if linked_task.due_date else '' }}">
+                                            </div>
+
+                                            <div>
+                                                <label style="font-size:12px; font-weight:600;">Status</label>
+                                                <select name="status">
+                                                    <option value="open" {% if linked_task.status == 'open' %}selected{% endif %}>Open</option>
+                                                    <option value="in_progress" {% if linked_task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                                    <option value="submitted" {% if linked_task.status == 'submitted' %}selected{% endif %}>Submitted</option>
+                                                    <option value="verified">Verify Complete</option>
+                                                    <option value="cancelled">Cancel</option>
+                                                </select>
+                                            </div>
+
+                                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                                <button type="submit" name="submit_action" value="save" class="btn btn-secondary btn-sm">Save</button>
+                                                <button type="submit" name="submit_action" value="unassign" class="btn btn-secondary btn-sm">Unassign</button>
+                                            </div>
+                                        </div>
+
+                                        <div style="margin-top:10px;">
+                                            <label style="font-size:12px; font-weight:600;">Notes</label>
+                                            <input type="text" name="notes" value="{{ linked_task.notes or '' }}" placeholder="Optional notes">
+                                        </div>
+                                    </form>
+                                    {% else %}
+                                    <form method="POST" action="{{ url_for('mit_sts.assign_board_task', progress_id=progress.id, mit_id=mit.id) }}" style="margin:0;">
+                                        <div style="display:grid; grid-template-columns: 1.4fr 110px 140px 1fr auto; gap:10px; align-items:end;">
+                                            <div>
+                                                <label style="font-size:12px; font-weight:600;">Title</label>
+                                                <input type="text" name="title" value="{{ item.item_name }}">
+                                            </div>
+
+                                            <div>
+                                                <label style="font-size:12px; font-weight:600;">Priority</label>
+                                                <select name="priority">
+                                                    <option value="low">Low</option>
+                                                    <option value="medium" selected>Medium</option>
+                                                    <option value="high">High</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label style="font-size:12px; font-weight:600;">Due Date</label>
+                                                <input type="date" name="due_date">
+                                            </div>
+
+                                            <div>
+                                                <label style="font-size:12px; font-weight:600;">Start Status</label>
+                                                <select name="status">
+                                                    <option value="open" selected>Open</option>
+                                                    <option value="in_progress">In Progress</option>
+                                                    <option value="submitted">Submitted</option>
+                                                    <option value="verified">Verify Complete</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <button type="submit" class="btn btn-primary btn-sm">Assign</button>
+                                            </div>
+                                        </div>
+
+                                        <div style="margin-top:10px;">
+                                            <label style="font-size:12px; font-weight:600;">Notes</label>
+                                            <input type="text" name="notes" placeholder="Optional notes">
+                                        </div>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </details>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <h3>No STS templates found</h3>
+        <p>Build the template library first, then this board will populate automatically.</p>
+    </div>
+    {% endif %}
+</div>
+
+</div>
+{% endblock %}

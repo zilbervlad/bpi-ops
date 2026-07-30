@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="academy-page">
+<link rel="stylesheet" href="{{ url_for('static', filename='academy/css/style.css') }}">
+<div class="page-header page-header-tight">
+    <div>
+        <p class="eyebrow">STS TEMPLATE</p>
+        <h2>{{ page_title }}</h2>
+        <p class="subtle">Create or edit STS items for the MIT program.</p>
+    </div>
+</div>
+
+<div class="card form-card form-card-wide">
+    <div class="card-header">
+        <h3>STS Item Details</h3>
+        <p>Keep naming and category structure consistent so the task board stays clean.</p>
+    </div>
+
+    <form method="POST">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Level Number</label>
+                <select name="level_number" required>
+                    <option value="1" {% if item and item.level_number == 1 %}selected{% endif %}>Level 1</option>
+                    <option value="2" {% if item and item.level_number == 2 %}selected{% endif %}>Level 2</option>
+                    <option value="3" {% if item and item.level_number == 3 %}selected{% endif %}>Level 3</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Category</label>
+                <input type="text" name="category" value="{{ item.category if item else '' }}" placeholder="Example: Product, Service, Ops">
+            </div>
+
+            <div class="form-group form-group-full">
+                <label>Item Name</label>
+                <input type="text" name="item_name" value="{{ item.item_name if item else '' }}" required>
+            </div>
+
+            <div class="form-group form-group-full">
+                <label>Description</label>
+                <textarea name="item_description" rows="4" placeholder="Optional details for coaches and leadership...">{{ item.item_description if item else '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Sort Order</label>
+                <input type="number" name="sort_order" value="{{ item.sort_order if item else 0 }}">
+            </div>
+
+            <div class="form-group">
+                <label>Source Ref</label>
+                <input type="text" name="source_ref" value="{{ item.source_ref if item else '' }}" placeholder="Optional source / reference">
+            </div>
+
+            <div class="form-group form-group-full checkbox-group">
+                <label style="display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" name="is_required" {% if not item or item.is_required %}checked{% endif %}>
+                    Required item
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions" style="margin-top: 18px;">
+            <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
+            <a href="{{ url_for('mit_sts.template_library') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+</div>
+{% endblock %}

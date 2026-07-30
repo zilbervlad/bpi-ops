@@ -1,0 +1,205 @@
+
+/* BPI Academy Landing */
+
+.academy-landing-page {
+    width: 100%;
+    max-width: 1320px;
+    margin: 0 auto;
+}
+
+.academy-landing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    margin-bottom: 18px;
+}
+
+.academy-landing-eyebrow,
+.academy-program-eyebrow {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.academy-landing-eyebrow {
+    margin-bottom: 7px;
+    color: #60a5fa !important;
+    -webkit-text-fill-color: #60a5fa !important;
+}
+
+.academy-landing-header h1 {
+    margin: 0 0 6px;
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+    font-size: 32px;
+    line-height: 1.05;
+}
+
+.academy-landing-header p {
+    margin: 0;
+    color: #aeb8c7 !important;
+    -webkit-text-fill-color: #aeb8c7 !important;
+    font-size: 14px;
+}
+
+.academy-landing-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.academy-landing-btn {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 850;
+    text-decoration: none;
+}
+
+.academy-landing-btn.primary {
+    border: 1px solid #16a34a;
+    background: #16a34a;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+.academy-landing-btn.primary:hover {
+    background: #15803d;
+}
+
+.academy-landing-btn.secondary {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+}
+
+.academy-program-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 20px;
+    padding: 22px;
+    border: 1px solid #d7dee8;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.academy-program-icon {
+    display: grid;
+    width: 62px;
+    height: 62px;
+    place-items: center;
+    border-radius: 16px;
+    background: #eef2ff;
+    font-size: 29px;
+}
+
+.academy-program-content {
+    min-width: 0;
+}
+
+.academy-program-eyebrow {
+    margin-bottom: 5px;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+}
+
+.academy-program-content h2 {
+    margin: 0 0 7px;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 25px;
+    line-height: 1.1;
+}
+
+.academy-program-content p {
+    max-width: 760px;
+    margin: 0;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.academy-program-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.academy-program-meta span {
+    display: inline-flex;
+    min-height: 25px;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569 !important;
+    -webkit-text-fill-color: #475569 !important;
+    font-size: 9px;
+    font-weight: 850;
+}
+
+.academy-program-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 180px;
+}
+
+@media (max-width: 900px) {
+    .academy-landing-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .academy-landing-header-actions {
+        justify-content: flex-start;
+    }
+
+    .academy-program-card {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .academy-program-actions {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        min-width: 0;
+    }
+
+    .academy-program-actions .academy-landing-btn {
+        flex: 1;
+    }
+}
+
+@media (max-width: 620px) {
+    .academy-program-card {
+        grid-template-columns: 1fr;
+        padding: 18px;
+    }
+
+    .academy-program-icon {
+        width: 54px;
+        height: 54px;
+    }
+
+    .academy-program-actions {
+        grid-column: auto;
+        flex-direction: column;
+    }
+
+    .academy-landing-header-actions .academy-landing-btn {
+        flex: 1 1 150px;
+    }
+}

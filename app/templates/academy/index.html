@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}BPI Academy{% endblock %}
+
+{% block content %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='academy/academy-landing.css', v='20260730-0900') }}">
+
+<div class="academy-landing-page">
+
+    <header class="academy-landing-header">
+        <div>
+            <div class="academy-landing-eyebrow">
+                Learning & Development
+            </div>
+
+            <h1>BPI Academy</h1>
+
+            <p>
+                Training, certification, development, and advancement across Boston Pie.
+            </p>
+        </div>
+
+        {% if can_manage %}
+            <div class="academy-landing-header-actions">
+                <a class="academy-landing-btn secondary"
+                   href="{{ url_for('mit_sts.template_library') }}">
+                    Edit STS Curriculum
+                </a>
+
+                <a class="academy-landing-btn primary"
+                   href="{{ url_for('mit_sts.new_mit') }}">
+                    + New MIT
+                </a>
+            </div>
+        {% endif %}
+    </header>
+
+    <section class="academy-program-card">
+        <div class="academy-program-icon">
+            🎓
+        </div>
+
+        <div class="academy-program-content">
+            <div class="academy-program-eyebrow">
+                Manager Development
+            </div>
+
+            <h2>MIT Store Training System</h2>
+
+            <p>
+                Track STS Levels 1–3, development assignments, progress,
+                verification, reviews, and promotion readiness.
+            </p>
+
+            <div class="academy-program-meta">
+                <span>Levels 1–3</span>
+                <span>Coach Verification</span>
+                <span>Promotion Tracking</span>
+            </div>
+        </div>
+
+        <div class="academy-program-actions">
+            {% if mit_profile %}
+                <a class="academy-landing-btn primary"
+                   href="{{ url_for('mit_sts.view_mit', mit_id=mit_profile.id) }}">
+                    Open My MIT Profile
+                </a>
+            {% else %}
+                <a class="academy-landing-btn primary"
+                   href="{{ url_for('mit_sts.dashboard') }}">
+                    Open MIT Dashboard
+                </a>
+            {% endif %}
+
+            {% if can_manage %}
+                <a class="academy-landing-btn secondary"
+                   href="{{ url_for('mit_sts.list_mits') }}">
+                    Manage MITs
+                </a>
+            {% endif %}
+        </div>
+    </section>
+
+</div>
+{% endblock %}

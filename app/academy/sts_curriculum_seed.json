@@ -1,0 +1,794 @@
+[
+  {
+    "level_number": 1,
+    "category": "Leadership",
+    "item_name": "Always on time, in Perfect Image, and ensures/enforces TM timeliness",
+    "item_description": "",
+    "sort_order": 1,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Leadership",
+    "item_name": "Recognizes when to call for help",
+    "item_description": "",
+    "sort_order": 2,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Leadership",
+    "item_name": "Safety and Security: Dayshift Cashouts",
+    "item_description": "",
+    "sort_order": 3,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Leadership",
+    "item_name": "Promotes a respectful and inclusive environment for all Team Members",
+    "item_description": "",
+    "sort_order": 4,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Leadership",
+    "item_name": "Access store email account; responds when requested",
+    "item_description": "",
+    "sort_order": 5,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Leadership",
+    "item_name": "Uses Checklist Book and writes in it every shift",
+    "item_description": "",
+    "sort_order": 6,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Leadership",
+    "item_name": "5 Star Shift",
+    "item_description": "",
+    "sort_order": 7,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Leadership",
+    "item_name": "Confronts and Corrects Image violations",
+    "item_description": "",
+    "sort_order": 8,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Leadership",
+    "item_name": "Performs 3 Self OA's a week",
+    "item_description": "",
+    "sort_order": 9,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Certified to open",
+    "item_description": "",
+    "sort_order": 10,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Certified to close",
+    "item_description": "",
+    "sort_order": 11,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Can make a large Pepperoni in 60 Seconds (has earned 60 second pin)",
+    "item_description": "",
+    "sort_order": 12,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Understands and Demonstrates 1-Way Proofing",
+    "item_description": "",
+    "sort_order": 13,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Checks in DNC and Coke deliveries, rotates stock",
+    "item_description": "",
+    "sort_order": 14,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Enters food deliveries and food transfers into PULSE",
+    "item_description": "",
+    "sort_order": 15,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Has taken 5 deliveries and WOWed at the door",
+    "item_description": "",
+    "sort_order": 16,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Sanitation, spray bottle, and 2-hour swap",
+    "item_description": "",
+    "sort_order": 17,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "25 Min ADT Chart (Opens)",
+    "item_description": "",
+    "sort_order": 18,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "25 Min ADT Chart (Closes)",
+    "item_description": "",
+    "sort_order": 19,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "PRP: Shifts are always properly prepared",
+    "item_description": "",
+    "sort_order": 20,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Has Learned & Demonstrates Basic Load & Go Principles",
+    "item_description": "",
+    "sort_order": 21,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Can pass a cut test",
+    "item_description": "",
+    "sort_order": 22,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Can perform and sync a self OA",
+    "item_description": "",
+    "sort_order": 23,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Operations",
+    "item_name": "Demonstrates Appropriate Scale Usage",
+    "item_description": "",
+    "sort_order": 24,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Profits",
+    "item_name": "Enforces Cash Control Policies & Procedures on Closes",
+    "item_description": "",
+    "sort_order": 25,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Profits",
+    "item_name": "Complete Level 1 Food Chart (.75%)",
+    "item_description": "",
+    "sort_order": 26,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Profits",
+    "item_name": "Completed Equipment Maintenance List",
+    "item_description": "",
+    "sort_order": 27,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Training",
+    "item_name": "Completed all level 1 modules & coaching guides (Adobe MDP Level 1)",
+    "item_description": "",
+    "sort_order": 28,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Training",
+    "item_name": "DWP Class",
+    "item_description": "",
+    "sort_order": 29,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Training",
+    "item_name": "Learn how and Close all CCCs",
+    "item_description": "",
+    "sort_order": 30,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Training",
+    "item_name": "Completed 15 Customer Satisfaction Call Backs",
+    "item_description": "",
+    "sort_order": 31,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 1,
+    "category": "Training",
+    "item_name": "Responded to 10 Negative Tracker Feedback",
+    "item_description": "",
+    "sort_order": 32,
+    "is_required": true,
+    "source_ref": "MIT STS Level 1"
+  },
+  {
+    "level_number": 2,
+    "category": "Leadership",
+    "item_name": "Motivation Audit Conducted > Score is 3.75 Overall",
+    "item_description": null,
+    "sort_order": 1,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Leadership",
+    "item_name": "Displays positive energy and passion, motivates the team, offers positive feedback",
+    "item_description": "",
+    "sort_order": 2,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Leadership",
+    "item_name": "Has sat in on/observed two interviews",
+    "item_description": "",
+    "sort_order": 3,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Leadership",
+    "item_name": "Has interviewed & hired 2 new team members using the structured interview guide",
+    "item_description": "",
+    "sort_order": 4,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Leadership",
+    "item_name": "Profesionally enforces all BPI/DPZ Standards",
+    "item_description": "",
+    "sort_order": 5,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Leadership",
+    "item_name": "Uses DWP procedures appropriately",
+    "item_description": "",
+    "sort_order": 6,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Leadership",
+    "item_name": "Recognizes & Responds appropriately to store-related issues",
+    "item_description": "",
+    "sort_order": 7,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Leadership",
+    "item_name": "Communicates regularly with all other memebers of management team",
+    "item_description": "",
+    "sort_order": 8,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Operations",
+    "item_name": "Demonstrates Advanced Load & Go",
+    "item_description": "",
+    "sort_order": 9,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Profits",
+    "item_name": "Complete Level 2 Food Chart (.65%)",
+    "item_description": "",
+    "sort_order": 10,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Operations",
+    "item_name": "Has earned 45 second Large Pepperoni Pin",
+    "item_description": "",
+    "sort_order": 11,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Operations",
+    "item_name": "Pizza making technique is consistent, can pass 5 out of 5 pizzas",
+    "item_description": "",
+    "sort_order": 12,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Operations",
+    "item_name": "5 Star shift - Demonstrates 5 Star Attitude",
+    "item_description": "",
+    "sort_order": 13,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Leadership",
+    "item_name": "Performs and Syncs atleast 3 Self OA's a week",
+    "item_description": "",
+    "sort_order": 14,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Profits",
+    "item_name": "Uses pulse report and functions to run labor to goal",
+    "item_description": "",
+    "sort_order": 15,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Operations",
+    "item_name": "Has run shifts in at least three stores",
+    "item_description": "",
+    "sort_order": 16,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Operations",
+    "item_name": "World's Fastest Pizzamaker in under 2:30",
+    "item_description": "",
+    "sort_order": 17,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Operations",
+    "item_name": "Completes closing paperwork within one hour",
+    "item_description": "",
+    "sort_order": 18,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Operations",
+    "item_name": "Can handle a $500 or 60 item hour on ovens",
+    "item_description": "",
+    "sort_order": 19,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Training",
+    "item_name": "Can Pass FSE Knowledge Quiz",
+    "item_description": "",
+    "sort_order": 20,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Operations",
+    "item_name": "Certified as Load Captain",
+    "item_description": "",
+    "sort_order": 21,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Operations",
+    "item_name": "Certified as Go Captain",
+    "item_description": "",
+    "sort_order": 22,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Training",
+    "item_name": "Completed all level 2 modules & coaching guides (Adobe MDP Level 2)",
+    "item_description": "",
+    "sort_order": 23,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Training",
+    "item_name": "Has learned and executed 12D Training",
+    "item_description": "",
+    "sort_order": 24,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Training",
+    "item_name": "Has trained Team Members on Pizza Making",
+    "item_description": "",
+    "sort_order": 25,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Profits",
+    "item_name": "Learn how to complete an accurate food order",
+    "item_description": "",
+    "sort_order": 26,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Marketing",
+    "item_name": "LSM Workbook",
+    "item_description": "",
+    "sort_order": 27,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Marketing",
+    "item_name": "Completes one community involvement activity",
+    "item_description": "",
+    "sort_order": 28,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 2,
+    "category": "Training",
+    "item_name": "Has completed 15 MVP Callbacks",
+    "item_description": "",
+    "sort_order": 29,
+    "is_required": true,
+    "source_ref": "MIT STS Level 2"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Motivation Audit completed with an overall score of 4.0",
+    "item_description": "",
+    "sort_order": 1,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Ensures that all Team Members hustle at all times",
+    "item_description": "",
+    "sort_order": 2,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Displays positive energy and passion, motivates the team, offers positive feedback",
+    "item_description": "",
+    "sort_order": 3,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Demonstrates proper use of DWP to improve behavior",
+    "item_description": "",
+    "sort_order": 4,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Led at least 1 monthly crew meeting",
+    "item_description": "",
+    "sort_order": 5,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Keeps employee communication board current",
+    "item_description": "",
+    "sort_order": 6,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Writes store weekly objectives",
+    "item_description": "",
+    "sort_order": 7,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Understands and Executes ISHCIMTR",
+    "item_description": "",
+    "sort_order": 8,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Has completed one month of the paperwork list",
+    "item_description": "",
+    "sort_order": 9,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Operations",
+    "item_name": "Completed unannounced OAs on 4 BPI Stores",
+    "item_description": "",
+    "sort_order": 10,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Operations",
+    "item_name": "Has earned 30 second Large Pepperoni Pin",
+    "item_description": "",
+    "sort_order": 11,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Operations",
+    "item_name": "Assigns positions/uses position chart for rushes",
+    "item_description": "",
+    "sort_order": 12,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Achieves written objectives for the store",
+    "item_description": "",
+    "sort_order": 13,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Operations",
+    "item_name": "Can handle a minimum 85 item hour on ovens",
+    "item_description": "",
+    "sort_order": 14,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Operations",
+    "item_name": "Has 5 shifts using DSS to achieve 15% 1 minute loads",
+    "item_description": "",
+    "sort_order": 15,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Has improved 1 Team Members turn around time or hustle times",
+    "item_description": "",
+    "sort_order": 16,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Has successfully completed a relief management week",
+    "item_description": "",
+    "sort_order": 17,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Marketing",
+    "item_name": "Understands store's marking plan",
+    "item_description": "",
+    "sort_order": 18,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Marketing",
+    "item_name": "Creates an incentive for a team upsell contest",
+    "item_description": "",
+    "sort_order": 19,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Marketing",
+    "item_name": "Completed 1 Advanced community involvement event",
+    "item_description": "",
+    "sort_order": 20,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Handles all customer concerns professionally",
+    "item_description": "",
+    "sort_order": 21,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Training",
+    "item_name": "Assists in the training of a new MIT",
+    "item_description": "",
+    "sort_order": 22,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Training",
+    "item_name": "Evaluates Level 1 or 2 MIT",
+    "item_description": "",
+    "sort_order": 23,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Leadership",
+    "item_name": "Writes an Effective Schedule (4 Weeks)",
+    "item_description": "",
+    "sort_order": 24,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Profits",
+    "item_name": "Review and analyze store P&L",
+    "item_description": "",
+    "sort_order": 25,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Profits",
+    "item_name": "Consistently makes accurate food orders",
+    "item_description": "",
+    "sort_order": 26,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  },
+  {
+    "level_number": 3,
+    "category": "Training",
+    "item_name": "Completed all level 3 modules & coaching guides (Adobe MDP Level 3)",
+    "item_description": "",
+    "sort_order": 27,
+    "is_required": true,
+    "source_ref": "MIT STS Level 3"
+  }
+]

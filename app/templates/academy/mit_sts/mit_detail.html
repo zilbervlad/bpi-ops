@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}{{ mit.mit_user.name }} | MIT STS{% endblock %}
+
+{% block content %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='academy/css/style.css') }}">
+
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='academy/mit-profile.css', v='20260730-0850') }}">
+
+{% set current_level_progress = level_1_progress if mit.current_level == 1 else (level_2_progress if mit.current_level == 2 else level_3_progress) %}
+
+<div class="academy-page mit-profile-page">
+
+    <header class="mit-profile-header">
+        <div>
+            <div class="mit-profile-eyebrow">BPI Academy · MIT STS</div>
+            <h1>{{ mit.mit_user.name }}</h1>
+            <p>
+                Store {{ mit.store_number or "Not set" }}
+                · Level {{ mit.current_level }}
+                · {{ mit.sts_status|replace("_", " ")|title }}
+            </p>
+        </div>
+
+        <div class="mit-profile-actions">
+
+
+            <a class="mit-profile-btn secondary"
+               href="{{ url_for('mit_sts.export_tasks_pdf', mit_id=mit.id) }}">
+                Export PDF
+            </a>
+
+            <a class="mit-profile-btn secondary"
+               href="{{ url_for('mit_sts.edit_mit', mit_id=mit.id) }}">
+                Edit Profile
+            </a>
+
+            <a class="mit-profile-btn secondary"
+               href="{{ url_for('mit_sts.list_mits') }}">
+                Back
+            </a>
+        </div>
+    </header>
+
+    <section class="mit-profile-top-grid">
+
+        <article class="mit-profile-card mit-summary-card">
+            <div class="mit-card-header">
+                <div>
+                    <h2>MIT Record</h2>
+                    <p>Core assignment and training details</p>
+                </div>
+
+                <span class="mit-record-badge">#{{ mit.id }}</span>
+            </div>
+
+            <div class="mit-summary-grid">
+                <div class="mit-summary-item">
+                    <span>Store</span>
+                    <strong>{{ mit.store_number or "Not set" }}</strong>
+                </div>
+
+                <div class="mit-summary-item">
+                    <span>Current Level</span>
+                    <strong>Level {{ mit.current_level }}</strong>
+                </div>
+
+                <div class="mit-summary-item">
+                    <span>Coach</span>
+                    <strong>{{ mit.coach_user.name if mit.coach_user else "Unassigned" }}</strong>
+                </div>
+
+                <div class="mit-summary-item">
+                    <span>Status</span>
+
+                    <strong>
+                        <span class="mit-status-pill status-{{ mit.sts_status or 'on_track' }}">
+                            {{ (mit.sts_status or "on_track")|replace("_", " ")|title }}
+                        </span>
+                    </strong>
+                </div>
+
+                <div class="mit-summary-item">
+                    <span>Start Date</span>
+                    <strong>{{ mit.start_date.strftime("%b %-d, %Y") if mit.start_date else "Not set" }}</strong>
+                </div>
+
+                <div class="mit-summary-item">
+                    <span>Next Review</span>
+                    <strong>{{ mit.next_review_date.strftime("%b %-d, %Y") if mit.next_review_date else "Not set" }}</strong>
+                </div>
+
+                <div class="mit-summary-item">
+                    <span>Open Tasks</span>
+                    <strong>{{ open_tasks_count }}</strong>
+                </div>
+
+                <div class="mit-summary-item">
+                    <span>Overdue</span>
+                    <strong>{{ overdue_tasks_count }}</strong>
+                </div>
+            </div>
+
+            {% if mit.notes %}
+                <div class="mit-profile-notes">
+                    <span>Notes</span>
+                    <p>{{ mit.notes }}</p>
+                </div>
+            {% endif %}
+        </article>
+
+        <article class="mit-profile-card mit-time-card">
+            <div class="mit-card-header">
+                <div>
+                    <h2>Time in Level</h2>
+                    <p>Development timeline</p>
+                </div>
+            </div>
+
+            <div class="mit-time-list">
+                {% for lvl in [1, 2, 3] %}
+                    <div class="mit-time-row">
+                        <div class="mit-time-level">
+                            <span>L{{ lvl }}</span>
+
+                            <div>
+                                <strong>Level {{ lvl }}</strong>
+                                <small>
+                                    {{ level_timeline[lvl].start.strftime("%b %-d, %Y") if level_timeline[lvl].start else "Not reached" }}
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="mit-time-weeks">
+                            {% if level_durations[lvl] is not none %}
+                                <strong>{{ level_durations[lvl] }}</strong>
+                                <small>weeks</small>
+                            {% else %}
+                                <strong>—</strong>
+                            {% endif %}
+                        </div>
+
+                        <span class="mit-time-status status-{{ level_timeline[lvl].status|lower|replace(' ', '-') }}">
+                            {{ level_timeline[lvl].status }}
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+        </article>
+
+    </section>
+
+    <section class="mit-kpi-grid">
+        <article class="mit-kpi-card">
+            <span>Overall Progress</span>
+            <strong>{{ overall_progress }}%</strong>
+
+            <div class="mit-kpi-track">
+                <div style="width: {{ overall_progress }}%"></div>
+            </div>
+        </article>
+
+        <article class="mit-kpi-card">
+            <span>Current Level</span>
+            <strong>{{ current_level_progress }}%</strong>
+
+            <div class="mit-kpi-track">
+                <div style="width: {{ current_level_progress }}%"></div>
+            </div>
+        </article>
+
+        <article class="mit-kpi-card">
+            <span>Incomplete Items</span>
+            <strong>{{ incomplete_count }}</strong>
+        </article>
+
+        <article class="mit-kpi-card">
+            <span>Awaiting Review</span>
+            <strong>{{ submitted_tasks_count }}</strong>
+        </article>
+    </section>
+
+    <section class="mit-profile-card mit-level-progress-card">
+        <div class="mit-card-header">
+            <div>
+                <h2>Level Progress</h2>
+                <p>Open a level to review requirements, tasks, and verification</p>
+            </div>
+        </div>
+
+        <div class="mit-level-list">
+            {% for lvl, prog in [(1, level_1_progress), (2, level_2_progress), (3, level_3_progress)] %}
+                <article class="mit-level-row">
+                    <div class="mit-level-number">
+                        L{{ lvl }}
+                    </div>
+
+                    <div class="mit-level-main">
+                        <div class="mit-level-title-row">
+                            <strong>Level {{ lvl }}</strong>
+
+                            {% if mit.current_level == lvl %}
+                                <span class="mit-current-badge">Current</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="mit-level-progress-track">
+                            <div style="width: {{ prog }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="mit-level-percent">
+                        {{ prog }}%
+                    </div>
+
+                    <div>
+                        {% if prog == 100 %}
+                            <span class="mit-level-status complete">Complete</span>
+                        {% elif prog > 0 %}
+                            <span class="mit-level-status progress">In Progress</span>
+                        {% else %}
+                            <span class="mit-level-status not-started">Not Started</span>
+                        {% endif %}
+                    </div>
+
+                    <a class="mit-level-open"
+                       href="{{ url_for('mit_sts.view_level', mit_id=mit.id, level_number=lvl) }}">
+                        Open
+                    </a>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if promotions %}
+        <section class="mit-profile-card mit-promotion-card">
+            <div class="mit-card-header">
+                <div>
+                    <h2>Promotion History</h2>
+                    <p>Recorded advancement activity</p>
+                </div>
+            </div>
+
+            <div class="mit-table-wrap">
+                <table class="mit-profile-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Approved By</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for promotion in promotions %}
+                            <tr>
+                                <td>{{ promotion.effective_date.strftime("%b %-d, %Y") if promotion.effective_date else "—" }}</td>
+                                <td>Level {{ promotion.from_level }}</td>
+                                <td>{{ promotion.to_level|upper }}</td>
+                                <td>{{ promotion.approved_by_user.name if promotion.approved_by_user else "—" }}</td>
+                                <td>{{ promotion.note or "—" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endif %}
+
+</div>
+{% endblock %}

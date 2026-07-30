@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}MIT Tasks{% endblock %}
+
+{% block content %}
+<div class="academy-page">
+<link rel="stylesheet" href="{{ url_for('static', filename='academy/css/style.css') }}">
+<div class="page-header">
+    <div>
+        <p class="eyebrow">MIT TASKS</p>
+        <h2>{{ mit.mit_user.name }} — Task Board</h2>
+        <p class="subtle">
+            Review active work, submitted items, and completed task history.
+        </p>
+    </div>
+
+    <div class="track-actions">
+        <a class="btn btn-secondary" href="{{ url_for('mit_sts.view_mit', mit_id=mit.id) }}">Back to MIT Profile</a>
+    </div>
+</div>
+
+{% set open_count = active_tasks|length %}
+{% set completed_count = completed_tasks|length %}
+{% set overdue_count = 0 %}
+{% set submitted_count = 0 %}
+
+{% for task, display_status in active_tasks %}
+    {% if display_status == "overdue" %}
+        {% set overdue_count = overdue_count + 1 %}
+    {% endif %}
+    {% if task.status == "submitted" %}
+        {% set submitted_count = submitted_count + 1 %}
+    {% endif %}
+{% endfor %}
+
+{% if overdue_count > 0 %}
+    {% set message = mit.mit_user.name ~ " has " ~ overdue_count ~ " overdue task" ~ ("s" if overdue_count != 1 else "") ~ ". Clear those first." %}
+{% elif submitted_count > 0 %}
+    {% set message = submitted_count ~ " task" ~ ("s are" if submitted_count != 1 else " is") ~ " waiting for review." %}
+{% elif open_count > 0 %}
+    {% set message = mit.mit_user.name ~ " has " ~ open_count ~ " active task" ~ ("s" if open_count != 1 else "") ~ " in progress." %}
+{% else %}
+    {% set message = "No active tasks right now. Add the next task from the MIT's level page." %}
+{% endif %}
+
+
+<div class="stats-grid" style="grid-template-columns: repeat(4, minmax(180px, 1fr));">
+    <div class="card stat-card">
+        <span class="stat-label">Active</span>
+        <h3>{{ open_count }}</h3>
+    </div>
+
+    <div class="card stat-card">
+        <span class="stat-label">Overdue</span>
+        <h3>{{ overdue_count }}</h3>
+    </div>
+
+    <div class="card stat-card">
+        <span class="stat-label">Submitted</span>
+        <h3>{{ submitted_count }}</h3>
+    </div>
+
+    <div class="card stat-card">
+        <span class="stat-label">Completed / Closed</span>
+        <h3>{{ completed_count }}</h3>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 18px;">
+    <div class="card-header">
+        <h3>Active Tasks</h3>
+        <p>Tasks that still need action, review, or completion.</p>
+    </div>
+
+    {% if active_tasks %}
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="min-width: 260px;">Task</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Due Date</th>
+                    <th>Assigned By</th>
+                    <th style="text-align:center; min-width: 220px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task, display_status in active_tasks %}
+                <tr class="{% if display_status == 'overdue' %}mit-row-overdue{% endif %}">
+                    <td>
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                            <strong>{{ task.title }}</strong>
+                            {% if task.description %}
+                            <span style="font-size:12px; color:#94a3b8; line-height:1.45;">
+                                {{ task.description }}
+                            </span>
+                            {% endif %}
+                            {% if task.notes %}
+                            <span style="font-size:12px; color:#cbd5e1; line-height:1.45;">
+                                <strong>Notes:</strong> {{ task.notes }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+
+                    <td>
+                        {% if task.priority == "high" %}
+                            <span class="pill pill-danger">High</span>
+                        {% elif task.priority == "medium" %}
+                            <span class="pill pill-warning">Medium</span>
+                        {% else %}
+                            <span class="pill pill-muted">Low</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if display_status == "overdue" %}
+                            <span class="pill pill-danger">Overdue</span>
+                        {% elif task.status == "submitted" %}
+                            <span class="pill pill-info">Submitted</span>
+                        {% elif task.status == "in_progress" %}
+                            <span class="pill pill-warning">In Progress</span>
+                        {% else %}
+                            <span class="pill pill-muted">{{ display_status|replace('_', ' ')|title }}</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '—' }}
+                    </td>
+
+                    <td>
+                        {{ task.assigned_by_user.name if task.assigned_by_user else '—' }}
+                    </td>
+
+                    <td style="text-align:center;">
+                        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+                            {% if current_user.id == mit.user_id and task.status in ["open", "in_progress"] or display_status == "overdue" %}
+                            <form method="POST" action="{{ url_for('mit_sts.submit_task_for_verification', task_id=task.id) }}" style="margin:0;">
+                                <button type="submit" class="btn btn-secondary btn-sm">Submit</button>
+                            </form>
+                            {% endif %}
+
+                            {% if can_edit %}
+                            <form method="POST" action="{{ url_for('mit_sts.update_task_status', task_id=task.id) }}" style="margin:0;">
+                                <input type="hidden" name="status" value="verified">
+                                <button type="submit" class="btn btn-secondary btn-sm">Verify</button>
+                            </form>
+
+                            <form method="POST" action="{{ url_for('mit_sts.update_task_status', task_id=task.id) }}" style="margin:0;">
+                                <input type="hidden" name="status" value="cancelled">
+                                <button type="submit" class="btn btn-secondary btn-sm">Cancel</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No active tasks</h3>
+        <p>This MIT has no open work right now.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card" style="margin-top: 18px;">
+    <div class="card-header">
+        <h3>Completed / Closed Tasks</h3>
+        <p>Verified or cancelled task history for this MIT.</p>
+    </div>
+
+    {% if completed_tasks %}
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="min-width: 260px;">Task</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Completed</th>
+                    <th>Assigned By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task, display_status in completed_tasks %}
+                <tr>
+                    <td>
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                            <strong>{{ task.title }}</strong>
+                            {% if task.description %}
+                            <span style="font-size:12px; color:#94a3b8; line-height:1.45;">
+                                {{ task.description }}
+                            </span>
+                            {% endif %}
+                            {% if task.notes %}
+                            <span style="font-size:12px; color:#cbd5e1; line-height:1.45;">
+                                <strong>Notes:</strong> {{ task.notes }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+
+                    <td>
+                        {% if task.priority == "high" %}
+                            <span class="pill pill-danger">High</span>
+                        {% elif task.priority == "medium" %}
+                            <span class="pill pill-warning">Medium</span>
+                        {% else %}
+                            <span class="pill pill-muted">Low</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if display_status == "verified" %}
+                            <span class="pill pill-success">Verified</span>
+                        {% else %}
+                            <span class="pill pill-muted">{{ display_status|replace('_', ' ')|title }}</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {{ task.completed_at.strftime('%Y-%m-%d %I:%M %p') if task.completed_at else '—' }}
+                    </td>
+
+                    <td>
+                        {{ task.assigned_by_user.name if task.assigned_by_user else '—' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No completed task history yet</h3>
+        <p>Verified and closed tasks will appear here.</p>
+    </div>
+    {% endif %}
+</div>
+
+</div>
+{% endblock %}

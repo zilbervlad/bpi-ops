@@ -161,6 +161,16 @@
                 </div>
                 {% endif %}
 
+                <div class="nav-section">
+                    <div class="nav-section-label">Development</div>
+
+                    <a href="{{ url_for('academy.index') }}"
+                       class="{% if request.endpoint and (request.endpoint == 'academy.index' or request.endpoint.startswith('mit_sts.')) %}active{% endif %}">
+                        <span class="nav-icon">🎓</span>
+                        <span>BPI Academy</span>
+                    </a>
+                </div>
+
                 {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager', 'maintenance', 'hr'] %}
                 <div class="nav-section">
                     <div class="nav-section-label">Review</div>

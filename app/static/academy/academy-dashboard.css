@@ -1,0 +1,378 @@
+
+/* Compact BPI Academy MIT Dashboard */
+
+.academy-dashboard-page {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+}
+
+.academy-dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 22px;
+    margin-bottom: 18px;
+}
+
+.academy-dashboard-eyebrow {
+    margin-bottom: 7px;
+    color: #60a5fa !important;
+    -webkit-text-fill-color: #60a5fa !important;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.academy-dashboard-title h1 {
+    margin: 0 0 6px;
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+    font-size: 31px;
+    line-height: 1.05;
+}
+
+.academy-dashboard-title p {
+    margin: 0;
+    color: #aeb8c7 !important;
+    -webkit-text-fill-color: #aeb8c7 !important;
+    font-size: 14px;
+}
+
+.academy-dashboard-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.academy-dashboard-btn {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 850;
+    text-decoration: none;
+}
+
+.academy-dashboard-btn.secondary {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+}
+
+.academy-dashboard-btn.primary {
+    border: 1px solid #16a34a;
+    background: #16a34a;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+.academy-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.academy-stat-card {
+    display: flex;
+    min-height: 92px;
+    flex-direction: column;
+    justify-content: center;
+    padding: 15px 17px;
+    border: 1px solid #d7dee8;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.academy-stat-card span {
+    margin-bottom: 8px;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.academy-stat-card strong {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 26px;
+    line-height: 1;
+}
+
+.academy-stat-highlight {
+    border-color: #86efac;
+    background: #f0fdf4;
+}
+
+.academy-stat-highlight span {
+    color: #15803d !important;
+    -webkit-text-fill-color: #15803d !important;
+}
+
+.academy-dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.75fr) minmax(520px, 1.5fr);
+    gap: 14px;
+    align-items: start;
+}
+
+.academy-dashboard-card {
+    overflow: hidden;
+    border: 1px solid #d7dee8;
+    border-radius: 16px;
+    background: #ffffff;
+}
+
+.academy-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 15px 18px 12px;
+}
+
+.academy-card-header h2 {
+    margin: 0 0 3px;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 17px;
+}
+
+.academy-card-header p {
+    margin: 0;
+    color: #94a3b8 !important;
+    -webkit-text-fill-color: #94a3b8 !important;
+    font-size: 12px;
+}
+
+.academy-text-link {
+    color: #2563eb !important;
+    -webkit-text-fill-color: #2563eb !important;
+    font-size: 12px;
+    font-weight: 850;
+    text-decoration: none;
+}
+
+.academy-table-wrap {
+    overflow-x: auto;
+    padding: 0 14px 14px;
+}
+
+.academy-compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+}
+
+.academy-compact-table th {
+    padding: 9px 10px;
+    border-bottom: 1px solid #dbe3ed;
+    background: #f8fafc;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.09em;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.academy-compact-table td {
+    padding: 10px;
+    border-bottom: 1px solid #e5eaf1;
+    color: #334155 !important;
+    -webkit-text-fill-color: #334155 !important;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.academy-compact-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.academy-compact-table td strong {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+}
+
+.academy-level-pill {
+    display: inline-flex;
+    min-height: 24px;
+    align-items: center;
+    padding: 3px 8px;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8 !important;
+    -webkit-text-fill-color: #1d4ed8 !important;
+    font-size: 10px;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.academy-progress-cell {
+    display: grid;
+    grid-template-columns: minmax(70px, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 110px;
+}
+
+.academy-progress-track {
+    overflow: hidden;
+    height: 7px;
+    border-radius: 999px;
+    background: #e2e8f0;
+}
+
+.academy-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: #22c55e;
+}
+
+.academy-progress-cell span {
+    color: #475569 !important;
+    -webkit-text-fill-color: #475569 !important;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.academy-row-action {
+    text-align: right;
+}
+
+.academy-row-action a {
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 11px;
+    font-weight: 850;
+    text-decoration: none;
+}
+
+.academy-empty-state {
+    display: flex;
+    min-height: 130px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 20px;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    text-align: center;
+}
+
+.academy-empty-state strong {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+}
+
+@media (max-width: 1050px) {
+    .academy-stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .academy-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .academy-dashboard-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .academy-dashboard-actions {
+        justify-content: flex-start;
+    }
+
+    .academy-dashboard-btn {
+        flex: 1 1 150px;
+    }
+
+    .academy-stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .academy-stat-card {
+        min-height: 82px;
+    }
+}
+
+@media (max-width: 480px) {
+    .academy-stat-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .academy-stat-highlight {
+        grid-column: 1 / -1;
+    }
+}
+
+/* === CLICKABLE ACADEMY STATS === */
+
+.academy-stat-link {
+    position: relative;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition:
+        transform 140ms ease,
+        border-color 140ms ease,
+        box-shadow 140ms ease;
+}
+
+.academy-stat-link:hover {
+    transform: translateY(-2px);
+    border-color: #93c5fd;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.academy-stat-link:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.35);
+    outline-offset: 2px;
+}
+
+.academy-stat-link small {
+    display: block;
+    margin-top: 8px;
+    color: #2563eb !important;
+    -webkit-text-fill-color: #2563eb !important;
+    font-size: 10px;
+    font-weight: 800;
+    opacity: 0;
+    transform: translateY(2px);
+    transition:
+        opacity 140ms ease,
+        transform 140ms ease;
+}
+
+.academy-stat-link:hover small,
+.academy-stat-link:focus-visible small {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.academy-stat-highlight.academy-stat-link small {
+    color: #15803d !important;
+    -webkit-text-fill-color: #15803d !important;
+}

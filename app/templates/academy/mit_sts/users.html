@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Users{% endblock %}
+
+{% block content %}
+<div class="academy-page">
+<link rel="stylesheet" href="{{ url_for('static', filename='academy/css/style.css') }}">
+<div class="page-header page-header-tight">
+    <div>
+        <p class="eyebrow">MIT STS</p>
+        <h2>Users</h2>
+        <p class="subtle">Create and manage users for the MIT STS platform.</p>
+    </div>
+
+    <a href="{{ url_for('mit_sts.new_user') }}" class="btn btn-primary">+ New User</a>
+</div>
+
+<div class="card" style="margin-bottom: 18px;">
+    <div class="card-header">
+        <h3>User Filters</h3>
+        <p>Search by person, narrow by role, or filter to a store.</p>
+    </div>
+
+    <form method="GET" class="form-grid">
+        <div class="form-group">
+            <label>Search</label>
+            <input type="text" name="q" value="{{ q }}" placeholder="Search by name or username">
+        </div>
+
+        <div class="form-group">
+            <label>Role</label>
+            <select name="role">
+                <option value="">All Roles</option>
+                {% for role_value in roles %}
+                <option value="{{ role_value }}" {% if selected_role == role_value %}selected{% endif %}>
+                    {{ role_value.replace('_', ' ').title() }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Store</label>
+            <input type="text" name="store" value="{{ selected_store }}" placeholder="Example: 3209">
+        </div>
+
+        <div class="form-actions form-group-full">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a href="{{ url_for('mit_sts.list_users') }}" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
+</div>
+
+{% if users %}
+<div class="card">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+        <div>
+            <h3>User Directory</h3>
+            <p>{{ users|length }} user{{ '' if users|length == 1 else 's' }} matched your current filters.</p>
+        </div>
+        <div class="badge">
+            Active Directory
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table class="data-table level-review-table">
+            <thead>
+                <tr>
+                    <th style="min-width: 220px;">Name</th>
+                    <th style="min-width: 150px;">Username</th>
+                    <th style="min-width: 130px;">Role</th>
+                    <th style="min-width: 100px;">Store</th>
+                    <th style="min-width: 110px;">Status</th>
+                    <th style="min-width: 240px; text-align:center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in users %}
+                {% set linked_mit = item.mit_profiles[0] if item.mit_profiles else None %}
+                <tr class="level-review-row">
+                    <td>
+                        <div class="review-item-cell">
+                            <a href="{{ url_for('mit_sts.view_user', user_id=item.id) }}" class="review-item-title" style="text-decoration:none;">
+                                {{ item.name }}
+                            </a>
+                            <div class="review-item-description">
+                                {{ item.role.replace('_', ' ').title() }}
+                                {% if item.store_number %}
+                                • Store {{ item.store_number }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+
+                    <td>
+                        <span style="font-size:13px; color:#334155;">{{ item.username }}</span>
+                    </td>
+
+                    <td>
+                        <span class="pill pill-info review-pill">{{ item.role.replace('_', ' ').title() }}</span>
+                    </td>
+
+                    <td>
+                        <span style="font-size:13px; color:#334155;">{{ item.store_number or "—" }}</span>
+                    </td>
+
+                    <td>
+                        {% if item.is_active_user %}
+                            <span class="pill pill-success review-pill">Active</span>
+                        {% else %}
+                            <span class="pill pill-muted review-pill">Inactive</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="text-align:center;">
+                        <div class="review-actions">
+                            <a href="{{ url_for('mit_sts.view_user', user_id=item.id) }}" class="btn btn-secondary btn-sm review-btn-secondary">Open</a>
+                            <a href="{{ url_for('mit_sts.edit_user', user_id=item.id) }}" class="btn btn-secondary btn-sm review-btn-secondary">Edit</a>
+
+                            {% if item.role == "mit" %}
+                                {% if linked_mit %}
+                                <a href="{{ url_for('mit_sts.view_mit', mit_id=linked_mit.id) }}" class="btn btn-secondary btn-sm review-btn-secondary">Open MIT</a>
+                                {% else %}
+                                <a href="{{ url_for('mit_sts.new_mit') }}" class="btn btn-secondary btn-sm review-btn-secondary">Create MIT</a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No users found</h3>
+    <p>Try adjusting your filters or create your first MIT STS user.</p>
+    <div class="page-footer-actions">
+        <a href="{{ url_for('mit_sts.new_user') }}" class="btn btn-primary">+ Create First User</a>
+    </div>
+</div>
+{% endif %}
+
+</div>
+{% endblock %}

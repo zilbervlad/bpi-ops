@@ -1,0 +1,483 @@
+
+/* Compact MIT Profile */
+
+.mit-profile-page {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+}
+
+.mit-profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.mit-profile-eyebrow {
+    margin-bottom: 6px;
+    color: #60a5fa !important;
+    -webkit-text-fill-color: #60a5fa !important;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.mit-profile-header h1 {
+    margin: 0 0 5px;
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+    font-size: 30px;
+}
+
+.mit-profile-header p {
+    margin: 0;
+    color: #aeb8c7 !important;
+    -webkit-text-fill-color: #aeb8c7 !important;
+    font-size: 14px;
+}
+
+.mit-profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.mit-profile-btn {
+    display: inline-flex;
+    min-height: 38px;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 13px;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 850;
+    text-decoration: none;
+}
+
+.mit-profile-btn.primary {
+    border: 1px solid #16a34a;
+    background: #16a34a;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+.mit-profile-btn.secondary {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+}
+
+.mit-profile-top-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.65fr);
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.mit-profile-card,
+.mit-kpi-card {
+    border: 1px solid #d7dee8;
+    border-radius: 15px;
+    background: #ffffff;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+}
+
+.mit-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px 10px;
+}
+
+.mit-card-header h2 {
+    margin: 0 0 2px;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 16px;
+}
+
+.mit-card-header p {
+    margin: 0;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 11px;
+}
+
+.mit-record-badge {
+    padding: 4px 8px;
+    border: 1px solid #fde68a;
+    border-radius: 999px;
+    background: #fffbeb;
+    color: #a16207 !important;
+    -webkit-text-fill-color: #a16207 !important;
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.mit-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    padding: 2px 16px 15px;
+}
+
+.mit-summary-item {
+    min-width: 0;
+    padding: 10px 12px;
+    border-top: 1px solid #eef2f7;
+}
+
+.mit-summary-item span,
+.mit-profile-notes > span {
+    display: block;
+    margin-bottom: 4px;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.mit-summary-item strong {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 15px;
+}
+
+.mit-status-pill {
+    display: inline-flex !important;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #fffbeb;
+    color: #a16207 !important;
+    -webkit-text-fill-color: #a16207 !important;
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.mit-status-pill.status-ready {
+    background: #f0fdf4;
+    color: #15803d !important;
+    -webkit-text-fill-color: #15803d !important;
+}
+
+.mit-status-pill.status-blocked {
+    background: #fef2f2;
+    color: #b91c1c !important;
+    -webkit-text-fill-color: #b91c1c !important;
+}
+
+.mit-profile-notes {
+    margin: 0 16px 15px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.mit-profile-notes p {
+    margin: 0;
+    color: #334155 !important;
+    -webkit-text-fill-color: #334155 !important;
+    font-size: 11px;
+}
+
+.mit-time-list {
+    padding: 3px 14px 14px;
+}
+
+.mit-time-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 58px auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 6px;
+    border-top: 1px solid #e5eaf1;
+}
+
+.mit-time-level {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.mit-time-level > span {
+    display: grid;
+    width: 31px;
+    height: 31px;
+    place-items: center;
+    border-radius: 9px;
+    background: #eff6ff;
+    color: #1d4ed8 !important;
+    -webkit-text-fill-color: #1d4ed8 !important;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.mit-time-level strong,
+.mit-time-weeks strong {
+    display: block;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 11px;
+}
+
+.mit-time-level small,
+.mit-time-weeks small {
+    color: #94a3b8 !important;
+    -webkit-text-fill-color: #94a3b8 !important;
+    font-size: 9px;
+}
+
+.mit-time-status {
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 8px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.mit-time-status.status-in-progress {
+    background: #eff6ff;
+    color: #1d4ed8 !important;
+    -webkit-text-fill-color: #1d4ed8 !important;
+}
+
+.mit-time-status.status-complete {
+    background: #f0fdf4;
+    color: #15803d !important;
+    -webkit-text-fill-color: #15803d !important;
+}
+
+.mit-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.mit-kpi-card {
+    min-height: 88px;
+    padding: 14px 16px;
+}
+
+.mit-kpi-card > span {
+    display: block;
+    margin-bottom: 7px;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.mit-kpi-card strong {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 25px;
+}
+
+.mit-kpi-track,
+.mit-level-progress-track {
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e2e8f0;
+}
+
+.mit-kpi-track {
+    height: 6px;
+    margin-top: 8px;
+}
+
+.mit-kpi-track div,
+.mit-level-progress-track div {
+    height: 100%;
+    border-radius: inherit;
+    background: #22c55e;
+}
+
+.mit-level-progress-card,
+.mit-promotion-card {
+    margin-bottom: 12px;
+}
+
+.mit-level-list {
+    padding: 0 12px 12px;
+}
+
+.mit-level-row {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) 48px 90px 56px;
+    align-items: center;
+    gap: 11px;
+    padding: 10px 8px;
+    border-top: 1px solid #e5eaf1;
+}
+
+.mit-level-number {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 9px;
+    background: #eff6ff;
+    color: #1d4ed8 !important;
+    -webkit-text-fill-color: #1d4ed8 !important;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.mit-level-title-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 6px;
+}
+
+.mit-level-title-row strong {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 12px;
+}
+
+.mit-current-badge {
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1d4ed8 !important;
+    -webkit-text-fill-color: #1d4ed8 !important;
+    font-size: 8px;
+    font-weight: 900;
+}
+
+.mit-level-progress-track {
+    height: 6px;
+}
+
+.mit-level-percent {
+    color: #475569 !important;
+    -webkit-text-fill-color: #475569 !important;
+    font-size: 10px;
+    font-weight: 850;
+}
+
+.mit-level-status {
+    display: inline-flex;
+    padding: 4px 7px;
+    border-radius: 999px;
+    font-size: 8px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.mit-level-status.complete {
+    background: #f0fdf4;
+    color: #15803d !important;
+    -webkit-text-fill-color: #15803d !important;
+}
+
+.mit-level-status.progress {
+    background: #fffbeb;
+    color: #a16207 !important;
+    -webkit-text-fill-color: #a16207 !important;
+}
+
+.mit-level-status.not-started {
+    background: #f1f5f9;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+}
+
+.mit-level-open {
+    display: inline-flex;
+    min-height: 29px;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 9px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-size: 9px;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.mit-table-wrap {
+    overflow-x: auto;
+    padding: 0 14px 14px;
+}
+
+.mit-profile-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.mit-profile-table th {
+    padding: 8px 9px;
+    background: #f8fafc;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    font-size: 9px;
+    font-weight: 900;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.mit-profile-table td {
+    padding: 9px;
+    border-bottom: 1px solid #e5eaf1;
+    color: #334155 !important;
+    -webkit-text-fill-color: #334155 !important;
+    font-size: 10px;
+}
+
+@media (max-width: 1000px) {
+    .mit-profile-top-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mit-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .mit-profile-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .mit-profile-actions {
+        justify-content: flex-start;
+    }
+
+    .mit-profile-btn {
+        flex: 1 1 135px;
+    }
+
+    .mit-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mit-level-row {
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+    }
+
+    .mit-level-percent,
+    .mit-level-status {
+        display: none;
+    }
+}

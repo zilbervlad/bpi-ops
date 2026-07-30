@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}MIT STS Dashboard | BPI Academy{% endblock %}
+
+{% block content %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='academy/css/style.css') }}">
+
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='academy/academy-dashboard.css', v='20260730-0840') }}">
+
+<div class="academy-page academy-dashboard-page">
+
+    <header class="academy-dashboard-header">
+        <div class="academy-dashboard-title">
+            <div class="academy-dashboard-eyebrow">BPI Academy · MIT STS</div>
+            <h1>MIT Dashboard</h1>
+            <p>Track development, assignments, progress, and promotion readiness.</p>
+        </div>
+
+        <div class="academy-dashboard-actions">
+            <a class="academy-dashboard-btn secondary"
+               href="{{ url_for('mit_sts.template_library') }}">
+                Edit STS Curriculum
+            </a>
+
+            <a class="academy-dashboard-btn secondary"
+               href="{{ url_for('mit_sts.list_mits') }}">
+                Manage MITs
+            </a>
+
+            <a class="academy-dashboard-btn primary"
+               href="{{ url_for('mit_sts.new_mit') }}">
+                + New MIT
+            </a>
+        </div>
+    </header>
+
+    <section class="academy-stat-grid">
+        <a class="academy-stat-card academy-stat-link"
+           href="{{ url_for('mit_sts.list_mits') }}">
+            <span>Total MITs</span>
+            <strong>{{ total_mits }}</strong>
+            <small>View all</small>
+        </a>
+
+        <a class="academy-stat-card academy-stat-link"
+           href="{{ url_for('mit_sts.list_mits', level='1') }}">
+            <span>Level 1</span>
+            <strong>{{ level_1_count }}</strong>
+            <small>View Level 1 MITs</small>
+        </a>
+
+        <a class="academy-stat-card academy-stat-link"
+           href="{{ url_for('mit_sts.list_mits', level='2') }}">
+            <span>Level 2</span>
+            <strong>{{ level_2_count }}</strong>
+            <small>View Level 2 MITs</small>
+        </a>
+
+        <a class="academy-stat-card academy-stat-link"
+           href="{{ url_for('mit_sts.list_mits', level='3') }}">
+            <span>Level 3</span>
+            <strong>{{ level_3_count }}</strong>
+            <small>View Level 3 MITs</small>
+        </a>
+
+        <a class="academy-stat-card academy-stat-highlight academy-stat-link"
+           href="{{ url_for('mit_sts.list_mits') }}">
+            <span>Company Education Level</span>
+            <strong>Level {{ company_score }}</strong>
+            <small>View MIT directory</small>
+        </a>
+    </section>
+
+    <div class="academy-dashboard-grid">
+
+        <section class="academy-dashboard-card academy-coach-card">
+            <div class="academy-card-header">
+                <div>
+                    <h2>Coach Education Levels</h2>
+                    <p>Average current MIT level by coach</p>
+                </div>
+            </div>
+
+            {% if coach_scores %}
+                <div class="academy-table-wrap">
+                    <table class="academy-compact-table">
+                        <thead>
+                            <tr>
+                                <th>Coach</th>
+                                <th>MITs</th>
+                                <th>Average Level</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for coach_name, coach in coach_scores.items() %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ coach.coach_name }}</strong>
+                                    </td>
+
+                                    <td>{{ coach.mit_count }}</td>
+
+                                    <td>
+                                        <span class="academy-level-pill">
+                                            Level {{ coach.score }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="academy-empty-state">
+                    No coach assignments yet.
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="academy-dashboard-card academy-recent-card">
+            <div class="academy-card-header">
+                <div>
+                    <h2>Recent MITs</h2>
+                    <p>Latest development profiles</p>
+                </div>
+
+                <a class="academy-text-link"
+                   href="{{ url_for('mit_sts.list_mits') }}">
+                    View all
+                </a>
+            </div>
+
+            {% if recent_mits %}
+                <div class="academy-table-wrap">
+                    <table class="academy-compact-table academy-mit-table">
+                        <thead>
+                            <tr>
+                                <th>MIT</th>
+                                <th>Store</th>
+                                <th>Coach</th>
+                                <th>Level</th>
+                                <th>Progress</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for mit in recent_mits %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ mit.mit_user.name }}</strong>
+                                    </td>
+
+                                    <td>{{ mit.store_number or "—" }}</td>
+
+                                    <td>
+                                        {{ mit.coach_user.name if mit.coach_user else "Unassigned" }}
+                                    </td>
+
+                                    <td>
+                                        <span class="academy-level-pill">
+                                            Level {{ mit.current_level }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <div class="academy-progress-cell">
+                                            <div class="academy-progress-track">
+                                                <div class="academy-progress-fill"
+                                                     style="width: {{ recent_progress_map.get(mit.id, 0) }}%">
+                                                </div>
+                                            </div>
+
+                                            <span>
+                                                {{ recent_progress_map.get(mit.id, 0) }}%
+                                            </span>
+                                        </div>
+                                    </td>
+
+                                    <td class="academy-row-action">
+                                        <a href="{{ url_for('mit_sts.view_mit', mit_id=mit.id) }}">
+                                            Open
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="academy-empty-state">
+                    <strong>No MIT profiles yet.</strong>
+
+                    <a href="{{ url_for('mit_sts.new_mit') }}">
+                        Create the first MIT profile
+                    </a>
+                </div>
+            {% endif %}
+        </section>
+
+    </div>
+</div>
+{% endblock %}

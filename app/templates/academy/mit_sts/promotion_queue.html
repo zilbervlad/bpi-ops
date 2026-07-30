@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Promotion Queue{% endblock %}
+
+{% block content %}
+<div class="academy-page">
+<link rel="stylesheet" href="{{ url_for('static', filename='academy/css/style.css') }}">
+<div class="page-header">
+    <div>
+        <p class="eyebrow">MIT STS</p>
+        <h2>Promotion Queue</h2>
+        <p class="subtle">MITs whose current level is 100% complete.</p>
+    </div>
+
+    <a href="{{ url_for('mit_sts.dashboard') }}" class="btn btn-secondary">
+        Back to MIT Dashboard
+    </a>
+</div>
+
+<div class="card" style="margin-top: 24px;">
+    <div class="section-header" style="margin-bottom: 18px;">
+        <h3 style="margin: 0;">Ready for Promotion</h3>
+        <p class="subtle" style="margin: 6px 0 0 0;">{{ queue|length }} MIT{% if queue|length != 1 %}s{% endif %} ready</p>
+    </div>
+
+    {% if queue %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>MIT</th>
+                    <th>Store</th>
+                    <th>Coach</th>
+                    <th>Current Level</th>
+                    <th>Progress</th>
+                    <th style="width: 220px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mit in queue %}
+                <tr>
+                    <td>{{ mit.mit_user.name if mit.mit_user else "MIT #" ~ mit.id }}</td>
+                    <td>{{ mit.store_number or "-" }}</td>
+                    <td>{{ mit.coach_user.name if mit.coach_user else "-" }}</td>
+                    <td>Level {{ mit.current_level }}</td>
+                    <td><strong>{{ progress_map.get(mit.id, 0) }}%</strong></td>
+                    <td style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <a href="{{ url_for('mit_sts.view_mit', mit_id=mit.id) }}" class="btn btn-secondary btn-sm">Open</a>
+                        <form method="POST" action="{{ url_for('mit_sts.promote_mit', mit_id=mit.id) }}">
+                            <button type="submit" class="btn btn-primary btn-sm">Promote</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="border: 1px dashed #cbd5e1; border-radius: 24px; padding: 40px 24px; text-align: center;">
+        <h3 style="margin-bottom: 10px;">No MITs ready right now</h3>
+        <p class="subtle" style="margin: 0;">Once a current level reaches 100%, the MIT will appear here.</p>
+    </div>
+    {% endif %}
+</div>
+
+</div>
+{% endblock %}

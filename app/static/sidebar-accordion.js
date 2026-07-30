@@ -3,11 +3,25 @@ document.addEventListener("DOMContentLoaded", function () {
     const nav = document.querySelector("#sidebar .nav");
     if (!nav) return;
 
-    const sections = Array.from(
-        nav.querySelectorAll(":scope > .nav-section")
-    );
-
     const storageKey = "bpiSidebarOpenSection";
+
+    function sections() {
+        return Array.from(
+            nav.querySelectorAll(":scope > .nav-section")
+        );
+    }
+
+    function getLabel(section) {
+        return Array.from(section.children).find(function (child) {
+            return child.classList &&
+                child.classList.contains("nav-section-label");
+        });
+    }
+
+    function labelText(section) {
+        const label = getLabel(section);
+        return label ? label.textContent.trim() : "";
+    }
 
     function directLinks(section) {
         return Array.from(section.children).filter(function (child) {
@@ -15,30 +29,78 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function labelFor(section) {
-        return Array.from(section.children).find(function (child) {
-            return child.classList &&
-                child.classList.contains("nav-section-label");
-        });
-    }
-
     function sectionKey(section) {
-        const label = labelFor(section);
-
-        return label
-            ? label.textContent.trim().toLowerCase().replace(/\s+/g, "-")
-            : "";
+        return labelText(section)
+            .toLowerCase()
+            .replace(/&/g, "and")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
     }
 
-    function closeCollapsibleSections(exceptSection) {
-        sections.forEach(function (section) {
+    /*
+     * Move BPI Academy into Command and remove its old
+     * one-item Development wrapper.
+     */
+    const commandSection = sections().find(function (section) {
+        return labelText(section) === "Command";
+    });
+
+    const academySection = sections().find(function (section) {
+        return directLinks(section).some(function (link) {
+            return link.textContent.trim().includes("BPI Academy");
+        });
+    });
+
+    if (
+        commandSection &&
+        academySection &&
+        academySection !== commandSection
+    ) {
+        const academyLink = directLinks(academySection).find(function (link) {
+            return link.textContent.trim().includes("BPI Academy");
+        });
+
+        if (academyLink) {
+            commandSection.appendChild(academyLink);
+        }
+
+        if (directLinks(academySection).length === 0) {
+            academySection.remove();
+        }
+    }
+
+    /*
+     * Merge a separate HR section into People & HR.
+     */
+    const peopleHrSection = sections().find(function (section) {
+        return labelText(section) === "People & HR";
+    });
+
+    const hrSection = sections().find(function (section) {
+        return labelText(section) === "HR";
+    });
+
+    if (
+        peopleHrSection &&
+        hrSection &&
+        peopleHrSection !== hrSection
+    ) {
+        directLinks(hrSection).forEach(function (link) {
+            peopleHrSection.appendChild(link);
+        });
+
+        hrSection.remove();
+    }
+
+    function closeOtherSections(exceptSection) {
+        sections().forEach(function (section) {
             if (
                 section !== exceptSection &&
                 section.classList.contains("is-collapsible")
             ) {
                 section.classList.remove("is-open");
 
-                const label = labelFor(section);
+                const label = getLabel(section);
                 if (label) {
                     label.setAttribute("aria-expanded", "false");
                 }
@@ -50,12 +112,13 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!section.classList.contains("is-collapsible")) return;
 
         if (shouldOpen) {
-            closeCollapsibleSections(section);
+            closeOtherSections(section);
         }
 
         section.classList.toggle("is-open", shouldOpen);
 
-        const label = labelFor(section);
+        const label = getLabel(section);
+
         if (label) {
             label.setAttribute(
                 "aria-expanded",
@@ -65,26 +128,36 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (remember) {
             if (shouldOpen) {
-                localStorage.setItem(storageKey, sectionKey(section));
+                localStorage.setItem(
+                    storageKey,
+                    sectionKey(section)
+                );
             } else {
                 localStorage.removeItem(storageKey);
             }
         }
     }
 
-    sections.forEach(function (section, index) {
+    sections().forEach(function (section) {
+        const label = getLabel(section);
         const links = directLinks(section);
-        const label = labelFor(section);
+        const name = labelText(section);
 
-        if (section.classList.contains("nav-logout-section")) {
+        section.classList.remove(
+            "is-open",
+            "is-fixed-open",
+            "is-collapsible",
+            "is-single-link"
+        );
+
+        if (
+            section.classList.contains("nav-logout-section")
+        ) {
             section.classList.add("is-single-link");
             return;
         }
 
-        /*
-         * Command stays permanently open.
-         */
-        if (index === 0) {
+        if (name === "Command") {
             section.classList.add("is-fixed-open", "is-open");
 
             if (label) {
@@ -94,9 +167,6 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        /*
-         * Sections with one link do not need an accordion heading.
-         */
         if (links.length <= 1) {
             section.classList.add("is-single-link");
             return;
@@ -110,26 +180,33 @@ document.addEventListener("DOMContentLoaded", function () {
         label.setAttribute("tabindex", "0");
         label.setAttribute("aria-expanded", "false");
 
-        function toggleSection() {
-            const opening = !section.classList.contains("is-open");
-            setOpen(section, opening, true);
+        function toggle() {
+            setOpen(
+                section,
+                !section.classList.contains("is-open"),
+                true
+            );
         }
 
-        label.addEventListener("click", toggleSection);
+        label.addEventListener("click", toggle);
 
         label.addEventListener("keydown", function (event) {
-            if (event.key !== "Enter" && event.key !== " ") return;
+            if (
+                event.key !== "Enter" &&
+                event.key !== " "
+            ) {
+                return;
+            }
 
             event.preventDefault();
-            toggleSection();
+            toggle();
         });
     });
 
-    /*
-     * The current page always wins over saved preference.
-     */
-    const activeSection = sections.find(function (section) {
-        return Boolean(section.querySelector(":scope > a.active"));
+    const activeSection = sections().find(function (section) {
+        return Boolean(
+            section.querySelector(":scope > a.active")
+        );
     });
 
     if (
@@ -137,13 +214,10 @@ document.addEventListener("DOMContentLoaded", function () {
         activeSection.classList.contains("is-collapsible")
     ) {
         setOpen(activeSection, true, false);
-        return;
-    }
+    } else {
+        const savedKey = localStorage.getItem(storageKey);
 
-    const savedKey = localStorage.getItem(storageKey);
-
-    if (savedKey) {
-        const savedSection = sections.find(function (section) {
+        const savedSection = sections().find(function (section) {
             return (
                 section.classList.contains("is-collapsible") &&
                 sectionKey(section) === savedKey

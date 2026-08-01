@@ -666,8 +666,10 @@
         window.addEventListener("resize", function () {
             clearDesktopTimers();
 
+            // Always close the drawer after a resize/orientation change.
+            closeMobileSidebar();
+
             if (isDesktop()) {
-                closeMobileSidebar();
                 restoreDesktopPreference();
             } else {
                 body.classList.remove(
@@ -675,6 +677,25 @@
                     "desktop-sidebar-pinned"
                 );
             }
+        });
+
+        window.addEventListener("orientationchange", function () {
+            closeMobileSidebar();
+
+            // Android reports the old dimensions for a brief moment.
+            window.setTimeout(function () {
+                closeMobileSidebar();
+                clearDesktopTimers();
+
+                if (isDesktop()) {
+                    restoreDesktopPreference();
+                } else {
+                    body.classList.remove(
+                        "desktop-sidebar-open",
+                        "desktop-sidebar-pinned"
+                    );
+                }
+            }, 250);
         });
 
         restoreDesktopPreference();

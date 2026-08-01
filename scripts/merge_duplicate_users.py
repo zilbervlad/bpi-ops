@@ -18,6 +18,40 @@ def valid_email(value):
     return value if "@" in value and "." in value.split("@")[-1] else ""
 
 
+def merge_hr_document_recipients(old_id, keep_id):
+    """Move HR recipients, deleting only rows duplicated for the same document."""
+    duplicate_ids = db.session.execute(
+        text(
+            """
+            SELECT old.id
+            FROM hr_document_recipients old
+            JOIN hr_document_recipients keep
+              ON keep.document_id = old.document_id
+             AND keep.user_id = :keep_id
+            WHERE old.user_id = :old_id
+            """
+        ),
+        {"old_id": old_id, "keep_id": keep_id},
+    ).scalars().all()
+
+    deleted = 0
+    if duplicate_ids:
+        result = db.session.execute(
+            text("DELETE FROM hr_document_recipients WHERE id = ANY(:ids)"),
+            {"ids": duplicate_ids},
+        )
+        deleted = result.rowcount or 0
+
+    result = db.session.execute(
+        text(
+            "UPDATE hr_document_recipients "
+            "SET user_id = :keep_id WHERE user_id = :old_id"
+        ),
+        {"old_id": old_id, "keep_id": keep_id},
+    )
+    return (result.rowcount or 0), deleted
+
+
 app = create_app()
 
 with app.app_context():
@@ -71,9 +105,16 @@ with app.app_context():
     for _, keep, remove in candidates:
         for old in remove:
             moved = 0
+            deduped = 0
             try:
                 with db.session.begin_nested():
                     for table, column in refs:
+                        if table == "hr_document_recipients" and column == "user_id":
+                            updated, deleted = merge_hr_document_recipients(old.id, keep.id)
+                            moved += updated
+                            deduped += deleted
+                            continue
+
                         result = db.session.execute(
                             text(
                                 f'UPDATE "{table}" SET "{column}" = :keep_id '
@@ -82,13 +123,17 @@ with app.app_context():
                             {"keep_id": keep.id, "old_id": old.id},
                         )
                         moved += result.rowcount or 0
+
                     old.is_active = False
                     db.session.flush()
 
                 db.session.commit()
                 sync = sync_user_to_bpi_connect(old, send_invite=False)
                 sync_note = "Connect synced" if sync.get("success") else f"Connect sync failed: {sync.get('error')}"
-                print(f"SUCCESS {old.id} -> {keep.id} | moved {moved} | {sync_note}")
+                print(
+                    f"SUCCESS {old.id} -> {keep.id} | moved {moved} | "
+                    f"removed {deduped} duplicate HR recipient rows | {sync_note}"
+                )
                 success += 1
 
             except (SQLAlchemyError, Exception) as exc:

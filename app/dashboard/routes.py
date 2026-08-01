@@ -779,7 +779,11 @@ def home():
 
     if user_role == "hr" or session.get("account_role") == "hr":
         quick_actions = [
-            {"label": "HR Documents", "url": "/hr-documents/"},
+            *(
+                []
+                if session.get("account_role") == "store"
+                else [{"label": "HR Documents", "url": "/hr-documents/"}]
+            ),
             {"label": "Upload Document", "url": "/hr-documents/new"},
             {"label": "Forms Admin", "url": "/forms/admin"},
             {"label": "Registration Requests", "url": "/users/registration-requests"},

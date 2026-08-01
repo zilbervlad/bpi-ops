@@ -219,6 +219,13 @@ def send_form_submission_email(submission: FormSubmission, photos=None):
     ).first()
     manager_email = manager_user.get_notification_email() if manager_user else None
 
+    store_user = User.query.filter_by(
+        store_number=submission.store_number,
+        role="store",
+        is_active=True
+    ).first()
+    store_email = store_user.get_notification_email() if store_user else None
+
     store = Store.query.filter_by(store_number=submission.store_number).first()
 
     supervisor = None
@@ -255,8 +262,21 @@ def send_form_submission_email(submission: FormSubmission, photos=None):
                 payroll_emails.append(email)
 
     recipients = []
-    if truthy_template_flag(template, "notify_gm", True) and manager_email:
-        recipients.append(manager_email)
+
+    template_slug = slugify(template.slug or template.title)
+    route_to_store_email = template_slug in {
+        "morning-inspection",
+        "morning-inspections",
+        "4pm-routine",
+        "4-pm-routine",
+    }
+
+    if truthy_template_flag(template, "notify_gm", True):
+        if route_to_store_email and store_email:
+            recipients.append(store_email)
+        elif not route_to_store_email and manager_email:
+            recipients.append(manager_email)
+
     if truthy_template_flag(template, "notify_supervisor", True) and supervisor_email:
         recipients.append(supervisor_email)
 
@@ -326,6 +346,7 @@ def send_form_submission_email(submission: FormSubmission, photos=None):
     return {
         "to_email": to_email,
         "manager_email": manager_email,
+        "store_email": store_email,
         "supervisor_email": supervisor_email,
         "admin_emails": admin_emails,
         "hr_emails": hr_emails,

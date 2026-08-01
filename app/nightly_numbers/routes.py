@@ -256,13 +256,13 @@ def apply_form_value_to_report(report, field):
 
 
 def send_nightly_numbers_email(report: NightlyNumbersReport):
-    manager_user = User.query.filter_by(
+    store_user = User.query.filter_by(
         store_number=report.store_number,
-        role="manager",
+        role="store",
         is_active=True
     ).first()
 
-    manager_email = manager_user.get_notification_email() if manager_user else None
+    store_email = store_user.get_notification_email() if store_user else None
 
     store = Store.query.filter_by(store_number=report.store_number).first()
 
@@ -288,10 +288,10 @@ def send_nightly_numbers_email(report: NightlyNumbersReport):
         cc_emails.append(supervisor_email)
     cc_emails.extend(admin_emails)
 
-    cc_emails = [email for email in dict.fromkeys(cc_emails) if email and email != manager_email]
+    cc_emails = [email for email in dict.fromkeys(cc_emails) if email and email != store_email]
 
-    if not manager_email:
-        raise ValueError(f"No manager notification email configured for store {report.store_number}.")
+    if not store_email:
+        raise ValueError(f"No store notification email configured for store {report.store_number}.")
 
     labor_status = ""
     if report.variable_labor is not None and report.labor_goal is not None:
@@ -325,14 +325,14 @@ def send_nightly_numbers_email(report: NightlyNumbersReport):
     )
 
     send_email(
-        to_email=manager_email,
+        to_email=store_email,
         subject=f"Store {report.store_number} Nightly Numbers - {report.report_date.strftime('%b %d, %Y')}",
         body=body,
         cc_emails=cc_emails if cc_emails else None
     )
 
     return {
-        "manager_email": manager_email,
+        "store_email": store_email,
         "supervisor_email": supervisor_email,
         "admin_emails": admin_emails,
     }

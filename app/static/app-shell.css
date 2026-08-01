@@ -221,7 +221,7 @@
         color: #fff;
     }
 
-    @media (max-width: 1200px) {
+    @media (max-width: 1400px) {
         .topbar {
             padding: 14px 16px;
             min-height: 66px;
@@ -352,7 +352,7 @@
 
 
 
-    @media (max-width: 1200px) {
+    @media (max-width: 1400px) {
         body {
             font-size: 14px;
         }
@@ -527,7 +527,7 @@
    Actual wrapper is .layout, not .app-shell
    ========================================================= */
 
-@media (min-width: 1201px) {
+@media (min-width: 1401px) {
     html,
     body {
         height: 100% !important;
@@ -636,7 +636,7 @@
 }
 
 /* Mobile keeps normal page scroll/drawer behavior */
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
     html,
     body {
         height: auto !important;
@@ -657,7 +657,7 @@
 }
 
 /* Keep logout visible on mobile topbar */
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
     .topbar-right {
         display: flex !important;
         align-items: center !important;
@@ -1290,7 +1290,7 @@ button {
     max-width: 100%;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
     .actions,
     .action-buttons,
     .actions-cell,
@@ -1512,7 +1512,7 @@ th:last-child {
    Added 2026-07-25
    ========================================================= */
 
-@media (min-width: 1201px) {
+@media (min-width: 1401px) {
     :root {
         --desktop-sidebar-width: 286px;
         --desktop-sidebar-hover-zone: 14px;
@@ -1662,7 +1662,7 @@ th:last-child {
 }
 
 /* Touch/mobile keeps the existing drawer system */
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
     .desktop-sidebar-hover-zone,
     .desktop-sidebar-pin {
         display: none !important;
@@ -1670,7 +1670,7 @@ th:last-child {
 }
 
 /* Disable hover automation for devices that do not truly support hover */
-@media (min-width: 1201px) and (hover: none) {
+@media (min-width: 1401px) and (hover: none) {
     .desktop-sidebar-hover-zone {
         display: none !important;
     }
@@ -1785,7 +1785,7 @@ th:last-child {
     padding-top: 10px;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
     .sidebar .nav-section-label {
         min-height: 40px;
         padding-top: 12px;
@@ -1931,7 +1931,7 @@ th:last-child {
     border-top: 1px solid rgba(148, 163, 184, 0.10) !important;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
     .sidebar .nav-section-label {
         min-height: 42px !important;
         padding-top: 14px !important;

@@ -220,6 +220,10 @@ def register_global_hr_navigation(state):
             or ""
         ).strip().lower()
 
+        # Shared store-tablet accounts must not receive employee/HR navigation.
+        if role == "store":
+            return response
+
         endpoint = request.endpoint or ""
         my_docs_active = " active" if endpoint.startswith("hr_documents") and endpoint not in {
             "hr_documents.index",

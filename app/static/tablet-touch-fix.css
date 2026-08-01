@@ -1,0 +1,149 @@
+/* =========================================================
+   BPI OPS — TOUCH TABLET SCROLL FIX
+   Prevent Android/managed-browser pull-to-refresh from
+   triggering during normal vertical scrolling.
+
+   Loaded AFTER app-shell.css so these rules win.
+   ========================================================= */
+
+/* Prevent scroll gestures from chaining into the browser UI. */
+html,
+body {
+    overscroll-behavior-y: none;
+}
+
+/* Only affect touch-first devices such as store tablets. */
+@media (hover: none) and (pointer: coarse) {
+
+    html,
+    body {
+        width: 100% !important;
+        min-height: 100% !important;
+        margin: 0 !important;
+
+        /*
+         * Prevent the browser itself from receiving a downward
+         * overscroll gesture and interpreting it as refresh.
+         */
+        overscroll-behavior-y: none !important;
+        overscroll-behavior-x: none !important;
+
+        /*
+         * Permit normal finger-driven vertical movement while
+         * preventing browser gesture takeover.
+         */
+        touch-action: pan-y !important;
+    }
+
+    /*
+     * Keep the application shell contained inside the viewport.
+     * The main-content element becomes the real scroll surface.
+     */
+    .layout {
+        height: 100dvh !important;
+        min-height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+        overscroll-behavior: none !important;
+    }
+
+    /*
+     * This is the only vertical scrolling surface.
+     * "contain" prevents the gesture from escaping upward into
+     * Android WebView / ManageEngine pull-to-refresh.
+     */
+    .main-content {
+        height: 100dvh !important;
+        min-height: 0 !important;
+        max-height: 100dvh !important;
+
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-y: contain !important;
+        overscroll-behavior-x: none !important;
+        touch-action: pan-y !important;
+
+        /*
+         * Gives the bottom navigation enough room without
+         * covering the final page content.
+         */
+        padding-bottom: calc(
+            72px + env(safe-area-inset-bottom)
+        ) !important;
+    }
+
+    /*
+     * Keep page content inside the main scroll surface.
+     */
+    .page-content {
+        overflow: visible !important;
+        min-height: auto !important;
+        touch-action: pan-y !important;
+    }
+
+    /*
+     * Sticky topbar remains inside .main-content rather than
+     * creating another competing scroll layer.
+     */
+    .topbar {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 900 !important;
+    }
+
+    /*
+     * Sidebar scroll remains independent when the drawer is open.
+     */
+    .sidebar {
+        overscroll-behavior-y: contain !important;
+        touch-action: pan-y !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /*
+     * Prevent controls and cards from accidentally initiating
+     * browser-level drag gestures.
+     */
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    .panel,
+    .metric-card,
+    .premium-card {
+        overscroll-behavior: contain;
+    }
+}
+
+/*
+ * Landscape-specific reinforcement. Some Android managed
+ * browsers report unusual viewport dimensions after rotation.
+ */
+@media (hover: none) and (pointer: coarse) and (orientation: landscape) {
+
+    html,
+    body {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+        overscroll-behavior-y: none !important;
+    }
+
+    .layout {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+    }
+
+    .main-content {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        overscroll-behavior-y: contain !important;
+        touch-action: pan-y !important;
+    }
+}

@@ -16,11 +16,37 @@ from app.services.email_service import send_email
 auth_bp = Blueprint("auth", __name__)
 
 
+@auth_bp.before_app_request
+def block_store_account_sensitive_modules():
+    """
+    Shared store-tablet accounts may use operational tools, but must never
+    access employee-specific Academy, DWP, or HR information.
+    """
+    if session.get("account_role") != "store":
+        return None
+
+    endpoint = request.endpoint or ""
+
+    blocked_prefixes = (
+        "academy.",
+        "mit_sts.",
+        "dwp.",
+        "hr_documents.",
+    )
+
+    if endpoint.startswith(blocked_prefixes):
+        flash("Store accounts cannot access employee or HR records.", "error")
+        return redirect(url_for("dashboard.home"))
+
+    return None
+
+
 VALID_ROLES = {
     "admin",
     "supervisor",
     "general_manager",
     "manager",
+    "store",
     "tm",
     "maintenance",
     "hr",
@@ -30,6 +56,7 @@ VALID_ROLES = {
 STORE_REQUIRED_ROLES = {
     "general_manager",
     "manager",
+    "store",
     "tm",
 }
 
@@ -42,6 +69,7 @@ ROLE_LABELS = {
     "supervisor": "Supervisor",
     "general_manager": "General Manager",
     "manager": "Manager",
+    "store": "Store",
     "tm": "TM",
     "maintenance": "Maintenance",
     "hr": "HR",
@@ -56,7 +84,7 @@ def get_access_role(user):
     the existing manager access path so current manager tools keep working.
     Existing routes throughout the app already check session["user_role"] == "manager".
     """
-    if user.role == "general_manager":
+    if user.role in {"general_manager", "store"}:
         return "manager"
     return user.role
 
@@ -158,7 +186,7 @@ def sync_user_to_bpi_connect(
             or ""
         ),
         "password_hash": user.password_hash,
-        "role": user.role,
+        "role": "manager" if user.role == "store" else user.role,
         "position": (
             position
             if position is not None
@@ -472,7 +500,7 @@ def clean_access_fields(role, area_name, store_number):
 
     Admin/Maintenance: no area or store
     Supervisor: area only
-    General Manager/Manager/TM: store only
+    General Manager/Manager/Store/TM: store only
     """
     if role in {"admin", "maintenance"}:
         return None, None
@@ -494,7 +522,7 @@ def validate_user_access(role, area_name, store_number):
         return False, "Supervisors must have an area assigned."
 
     if role in STORE_REQUIRED_ROLES and not store_number:
-        return False, "General Managers, Managers, and TM accounts must have a store assigned."
+        return False, "General Managers, Managers, Store accounts, and TM accounts must have a store assigned."
 
     return True, None
 

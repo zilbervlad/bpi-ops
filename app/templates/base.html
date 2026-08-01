@@ -64,7 +64,7 @@
                         <span>Dashboard</span>
                     </a>
 
-                    {% if account_role not in ['admin', 'hr'] %}
+                    {% if account_role not in ['admin', 'hr', 'store'] %}
                     <a href="{{ url_for('hr_documents.my_documents') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('hr_documents') and request.endpoint != 'hr_documents.index' and request.endpoint != 'hr_documents.new_document' and request.endpoint != 'hr_documents.detail' %}active{% endif %}">
                         <span class="nav-icon">◨</span>
@@ -161,6 +161,7 @@
                 </div>
                 {% endif %}
 
+                {% if account_role != 'store' %}
                 <div class="nav-section">
                     <div class="nav-section-label">Development</div>
 
@@ -170,6 +171,7 @@
                         <span>BPI Academy</span>
                     </a>
                 </div>
+                {% endif %}
 
                 {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager', 'maintenance', 'hr'] %}
                 <div class="nav-section">
@@ -304,6 +306,7 @@
 
                 <div class="topbar-right">
                     {% set notification_count = session.get('notification_count', 0) %}
+                    {% if account_role != 'store' %}
                     <a href="{{ url_for('hr_documents.my_documents') }}"
                        class="topbar-notification-bell {% if request.endpoint == 'hr_documents.my_documents' %}active{% endif %}"
                        title="Notifications"
@@ -313,8 +316,9 @@
                         <span class="topbar-notification-badge">{{ notification_count }}</span>
                         {% endif %}
                     </a>
+                    {% endif %}
 
-                    {% if access_role in ['admin', 'supervisor', 'manager'] %}
+                    {% if access_role in ['admin', 'supervisor', 'manager'] and account_role != 'store' %}
                     <a href="{{ url_for('dashboard.admin_center') }}"
                        class="topbar-admin-gear {% if request.endpoint == 'dashboard.admin_center'
                                   or request.endpoint in [

@@ -22,6 +22,7 @@
 
 {% macro account_role_label(role) -%}
     {%- if role == 'general_manager' -%}General Manager
+    {%- elif role == 'store' -%}Store
     {%- elif role == 'tm' -%}TM
     {%- else -%}{{ role|replace('_', ' ')|title }}
     {%- endif -%}
@@ -702,7 +703,7 @@
                 </h3>
                 <div class="area-subtitle">
                     {% if can_manage_all %}
-                        Add a new General Manager, Manager, TM, Supervisor, Maintenance, HR, Payroll, or Admin
+                        Add a new Store, General Manager, Manager, TM, Supervisor, Maintenance, HR, Payroll, or Admin
                     {% else %}
                         Add a new Driver or CSR login for store {{ gm_store }}
                     {% endif %}
@@ -744,6 +745,7 @@
                         <select id="create_role" name="role" required onchange="toggleCreateFields()">
                             <option value="general_manager">General Manager</option>
                             <option value="manager">Manager</option>
+                            <option value="store">Store</option>
                             <option value="tm">TM</option>
                             <option value="supervisor">Supervisor</option>
                             <option value="maintenance">Maintenance</option>
@@ -912,6 +914,7 @@
                 <option value="supervisor">Supervisor</option>
                 <option value="general_manager">General Manager</option>
                 <option value="manager">Manager</option>
+                            <option value="store">Store</option>
                 <option value="maintenance">Maintenance</option>
                 <option value="tm">TM</option>
             </select>
@@ -921,6 +924,7 @@
                 <option value="csr">CSR</option>
                 <option value="driver">Driver</option>
                 <option value="manager">Manager</option>
+                            <option value="store">Store</option>
                 <option value="mit">MIT / Shift Runner</option>
             </select>
 

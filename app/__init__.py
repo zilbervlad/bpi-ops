@@ -9,6 +9,7 @@ from app.labels import labels_bp
 from app.perks.routes import perks_bp
 from app.perks.api_routes import perks_api_bp
 from app.doughy.api_routes import doughy_api_bp
+from app.services.module_access_service import install_module_access
 import gzip
 
 
@@ -193,6 +194,8 @@ def create_app():
     app.register_blueprint(doughy_daily_brief_bp)
     app.register_blueprint(academy_bp)
     app.register_blueprint(mit_sts_bp)
+
+    install_module_access(app)
 
     @app.route("/create-db")
     def create_db():

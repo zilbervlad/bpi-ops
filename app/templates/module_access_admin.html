@@ -1,231 +1,387 @@
 {% extends "base.html" %}
 
-{% block title %}Module Access · BPI Ops{% endblock %}
-{% block header %}Module Access{% endblock %}
+{% block title %}Module & Email Access · BPI Ops{% endblock %}
+{% block header %}Module & Email Access{% endblock %}
 
 {% block content %}
 <style>
-    .module-access-shell {
-        display: grid;
-        gap: 16px;
-    }
-
-    .module-access-hero {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 16px;
-        padding-bottom: 14px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-    }
-
-    .module-access-hero h2 {
-        margin: 0;
-        color: #f8fafc;
-        font-size: 24px;
-        letter-spacing: -0.045em;
-    }
-
-    .module-access-hero p {
-        margin: 6px 0 0;
-        color: rgba(203, 213, 225, 0.66);
-        font-size: 13px;
-        font-weight: 750;
-    }
-
-    .module-group-card {
-        border: 1px solid rgba(148, 163, 184, 0.12);
-        background: rgba(15, 23, 42, 0.58);
-        border-radius: 18px;
-        overflow: hidden;
-    }
-
-    .module-group-head {
-        padding: 13px 15px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.10);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .module-group-head h3 {
-        margin: 0;
-        color: #f8fafc;
-        font-size: 15px;
-        letter-spacing: -0.02em;
-    }
-
-    .module-access-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .module-access-table th,
-    .module-access-table td {
-        border-bottom: 1px solid rgba(148, 163, 184, 0.08);
-        padding: 9px 10px;
-        text-align: center;
-        vertical-align: middle;
-    }
-
-    .module-access-table th:first-child,
-    .module-access-table td:first-child {
-        text-align: left;
-        min-width: 210px;
-    }
-
-    .module-access-table th {
-        color: rgba(148, 163, 184, 0.80);
-        font-size: 10px;
-        font-weight: 950;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        background: rgba(2, 6, 23, 0.20);
-    }
-
-    .module-access-table tr:last-child td {
-        border-bottom: none;
-    }
-
-    .module-name {
-        color: #f8fafc;
-        font-size: 13px;
-        font-weight: 950;
-    }
-
-    .module-key {
-        margin-top: 3px;
-        color: rgba(148, 163, 184, 0.68);
-        font-size: 10px;
-        font-weight: 750;
-    }
-
-    .module-check {
-        width: 18px;
-        height: 18px;
-        accent-color: #2563eb;
-    }
-
-    .module-enabled-cell {
-        width: 80px;
-    }
-
-    .module-save-bar {
-        position: sticky;
-        bottom: 12px;
-        z-index: 5;
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 16px;
-    }
-
-    .module-save-inner {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px;
-        border-radius: 999px;
-        background: rgba(2, 6, 23, 0.82);
-        border: 1px solid rgba(148, 163, 184, 0.16);
-        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
-        backdrop-filter: blur(14px);
-    }
-
-    @media (max-width: 980px) {
-        .module-access-table-wrap {
-            overflow-x: auto;
-        }
-
-        .module-access-table {
-            min-width: 880px;
-        }
-
-        .module-access-hero {
-            align-items: flex-start;
-            flex-direction: column;
-        }
-    }
+.ma-shell{display:grid;gap:14px;max-width:1720px;margin:0 auto;padding-bottom:96px}
+.ma-hero{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:18px 20px;border:1px solid rgba(148,163,184,.14);border-radius:18px;background:radial-gradient(circle at top right,rgba(37,99,235,.16),transparent 34%),rgba(15,23,42,.78)}
+.ma-hero h2{margin:0;color:#f8fafc;font-size:25px;letter-spacing:-.04em}
+.ma-hero p{margin:6px 0 0;color:#94a3b8;font-size:13px;line-height:1.5;max-width:760px}
+.ma-status{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.ma-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.14);background:rgba(2,6,23,.34);color:#cbd5e1;font-size:10px;font-weight:850}
+.ma-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.13)}
+.ma-toolbar{display:grid;grid-template-columns:minmax(240px,1fr) 210px auto;gap:10px;padding:10px;border:1px solid rgba(148,163,184,.14);border-radius:15px;background:rgba(2,6,23,.78)}
+.ma-search,.ma-select{min-height:42px;border:1px solid rgba(148,163,184,.18);border-radius:11px;background:rgba(15,23,42,.92);color:#f8fafc;padding:0 12px;font-size:13px;font-weight:750}
+.ma-tabs{display:flex;gap:6px;padding:4px;border:1px solid rgba(148,163,184,.12);border-radius:12px;background:rgba(15,23,42,.72)}
+.ma-tab{border:0;border-radius:9px;padding:0 12px;background:transparent;color:#94a3b8;font-size:11px;font-weight:900;cursor:pointer}
+.ma-tab.active{background:#2563eb;color:#fff}
+.ma-workspace{display:grid;grid-template-columns:250px minmax(0,1fr) 390px;gap:14px;align-items:start;min-height:650px}
+.ma-sidebar{border:1px solid rgba(148,163,184,.13);border-radius:16px;background:rgba(15,23,42,.6);padding:10px;position:sticky;top:10px}
+.ma-sidebar-title{padding:8px 10px;color:#64748b;font-size:9px;font-weight:950;letter-spacing:.11em;text-transform:uppercase}
+.ma-folder{width:100%;display:flex;align-items:center;gap:10px;border:0;border-radius:11px;padding:10px 11px;background:transparent;color:#cbd5e1;text-align:left;cursor:pointer;font-size:12px;font-weight:850}
+.ma-folder:hover{background:rgba(30,41,59,.72);color:#fff}
+.ma-folder.active{background:linear-gradient(135deg,rgba(37,99,235,.28),rgba(37,99,235,.12));color:#fff;box-shadow:inset 0 0 0 1px rgba(59,130,246,.24)}
+.ma-folder-icon{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:rgba(30,41,59,.82);font-size:13px}
+.ma-folder-count{margin-left:auto;color:#64748b;font-size:10px}
+.ma-subfolder{padding-left:20px;font-size:11px}
+.ma-content{display:grid;gap:12px}
+.ma-content-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 15px;border:1px solid rgba(148,163,184,.13);border-radius:15px;background:rgba(15,23,42,.58)}
+.ma-content-head h3{margin:0;color:#f8fafc;font-size:17px}
+.ma-content-head p{margin:4px 0 0;color:#64748b;font-size:11px}
+.ma-breadcrumb{color:#93c5fd;font-size:10px;font-weight:850;margin-bottom:4px}
+.ma-content-actions{display:flex;gap:7px}
+.ma-small-btn{border:1px solid rgba(148,163,184,.14);border-radius:9px;padding:7px 9px;background:rgba(30,41,59,.72);color:#cbd5e1;font-size:10px;font-weight:850;cursor:pointer}
+.ma-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ma-card{min-height:132px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;padding:14px;border:1px solid rgba(148,163,184,.12);border-radius:15px;background:rgba(15,23,42,.58);cursor:pointer;transition:.16s ease}
+.ma-card:hover{transform:translateY(-1px);border-color:rgba(59,130,246,.36);background:rgba(18,30,50,.78)}
+.ma-card.selected{border-color:rgba(59,130,246,.62);box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+.ma-card.is-off{opacity:.58}
+.ma-card h4{margin:0;color:#f8fafc;font-size:14px}
+.ma-key{margin-top:4px;color:#64748b;font-size:10px}
+.ma-role-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:11px}
+.ma-role-chip{padding:4px 7px;border-radius:999px;background:rgba(37,99,235,.12);color:#93c5fd;border:1px solid rgba(37,99,235,.17);font-size:9px;font-weight:850}
+.ma-more{padding:4px 7px;border-radius:999px;background:rgba(148,163,184,.08);color:#94a3b8;font-size:9px;font-weight:850}
+.ma-live{min-width:54px;text-align:center;padding:5px 7px;border-radius:999px;font-size:9px;font-weight:950;letter-spacing:.05em;text-transform:uppercase}
+.ma-live.on{background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.2)}
+.ma-live.off{background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.18)}
+.ma-inspector{position:sticky;top:10px;border:1px solid rgba(148,163,184,.13);border-radius:16px;background:linear-gradient(180deg,rgba(18,30,50,.96),rgba(15,23,42,.96));min-height:470px;overflow:hidden}
+.ma-inspector-empty{display:grid;place-items:center;min-height:470px;padding:30px;text-align:center;color:#64748b}
+.ma-inspector-empty strong{display:block;color:#cbd5e1;font-size:14px;margin-bottom:6px}
+.ma-inspector-panel{display:none}
+.ma-inspector-panel.active{display:block}
+.ma-inspector-head{padding:16px;border-bottom:1px solid rgba(148,163,184,.09);background:rgba(2,6,23,.25)}
+.ma-inspector-head h3{margin:0;color:#f8fafc;font-size:18px}
+.ma-inspector-sub{margin-top:4px;color:#64748b;font-size:10px}
+.ma-inspector-body{padding:16px}
+.ma-switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid rgba(148,163,184,.08)}
+.ma-switch-label strong{display:block;color:#f8fafc;font-size:12px}
+.ma-switch-label span{display:block;color:#64748b;font-size:10px;margin-top:3px;line-height:1.4}
+.ma-role-grid{display:grid;grid-template-columns:1fr;gap:7px;margin-top:10px}
+.ma-role-toggle{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid rgba(148,163,184,.12);border-radius:11px;background:rgba(2,6,23,.28);color:#cbd5e1;font-size:11px;font-weight:800}
+.ma-role-toggle input{width:17px;height:17px;accent-color:#2563eb}
+.ma-warning{display:none;margin-top:12px;padding:10px 11px;border-radius:11px;border:1px solid rgba(245,158,11,.22);background:rgba(245,158,11,.08);color:#fcd34d;font-size:10px;font-weight:800;line-height:1.45}
+.ma-warning.show{display:block}
+.ma-savebar{position:fixed;left:max(24px,calc(var(--sidebar-width,0px) + 24px));right:150px;bottom:18px;z-index:70;display:flex;justify-content:center;pointer-events:none}
+.ma-saveinner{pointer-events:auto;display:flex;align-items:center;gap:12px;padding:9px 10px 9px 14px;border:1px solid rgba(148,163,184,.18);border-radius:999px;background:rgba(2,6,23,.94);box-shadow:0 18px 46px rgba(0,0,0,.38)}
+.ma-savemsg{color:#94a3b8;font-size:11px;font-weight:800}
+.ma-shell.dirty .ma-savemsg{color:#fbbf24}
+.ma-empty{display:none;padding:42px;text-align:center;color:#94a3b8;border:1px dashed rgba(148,163,184,.18);border-radius:14px}
+.ma-hidden{display:none!important}
+@media(max-width:1350px){.ma-workspace{grid-template-columns:220px minmax(0,1fr) 340px}.ma-grid{grid-template-columns:1fr}}
+@media(max-width:980px){.ma-workspace{grid-template-columns:220px minmax(0,1fr)}.ma-inspector{grid-column:1/-1;position:static}.ma-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.ma-hero{align-items:flex-start;flex-direction:column}.ma-toolbar{grid-template-columns:1fr}.ma-workspace{grid-template-columns:1fr}.ma-sidebar{position:static;display:flex;overflow-x:auto}.ma-folder{min-width:max-content}.ma-sidebar-title{display:none}.ma-grid{grid-template-columns:1fr}.ma-savebar{left:12px;right:12px}}
 </style>
 
-<div class="module-access-shell">
-    <section class="module-access-hero">
-        <div>
-            <h2>Module Access</h2>
-            <p>Choose which account roles should have access to each module. This first version controls setup; route enforcement will be connected module-by-module.</p>
-        </div>
-
-        <a href="{{ url_for('dashboard.admin_center') }}" class="btn-primary" style="text-decoration:none;">Back to Admin Center</a>
-    </section>
-
-    <form method="POST">
-        {% for group_name, settings in grouped_settings %}
-        <section class="module-group-card" style="margin-bottom: 14px;">
-            <div class="module-group-head">
-                <h3>{{ group_name }}</h3>
-                <span class="summary-pill">{{ settings|length }} Modules</span>
-            </div>
-
-            <div class="module-access-table-wrap">
-                <table class="module-access-table">
-                    <thead>
-                        <tr>
-                            <th>Module</th>
-                            <th>Enabled</th>
-                            {% for role_key, role_label in role_options %}
-                            <th>{{ role_label }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for setting in settings %}
-                        {% set allowed_roles = module_access_allowed_roles(setting) %}
-                        <tr>
-                            <td>
-                                <div class="module-name">{{ setting.module_label }}</div>
-                                <div class="module-key">{{ setting.module_key }}</div>
-                            </td>
-                            <td class="module-enabled-cell">
-                                <input
-                                    type="checkbox"
-                                    class="module-check"
-                                    name="enabled_{{ setting.module_key }}"
-                                    {% if setting.is_enabled %}checked{% endif %}
-                                    {% if setting.module_key == 'module_access' %}disabled{% endif %}
-                                >
-                                {% if setting.module_key == 'module_access' %}
-                                <input type="hidden" name="enabled_{{ setting.module_key }}" value="on">
-                                {% endif %}
-                            </td>
-                            {% for role_key, role_label in role_options %}
-                            <td>
-                                <input
-                                    type="checkbox"
-                                    class="module-check"
-                                    name="role_{{ setting.module_key }}_{{ role_key }}"
-                                    {% if role_key in allowed_roles %}checked{% endif %}
-                                    {% if setting.module_key == 'module_access' and role_key != 'admin' %}disabled{% endif %}
-                                    {% if setting.module_key == 'module_access' and role_key == 'admin' %}checked disabled{% endif %}
-                                >
-                                {% if setting.module_key == 'module_access' and role_key == 'admin' %}
-                                <input type="hidden" name="role_{{ setting.module_key }}_admin" value="on">
-                                {% endif %}
-                            </td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
-        {% endfor %}
-
-        <div class="module-save-bar">
-            <div class="module-save-inner">
-                <span class="summary-pill">Admin Only</span>
-                <button type="submit" class="btn-primary">Save Module Access</button>
-            </div>
-        </div>
-    </form>
+<div class="ma-shell" id="maShell">
+<section class="ma-hero">
+<div>
+<h2>Module & Email Access</h2>
+<p>Choose a folder, select a module, then edit access in the inspector. Changes control both the UI and direct URL access.</p>
+<div class="ma-status">
+<span class="ma-pill"><span class="ma-dot"></span>Backend enforced</span>
+<span class="ma-pill"><span class="ma-dot"></span>Navigation synced</span>
+<span class="ma-pill"><span class="ma-dot"></span>Admin protected</span>
 </div>
+</div>
+<a href="{{ url_for('dashboard.admin_center') }}" class="btn-primary" style="text-decoration:none;">Back to Admin Center</a>
+</section>
+
+<section class="ma-toolbar">
+<input id="maSearch" class="ma-search" type="search" placeholder="Search modules or email events...">
+<select id="maRoleFilter" class="ma-select">
+<option value="all">All roles</option>
+{% for role_key, role_label in role_options %}
+<option value="{{ role_key }}">{{ role_label }}</option>
+{% endfor %}
+</select>
+<div class="ma-tabs">
+<button type="button" class="ma-tab active" data-mode="all">All</button>
+<button type="button" class="ma-tab" data-mode="modules">Modules</button>
+<button type="button" class="ma-tab" data-mode="emails">Email Events</button>
+</div>
+</section>
+
+<form method="POST" id="maForm">
+<div class="ma-workspace">
+<aside class="ma-sidebar">
+<div class="ma-sidebar-title">Folders</div>
+
+{% for group_name, settings in grouped_settings if not group_name.startswith('Email ·') %}
+<button type="button" class="ma-folder {% if loop.first %}active{% endif %}" data-group="{{ group_name }}" data-kind="modules">
+<span class="ma-folder-icon">📁</span>
+<span>{{ group_name }}</span>
+<span class="ma-folder-count">{{ settings|length }}</span>
+</button>
+{% endfor %}
+
+<button type="button" class="ma-folder" data-group="Email Notifications" data-kind="emails">
+<span class="ma-folder-icon">✉</span>
+<span>Email Notifications</span>
+<span class="ma-folder-count">
+{% set ns = namespace(total=0) %}
+{% for group_name, settings in grouped_settings if group_name.startswith('Email ·') %}
+{% set ns.total = ns.total + settings|length %}
+{% endfor %}
+{{ ns.total }}
+</span>
+</button>
+
+{% for group_name, settings in grouped_settings if group_name.startswith('Email ·') %}
+<button type="button" class="ma-folder ma-subfolder ma-hidden" data-group="{{ group_name }}" data-kind="emails" data-email-child="1">
+<span class="ma-folder-icon">↳</span>
+<span>{{ group_name.replace('Email · ', '') }}</span>
+<span class="ma-folder-count">{{ settings|length }}</span>
+</button>
+{% endfor %}
+</aside>
+
+<main class="ma-content">
+{% for group_name, settings in grouped_settings %}
+<section class="ma-group-pane {% if not loop.first %}ma-hidden{% endif %}" data-group-pane="{{ group_name }}" data-kind="{{ 'emails' if group_name.startswith('Email ·') else 'modules' }}">
+<div class="ma-content-head">
+<div>
+<div class="ma-breadcrumb">{{ 'Email Notifications / ' if group_name.startswith('Email ·') else '' }}{{ group_name.replace('Email · ', '') }}</div>
+<h3>{{ group_name.replace('Email · ', '') }}</h3>
+<p>{{ settings|length }} {{ 'email events' if group_name.startswith('Email ·') else 'modules' }}</p>
+</div>
+<div class="ma-content-actions">
+<button type="button" class="ma-small-btn" data-enable-group="1">Enable all</button>
+<button type="button" class="ma-small-btn" data-disable-group="1">Disable all</button>
+</div>
+</div>
+
+<div class="ma-grid">
+{% for setting in settings %}
+{% set allowed_roles = module_access_allowed_roles(setting) %}
+<article class="ma-card {% if not setting.is_enabled %}is-off{% endif %}" data-search="{{ (setting.module_label ~ ' ' ~ setting.module_key ~ ' ' ~ group_name)|lower }}" data-setting="{{ setting.module_key }}">
+<div>
+<h4>{{ setting.module_label }}</h4>
+<div class="ma-key">{{ setting.module_key }}</div>
+<div class="ma-role-chips">
+{% for role_key, role_label in role_options %}
+{% if role_key in allowed_roles and loop.index <= 4 %}<span class="ma-role-chip">{{ role_label }}</span>{% endif %}
+{% endfor %}
+{% if allowed_roles|length > 4 %}<span class="ma-more">+{{ allowed_roles|length - 4 }} more</span>{% endif %}
+</div>
+</div>
+<span class="ma-live {{ 'on' if setting.is_enabled else 'off' }}">{{ 'On' if setting.is_enabled else 'Off' }}</span>
+</article>
+{% endfor %}
+</div>
+</section>
+{% endfor %}
+<div class="ma-empty" id="maEmpty">No matching modules or email events.</div>
+</main>
+
+<aside class="ma-inspector">
+<div class="ma-inspector-empty" id="maInspectorEmpty">
+<div><strong>Select a module</strong>Its permissions will open here.</div>
+</div>
+
+{% for group_name, settings in grouped_settings %}
+{% for setting in settings %}
+{% set allowed_roles = module_access_allowed_roles(setting) %}
+<section class="ma-inspector-panel" data-inspector="{{ setting.module_key }}">
+<div class="ma-inspector-head">
+<div class="ma-breadcrumb">{{ group_name }}</div>
+<h3>{{ setting.module_label }}</h3>
+<div class="ma-inspector-sub">{{ setting.module_key }}</div>
+</div>
+
+<div class="ma-inspector-body">
+<div class="ma-switch-row">
+<div class="ma-switch-label">
+<strong>Feature live</strong>
+<span>Turning this off hides the module and blocks direct access.</span>
+</div>
+<input type="checkbox" class="ma-enabled" name="enabled_{{ setting.module_key }}" {% if setting.is_enabled %}checked{% endif %} {% if setting.module_key == 'module_access' %}disabled{% endif %}>
+{% if setting.module_key == 'module_access' %}
+<input type="hidden" name="enabled_{{ setting.module_key }}" value="on">
+{% endif %}
+</div>
+
+<div class="ma-warning">This change will remove access for every role and hide the module from the UI.</div>
+
+<div class="ma-switch-label" style="margin-top:15px;">
+<strong>Allowed roles</strong>
+<span>These roles can access the module or receive this email event.</span>
+</div>
+
+<div class="ma-role-grid">
+{% for role_key, role_label in role_options %}
+<label class="ma-role-toggle">
+<input type="checkbox" class="ma-role-check" data-role="{{ role_key }}" name="role_{{ setting.module_key }}_{{ role_key }}"
+{% if role_key in allowed_roles %}checked{% endif %}
+{% if setting.module_key == 'module_access' and role_key not in ['admin','platform_admin'] %}disabled{% endif %}
+{% if setting.module_key == 'module_access' and role_key in ['admin','platform_admin'] %}checked disabled{% endif %}>
+<span>{{ role_label }}</span>
+</label>
+{% if setting.module_key == 'module_access' and role_key in ['admin','platform_admin'] %}
+<input type="hidden" name="role_{{ setting.module_key }}_{{ role_key }}" value="on">
+{% endif %}
+{% endfor %}
+</div>
+</div>
+</section>
+{% endfor %}
+{% endfor %}
+</aside>
+</div>
+
+<div class="ma-savebar">
+<div class="ma-saveinner">
+<span class="ma-savemsg">No unsaved changes</span>
+<button type="submit" class="btn-primary">Save Access Settings</button>
+</div>
+</div>
+</form>
+</div>
+
+<script>
+(function(){
+const shell=document.getElementById('maShell');
+const form=document.getElementById('maForm');
+const search=document.getElementById('maSearch');
+const roleFilter=document.getElementById('maRoleFilter');
+const empty=document.getElementById('maEmpty');
+const saveMsg=document.querySelector('.ma-savemsg');
+const inspectorEmpty=document.getElementById('maInspectorEmpty');
+let mode='all',dirty=false,currentGroup=null;
+
+function markDirty(){dirty=true;shell.classList.add('dirty');saveMsg.textContent='Unsaved changes';}
+
+function selectGroup(group){
+currentGroup=group;
+document.querySelectorAll('.ma-folder').forEach(x=>x.classList.toggle('active',x.dataset.group===group));
+document.querySelectorAll('.ma-group-pane').forEach(x=>x.classList.toggle('ma-hidden',x.dataset.groupPane!==group));
+document.querySelectorAll('.ma-card').forEach(x=>x.classList.remove('selected'));
+document.querySelectorAll('.ma-inspector-panel').forEach(x=>x.classList.remove('active'));
+inspectorEmpty.style.display='grid';
+refresh();
+}
+
+function refresh(){
+const q=(search.value||'').trim().toLowerCase();
+const role=roleFilter.value;
+let any=false;
+
+const emailParent=document.querySelector('[data-group="Email Notifications"]');
+const activeEmailChild=document.querySelector('.ma-folder[data-email-child].active');
+const emailSectionOpen=!!(emailParent&&emailParent.classList.contains('active'))||!!activeEmailChild;
+
+document.querySelectorAll('.ma-folder[data-kind]').forEach(folder=>{
+if(folder.dataset.group==='Email Notifications'){
+const parentKindOk=mode==='all'||mode==='emails';
+folder.classList.toggle('ma-hidden',!parentKindOk);
+return;
+}
+const kindOk=mode==='all'||folder.dataset.kind===mode;
+const hideEmailChild=folder.hasAttribute('data-email-child')&&!emailSectionOpen;
+folder.classList.toggle('ma-hidden',!kindOk||hideEmailChild);
+});
+
+document.querySelectorAll('.ma-card').forEach(card=>{
+const inspector=document.querySelector('[data-inspector="'+CSS.escape(card.dataset.setting)+'"]');
+let roleOk=true;
+if(role!=='all'){
+const box=inspector.querySelector('.ma-role-check[data-role="'+role+'"]');
+roleOk=!!(box&&box.checked);
+}
+const show=card.dataset.search.includes(q)&&roleOk;
+card.classList.toggle('ma-hidden',!show);
+if(show&&!card.closest('.ma-group-pane').classList.contains('ma-hidden'))any=true;
+});
+empty.style.display=any?'none':'block';
+}
+
+document.querySelectorAll('.ma-folder').forEach(btn=>btn.addEventListener('click',()=>{
+if(btn.dataset.group==='Email Notifications'){
+mode='emails';
+document.querySelectorAll('.ma-tab').forEach(tab=>{
+tab.classList.toggle('active',tab.dataset.mode==='emails');
+});
+document.querySelectorAll('[data-email-child]').forEach(x=>x.classList.remove('ma-hidden'));
+const first=document.querySelector('[data-email-child]');
+if(first){
+selectGroup(first.dataset.group);
+first.classList.add('active');
+}
+btn.classList.add('active');
+document.querySelectorAll('[data-email-child]').forEach(x=>x.classList.remove('ma-hidden'));
+refresh();
+return;
+}
+
+if(btn.hasAttribute('data-email-child')){
+mode='emails';
+document.querySelectorAll('.ma-tab').forEach(tab=>{
+tab.classList.toggle('active',tab.dataset.mode==='emails');
+});
+selectGroup(btn.dataset.group);
+document.querySelector('[data-group="Email Notifications"]').classList.add('active');
+btn.classList.add('active');
+document.querySelectorAll('[data-email-child]').forEach(x=>x.classList.remove('ma-hidden'));
+refresh();
+return;
+}
+
+selectGroup(btn.dataset.group);
+}));
+
+document.querySelectorAll('.ma-card').forEach(card=>card.addEventListener('click',()=>{
+document.querySelectorAll('.ma-card').forEach(x=>x.classList.remove('selected'));
+card.classList.add('selected');
+document.querySelectorAll('.ma-inspector-panel').forEach(x=>x.classList.remove('active'));
+const panel=document.querySelector('[data-inspector="'+CSS.escape(card.dataset.setting)+'"]');
+panel.classList.add('active');
+inspectorEmpty.style.display='none';
+}));
+
+document.querySelectorAll('.ma-enabled').forEach(box=>box.addEventListener('change',()=>{
+const panel=box.closest('.ma-inspector-panel');
+const key=panel.dataset.inspector;
+const card=document.querySelector('[data-setting="'+CSS.escape(key)+'"]');
+card.classList.toggle('is-off',!box.checked);
+const live=card.querySelector('.ma-live');
+live.classList.toggle('on',box.checked);
+live.classList.toggle('off',!box.checked);
+live.textContent=box.checked?'On':'Off';
+panel.querySelector('.ma-warning').classList.toggle('show',!box.checked);
+markDirty();
+}));
+
+document.querySelectorAll('.ma-role-check').forEach(box=>box.addEventListener('change',()=>{markDirty();refresh();}));
+
+document.querySelectorAll('[data-enable-group]').forEach(btn=>btn.addEventListener('click',()=>{
+btn.closest('.ma-group-pane').querySelectorAll('.ma-card').forEach(card=>{
+const box=document.querySelector('[data-inspector="'+CSS.escape(card.dataset.setting)+'"] .ma-enabled:not(:disabled)');
+if(box&&!box.checked){box.checked=true;box.dispatchEvent(new Event('change'));}
+});
+}));
+
+document.querySelectorAll('[data-disable-group]').forEach(btn=>btn.addEventListener('click',()=>{
+if(!window.confirm('Disable every item in this folder? This will hide them and block direct access for all users.'))return;
+btn.closest('.ma-group-pane').querySelectorAll('.ma-card').forEach(card=>{
+const box=document.querySelector('[data-inspector="'+CSS.escape(card.dataset.setting)+'"] .ma-enabled:not(:disabled)');
+if(box&&box.checked){box.checked=false;box.dispatchEvent(new Event('change'));}
+});
+}));
+
+document.querySelectorAll('.ma-tab').forEach(btn=>btn.addEventListener('click',()=>{
+mode=btn.dataset.mode;
+document.querySelectorAll('.ma-tab').forEach(x=>x.classList.toggle('active',x===btn));
+refresh();
+}));
+
+search.addEventListener('input',refresh);
+roleFilter.addEventListener('change',refresh);
+form.addEventListener('submit',()=>{dirty=false;saveMsg.textContent='Saving...';});
+window.addEventListener('beforeunload',e=>{if(!dirty)return;e.preventDefault();e.returnValue='';});
+
+const first=document.querySelector('.ma-folder[data-kind="modules"]');
+if(first)selectGroup(first.dataset.group);
+})();
+</script>
 {% endblock %}

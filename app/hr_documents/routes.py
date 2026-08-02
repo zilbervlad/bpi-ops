@@ -38,11 +38,11 @@ def current_account_role():
 
 
 def can_view_hr_documents():
-    return current_account_role() in {"admin", "hr", "supervisor"}
+    return current_account_role() in {"admin", "hr", "payroll", "supervisor"}
 
 
 def can_manage_hr_documents():
-    return current_account_role() in {"admin", "hr"}
+    return current_account_role() in {"admin", "hr", "payroll"}
 
 
 def current_user():
@@ -161,6 +161,13 @@ def user_can_access_document(document):
 
 def recipient_query_for_target(target_mode, form):
     query = User.query.filter_by(is_active=True)
+
+    # Supervisors may only select recipients from stores in their assigned area.
+    visible_stores = supervisor_visible_store_numbers()
+    if visible_stores is not None:
+        if not visible_stores:
+            return query.filter(False)
+        query = query.filter(User.store_number.in_(visible_stores))
 
     if target_mode == "all":
         return query
@@ -464,7 +471,7 @@ Boston Pie, Inc.
 
 @hr_documents_bp.route("/")
 @login_required
-@role_required("admin", "hr", "supervisor")
+@role_required("admin", "hr", "payroll", "supervisor")
 def index():
     status_filter = request.args.get("status", "active").strip()
 
@@ -554,7 +561,7 @@ def index():
 
 @hr_documents_bp.route("/new", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "hr")
+@role_required("admin", "hr", "payroll")
 def new_document():
     users = User.query.filter_by(is_active=True).order_by(User.name.asc()).all()
     stores = Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
@@ -567,6 +574,7 @@ def new_document():
         ("tm", "TM"),
         ("maintenance", "Maintenance"),
         ("hr", "HR"),
+        ("payroll", "Payroll"),
     ]
 
     positions = [
@@ -687,7 +695,7 @@ def my_documents():
 
 @hr_documents_bp.route("/<int:document_id>")
 @login_required
-@role_required("admin", "hr", "supervisor")
+@role_required("admin", "hr", "payroll", "supervisor")
 def detail(document_id):
     document = HRDocument.query.get_or_404(document_id)
 
@@ -760,7 +768,7 @@ def detail(document_id):
 
 @hr_documents_bp.route("/<int:document_id>/archive", methods=["POST"])
 @login_required
-@role_required("admin", "hr")
+@role_required("admin", "hr", "payroll")
 def archive_document(document_id):
     document = HRDocument.query.get_or_404(document_id)
     document.is_active = False
@@ -772,7 +780,7 @@ def archive_document(document_id):
 
 @hr_documents_bp.route("/<int:document_id>/restore", methods=["POST"])
 @login_required
-@role_required("admin", "hr")
+@role_required("admin", "hr", "payroll")
 def restore_document(document_id):
     document = HRDocument.query.get_or_404(document_id)
     document.is_active = True
@@ -784,12 +792,24 @@ def restore_document(document_id):
 
 @hr_documents_bp.route("/<int:document_id>/add-recipients", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "hr", "supervisor")
+@role_required("admin", "hr", "payroll", "supervisor")
 def add_recipients(document_id):
     document = HRDocument.query.get_or_404(document_id)
 
-    users = User.query.filter_by(is_active=True).order_by(User.name.asc()).all()
-    stores = Store.query.filter_by(is_active=True).order_by(Store.store_number.asc()).all()
+    user_query = User.query.filter_by(is_active=True)
+    store_query = Store.query.filter_by(is_active=True)
+
+    visible_stores = supervisor_visible_store_numbers()
+    if visible_stores is not None:
+        if not visible_stores:
+            user_query = user_query.filter(False)
+            store_query = store_query.filter(False)
+        else:
+            user_query = user_query.filter(User.store_number.in_(visible_stores))
+            store_query = store_query.filter(Store.store_number.in_(visible_stores))
+
+    users = user_query.order_by(User.name.asc()).all()
+    stores = store_query.order_by(Store.store_number.asc()).all()
 
     roles = [
         ("admin", "Admin"),
@@ -799,6 +819,7 @@ def add_recipients(document_id):
         ("tm", "TM"),
         ("maintenance", "Maintenance"),
         ("hr", "HR"),
+        ("payroll", "Payroll"),
     ]
 
     positions = [
@@ -853,13 +874,19 @@ def add_recipients(document_id):
 
 @hr_documents_bp.route("/<int:document_id>/resend/<int:recipient_id>", methods=["POST"])
 @login_required
-@role_required("admin", "hr", "supervisor")
+@role_required("admin", "hr", "payroll", "supervisor")
 def resend_document_email(document_id, recipient_id):
     document = HRDocument.query.get_or_404(document_id)
     recipient = HRDocumentRecipient.query.get_or_404(recipient_id)
 
     if recipient.document_id != document.id:
         abort(404)
+
+    visible_stores = supervisor_visible_store_numbers()
+    if visible_stores is not None:
+        recipient_store = getattr(recipient.user, "store_number", None)
+        if not recipient_store or recipient_store not in visible_stores:
+            abort(403)
 
     if recipient.status == "acknowledged":
         flash("This user already acknowledged the document.", "error")
@@ -876,14 +903,16 @@ def resend_document_email(document_id, recipient_id):
 
 @hr_documents_bp.route("/<int:document_id>/resend-pending", methods=["POST"])
 @login_required
-@role_required("admin", "hr", "supervisor")
+@role_required("admin", "hr", "payroll", "supervisor")
 def resend_pending_document_emails(document_id):
     document = HRDocument.query.get_or_404(document_id)
 
-    recipients = HRDocumentRecipient.query.filter(
-        HRDocumentRecipient.document_id == document.id,
+    recipients = scoped_recipient_query(document.id).filter(
         HRDocumentRecipient.status != "acknowledged",
     ).all()
+
+    if current_account_role() == "supervisor" and not recipients:
+        abort(403)
 
     sent_count, failed_count = send_hr_document_emails_bulk(document, recipients)
     notify_hr_document_recipients_connect(document, recipients)
@@ -896,7 +925,7 @@ def resend_pending_document_emails(document_id):
 
 @hr_documents_bp.route("/<int:document_id>/export")
 @login_required
-@role_required("admin", "hr", "supervisor")
+@role_required("admin", "hr", "payroll", "supervisor")
 def export_document_tracking(document_id):
     document = HRDocument.query.get_or_404(document_id)
 

@@ -160,10 +160,16 @@
 <h4>{{ setting.module_label }}</h4>
 <div class="ma-key">{{ setting.module_key }}</div>
 <div class="ma-role-chips">
+{% set role_ns = namespace(shown=0) %}
 {% for role_key, role_label in role_options %}
-{% if role_key in allowed_roles and loop.index <= 4 %}<span class="ma-role-chip">{{ role_label }}</span>{% endif %}
+{% if role_key in allowed_roles and role_ns.shown < 4 %}
+<span class="ma-role-chip">{{ role_label }}</span>
+{% set role_ns.shown = role_ns.shown + 1 %}
+{% endif %}
 {% endfor %}
-{% if allowed_roles|length > 4 %}<span class="ma-more">+{{ allowed_roles|length - 4 }} more</span>{% endif %}
+{% if allowed_roles|length > role_ns.shown %}
+<span class="ma-more">+{{ allowed_roles|length - role_ns.shown }} more</span>
+{% endif %}
 </div>
 </div>
 <span class="ma-live {{ 'on' if setting.is_enabled else 'off' }}">{{ 'On' if setting.is_enabled else 'Off' }}</span>

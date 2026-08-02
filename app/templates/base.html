@@ -59,26 +59,32 @@
                 <div class="nav-section">
                     <div class="nav-section-label">Command</div>
 
+                    {% if can_access_module('dashboard') %}
                     <a href="{{ url_for('dashboard.home') }}"
                        class="{% if request.endpoint == 'dashboard.home' %}active{% endif %}">
                         <span class="nav-icon">⌁</span>
                         <span>Dashboard</span>
                     </a>
+                    {% endif %}
 
                     {% if account_role not in ['admin', 'hr', 'store'] %}
+                    {% if can_access_module('hr_documents') %}
                     <a href="{{ url_for('hr_documents.my_documents') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('hr_documents') and request.endpoint != 'hr_documents.index' and request.endpoint != 'hr_documents.new_document' and request.endpoint != 'hr_documents.detail' %}active{% endif %}">
                         <span class="nav-icon">◨</span>
                         <span>My Documents</span>
                     </a>
                     {% endif %}
+                    {% endif %}
 
                     {% if access_role in ['admin', 'supervisor', 'manager'] %}
+                    {% if can_access_module('store_dashboard') %}
                     <a href="{{ url_for('store_dashboard.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('store_dashboard') %}active{% endif %}">
                         <span class="nav-icon">▦</span>
                         <span>Store Dashboard</span>
                     </a>
+                    {% endif %}
                     {% endif %}
                 </div>
 
@@ -86,17 +92,21 @@
                 <div class="nav-section">
                     <div class="nav-section-label">My Shift</div>
 
+                    {% if can_access_module('dwp') %}
                     <a href="{{ url_for('dwp.my_dwp') }}"
                        class="{% if request.endpoint == 'dwp.my_dwp' or request.endpoint == 'dwp.detail' %}active{% endif %}">
                         <span class="nav-icon">◇</span>
                         <span>My DWP</span>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('shift_todos') %}
                     <a href="{{ url_for('shift_todos.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
                         <span class="nav-icon">✓</span>
                         <span>My To-Dos</span>
                     </a>
+                    {% endif %}
                 </div>
                 {% endif %}
 
@@ -105,59 +115,75 @@
                     <div class="nav-section-label">Daily Ops</div>
 
                     {% if access_role in ['admin', 'supervisor'] %}
+                    {% if can_access_module('checklist') %}
                     <a href="{{ url_for('checklist.overview') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('checklist') and request.endpoint != 'checklist.admin' %}active{% endif %}">
                         <span class="nav-icon">☑</span>
                         <span>Checklist</span>
                     </a>
+                    {% endif %}
                     {% else %}
+                    {% if can_access_module('checklist') %}
                     <a href="{{ url_for('checklist.index') }}"
                        class="{% if request.endpoint == 'checklist.index' %}active{% endif %}">
                         <span class="nav-icon">☑</span>
                         <span>Checklist</span>
                     </a>
                     {% endif %}
+                    {% endif %}
 
+                    {% if can_access_module('forms') %}
                     <a href="{{ url_for('forms.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('forms') and request.endpoint not in ['forms.admin', 'forms.edit_template'] %}active{% endif %}">
                         <span class="nav-icon">□</span>
                         <span>Forms</span>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('prep') %}
                     <a href="{{ url_for('prep.index') }}"
                        class="{% if request.endpoint == 'prep.index' %}active{% endif %}">
                         <span class="nav-icon">◫</span>
                         <span>Prep</span>
                     </a>
+                    {% endif %}
 
                     {% if access_role == 'manager' %}
+                    {% if can_access_module('cash') %}
                     <a href="{{ url_for('cash.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('cash') and not request.endpoint.startswith('cash_review') %}active{% endif %}">
                         <span class="nav-icon">$</span>
                         <span>Cash</span>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('nightly_numbers') %}
                     <a href="{{ url_for('nightly_numbers.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('nightly_numbers') and request.endpoint != 'nightly_numbers.admin' %}active{% endif %}">
                         <span class="nav-icon">#</span>
                         <span>Nightly #s</span>
                     </a>
                     {% endif %}
+                    {% endif %}
 
                     {% if access_role in ['admin', 'supervisor', 'general_manager'] %}
+                    {% if can_access_module('cash_review') %}
                     <a href="{{ url_for('cash_review.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('cash_review') %}active{% endif %}">
                         <span class="nav-icon">$</span>
                         <span>Cash Review</span>
                     </a>
                     {% endif %}
+                    {% endif %}
 
                     {% if access_role in ['admin', 'supervisor', 'manager'] %}
+                    {% if can_access_module('shift_todos') %}
                     <a href="{{ url_for('shift_todos.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
                         <span class="nav-icon">↳</span>
                         <span>Shift To-Dos</span>
                     </a>
+                    {% endif %}
                     {% endif %}
                 </div>
                 {% endif %}
@@ -166,11 +192,13 @@
                 <div class="nav-section">
                     <div class="nav-section-label">Development</div>
 
+                    {% if can_access_module('academy') %}
                     <a href="{{ url_for('academy.index') }}"
                        class="{% if request.endpoint and (request.endpoint == 'academy.index' or request.endpoint.startswith('mit_sts.')) %}active{% endif %}">
                         <span class="nav-icon">🎓</span>
                         <span>BPI Academy</span>
                     </a>
+                    {% endif %}
                 </div>
                 {% endif %}
 
@@ -179,47 +207,59 @@
                     <div class="nav-section-label">Review</div>
 
                     {% if access_role in ['admin', 'supervisor'] %}
+                    {% if can_access_module('reports') %}
                     <a href="{{ url_for('reports.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('reports') %}active{% endif %}">
                         <span class="nav-icon">↗</span>
                         <span>Reports</span>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('svr') %}
                     <a href="{{ url_for('svr.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('svr') and request.endpoint != 'svr.admin' %}active{% endif %}">
                         <span class="nav-icon">◎</span>
                         <span>SVR</span>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('verification') %}
                     <a href="{{ url_for('verification.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('verification') and request.endpoint != 'verification.admin' %}active{% endif %}">
                         <span class="nav-icon">◇</span>
                         <span>Verification</span>
                     </a>
                     {% endif %}
+                    {% endif %}
 
                     {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager', 'maintenance'] %}
+                    {% if can_access_module('maintenance') %}
                     <a href="{{ url_for('maintenance.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('maintenance') and request.endpoint not in ['maintenance.time_card', 'maintenance.time_cards', 'maintenance.time_cards_pdf'] %}active{% endif %}">
                         <span class="nav-icon">⚙</span>
                         <span>Maintenance</span>
                     </a>
                     {% endif %}
+                    {% endif %}
 
                     {% if access_role in ['admin', 'supervisor', 'manager', 'general_manager'] %}
+                    {% if can_access_module('labels') %}
                     <a href="{{ url_for('labels.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('labels') %}active{% endif %}">
                         <span class="nav-icon">🏷</span>
                         <span>BPI Labels</span>
                     </a>
                     {% endif %}
+                    {% endif %}
 
                     {% if access_role in ['admin', 'maintenance', 'hr'] %}
+                    {% if can_access_module('maintenance_time_cards') %}
                     <a href="{{ url_for('maintenance.time_cards') }}"
                        class="{% if request.endpoint in ['maintenance.time_card', 'maintenance.time_cards', 'maintenance.time_cards_pdf'] %}active{% endif %}">
                         <span class="nav-icon">◷</span>
                         <span>Time Cards</span>
                     </a>
+                    {% endif %}
                     {% endif %}
                 </div>
                 {% endif %}
@@ -229,11 +269,13 @@
                 <div class="nav-section">
                     <div class="nav-section-label">People</div>
 
+                    {% if can_access_module('dwp') %}
                     <a href="{{ url_for('dwp.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('dwp') %}active{% endif %}">
                         <span class="nav-icon">◇</span>
                         <span>DWP</span>
                     </a>
+                    {% endif %}
                 </div>
                 {% endif %}
 
@@ -242,36 +284,46 @@
                     <div class="nav-section-label">People & HR</div>
 
                     {% if account_role in ['admin', 'hr', 'supervisor'] %}
+                    {% if can_access_module('hr_documents') %}
                     <a href="{{ url_for('hr_documents.index') }}"
                        class="{% if request.endpoint in ['hr_documents.index', 'hr_documents.new_document', 'hr_documents.detail'] %}active{% endif %}">
                         <span class="nav-icon">◆</span>
                         <span>HR Documents</span>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('dwp') %}
                     <a href="{{ url_for('dwp.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('dwp') %}active{% endif %}">
                         <span class="nav-icon">◇</span>
                         <span>DWP</span>
                     </a>
                     {% endif %}
+                    {% endif %}
 
+                    {% if can_access_module('forms_admin') %}
                     <a href="{{ url_for('forms.admin') }}"
                        class="{% if request.endpoint in ['forms.admin', 'forms.edit_template'] %}active{% endif %}">
                         <span class="nav-icon">□</span>
                         <span>Forms</span>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('registration_requests') %}
                     <a href="{{ url_for('auth.registration_requests') }}"
                        class="{% if request.endpoint == 'auth.registration_requests' %}active{% endif %}">
                         <span class="nav-icon">＋</span>
                         <span>Registrations</span>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('registration_qr') %}
                     <a href="{{ url_for('auth.registration_qr_center') }}"
                        class="{% if request.endpoint == 'auth.registration_qr_center' %}active{% endif %}">
                         <span class="nav-icon">▣</span>
                         <span>QR Center</span>
                     </a>
+                    {% endif %}
                 </div>
                 {% endif %}
 
@@ -307,6 +359,7 @@
 
                 <div class="topbar-right">
                     {% if access_role in ['admin', 'supervisor', 'manager'] and account_role != 'store' %}
+                    {% if can_access_module('admin_center') %}
                     <a href="{{ url_for('dashboard.admin_center') }}"
                        class="topbar-admin-gear {% if request.endpoint == 'dashboard.admin_center'
                                   or request.endpoint in [
@@ -325,6 +378,7 @@
                        aria-label="Admin Center">
                         ⚙
                     </a>
+                    {% endif %}
                     {% endif %}
 
                     <div class="topbar-user-pill">
@@ -353,119 +407,155 @@
             </div>
 
             <nav class="mobile-bottom-nav" aria-label="Mobile quick navigation">
+                {% if can_access_module('dashboard') %}
                 <a href="{{ url_for('dashboard.home') }}"
                    class="{% if request.endpoint == 'dashboard.home' %}active{% endif %}">
                     <span>⌂</span>
                     <small>Home</small>
                 </a>
+                {% endif %}
 
                 {% if access_role == 'manager' %}
+                    {% if can_access_module('checklist') %}
                     <a href="{{ url_for('checklist.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
                         <span>☑</span>
                         <small>Checklist</small>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('cash') %}
                     <a href="{{ url_for('cash.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('cash') and not request.endpoint.startswith('cash_review') %}active{% endif %}">
                         <span>💵</span>
                         <small>Cash</small>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('nightly_numbers') %}
                     <a href="{{ url_for('nightly_numbers.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('nightly_numbers') and request.endpoint != 'nightly_numbers.admin' %}active{% endif %}">
                         <span>#</span>
                         <small>Nightly</small>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('shift_todos') %}
                     <a href="{{ url_for('shift_todos.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
                         <span>✓</span>
                         <small>To-Dos</small>
                     </a>
+                    {% endif %}
 
                 {% elif account_role == 'tm' %}
+                    {% if can_access_module('shift_todos') %}
                     <a href="{{ url_for('shift_todos.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
                         <span>✓</span>
                         <small>To-Dos</small>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('checklist') %}
                     <a href="{{ url_for('checklist.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
                         <span>☑</span>
                         <small>Checklist</small>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('store_dashboard') %}
                     <a href="{{ url_for('store_dashboard.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('store_dashboard') %}active{% endif %}">
                         <span>🏪</span>
                         <small>Store</small>
                     </a>
+                    {% endif %}
 
                 {% elif account_role == 'general_manager' %}
+                    {% if can_access_module('shift_todos') %}
                     <a href="{{ url_for('shift_todos.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('shift_todos') %}active{% endif %}">
                         <span>✓</span>
                         <small>To-Dos</small>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('forms') %}
                     <a href="{{ url_for('forms.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('forms') and request.endpoint != 'forms.admin' and request.endpoint != 'forms.edit_template' %}active{% endif %}">
                         <span>▣</span>
                         <small>Forms</small>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('maintenance') %}
                     <a href="{{ url_for('maintenance.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
                         <span>🔧</span>
                         <small>Fix</small>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('labels') %}
                     <a href="{{ url_for('labels.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('labels') %}active{% endif %}">
                         <span>🏷</span>
                         <small>Labels</small>
                     </a>
+                    {% endif %}
 
                 {% elif access_role in ['admin', 'supervisor'] %}
+                    {% if can_access_module('svr') %}
                     <a href="{{ url_for('svr.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('svr') and request.endpoint != 'svr.admin' %}active{% endif %}">
                         <span>📋</span>
                         <small>SVR</small>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('checklist') %}
                     <a href="{{ url_for('checklist.overview') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('checklist') %}active{% endif %}">
                         <span>☑</span>
                         <small>Checklist</small>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('maintenance') %}
                     <a href="{{ url_for('maintenance.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
                         <span>🔧</span>
                         <small>Fix</small>
                     </a>
+                    {% endif %}
 
                 {% elif access_role == 'hr' %}
+                    {% if can_access_module('forms') %}
                     <a href="{{ url_for('forms.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('forms') and request.endpoint != 'forms.admin' and request.endpoint != 'forms.edit_template' %}active{% endif %}">
                         <span>▣</span>
                         <small>Forms</small>
                     </a>
+                    {% endif %}
 
+                    {% if can_access_module('maintenance_time_cards') %}
                     <a href="{{ url_for('maintenance.time_cards') }}"
                        class="{% if request.endpoint in ['maintenance.time_card', 'maintenance.time_cards', 'maintenance.time_cards_pdf'] %}active{% endif %}">
                         <span>◷</span>
                         <small>Time</small>
                     </a>
+                    {% endif %}
 
                 {% elif access_role == 'maintenance' %}
+                    {% if can_access_module('maintenance') %}
                     <a href="{{ url_for('maintenance.index') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('maintenance') %}active{% endif %}">
                         <span>🔧</span>
                         <small>Fix</small>
                     </a>
+                    {% endif %}
                 {% endif %}
 
                 <button type="button" id="mobile-bottom-more" aria-label="Open menu">

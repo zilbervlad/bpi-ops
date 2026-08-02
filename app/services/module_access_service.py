@@ -33,6 +33,7 @@ MODULE_REGISTRY = [
     ("academy", "BPI Academy", "People & Development", ["admin","supervisor","general_manager","manager","tm","hr","platform_admin"], 300),
     ("dwp", "DWP", "People & Development", ["admin","supervisor","general_manager","manager","hr","payroll","tm","platform_admin"], 310),
     ("hr_documents", "HR Documents", "People & Development", ["admin","supervisor","hr","payroll","tm","platform_admin"], 320),
+    ("my_documents", "My Documents", "People & Development", ["admin","supervisor","general_manager","manager","tm","maintenance","hr","payroll","platform_admin"], 325),
     ("users", "Users & Roles", "People & Development", ["admin","supervisor","general_manager","hr","platform_admin"], 330),
     ("registration_requests", "Registration Requests", "People & Development", ["admin","supervisor","general_manager","hr","platform_admin"], 340),
     ("registration_qr", "Registration QR Center", "People & Development", ["admin","supervisor","general_manager","manager","hr","platform_admin"], 350),
@@ -84,6 +85,9 @@ ENDPOINT_MODULES = {
     "nightly_numbers.admin":"nightly_numbers_admin","nightly_numbers.edit_report":"nightly_numbers_admin",
     "maintenance.time_card":"maintenance_time_cards","maintenance.time_cards":"maintenance_time_cards",
     "maintenance.time_cards_pdf":"maintenance_time_cards",
+    "hr_documents.my_documents":"my_documents",
+    "hr_documents.acknowledge_document":"my_documents",
+    "hr_documents.download_document":"my_documents",
 }
 
 PATH_MODULES = [
@@ -96,7 +100,7 @@ PATH_MODULES = [
     ("/nightly-numbers","nightly_numbers"),("/cash-review","cash_review"),("/cash","cash"),
     ("/maintenance/time-card","maintenance_time_cards"),("/maintenance","maintenance"),
     ("/reports","reports"),("/store-dashboard","store_dashboard"),("/shift-todos","shift_todos"),
-    ("/hr-documents","hr_documents"),("/dwp","dwp"),("/labels","labels"),
+    ("/hr-documents/my","my_documents"),("/hr-documents","hr_documents"),("/dwp","dwp"),("/labels","labels"),
     ("/connect-admin","connect_admin"),("/perks","perks"),("/academy","academy"),("/doughy","doughy"),
 ]
 

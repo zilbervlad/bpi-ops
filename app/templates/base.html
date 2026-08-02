@@ -68,7 +68,7 @@
                     {% endif %}
 
                     {% if account_role not in ['admin', 'hr', 'store'] %}
-                    {% if can_access_module('hr_documents') %}
+                    {% if can_access_module('my_documents') %}
                     <a href="{{ url_for('hr_documents.my_documents') }}"
                        class="{% if request.endpoint and request.endpoint.startswith('hr_documents') and request.endpoint != 'hr_documents.index' and request.endpoint != 'hr_documents.new_document' and request.endpoint != 'hr_documents.detail' %}active{% endif %}">
                         <span class="nav-icon">◨</span>

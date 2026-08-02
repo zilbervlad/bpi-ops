@@ -17,6 +17,10 @@ from app.models import (
     User,
 )
 from app.services.email_service import send_email
+from app.services.module_access_service import (
+    email_event_is_enabled,
+    resolve_email_event_addresses,
+)
 import os
 
 verification_bp = Blueprint("verification", __name__, url_prefix="/verification")
@@ -443,39 +447,33 @@ def new_report():
                 val = (request.form.get(field.field_key) or "").strip()
                 body += f"{field.field_label}:\n{val or '—'}\n\n"
 
-            to_email = (os.getenv("EMAIL_FROM", "") or os.getenv("EMAIL_USER", "")).strip()
-            if not to_email:
-                raise ValueError("Missing EMAIL_FROM / EMAIL_USER in environment settings.")
+            event_key = "email__verification__submitted"
 
-            supervisor_email = None
-            user_id = session.get("user_id")
-            if user_id:
-                submitting_user = User.query.get(user_id)
-                if submitting_user:
-                    supervisor_email = submitting_user.get_notification_email()
+            if not email_event_is_enabled(event_key):
+                current_app.logger.info(
+                    "Verification email disabled by central email settings."
+                )
+            else:
+                store = Store.query.filter_by(store_number=store_number).first()
+                area_name = store.area_name if store else None
 
-            admin_users = User.query.filter_by(role="admin", is_active=True).all()
-            admin_emails = [
-                user.get_notification_email()
-                for user in admin_users
-                if user.get_notification_email()
-            ]
+                recipients = resolve_email_event_addresses(
+                    event_key,
+                    store_number=store_number,
+                    area_name=area_name,
+                )
 
-            cc_list = []
+                if not recipients:
+                    raise ValueError(
+                        f"No Verification recipients configured for store {store_number}."
+                    )
 
-            if supervisor_email:
-                cc_list.append(supervisor_email)
-
-            for email in admin_emails:
-                if email and email not in cc_list and email != to_email:
-                    cc_list.append(email)
-
-            send_email(
-                to_email=to_email,
-                subject=f"Verification - Store {store_number}",
-                body=body,
-                cc_emails=cc_list if cc_list else None
-            )
+                send_email(
+                    to_email=recipients[0],
+                    subject=f"Verification - Store {store_number}",
+                    body=body,
+                    cc_emails=recipients[1:] or None,
+                )
 
         except Exception as e:
             current_app.logger.exception("Verification email failed")

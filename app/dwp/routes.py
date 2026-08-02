@@ -40,6 +40,7 @@ from app.models import (
     HRDocumentRecipient,
 )
 from app.services.email_service import send_email
+from app.services.module_access_service import email_event_is_enabled
 
 
 DISCUSSION_TYPES = [
@@ -308,6 +309,9 @@ def safe_send_dwp_email(**kwargs):
 
 
 def send_dwp_created_emails(record):
+    if not email_event_is_enabled("email__dwp__submitted"):
+        return 0
+
     team_member = db.session.get(User, record.team_member_id)
     submitter = db.session.get(User, record.submitted_by_id)
 
@@ -338,6 +342,12 @@ def send_dwp_created_emails(record):
         if submitter
         else None
     )
+
+    direct_email_keys = {
+        email.strip().lower()
+        for email in [tm_email, submitter_email]
+        if email and email.strip()
+    }
 
     sent_count = 0
     failed_count = 0
@@ -406,6 +416,11 @@ BPI Ops
         pdf_recipients, invalid_emails = parse_dwp_recipient_emails(
             settings.recipients_text
         )
+        pdf_recipients = [
+            email
+            for email in pdf_recipients
+            if email.strip().lower() not in direct_email_keys
+        ]
 
         if invalid_emails:
             current_app.logger.warning(

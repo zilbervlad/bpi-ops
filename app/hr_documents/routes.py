@@ -12,6 +12,10 @@ from app.extensions import db
 from app.models import User, Store, HRDocument, HRDocumentRecipient, DWPRecord
 from app.auth.routes import login_required, role_required
 from app.services.email_service import send_email, send_bulk_emails
+from app.services.module_access_service import (
+    email_event_allowed_roles,
+    email_event_is_enabled,
+)
 
 
 hr_documents_bp = Blueprint("hr_documents", __name__, url_prefix="/hr-documents")
@@ -222,6 +226,16 @@ def recipient_query_for_target(target_mode, form):
 
 
 def build_hr_document_email_message(document, recipient):
+    allowed_roles = set(
+        email_event_allowed_roles("email__hr_documents__assigned")
+    )
+    recipient_role = (
+        getattr(recipient.user, "role", "") or ""
+    ).strip().lower()
+
+    if recipient_role not in allowed_roles:
+        return None, "Recipient role is disabled for HR Document assignment email."
+
     to_email = recipient.user.get_notification_email()
     if not to_email:
         return None, "No notification email configured."
@@ -250,8 +264,11 @@ Boston Pie, Inc.
 
 
 def send_hr_document_emails_bulk(document, recipients):
+    if not email_event_is_enabled("email__hr_documents__assigned"):
+        return 0, 0
+
     messages = []
-    recipient_by_email = {}
+    recipients_by_email = {}
 
     for recipient in recipients:
         message, error = build_hr_document_email_message(document, recipient)
@@ -261,11 +278,14 @@ def send_hr_document_emails_bulk(document, recipients):
             continue
 
         email_key = message["to_email"].strip().lower()
-        messages.append(message)
-        recipient_by_email[email_key] = recipient
+        recipients_by_email.setdefault(email_key, []).append(recipient)
+
+        if len(recipients_by_email[email_key]) == 1:
+            messages.append(message)
 
     if not messages:
-        return 0, len(recipients)
+        failed_count = sum(1 for recipient in recipients if recipient.email_error)
+        return 0, failed_count
 
     try:
         result = send_bulk_emails(messages)
@@ -284,20 +304,21 @@ def send_hr_document_emails_bulk(document, recipients):
         for row in result.get("errors", [])
     }
 
-    for message in messages:
-        email_key = message["to_email"].strip().lower()
-        recipient = recipient_by_email.get(email_key)
-        if not recipient:
-            continue
-
+    for email_key, matching_recipients in recipients_by_email.items():
         if email_key in failed_emails:
-            recipient.email_error = failed_emails[email_key]
+            for recipient in matching_recipients:
+                recipient.email_error = failed_emails[email_key]
         else:
-            recipient.email_sent_at = datetime.utcnow()
-            recipient.email_error = None
+            for recipient in matching_recipients:
+                recipient.email_sent_at = datetime.utcnow()
+                recipient.email_error = None
 
-    no_email_failures = sum(1 for recipient in recipients if not recipient.user.get_notification_email())
-    failed_count += no_email_failures
+    failed_count += sum(
+        1
+        for recipient in recipients
+        if recipient.email_error
+        and not recipient.user.get_notification_email()
+    )
 
     return sent_count, failed_count
 
@@ -434,6 +455,25 @@ def send_hr_document_connect_notification(document, recipient, action="assigned"
 
 
 def send_hr_document_email(document, recipient):
+    if not email_event_is_enabled("email__hr_documents__reminder"):
+        recipient.email_error = (
+            "HR Document reminder email is disabled in Module & Email Access."
+        )
+        return False
+
+    allowed_roles = set(
+        email_event_allowed_roles("email__hr_documents__reminder")
+    )
+    recipient_role = (
+        getattr(recipient.user, "role", "") or ""
+    ).strip().lower()
+
+    if recipient_role not in allowed_roles:
+        recipient.email_error = (
+            "This recipient role is disabled for HR Document reminder email."
+        )
+        return False
+
     to_email = recipient.user.get_notification_email()
     if not to_email:
         recipient.email_error = "No notification email configured."

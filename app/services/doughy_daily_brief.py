@@ -23,6 +23,10 @@ from app.models import (
 )
 from app.services.doughy_ai_service import ask_doughy_ai
 from app.services.email_service import send_email
+from app.services.module_access_service import (
+    email_event_allowed_roles,
+    email_event_is_enabled,
+)
 
 
 APP_TZ = ZoneInfo("America/New_York")
@@ -2411,7 +2415,28 @@ def send_daily_briefs(
         "failed": [],
     }
 
+    event_key = "email__doughy__daily_brief"
+
+    if not email_event_is_enabled(event_key):
+        results["skipped"].append({
+            "reason": "email_event_disabled",
+        })
+        return results
+
+    allowed_roles = set(email_event_allowed_roles(event_key))
+    seen_delivery_scopes = set()
+
     for user in eligible_recipients():
+        role = (getattr(user, "role", "") or "").strip().lower()
+
+        if role not in allowed_roles:
+            results["skipped"].append({
+                "user_id": user.id,
+                "name": user.name,
+                "reason": "role_not_enabled",
+            })
+            continue
+
         configured_email = user.get_notification_email()
 
         if not configured_email:
@@ -2433,6 +2458,21 @@ def send_daily_briefs(
             continue
 
         scope_label = recipient_scope_label(user, stores)
+        delivery_scope_key = (
+            (test_email or configured_email).strip().lower(),
+            scope_label.strip().lower(),
+            "weekly" if is_weekly_recap else "daily",
+        )
+
+        if delivery_scope_key in seen_delivery_scopes:
+            results["skipped"].append({
+                "user_id": user.id,
+                "name": user.name,
+                "reason": "duplicate_email_scope",
+            })
+            continue
+
+        seen_delivery_scopes.add(delivery_scope_key)
 
         log, skip_reason = reserve_log(
             brief_date=brief_date,

@@ -7,8 +7,9 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from app.extensions import db
 from app.services.email_service import send_email
 from app.services.module_access_service import (
+    email_event_allowed_roles,
     email_event_is_enabled,
-    resolve_email_event_addresses,
+    resolve_email_event_users,
 )
 from app.services.ephemeral_photos import PhotoValidationError, normalize_ephemeral_photos
 from app.models import FormAnswer, FormQuestion, FormSubmission, FormTemplate, Store, User, today_et
@@ -227,11 +228,45 @@ def send_form_submission_email(submission: FormSubmission, photos=None):
     store = Store.query.filter_by(store_number=submission.store_number).first()
     area_name = store.area_name if store else None
 
-    recipients = resolve_email_event_addresses(
+    globally_allowed_roles = set(email_event_allowed_roles(event_key))
+
+    template_role_flags = {
+        "general_manager": truthy_template_flag(template, "notify_gm"),
+        "manager": truthy_template_flag(template, "notify_gm"),
+        "supervisor": truthy_template_flag(template, "notify_supervisor"),
+        "admin": truthy_template_flag(template, "notify_admin"),
+        "hr": truthy_template_flag(template, "notify_hr"),
+        "payroll": truthy_template_flag(template, "notify_payroll"),
+    }
+
+    allowed_template_roles = {
+        role
+        for role, enabled in template_role_flags.items()
+        if enabled and role in globally_allowed_roles
+    }
+
+    recipient_users = resolve_email_event_users(
         event_key,
         store_number=submission.store_number,
         area_name=area_name,
     )
+
+    recipients = []
+    seen_recipient_emails = set()
+
+    for user in recipient_users:
+        role = (getattr(user, "role", "") or "").strip().lower()
+        if role not in allowed_template_roles:
+            continue
+
+        email = user.get_notification_email()
+        normalized = (email or "").strip().lower()
+
+        if not normalized or normalized in seen_recipient_emails:
+            continue
+
+        seen_recipient_emails.add(normalized)
+        recipients.append(email.strip())
 
     if not recipients:
         raise ValueError(

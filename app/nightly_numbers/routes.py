@@ -307,6 +307,26 @@ def send_nightly_numbers_email(report: NightlyNumbersReport):
         }
 
     allowed_roles = email_event_allowed_roles(event_key)
+
+    immediate_store_roles = {
+        "store",
+        "general_manager",
+        "manager",
+    }
+    allowed_roles = [
+        role
+        for role in allowed_roles
+        if role in immediate_store_roles
+    ]
+
+    if not allowed_roles:
+        return {
+            "skipped": True,
+            "reason": "No store-level roles are enabled for immediate Nightly Numbers email.",
+            "recipient_emails": [],
+            "allowed_roles": [],
+        }
+
     recipient_users = _nightly_number_recipient_users(report, allowed_roles)
 
     recipient_emails = []

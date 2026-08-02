@@ -6,6 +6,10 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 
 from app.extensions import db
 from app.services.email_service import send_email
+from app.services.module_access_service import (
+    email_event_is_enabled,
+    resolve_email_event_addresses,
+)
 from app.services.ephemeral_photos import PhotoValidationError, normalize_ephemeral_photos
 from app.models import FormAnswer, FormQuestion, FormSubmission, FormTemplate, Store, User, today_et
 
@@ -211,83 +215,29 @@ def grade_from_score(percent, critical_failed_count=0):
 
 def send_form_submission_email(submission: FormSubmission, photos=None):
     template = submission.template
+    event_key = "email__forms__submitted"
 
-    manager_user = User.query.filter_by(
-        store_number=submission.store_number,
-        role="manager",
-        is_active=True
-    ).first()
-    manager_email = manager_user.get_notification_email() if manager_user else None
-
-    store_user = User.query.filter_by(
-        store_number=submission.store_number,
-        role="store",
-        is_active=True
-    ).first()
-    store_email = store_user.get_notification_email() if store_user else None
+    if not email_event_is_enabled(event_key):
+        return {
+            "skipped": True,
+            "recipients": [],
+            "cc_emails": [],
+        }
 
     store = Store.query.filter_by(store_number=submission.store_number).first()
+    area_name = store.area_name if store else None
 
-    supervisor = None
-    if store:
-        supervisor = User.query.filter_by(
-            area_name=store.area_name,
-            role="supervisor",
-            is_active=True
-        ).first()
-    supervisor_email = supervisor.get_notification_email() if supervisor else None
-
-    admin_emails = []
-    if truthy_template_flag(template, "notify_admin", True):
-        admin_users = User.query.filter_by(role="admin", is_active=True).all()
-        for admin in admin_users:
-            email = admin.get_notification_email()
-            if email:
-                admin_emails.append(email)
-
-    hr_emails = []
-    if truthy_template_flag(template, "notify_hr", False):
-        hr_users = User.query.filter_by(role="hr", is_active=True).all()
-        for hr_user in hr_users:
-            email = hr_user.get_notification_email()
-            if email:
-                hr_emails.append(email)
-
-    payroll_emails = []
-    if truthy_template_flag(template, "notify_payroll", False):
-        payroll_users = User.query.filter_by(role="payroll", is_active=True).all()
-        for payroll_user in payroll_users:
-            email = payroll_user.get_notification_email()
-            if email:
-                payroll_emails.append(email)
-
-    recipients = []
-
-    template_slug = slugify(template.slug or template.title)
-    route_to_store_email = template_slug in {
-        "morning-inspection",
-        "morning-inspections",
-        "4pm-routine",
-        "4-pm-routine",
-    }
-
-    if truthy_template_flag(template, "notify_gm", True):
-        if route_to_store_email and store_email:
-            recipients.append(store_email)
-        elif not route_to_store_email and manager_email:
-            recipients.append(manager_email)
-
-    if truthy_template_flag(template, "notify_supervisor", True) and supervisor_email:
-        recipients.append(supervisor_email)
-
-    recipients.extend(admin_emails)
-    recipients.extend(hr_emails)
-    recipients.extend(payroll_emails)
-
-    recipients = [email for email in dict.fromkeys(recipients) if email]
+    recipients = resolve_email_event_addresses(
+        event_key,
+        store_number=submission.store_number,
+        area_name=area_name,
+    )
 
     if not recipients:
-        raise ValueError("No email recipients configured for this form template.")
+        raise ValueError(
+            f"No enabled Forms email recipients are configured for store "
+            f"{submission.store_number}."
+        )
 
     to_email = recipients[0]
     cc_emails = recipients[1:]
@@ -344,13 +294,8 @@ def send_form_submission_email(submission: FormSubmission, photos=None):
     )
 
     return {
+        "skipped": False,
         "to_email": to_email,
-        "manager_email": manager_email,
-        "store_email": store_email,
-        "supervisor_email": supervisor_email,
-        "admin_emails": admin_emails,
-        "hr_emails": hr_emails,
-        "payroll_emails": payroll_emails,
         "cc_emails": cc_emails,
         "recipients": recipients,
     }

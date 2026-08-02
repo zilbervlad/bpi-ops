@@ -183,6 +183,72 @@ def email_event_enabled(event_key):
         and current_account_role() in email_event_allowed_roles(event_key)
     )
 
+
+def resolve_email_event_users(event_key, store_number=None, area_name=None):
+    from app.models import Store, User
+
+    if not email_event_is_enabled(event_key):
+        return []
+
+    roles = email_event_allowed_roles(event_key)
+
+    if store_number is not None:
+        store_number = str(store_number)
+
+    if store_number and not area_name:
+        store = Store.query.filter_by(store_number=store_number).first()
+        area_name = store.area_name if store else None
+
+    store_scoped = {"store", "general_manager", "manager", "tm", "maintenance"}
+    area_scoped = {"supervisor"}
+    company_scoped = {"admin", "hr", "payroll", "platform_admin"}
+
+    users = []
+    seen_ids = set()
+
+    for role in roles:
+        query = User.query.filter_by(role=role, is_active=True)
+
+        if role in store_scoped:
+            if not store_number:
+                continue
+            query = query.filter_by(store_number=store_number)
+        elif role in area_scoped:
+            if not area_name:
+                continue
+            query = query.filter_by(area_name=area_name)
+        elif role not in company_scoped:
+            continue
+
+        for user in query.all():
+            if user.id in seen_ids:
+                continue
+            seen_ids.add(user.id)
+            users.append(user)
+
+    return users
+
+
+def resolve_email_event_addresses(event_key, store_number=None, area_name=None):
+    addresses = []
+    seen = set()
+
+    for user in resolve_email_event_users(
+        event_key,
+        store_number=store_number,
+        area_name=area_name,
+    ):
+        email = user.get_notification_email()
+        normalized = (email or "").strip().lower()
+
+        if not normalized or normalized in seen:
+            continue
+
+        seen.add(normalized)
+        addresses.append(email.strip())
+
+    return addresses
+
 def grouped_module_access_settings():
     seed_module_access_settings()
     settings = ModuleAccessSetting.query.order_by(ModuleAccessSetting.sort_order.asc(), ModuleAccessSetting.module_label.asc()).all()

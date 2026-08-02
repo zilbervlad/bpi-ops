@@ -20,6 +20,10 @@ from app.models import (
     ChecklistAutoEmailLog,
 )
 from app.services.email_service import send_email
+from app.services.module_access_service import (
+    email_event_is_enabled,
+    resolve_email_event_addresses,
+)
 
 from app.services.doughy_execution import build_execution_snapshot
 
@@ -454,7 +458,11 @@ def run_checklist_closeout(closeout_date: date):
     }
 
 
-def send_store_summary_email(store_number: str, include_supervisor_cc: bool = True):
+def send_store_summary_email(
+    store_number: str,
+    include_supervisor_cc: bool = True,
+    event_key: str = "email__checklist__summary",
+):
     ops_date = current_ops_date()
 
     checklist = DailyChecklist.query.filter_by(
@@ -465,31 +473,31 @@ def send_store_summary_email(store_number: str, include_supervisor_cc: bool = Tr
     if not checklist:
         return {"success": False, "error": f"No checklist found for store {store_number} for today."}
 
-    manager = User.query.filter_by(
-        store_number=store_number,
-        role="manager",
-        is_active=True
-    ).first()
-
-    if not manager:
-        return {"success": False, "error": f"No active manager user found for store {store_number}."}
-
-    manager_email = manager.get_notification_email()
-    if not manager_email:
-        return {"success": False, "error": f"Manager email is not configured for store {store_number}."}
+    if not email_event_is_enabled(event_key):
+        return {
+            "success": True,
+            "skipped": True,
+            "store_number": store_number,
+            "recipient_emails": [],
+        }
 
     store = Store.query.filter_by(store_number=store_number).first()
+    area_name = store.area_name if store else None
 
-    supervisor = None
-    if store:
-        supervisor = User.query.filter_by(
-            area_name=store.area_name,
-            role="supervisor",
-            is_active=True
-        ).first()
+    recipient_emails = resolve_email_event_addresses(
+        event_key,
+        store_number=store_number,
+        area_name=area_name,
+    )
 
-    supervisor_email = supervisor.get_notification_email() if supervisor else None
-    cc_email = supervisor_email if include_supervisor_cc else None
+    if not recipient_emails:
+        return {
+            "success": False,
+            "error": f"No Checklist Summary recipients configured for store {store_number}.",
+        }
+
+    primary_email = recipient_emails[0]
+    cc_emails = recipient_emails[1:] if include_supervisor_cc else []
 
     incomplete_items = [item.task_text for item in checklist.items if not item.is_completed]
     manager_walk_integrity = calculate_manager_walk_integrity(checklist)
@@ -500,7 +508,7 @@ def send_store_summary_email(store_number: str, include_supervisor_cc: bool = Tr
         missing_tasks_text = "- None"
 
     send_email(
-        to_email=manager_email,
+        to_email=primary_email,
         subject=f"[{round(checklist.percent_complete)}%] Store {store_number} Checklist Summary",
         body=(
             f"Store: {store_number}\n"
@@ -514,13 +522,13 @@ def send_store_summary_email(store_number: str, include_supervisor_cc: bool = Tr
             f"Missing Tasks:\n{missing_tasks_text}\n\n"
             f"- BPI Ops"
         ),
-        cc_emails=cc_email
+        cc_emails=cc_emails or None
     )
 
     return {
         "success": True,
-        "manager_email": manager_email,
-        "supervisor_email": supervisor_email,
+        "primary_email": primary_email,
+        "recipient_emails": recipient_emails,
         "store_number": store_number,
         "percent_complete": round(checklist.percent_complete, 1),
         "integrity_score": round(checklist.integrity_score, 1),
@@ -737,16 +745,11 @@ def send_daily_summary(store_number):
             flash(result["error"], "error")
             return redirect(url_for("checklist.overview"))
 
-        if result["supervisor_email"]:
-            flash(
-                f"Summary sent to {result['manager_email']} and cc'd to {result['supervisor_email']}.",
-                "success"
-            )
-        else:
-            flash(
-                f"Summary sent to {result['manager_email']}. No supervisor email was configured.",
-                "success"
-            )
+        recipient_count = len(result.get("recipient_emails", []))
+        flash(
+            f"Summary sent to {recipient_count} configured recipient(s).",
+            "success",
+        )
 
     except Exception as e:
         flash(f"Failed to send summary: {str(e)}", "error")
@@ -760,6 +763,7 @@ def run_checklist_summary_batch(
     include_store_emails=True,
     include_supervisor_cc=True,
     include_owner_recap=True,
+    event_key="email__checklist__summary",
 ):
     sent_count = 0
     failed_count = 0
@@ -770,7 +774,8 @@ def run_checklist_summary_batch(
             try:
                 result = send_store_summary_email(
                     store.store_number,
-                    include_supervisor_cc=include_supervisor_cc
+                    include_supervisor_cc=include_supervisor_cc,
+                    event_key=event_key,
                 )
                 result["store_number"] = store.store_number
                 send_results.append(result)
@@ -1066,6 +1071,7 @@ def maybe_send_checklist_auto_summaries():
                 visible_stores=visible_stores,
                 user_id=None,
                 include_store_emails=settings.send_store_emails,
+                event_key=f"email__checklist__{slot}",
                 include_supervisor_cc=False,
                 include_owner_recap=False,
             )

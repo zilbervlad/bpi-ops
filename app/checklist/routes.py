@@ -23,6 +23,7 @@ from app.services.email_service import send_email
 from app.services.module_access_service import (
     email_event_is_enabled,
     resolve_email_event_addresses,
+    resolve_email_event_users,
 )
 
 from app.services.doughy_execution import build_execution_snapshot
@@ -484,11 +485,41 @@ def send_store_summary_email(
     store = Store.query.filter_by(store_number=store_number).first()
     area_name = store.area_name if store else None
 
-    recipient_emails = resolve_email_event_addresses(
+    recipient_users = resolve_email_event_users(
         event_key,
         store_number=store_number,
         area_name=area_name,
     )
+
+    # Scheduled 11 AM / 4 PM store notices should only go to store-level roles.
+    # Admin and Supervisor already receive consolidated summaries.
+    if event_key in {"email__checklist__11am", "email__checklist__4pm"}:
+        store_delivery_roles = {
+            "store",
+            "general_manager",
+            "manager",
+            "tm",
+            "maintenance",
+        }
+        recipient_users = [
+            user
+            for user in recipient_users
+            if (getattr(user, "role", "") or "").strip().lower()
+            in store_delivery_roles
+        ]
+
+    recipient_emails = []
+    seen_recipient_emails = set()
+
+    for user in recipient_users:
+        email = user.get_notification_email()
+        normalized = (email or "").strip().lower()
+
+        if not normalized or normalized in seen_recipient_emails:
+            continue
+
+        seen_recipient_emails.add(normalized)
+        recipient_emails.append(email.strip())
 
     if not recipient_emails:
         return {

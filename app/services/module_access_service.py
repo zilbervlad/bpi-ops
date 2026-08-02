@@ -152,8 +152,36 @@ def can_access_module(module_key, role=None):
         return enabled and role in roles
     return bool(setting.is_enabled) and role in module_access_allowed_roles(setting)
 
+def email_event_setting(event_key):
+    try:
+        return ModuleAccessSetting.query.filter_by(module_key=event_key).first()
+    except SQLAlchemyError:
+        db.session.rollback()
+        return None
+
+
+def email_event_is_enabled(event_key):
+    setting = email_event_setting(event_key)
+    if setting is None:
+        enabled, _roles_list = _default(event_key)
+        return bool(enabled)
+    return bool(setting.is_enabled)
+
+
+def email_event_allowed_roles(event_key):
+    setting = email_event_setting(event_key)
+    if setting is None:
+        _enabled, roles = _default(event_key)
+        return list(roles)
+    return module_access_allowed_roles(setting)
+
+
 def email_event_enabled(event_key):
-    return can_access_module(event_key)
+    # Template helper: enabled for the current role.
+    return (
+        email_event_is_enabled(event_key)
+        and current_account_role() in email_event_allowed_roles(event_key)
+    )
 
 def grouped_module_access_settings():
     seed_module_access_settings()

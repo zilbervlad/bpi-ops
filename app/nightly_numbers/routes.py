@@ -7,6 +7,10 @@ from app.auth.routes import login_required, role_required
 from app.extensions import db
 from app.models import NightlyNumbersReport, NightlyNumbersFieldConfig, Store, User
 from app.services.email_service import send_email
+from app.services.module_access_service import (
+    email_event_allowed_roles,
+    email_event_is_enabled,
+)
 
 nightly_numbers_bp = Blueprint("nightly_numbers", __name__, url_prefix="/nightly-numbers")
 
@@ -255,43 +259,72 @@ def apply_form_value_to_report(report, field):
     setattr(report, field_key, raw_value or None)
 
 
-def send_nightly_numbers_email(report: NightlyNumbersReport):
-    store_user = User.query.filter_by(
-        store_number=report.store_number,
-        role="store",
-        is_active=True
-    ).first()
-
-    store_email = store_user.get_notification_email() if store_user else None
-
+def _nightly_number_recipient_users(report, allowed_roles):
     store = Store.query.filter_by(store_number=report.store_number).first()
+    users = []
 
-    supervisor = None
-    if store:
-        supervisor = User.query.filter_by(
-            area_name=store.area_name,
-            role="supervisor",
-            is_active=True
-        ).first()
+    store_scoped_roles = {
+        "store",
+        "general_manager",
+        "manager",
+        "tm",
+        "maintenance",
+    }
+    area_scoped_roles = {"supervisor"}
+    company_scoped_roles = {
+        "admin",
+        "hr",
+        "payroll",
+        "platform_admin",
+    }
 
-    supervisor_email = supervisor.get_notification_email() if supervisor else None
+    for role in allowed_roles:
+        query = User.query.filter_by(role=role, is_active=True)
 
-    admin_users = User.query.filter_by(role="admin", is_active=True).all()
-    admin_emails = []
-    for admin in admin_users:
-        email = admin.get_notification_email()
-        if email:
-            admin_emails.append(email)
+        if role in store_scoped_roles:
+            query = query.filter_by(store_number=report.store_number)
+        elif role in area_scoped_roles:
+            if not store or not store.area_name:
+                continue
+            query = query.filter_by(area_name=store.area_name)
+        elif role not in company_scoped_roles:
+            continue
 
-    cc_emails = []
-    if supervisor_email:
-        cc_emails.append(supervisor_email)
-    cc_emails.extend(admin_emails)
+        users.extend(query.all())
 
-    cc_emails = [email for email in dict.fromkeys(cc_emails) if email and email != store_email]
+    return users
 
-    if not store_email:
-        raise ValueError(f"No store notification email configured for store {report.store_number}.")
+
+def send_nightly_numbers_email(report: NightlyNumbersReport):
+    event_key = "email__nightly_numbers__submitted"
+
+    if not email_event_is_enabled(event_key):
+        return {
+            "skipped": True,
+            "reason": "Nightly Numbers submitted email is disabled.",
+            "recipient_emails": [],
+            "allowed_roles": [],
+        }
+
+    allowed_roles = email_event_allowed_roles(event_key)
+    recipient_users = _nightly_number_recipient_users(report, allowed_roles)
+
+    recipient_emails = []
+    seen = set()
+
+    for user in recipient_users:
+        email = user.get_notification_email()
+        normalized = (email or "").strip().lower()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        recipient_emails.append(email.strip())
+
+    if not recipient_emails:
+        raise ValueError(
+            f"No Nightly Numbers recipient email is configured for store "
+            f"{report.store_number} under the selected email roles."
+        )
 
     labor_status = ""
     if report.variable_labor is not None and report.labor_goal is not None:
@@ -324,17 +357,24 @@ def send_nightly_numbers_email(report: NightlyNumbersReport):
         f"- BPI Ops"
     )
 
+    primary_email = recipient_emails[0]
+    cc_emails = recipient_emails[1:]
+
     send_email(
-        to_email=store_email,
-        subject=f"Store {report.store_number} Nightly Numbers - {report.report_date.strftime('%b %d, %Y')}",
+        to_email=primary_email,
+        subject=(
+            f"Store {report.store_number} Nightly Numbers - "
+            f"{report.report_date.strftime('%b %d, %Y')}"
+        ),
         body=body,
-        cc_emails=cc_emails if cc_emails else None
+        cc_emails=cc_emails or None,
     )
 
     return {
-        "store_email": store_email,
-        "supervisor_email": supervisor_email,
-        "admin_emails": admin_emails,
+        "skipped": False,
+        "primary_email": primary_email,
+        "recipient_emails": recipient_emails,
+        "allowed_roles": allowed_roles,
     }
 
 
@@ -349,13 +389,18 @@ def parse_form_bool_value(field_key):
 
 @nightly_numbers_bp.route("/", methods=["GET", "POST"])
 @login_required
-@role_required("manager", "admin", "supervisor")
+@role_required("manager", "store", "general_manager", "admin", "supervisor")
 
 def index():
-    role = session.get("user_role")
+    role = (
+        session.get("account_role")
+        or session.get("access_role")
+        or session.get("user_role")
+        or ""
+    )
     user_store = session.get("user_store")
 
-    if role != "manager":
+    if role not in {"manager", "store", "general_manager"}:
         return redirect(url_for("nightly_numbers.admin"))
 
     if not user_store:
@@ -399,10 +444,17 @@ def index():
 
         try:
             email_result = send_nightly_numbers_email(report)
-            flash(
-                f"Nightly numbers saved and emailed to {email_result['manager_email']}.",
-                "success"
-            )
+            if email_result.get("skipped"):
+                flash(
+                    "Nightly numbers saved. The submitted-email event is disabled.",
+                    "success",
+                )
+            else:
+                recipient_count = len(email_result.get("recipient_emails", []))
+                flash(
+                    f"Nightly numbers saved and emailed to {recipient_count} recipient(s).",
+                    "success",
+                )
         except Exception as e:
             flash(f"Nightly numbers saved, but email failed: {str(e)}", "error")
 

@@ -1427,60 +1427,69 @@ def render_email_body(
             f"{len(data['hr_signed'])}"
         )
 
-    data_quality_lines = []
-
-    for report in data["nightly_reports"]:
-        if report.adt is not None and report.adt >= 120:
-            data_quality_lines.append(
-                f"- Store {report.store_number}: "
-                f"ADT entered as "
-                f"{format_optional_number(report.adt)}; "
-                f"confirm this is not a data-entry error."
-            )
+    manager_walk_missed = sorted(
+        str(row["store_number"])
+        for row in data["checklist_rows"]
+        if row["manager_walk"] is None
+        or row["manager_walk"] < 100
+    )
 
     return (
         f"Good morning {user.name},\n\n"
 
         f"DOUGHY'S MORNING BRIEF\n"
         f"{date_label}\n"
-        f"Scope: {scope_label}\n\n"
+        f"{scope_label}\n\n"
 
-        f"DOUGHY'S TAKE\n"
+        f"================================\n"
+        f"1. DOUGHY'S TAKE\n"
+        f"================================\n"
         f"{doughy_take}\n\n"
 
-        f"EXECUTIVE SNAPSHOT\n"
+        f"================================\n"
+        f"2. EXECUTIVE SNAPSHOT\n"
+        f"================================\n"
         f"Priority stores: {len(priority_rows)}\n"
         f"Watch stores: {len(watch_rows)}\n"
         f"Strong stores: {len(strong_rows)}\n"
         f"Nightly Numbers: "
-        f"{len(data['nightly_reports'])}/{len(data['stores'])} submitted\n"
-        f"Missing Nightly Numbers: "
-        f"{render_store_list(data['missing_nightly'])}\n\n"
+        f"{len(data['nightly_reports'])}/{len(data['stores'])} submitted\n\n"
 
-        f"PRIORITY FOLLOW-UP\n"
+        f"================================\n"
+        f"3. PRIORITY FOLLOW-UP\n"
+        f"================================\n"
         f"{priority_text if priority_text else '- None'}\n\n"
 
-        f"WATCH LIST\n"
+        f"================================\n"
+        f"4. WATCH LIST\n"
+        f"================================\n"
         f"{watch_text if watch_text else '- None'}\n\n"
 
-        f"STRONG EXECUTION\n"
+        f"================================\n"
+        f"5. STRONG EXECUTION\n"
+        f"================================\n"
         f"{strong_text if strong_text else '- None'}\n\n"
 
-        f"NIGHTLY NUMBERS EXCEPTIONS\n"
-        f"Missing submissions: "
-        f"{render_store_list(data['missing_nightly'])}\n"
-        f"{chr(10).join(nightly_exception_lines) if nightly_exception_lines else '- No submitted-store exceptions'}\n\n"
+        f"================================\n"
+        f"6. MANAGER'S WALK MISSED\n"
+        f"================================\n"
+        f"{render_store_list(manager_walk_missed)}\n\n"
 
-        f"DATA QUALITY REVIEW\n"
-        f"{chr(10).join(data_quality_lines) if data_quality_lines else '- None'}\n\n"
+        f"================================\n"
+        f"7. NIGHTLY NUMBERS\n"
+        f"================================\n"
+        f"{len(data['nightly_reports'])}/{len(data['stores'])} submitted\n"
+        f"Missing: {render_store_list(data['missing_nightly'])}\n"
+        f"Full store-by-store details are attached.\n\n"
 
-        f"OTHER ACTIVITY\n"
+        f"================================\n"
+        f"8. OTHER ACTIVITY\n"
+        f"================================\n"
         f"{chr(10).join(activity_lines) if activity_lines else '- None'}\n\n"
 
         f"- Doughy\n"
         f"BPI Ops"
     )
-
 
 def previous_week_range(reference_time: datetime | None = None):
     current = reference_time or now_et()

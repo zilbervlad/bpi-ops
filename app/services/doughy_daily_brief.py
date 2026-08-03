@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+from io import BytesIO
+
 from collections import defaultdict
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import landscape, letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 
 from app.extensions import db
 from app.models import (
@@ -2384,6 +2392,257 @@ def reserve_log(
     return log, None
 
 
+
+def build_nightly_numbers_pdf(stores, brief_date):
+    store_numbers = [str(store.store_number) for store in stores]
+
+    reports = (
+        NightlyNumbersReport.query
+        .filter(
+            NightlyNumbersReport.store_number.in_(store_numbers),
+            NightlyNumbersReport.report_date == brief_date,
+        )
+        .all()
+        if store_numbers
+        else []
+    )
+
+    report_by_store = {
+        str(report.store_number): report
+        for report in reports
+    }
+
+    buffer = BytesIO()
+
+    document = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(letter),
+        leftMargin=0.25 * inch,
+        rightMargin=0.25 * inch,
+        topMargin=0.3 * inch,
+        bottomMargin=0.3 * inch,
+        title=f"Nightly Numbers - {brief_date.isoformat()}",
+        author="BPI Ops",
+    )
+
+    styles = getSampleStyleSheet()
+
+    submitted_count = len(reports)
+    missing_count = max(len(stores) - submitted_count, 0)
+
+    story = [
+        Paragraph(
+            f"<b>Nightly Numbers — {brief_date.strftime('%B %d, %Y')}</b>",
+            styles["Title"],
+        ),
+        Paragraph(
+            (
+                f"Stores: {len(stores)} &nbsp;&nbsp; "
+                f"Submitted: {submitted_count} &nbsp;&nbsp; "
+                f"Missing: {missing_count}"
+            ),
+            styles["Normal"],
+        ),
+    ]
+
+    rows = [[
+        "Store",
+        "Status",
+        "Manager",
+        "Sales",
+        "Labor",
+        "Goal",
+        "Variance",
+        "Food Var.",
+        "ADT",
+        "Load",
+        "Cash +/-",
+        "Inv/Xfer",
+        "Food Order",
+    ]]
+
+    row_reports = {}
+
+    for store in sorted(stores, key=lambda item: str(item.store_number)):
+        store_number = str(store.store_number)
+        report = report_by_store.get(store_number)
+
+        if not report:
+            rows.append([
+                store_number,
+                "MISSING",
+                "—",
+                "—",
+                "—",
+                "—",
+                "—",
+                "—",
+                "—",
+                "—",
+                "—",
+                "—",
+                "—",
+            ])
+            continue
+
+        labor_variance = None
+
+        if (
+            report.variable_labor is not None
+            and report.labor_goal is not None
+        ):
+            labor_variance = (
+                report.variable_labor - report.labor_goal
+            )
+
+        def money(value):
+            return "—" if value is None else f"${value:,.2f}"
+
+        def percent(value):
+            return "—" if value is None else f"{value:.2f}%"
+
+        rows.append([
+            store_number,
+            "Submitted",
+            report.manager_name or "—",
+            money(report.royalty_sales),
+            percent(report.variable_labor),
+            percent(report.labor_goal),
+            percent(labor_variance),
+            percent(report.food_variance),
+            "—" if report.adt is None else f"{report.adt:.1f}",
+            str(report.load_time or "—"),
+            money(report.cash_diff),
+            "Yes" if report.invoices_transfers_checked else "No",
+            "Yes" if report.food_order_placed else "No",
+        ])
+
+        row_reports[len(rows) - 1] = report
+
+    table = Table(
+        rows,
+        colWidths=[
+            0.43 * inch,
+            0.58 * inch,
+            0.82 * inch,
+            0.67 * inch,
+            0.50 * inch,
+            0.50 * inch,
+            0.55 * inch,
+            0.60 * inch,
+            0.43 * inch,
+            0.47 * inch,
+            0.62 * inch,
+            0.55 * inch,
+            0.58 * inch,
+        ],
+        repeatRows=1,
+    )
+
+    formatting = [
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0F172A")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 6.4),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#CBD5E1")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [
+            colors.white,
+            colors.HexColor("#F8FAFC"),
+        ]),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]
+
+    for row_index, row in enumerate(rows[1:], start=1):
+        if row[1] == "MISSING":
+            formatting.extend([
+                (
+                    "BACKGROUND",
+                    (0, row_index),
+                    (-1, row_index),
+                    colors.HexColor("#FEE2E2"),
+                ),
+                (
+                    "TEXTCOLOR",
+                    (0, row_index),
+                    (-1, row_index),
+                    colors.HexColor("#991B1B"),
+                ),
+                (
+                    "FONTNAME",
+                    (0, row_index),
+                    (1, row_index),
+                    "Helvetica-Bold",
+                ),
+            ])
+            continue
+
+        report = row_reports.get(row_index)
+
+        if not report:
+            continue
+
+        if (
+            report.variable_labor is not None
+            and report.labor_goal is not None
+            and report.variable_labor > report.labor_goal
+        ):
+            formatting.append(
+                (
+                    "BACKGROUND",
+                    (6, row_index),
+                    (6, row_index),
+                    colors.HexColor("#FEF3C7"),
+                )
+            )
+
+        if (
+            report.food_variance is not None
+            and abs(report.food_variance) > 0.50
+        ):
+            formatting.append(
+                (
+                    "BACKGROUND",
+                    (7, row_index),
+                    (7, row_index),
+                    colors.HexColor("#FEF3C7"),
+                )
+            )
+
+        if report.adt is not None and report.adt > 25:
+            formatting.append(
+                (
+                    "BACKGROUND",
+                    (8, row_index),
+                    (8, row_index),
+                    colors.HexColor("#FEF3C7"),
+                )
+            )
+
+        if (
+            report.cash_diff is not None
+            and abs(report.cash_diff) > 10
+        ):
+            formatting.append(
+                (
+                    "BACKGROUND",
+                    (10, row_index),
+                    (10, row_index),
+                    colors.HexColor("#FEF3C7"),
+                )
+            )
+
+    table.setStyle(TableStyle(formatting))
+    story.append(table)
+
+    document.build(story)
+
+    return buffer.getvalue()
+
+
 def send_daily_briefs(
     *,
     force: bool = False,
@@ -2493,6 +2752,8 @@ def send_daily_briefs(
         delivery_email = test_email or configured_email
 
         try:
+            attachments = None
+
             if is_weekly_recap:
                 data = collect_weekly_scope_data(
                     user=user,
@@ -2534,6 +2795,20 @@ def send_daily_briefs(
                     doughy_take=doughy_take,
                 )
 
+                nightly_pdf = build_nightly_numbers_pdf(
+                    stores=stores,
+                    brief_date=brief_date,
+                )
+
+                attachments = [{
+                    "filename": (
+                        f"Nightly-Numbers-"
+                        f"{brief_date.strftime('%Y-%m-%d')}.pdf"
+                    ),
+                    "content": nightly_pdf,
+                    "mime_type": "application/pdf",
+                }]
+
             subject_prefix = "[TEST] " if test_email else ""
 
             if is_weekly_recap:
@@ -2552,6 +2827,7 @@ def send_daily_briefs(
                 to_email=delivery_email,
                 subject=subject,
                 body=body,
+                attachments=attachments,
             )
 
             log.status = "sent"

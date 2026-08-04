@@ -50,7 +50,11 @@ class DWPEmailDeliveryFixTests(unittest.TestCase):
         submitter_email=None,
         send_side_effect=True,
     ):
-        send_mock = MagicMock(side_effect=send_side_effect)
+        if isinstance(send_side_effect, list):
+            send_mock = MagicMock(side_effect=send_side_effect)
+        else:
+            send_mock = MagicMock(return_value=send_side_effect)
+
         pdf_mock = MagicMock(return_value=BytesIO(b"pdf"))
 
         patches = [

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from typing import Any
 
 from app.models import (
@@ -1017,6 +1017,22 @@ def _checklist_history(
         )
     }
 
+    checklist_completion_by_store = {
+        store_number: {
+            "store_number": store_number,
+            "completed_days": 0,
+            "incomplete_days": 0,
+            "checklist_days": 0,
+            "missing_days": 0,
+            "completed_dates": [],
+            "incomplete_dates": [],
+            "missing_dates": [],
+        }
+        for store_number in sorted(
+            allowed_stores
+        )
+    }
+
     manager_walk_details = {}
 
     for row in all_rows:
@@ -1058,6 +1074,45 @@ def _checklist_history(
             ),
         }
 
+        completion_summary = (
+            checklist_completion_by_store
+            .setdefault(
+                row.store_number,
+                {
+                    "store_number": row.store_number,
+                    "completed_days": 0,
+                    "incomplete_days": 0,
+                    "checklist_days": 0,
+                    "missing_days": 0,
+                    "completed_dates": [],
+                    "incomplete_dates": [],
+                    "missing_dates": [],
+                },
+            )
+        )
+
+        completion_summary["checklist_days"] += 1
+
+        checklist_complete = bool(
+            row.percent_complete is not None
+            and float(row.percent_complete) >= 100
+        )
+
+        checklist_date_text = _iso(
+            row.checklist_date
+        )
+
+        if checklist_complete:
+            completion_summary["completed_days"] += 1
+            completion_summary["completed_dates"].append(
+                checklist_date_text
+            )
+        else:
+            completion_summary["incomplete_days"] += 1
+            completion_summary["incomplete_dates"].append(
+                checklist_date_text
+            )
+
         store_summary = (
             manager_walk_by_store
             .setdefault(
@@ -1088,6 +1143,11 @@ def _checklist_history(
             ] += 1
 
     if expected_days is not None:
+        expected_dates = [
+            date_from + timedelta(days=offset)
+            for offset in range(expected_days)
+        ]
+
         for summary in (
             manager_walk_by_store
             .values()
@@ -1096,6 +1156,30 @@ def _checklist_history(
                 expected_days
                 - summary["checklist_days"],
                 0,
+            )
+
+        for summary in (
+            checklist_completion_by_store
+            .values()
+        ):
+            recorded_dates = {
+                value
+                for value in (
+                    summary["completed_dates"]
+                    + summary["incomplete_dates"]
+                )
+                if value
+            }
+
+            summary["missing_dates"] = [
+                value.isoformat()
+                for value in expected_dates
+                if value.isoformat()
+                not in recorded_dates
+            ]
+
+            summary["missing_days"] = len(
+                summary["missing_dates"]
             )
 
     manager_walk_summary = sorted(
@@ -1119,6 +1203,15 @@ def _checklist_history(
         "manager_walk_summary": (
             manager_walk_summary
         ),
+        "checklist_completion_summary": sorted(
+            checklist_completion_by_store.values(),
+            key=lambda item: item["store_number"],
+        ),
+        "visible_stores": sorted(
+            str(store_number)
+            for store_number in allowed_stores
+        ),
+        "expected_days": expected_days,
         "records": [
             {
                 "id": row.id,

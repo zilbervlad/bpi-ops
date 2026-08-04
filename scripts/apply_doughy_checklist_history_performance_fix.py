@@ -42,8 +42,16 @@ def patch_gateway() -> None:
 
     replace_once(
         path,
-        '''    query = DailyChecklist.query\n\n    if store:\n''',
-        '''    query = DailyChecklist.query.options(\n        selectinload(DailyChecklist.items)\n    )\n\n    if store:\n''',
+        '''    query = DailyChecklist.query
+
+    if store:
+''',
+        '''    query = DailyChecklist.query.options(
+        selectinload(DailyChecklist.items)
+    )
+
+    if store:
+''',
     )
 
 
@@ -52,7 +60,27 @@ def write_tests() -> None:
     tests_dir.mkdir(exist_ok=True)
     path = tests_dir / "test_doughy_checklist_history_performance.py"
 
-    content = '''from __future__ import annotations\n\nimport inspect\nimport unittest\n\nfrom app.services.doughy_universal_gateway import _checklist_history\n\n\nclass DoughyChecklistHistoryPerformanceTests(unittest.TestCase):\n    def test_history_eager_loads_checklist_items(self):\n        source = inspect.getsource(_checklist_history)\n\n        self.assertIn(\n            "selectinload(DailyChecklist.items)",\n            source,\n        )\n\n\nif __name__ == "__main__":\n    unittest.main()\n'''
+    content = '''from __future__ import annotations
+
+import inspect
+import unittest
+
+from app.services.doughy_universal_gateway import _checklist_history
+
+
+class DoughyChecklistHistoryPerformanceTests(unittest.TestCase):
+    def test_history_eager_loads_checklist_items(self):
+        source = inspect.getsource(_checklist_history)
+
+        self.assertIn(
+            "selectinload(DailyChecklist.items)",
+            source,
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
+'''
 
     if path.exists() and path.read_text(encoding="utf-8") == content:
         print(f"Already written: {path.relative_to(ROOT)}")

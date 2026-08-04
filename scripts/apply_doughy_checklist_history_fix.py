@@ -40,6 +40,12 @@ def patch_gateway() -> None:
 
     replace_once(
         path,
+        "from datetime import date, datetime, time\n",
+        "from datetime import date, datetime, time, timedelta\n",
+    )
+
+    replace_once(
+        path,
         '''    manager_walk_by_store = {
         store_number: {
             "store_number": store_number,

@@ -116,6 +116,107 @@ body {
     .premium-card {
         overscroll-behavior: contain;
     }
+
+    /* =====================================================
+       WIDE TOUCHSCREEN LAYOUT FIX
+       Width alone must never put an Elo/Android touchscreen
+       into the desktop hover-sidebar layout.
+       ===================================================== */
+
+    .layout {
+        display: block !important;
+        position: relative !important;
+        width: 100% !important;
+        grid-template-columns: none !important;
+    }
+
+    .main-content,
+    body.desktop-sidebar-pinned .main-content,
+    body.desktop-sidebar-open .main-content {
+        position: relative !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        margin-left: 0 !important;
+    }
+
+    .desktop-sidebar-hover-zone,
+    .desktop-sidebar-pin {
+        display: none !important;
+        pointer-events: none !important;
+    }
+
+    .mobile-nav-toggle,
+    .mobile-nav-close {
+        display: grid !important;
+        place-items: center !important;
+    }
+
+    .topbar-left {
+        display: flex !important;
+        align-items: center !important;
+        min-width: 0 !important;
+    }
+
+    .topbar {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        min-height: 58px !important;
+        height: auto !important;
+        padding: 10px 12px !important;
+    }
+
+    .sidebar,
+    body.desktop-sidebar-open .sidebar,
+    body.desktop-sidebar-pinned .sidebar {
+        position: fixed !important;
+        z-index: 1100 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: min(82vw, 310px) !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        transform: translateX(-100%) !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        transition: transform 240ms cubic-bezier(.22, .8, .24, 1) !important;
+    }
+
+    body.mobile-nav-open .sidebar,
+    body.mobile-nav-open.desktop-sidebar-open .sidebar,
+    body.mobile-nav-open.desktop-sidebar-pinned .sidebar {
+        transform: translateX(0) !important;
+    }
+
+    .mobile-sidebar-overlay {
+        display: block !important;
+        position: fixed !important;
+        z-index: 1050 !important;
+        inset: 0 !important;
+        background: rgba(2, 6, 23, 0.65) !important;
+        backdrop-filter: blur(2px) !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transition: opacity 240ms ease, visibility 0s linear 240ms !important;
+    }
+
+    body.mobile-nav-open .mobile-sidebar-overlay {
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        transition: opacity 240ms ease, visibility 0s linear 0s !important;
+    }
+
+    body.desktop-sidebar-open:not(.desktop-sidebar-pinned)::after,
+    body.desktop-sidebar-pinned::after {
+        display: none !important;
+        content: none !important;
+    }
 }
 
 /*

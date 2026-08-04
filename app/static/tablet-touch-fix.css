@@ -12,8 +12,13 @@ body {
     overscroll-behavior-y: none;
 }
 
-/* Only affect touch-first devices such as store tablets. */
-@media (hover: none) and (pointer: coarse) {
+/*
+ * Touch-first tablets, plus hybrid Elo/Windows touchscreens that may
+ * report an attached mouse as the primary pointer. Hybrid handling is
+ * limited to 1400px so ordinary large desktop workstations stay desktop.
+ */
+@media (hover: none) and (pointer: coarse),
+       (any-pointer: coarse) and (max-width: 1400px) {
 
     html,
     body {
@@ -223,7 +228,8 @@ body {
  * Landscape-specific reinforcement. Some Android managed
  * browsers report unusual viewport dimensions after rotation.
  */
-@media (hover: none) and (pointer: coarse) and (orientation: landscape) {
+@media (orientation: landscape) and (hover: none) and (pointer: coarse),
+       (orientation: landscape) and (any-pointer: coarse) and (max-width: 1400px) {
 
     html,
     body {

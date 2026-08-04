@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flask import current_app, url_for
+from flask import current_app, has_app_context, url_for
 from werkzeug.utils import secure_filename
 
 from app import db
@@ -14,6 +14,16 @@ DWP_SUBMITTED_EVENT_KEY = "email__dwp__submitted"
 
 def _normalized_email(value):
     return str(value or "").strip().lower()
+
+
+def _log(level, message, *args):
+    """Log when Flask has an active app context; otherwise continue safely."""
+    if not has_app_context():
+        return
+
+    logger_method = getattr(current_app.logger, level, None)
+    if logger_method:
+        logger_method(message, *args)
 
 
 def send_dwp_created_emails(record):
@@ -127,7 +137,8 @@ BPI Ops
             else:
                 failed_count += 1
     else:
-        current_app.logger.info(
+        _log(
+            "info",
             "DWP direct notifications disabled by Module & Email Access "
             "for record_id=%s",
             record.id,
@@ -146,7 +157,8 @@ BPI Ops
         )
 
         if invalid_emails:
-            current_app.logger.warning(
+            _log(
+                "warning",
                 "Ignoring invalid DWP PDF recipient emails: %s",
                 ", ".join(invalid_emails),
             )
@@ -213,7 +225,8 @@ Boston Pie, Inc.
                 else:
                     failed_count += 1
 
-    current_app.logger.info(
+    _log(
+        "info",
         "DWP email delivery completed record_id=%s "
         "direct_enabled=%s pdf_enabled=%s sent=%s failed=%s",
         record.id,

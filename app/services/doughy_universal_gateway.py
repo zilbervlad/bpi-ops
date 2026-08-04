@@ -7,6 +7,8 @@ from app.models import (
     CashLog,
     DailyChecklist,
     DailyPrep,
+    PrepTemplateItem,
+    today_et,
     DWPRecord,
     FormSubmission,
     HRDocument,
@@ -740,6 +742,72 @@ def _forms_context(
     }
 
 
+_PREP_WEEKDAY_FIELDS = {
+    "monday": "monday_build_to",
+    "tuesday": "tuesday_build_to",
+    "wednesday": "wednesday_build_to",
+    "thursday": "thursday_build_to",
+    "friday": "friday_build_to",
+    "saturday": "saturday_build_to",
+    "sunday": "sunday_build_to",
+}
+
+
+def _prep_build_to_for_date(template: Any, prep_date: date) -> Any:
+    weekday_name = prep_date.strftime("%A").lower()
+    weekday_field = _PREP_WEEKDAY_FIELDS.get(weekday_name)
+    if weekday_field:
+        weekday_value = getattr(template, weekday_field, None)
+        if weekday_value:
+            return weekday_value
+    return getattr(template, "build_to", None)
+
+
+def _synthetic_prep_rows(
+    *,
+    template_rows: list[Any],
+    store_numbers: set[str],
+    prep_date: date,
+    existing_store_numbers: set[str],
+) -> list[dict[str, Any]]:
+    weekday_name = prep_date.strftime("%A").lower()
+    grouped: dict[str, list[Any]] = {}
+
+    for template in template_rows:
+        store_number = str(getattr(template, "store_number", "") or "").strip()
+        if not store_number or store_number not in store_numbers:
+            continue
+        if not bool(getattr(template, weekday_name, False)):
+            continue
+        grouped.setdefault(store_number, []).append(template)
+
+    results = []
+    for store_number in sorted(store_numbers):
+        if store_number in existing_store_numbers:
+            continue
+        templates = grouped.get(store_number, [])
+        results.append({
+            "id": None,
+            "store_number": store_number,
+            "prep_date": prep_date.isoformat(),
+            "created_at": None,
+            "item_count": len(templates),
+            "completed_count": 0,
+            "percent_complete": 0,
+            "record_exists": False,
+            "status": "not_started" if templates else "no_active_template",
+            "incomplete_items": [
+                {
+                    "section_name": getattr(template, "section_name", None),
+                    "item_name": getattr(template, "item_name", None),
+                    "build_to": _prep_build_to_for_date(template, prep_date),
+                }
+                for template in templates[:30]
+            ],
+        })
+    return results
+
+
 def _prep_context(
     *,
     user_context: dict[str, Any],
@@ -748,106 +816,118 @@ def _prep_context(
     date_to: date | None,
     limit: int,
 ) -> dict[str, Any]:
-    allowed_stores = visible_store_numbers(
-        user_context
-    )
+    allowed_stores = visible_store_numbers(user_context)
+    target_stores = {store} if store else set(allowed_stores)
 
-    query = DailyPrep.query
+    if store and store not in allowed_stores:
+        return {
+            "ok": False,
+            "error": "Store is outside the requester's visible scope.",
+        }
 
-    if store:
-        if store not in allowed_stores:
-            return {
-                "ok": False,
-                "error": (
-                    "Store is outside the "
-                    "requester's visible scope."
-                ),
-            }
-
-        query = query.filter(
-            DailyPrep.store_number == store
-        )
-    else:
-        query = query.filter(
-            DailyPrep.store_number.in_(
-                allowed_stores
-            )
-        )
-
+    query = DailyPrep.query.filter(DailyPrep.store_number.in_(target_stores))
     if date_from:
-        query = query.filter(
-            DailyPrep.prep_date >= date_from
-        )
-
+        query = query.filter(DailyPrep.prep_date >= date_from)
     if date_to:
-        query = query.filter(
-            DailyPrep.prep_date <= date_to
-        )
+        query = query.filter(DailyPrep.prep_date <= date_to)
 
     rows = (
         query
-        .order_by(
-            DailyPrep.prep_date.desc(),
-            DailyPrep.id.desc(),
-        )
+        .order_by(DailyPrep.prep_date.desc(), DailyPrep.id.desc())
         .limit(limit)
         .all()
     )
 
     results = []
-
     for row in rows:
-        completed = sum(
-            1
-            for item in row.items
-            if item.is_completed
-        )
-
+        completed = sum(1 for item in row.items if item.is_completed)
         results.append({
             "id": row.id,
-            "store_number": (
-                row.store_number
-            ),
-            "prep_date": _iso(
-                row.prep_date
-            ),
-            "created_at": _iso(
-                row.created_at
-            ),
+            "store_number": row.store_number,
+            "prep_date": _iso(row.prep_date),
+            "created_at": _iso(row.created_at),
             "item_count": len(row.items),
             "completed_count": completed,
             "percent_complete": round(
-                (
-                    completed
-                    / len(row.items)
-                    * 100
-                )
-                if row.items
-                else 0,
+                (completed / len(row.items) * 100) if row.items else 0,
                 1,
+            ),
+            "record_exists": True,
+            "status": (
+                "complete"
+                if row.items and completed == len(row.items)
+                else "in_progress"
+                if completed > 0
+                else "not_started"
             ),
             "incomplete_items": [
                 {
-                    "section_name": (
-                        item.section_name
-                    ),
-                    "item_name": (
-                        item.item_name
-                    ),
-                    "build_to": (
-                        item.build_to
-                    ),
+                    "section_name": item.section_name,
+                    "item_name": item.item_name,
+                    "build_to": item.build_to,
                 }
                 for item in row.items
                 if not item.is_completed
             ][:30],
         })
 
+    synthesized = []
+    exact_date = date_from if date_from and date_from == date_to else None
+
+    # DailyPrep rows are created lazily when a store opens the Prep page.
+    # For today's read-only company status, synthesize missing stores from
+    # active templates so unopened pages do not disappear from Doughy.
+    if exact_date and exact_date == today_et():
+        existing_store_numbers = {
+            str(row.store_number)
+            for row in rows
+            if row.prep_date == exact_date
+        }
+        template_rows = (
+            PrepTemplateItem.query
+            .filter(
+                PrepTemplateItem.store_number.in_(target_stores),
+                PrepTemplateItem.is_active.is_(True),
+            )
+            .order_by(
+                PrepTemplateItem.store_number.asc(),
+                PrepTemplateItem.section_name.asc(),
+                PrepTemplateItem.sort_order.asc(),
+                PrepTemplateItem.id.asc(),
+            )
+            .all()
+        )
+        synthesized = _synthetic_prep_rows(
+            template_rows=template_rows,
+            store_numbers=target_stores,
+            prep_date=exact_date,
+            existing_store_numbers=existing_store_numbers,
+        )
+        results.extend(synthesized)
+
+    results.sort(
+        key=lambda item: (
+            str(item.get("prep_date") or ""),
+            str(item.get("store_number") or ""),
+        ),
+        reverse=True,
+    )
+
     return {
         "ok": True,
         "module": "prep",
-        "count": len(results),
-        "daily_preps": results,
+        "count": len(results[:limit]),
+        "daily_preps": results[:limit],
+        "synthesized_count": len(synthesized),
+        "requested": {
+            "store": store,
+            "date_from": _iso(date_from),
+            "date_to": _iso(date_to),
+        },
+        "scope": {
+            "role": _role(user_context),
+            "visible_store_count": len(target_stores),
+        },
     }
 
 

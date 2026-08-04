@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta
 from typing import Any
 
+from sqlalchemy.orm import selectinload
+
 from app.models import (
     CashLog,
     DailyChecklist,
@@ -944,7 +946,9 @@ def _checklist_history(
         user_context
     )
 
-    query = DailyChecklist.query
+    query = DailyChecklist.query.options(
+        selectinload(DailyChecklist.items)
+    )
 
     if store:
         if store not in allowed_stores:

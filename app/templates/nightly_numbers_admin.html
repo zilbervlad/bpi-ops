@@ -514,6 +514,75 @@
         <section class="panel premium-panel nightly-admin-panel">
             <div class="panel-head">
                 <div>
+                    <h3>Store Labor Goals</h3>
+                    <div class="nightly-admin-muted">
+                        Set the official Nightly Numbers labor target for each active store.
+                        Managers will see the goal but cannot change it.
+                    </div>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('nightly_numbers.admin') }}">
+                <input type="hidden" name="action" value="update_store_labor_goals">
+
+                <div class="nightly-settings-list">
+                    {% for store in stores %}
+                    <div class="nightly-setting-card">
+                        <div class="nightly-setting-body"
+                             style="grid-template-columns:minmax(180px, 1fr) minmax(160px, 240px) auto;">
+                            <div>
+                                <div class="nightly-setting-title">Store</div>
+                                <div class="nightly-setting-subtitle">
+                                    {{ store.store_number }}
+                                    {% if store.store_name %}
+                                        · {{ store.store_name }}
+                                    {% endif %}
+                                </div>
+                                <div class="nightly-admin-muted">
+                                    {{ store.area_name }}
+                                </div>
+                            </div>
+
+                            <div class="nightly-inline-field">
+                                <label for="labor_goal_{{ store.id }}">Labor Goal %</label>
+                                <input
+                                    id="labor_goal_{{ store.id }}"
+                                    name="labor_goal_{{ store.id }}"
+                                    type="number"
+                                    inputmode="decimal"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    value="{{ '' if store.labor_goal is none else ('%.2f'|format(store.labor_goal)) }}"
+                                    placeholder="Example: 21.00"
+                                >
+                            </div>
+
+                            <div class="nightly-setting-actions">
+                                <span class="nightly-setting-status">
+                                    {% if store.labor_goal is none %}
+                                        Default 21%
+                                    {% else %}
+                                        {{ '%.2f'|format(store.labor_goal) }}%
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+                    <button type="submit" class="btn btn-primary">
+                        Save Labor Goals
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel premium-panel nightly-admin-panel">
+            <div class="panel-head">
+                <div>
                     <h3>Nightly Form Settings</h3>
                     <div class="nightly-admin-muted">
                         Control which fields managers see on the nightly numbers form.

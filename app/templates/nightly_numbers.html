@@ -38,6 +38,10 @@
                         <input
                             type="checkbox"
                             name="{{ field.field_key }}"
+                                    {% if field.field_key == 'labor_goal' %}
+                                        readonly
+                                        aria-readonly="true"
+                                    {% endif %}
                             {% if value %}checked{% endif %}
                             {% if field.is_required %}required{% endif %}
                         >
@@ -49,6 +53,10 @@
                         <textarea
                             id="{{ field.field_key }}"
                             name="{{ field.field_key }}"
+                                    {% if field.field_key == 'labor_goal' %}
+                                        readonly
+                                        aria-readonly="true"
+                                    {% endif %}
                             rows="{{ meta.get('rows', 3) }}"
                             placeholder="{{ meta.get('placeholder', '') }}"
                             {% if field.is_required %}required{% endif %}
@@ -61,6 +69,10 @@
                             type="text"
                             id="{{ field.field_key }}"
                             name="{{ field.field_key }}"
+                                    {% if field.field_key == 'labor_goal' %}
+                                        readonly
+                                        aria-readonly="true"
+                                    {% endif %}
                             value="{{ '' if value is none else value }}"
                             placeholder="{{ meta.get('placeholder', '') }}"
                             {% if field.is_required %}required{% endif %}

@@ -135,8 +135,7 @@ FIELD_META = {
         "placeholder": "Example: 20.00",
     },
     "labor_goal": {
-        "placeholder": "Example: 21.0",
-        "default": "21.0",
+        "placeholder": "Set by Admin",
     },
     "food_variance": {
         "placeholder": "Example: 0.01",
@@ -427,6 +426,15 @@ def index():
         flash("No store is assigned to this manager.", "error")
         return redirect(url_for("dashboard.home"))
 
+    assigned_store = Store.query.filter_by(
+        store_number=user_store,
+        is_active=True,
+    ).first()
+
+    if not assigned_store:
+        flash("Your assigned store could not be found.", "error")
+        return redirect(url_for("dashboard.home"))
+
     fields = get_field_config()
     business_date = current_business_date()
     today_str = business_date.strftime("%Y-%m-%d")
@@ -455,6 +463,15 @@ def index():
 
         for field in fields:
             apply_form_value_to_report(report, field)
+
+        # Labor goal is controlled by Admin at the store level.
+        # Save a snapshot on the report so historical reports retain
+        # the goal that was active when the report was submitted.
+        report.labor_goal = (
+            assigned_store.labor_goal
+            if assigned_store.labor_goal is not None
+            else 21.0
+        )
 
         # Dynamic yes/no fields post values like "yes"; model columns are Boolean.
         report.invoices_transfers_checked = parse_form_bool_value("invoices_transfers_checked")
@@ -493,7 +510,13 @@ def index():
     for field in fields:
         value = get_report_value(existing_report, field.field_key)
 
-        if value is None and field.field_key in FIELD_META and "default" in FIELD_META[field.field_key]:
+        if value is None and field.field_key == "labor_goal":
+            value = (
+                assigned_store.labor_goal
+                if assigned_store.labor_goal is not None
+                else 21.0
+            )
+        elif value is None and field.field_key in FIELD_META and "default" in FIELD_META[field.field_key]:
             value = FIELD_META[field.field_key]["default"]
 
         field_values[field.field_key] = value
@@ -518,6 +541,36 @@ def admin():
     if request.method == "POST":
         if session.get("user_role") != "admin":
             flash("Only admins can update nightly form settings.", "error")
+            return redirect(url_for("nightly_numbers.admin"))
+
+        action = request.form.get("action", "").strip()
+
+        if action == "update_store_labor_goals":
+            active_stores = Store.query.filter_by(is_active=True).all()
+
+            for store in active_stores:
+                raw_goal = request.form.get(
+                    f"labor_goal_{store.id}",
+                    "",
+                ).strip()
+
+                if not raw_goal:
+                    store.labor_goal = None
+                    continue
+
+                parsed_goal = parse_float(raw_goal)
+
+                if parsed_goal is None or parsed_goal < 0 or parsed_goal > 100:
+                    flash(
+                        f"Invalid labor goal for store {store.store_number}.",
+                        "error",
+                    )
+                    return redirect(url_for("nightly_numbers.admin"))
+
+                store.labor_goal = round(parsed_goal, 2)
+
+            db.session.commit()
+            flash("Store labor goals updated.", "success")
             return redirect(url_for("nightly_numbers.admin"))
 
         field_id = request.form.get("field_id", type=int)

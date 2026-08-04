@@ -27,6 +27,25 @@ def ensure_user_position_column():
 
 
 
+def ensure_store_labor_goal_column():
+    """Add stores.labor_goal for databases created before store labor goals."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    table_names = set(inspector.get_table_names())
+
+    if "stores" not in table_names:
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("stores")}
+
+    if "labor_goal" not in columns:
+        with db.engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE stores ADD COLUMN labor_goal FLOAT")
+            )
+
+
 def ensure_hr_document_due_date_column():
     """Add hr_documents.due_date for existing databases that were created before this column existed."""
     from sqlalchemy import inspect, text
@@ -210,6 +229,7 @@ def create_app():
         ensure_academy_seed_data()
         ensure_user_position_column()
         ensure_hr_document_due_date_column()
+        ensure_store_labor_goal_column()
         return "Database tables created"
 
     # Seed data + ensure tables exist
@@ -221,6 +241,7 @@ def create_app():
         db.create_all()
         ensure_user_position_column()
         ensure_hr_document_due_date_column()
+        ensure_store_labor_goal_column()
         seed_admin()
         seed_stores()
         seed_checklist_template()

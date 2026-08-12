@@ -238,21 +238,6 @@ def register_global_hr_navigation(state):
             "dwp.hr_form_decision",
             "dwp.hr_form_acknowledge",
         } else ""
-        manage_docs_active = " active" if endpoint in {
-            "hr_documents.index",
-            "hr_documents.new_document",
-            "hr_documents.detail",
-            "hr_documents.add_recipients",
-        } else ""
-
-        admin_link = ""
-        if role in {"admin", "hr", "supervisor"}:
-            admin_link = f"""
-            <a href="/hr-documents/" class="global-hr-admin-link{manage_docs_active}">
-                <span class="nav-icon">◆</span>
-                <span>Manage Documents</span>
-            </a>
-            """
 
         nav = f"""
         <div class="nav-section global-hr-nav" data-global-hr-nav="1">
@@ -265,7 +250,6 @@ def register_global_hr_navigation(state):
                 <span class="nav-icon">□</span>
                 <span>HR Forms</span>
             </a>
-            {admin_link}
         </div>
         """
 
@@ -280,7 +264,7 @@ def register_global_hr_navigation(state):
             const globalNav = document.querySelector(".global-hr-nav");
             if (!globalNav) return;
 
-            document.querySelectorAll('.sidebar a[href="/hr-documents/my"], .sidebar a[href="/hr-documents/"]').forEach(function (link) {
+            document.querySelectorAll('.sidebar a[href="/hr-documents/my"]').forEach(function (link) {
                 if (!globalNav.contains(link)) {
                     const section = link.closest(".nav-section");
                     link.remove();

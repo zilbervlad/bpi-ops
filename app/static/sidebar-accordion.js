@@ -229,3 +229,99 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 });
+
+/*
+ * Global POST-form submit guard.
+ *
+ * A slow email/PDF/upload request used to leave the submit button active,
+ * so a second click could create a duplicate submission. Lock the form as
+ * soon as the browser accepts a valid submit, show a clear busy state, and
+ * block every later submit event until the page changes.
+ *
+ * Add data-allow-repeat-submit to a form if a future AJAX workflow genuinely
+ * needs to submit the same form more than once without a page navigation.
+ */
+(function () {
+    function getBusyText(form, button) {
+        const override =
+            (button && button.getAttribute("data-submitting-text")) ||
+            form.getAttribute("data-submitting-text");
+
+        if (override) return override;
+
+        const label = button
+            ? ((button.textContent || button.value || "").trim().toLowerCase())
+            : "";
+
+        if (label.includes("save") || label.includes("update")) {
+            return "Saving…";
+        }
+
+        if (label.includes("upload")) {
+            return "Uploading…";
+        }
+
+        return "Sending…";
+    }
+
+    function preserveSubmitterValue(form, submitter) {
+        if (!submitter || !submitter.name || submitter.disabled) return;
+
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = submitter.name;
+        hidden.value = submitter.value || "";
+        hidden.setAttribute("data-bpi-submitter-copy", "true");
+        form.appendChild(hidden);
+    }
+
+    function lockSubmitButton(button, busyText) {
+        if (!button) return;
+
+        button.setAttribute("aria-busy", "true");
+        button.setAttribute("aria-disabled", "true");
+        button.disabled = true;
+
+        if (button.tagName === "INPUT") {
+            button.setAttribute("data-bpi-original-value", button.value || "");
+            button.value = busyText;
+            return;
+        }
+
+        button.setAttribute("data-bpi-original-html", button.innerHTML);
+        button.textContent = busyText;
+    }
+
+    document.addEventListener("submit", function (event) {
+        const form = event.target;
+
+        if (!(form instanceof HTMLFormElement)) return;
+        if ((form.method || "get").toLowerCase() !== "post") return;
+        if (form.hasAttribute("data-allow-repeat-submit")) return;
+        if (event.defaultPrevented) return;
+
+        if (form.getAttribute("data-bpi-submitting") === "true") {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
+
+        form.setAttribute("data-bpi-submitting", "true");
+        form.setAttribute("aria-busy", "true");
+
+        const submitter = event.submitter || form.querySelector(
+            'button[type="submit"], input[type="submit"]'
+        );
+
+        preserveSubmitterValue(form, submitter);
+
+        const busyText = getBusyText(form, submitter);
+        const submitButtons = form.querySelectorAll(
+            'button[type="submit"], input[type="submit"]'
+        );
+
+        submitButtons.forEach(function (button) {
+            lockSubmitButton(button, busyText);
+        });
+    });
+})();

@@ -105,6 +105,8 @@ PATH_MODULES = [
 ]
 
 PROTECTED_MODULES = {"dashboard","module_access"}
+LEGACY_MODULE_KEYS = {"manage_documents", "hr_manage_documents", "hr_documents_manage"}
+LEGACY_MODULE_LABELS = {"manage documents"}
 
 def _roles(raw):
     try:
@@ -128,6 +130,21 @@ def seed_module_access_settings():
             changed = True
         else:
             setting.module_label, setting.module_group, setting.sort_order = label, group, order
+
+    # "Manage Documents" was an older name/module for the same administrative
+    # HR document screen now represented by the canonical hr_documents module.
+    # Old database rows were never pruned by the seeder, so the legacy entry
+    # could continue to appear beside HR Documents even though both routes
+    # opened the exact same screen. Remove only these known aliases; unknown
+    # custom modules remain untouched.
+    legacy_rows = ModuleAccessSetting.query.all()
+    for setting in legacy_rows:
+        key = (setting.module_key or "").strip().lower()
+        label = (setting.module_label or "").strip().lower()
+        if key in LEGACY_MODULE_KEYS or label in LEGACY_MODULE_LABELS:
+            db.session.delete(setting)
+            changed = True
+
     if changed:
         db.session.commit()
 

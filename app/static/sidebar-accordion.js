@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", function () {
     const nav = document.querySelector("#sidebar .nav");
     if (!nav) return;
@@ -6,15 +5,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const storageKey = "bpiSidebarOpenSection";
 
     function sections() {
-        return Array.from(
-            nav.querySelectorAll(":scope > .nav-section")
-        );
+        return Array.from(nav.querySelectorAll(":scope > .nav-section"));
     }
 
     function getLabel(section) {
         return Array.from(section.children).find(function (child) {
-            return child.classList &&
-                child.classList.contains("nav-section-label");
+            return child.classList && child.classList.contains("nav-section-label");
         });
     }
 
@@ -37,10 +33,6 @@ document.addEventListener("DOMContentLoaded", function () {
             .replace(/^-|-$/g, "");
     }
 
-    /*
-     * Move BPI Academy into Command and remove its old
-     * one-item Development wrapper.
-     */
     const commandSection = sections().find(function (section) {
         return labelText(section) === "Command";
     });
@@ -51,27 +43,15 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    if (
-        commandSection &&
-        academySection &&
-        academySection !== commandSection
-    ) {
+    if (commandSection && academySection && academySection !== commandSection) {
         const academyLink = directLinks(academySection).find(function (link) {
             return link.textContent.trim().includes("BPI Academy");
         });
 
-        if (academyLink) {
-            commandSection.appendChild(academyLink);
-        }
-
-        if (directLinks(academySection).length === 0) {
-            academySection.remove();
-        }
+        if (academyLink) commandSection.appendChild(academyLink);
+        if (directLinks(academySection).length === 0) academySection.remove();
     }
 
-    /*
-     * Merge a separate HR section into People & HR.
-     */
     const peopleHrSection = sections().find(function (section) {
         return labelText(section) === "People & HR";
     });
@@ -80,15 +60,10 @@ document.addEventListener("DOMContentLoaded", function () {
         return labelText(section) === "HR";
     });
 
-    if (
-        peopleHrSection &&
-        hrSection &&
-        peopleHrSection !== hrSection
-    ) {
+    if (peopleHrSection && hrSection && peopleHrSection !== hrSection) {
         directLinks(hrSection).forEach(function (link) {
             peopleHrSection.appendChild(link);
         });
-
         hrSection.remove();
     }
 
@@ -99,39 +74,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 section.classList.contains("is-collapsible")
             ) {
                 section.classList.remove("is-open");
-
                 const label = getLabel(section);
-                if (label) {
-                    label.setAttribute("aria-expanded", "false");
-                }
+                if (label) label.setAttribute("aria-expanded", "false");
             }
         });
     }
 
     function setOpen(section, shouldOpen, remember) {
         if (!section.classList.contains("is-collapsible")) return;
-
-        if (shouldOpen) {
-            closeOtherSections(section);
-        }
+        if (shouldOpen) closeOtherSections(section);
 
         section.classList.toggle("is-open", shouldOpen);
-
         const label = getLabel(section);
-
-        if (label) {
-            label.setAttribute(
-                "aria-expanded",
-                shouldOpen ? "true" : "false"
-            );
-        }
+        if (label) label.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
 
         if (remember) {
             if (shouldOpen) {
-                localStorage.setItem(
-                    storageKey,
-                    sectionKey(section)
-                );
+                localStorage.setItem(storageKey, sectionKey(section));
             } else {
                 localStorage.removeItem(storageKey);
             }
@@ -150,20 +109,14 @@ document.addEventListener("DOMContentLoaded", function () {
             "is-single-link"
         );
 
-        if (
-            section.classList.contains("nav-logout-section")
-        ) {
+        if (section.classList.contains("nav-logout-section")) {
             section.classList.add("is-single-link");
             return;
         }
 
         if (name === "Command") {
             section.classList.add("is-fixed-open", "is-open");
-
-            if (label) {
-                label.setAttribute("aria-expanded", "true");
-            }
-
+            if (label) label.setAttribute("aria-expanded", "true");
             return;
         }
 
@@ -173,7 +126,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         section.classList.add("is-collapsible");
-
         if (!label) return;
 
         label.setAttribute("role", "button");
@@ -181,66 +133,33 @@ document.addEventListener("DOMContentLoaded", function () {
         label.setAttribute("aria-expanded", "false");
 
         function toggle() {
-            setOpen(
-                section,
-                !section.classList.contains("is-open"),
-                true
-            );
+            setOpen(section, !section.classList.contains("is-open"), true);
         }
 
         label.addEventListener("click", toggle);
-
         label.addEventListener("keydown", function (event) {
-            if (
-                event.key !== "Enter" &&
-                event.key !== " "
-            ) {
-                return;
-            }
-
+            if (event.key !== "Enter" && event.key !== " ") return;
             event.preventDefault();
             toggle();
         });
     });
 
     const activeSection = sections().find(function (section) {
-        return Boolean(
-            section.querySelector(":scope > a.active")
-        );
+        return Boolean(section.querySelector(":scope > a.active"));
     });
 
-    if (
-        activeSection &&
-        activeSection.classList.contains("is-collapsible")
-    ) {
+    if (activeSection && activeSection.classList.contains("is-collapsible")) {
         setOpen(activeSection, true, false);
     } else {
         const savedKey = localStorage.getItem(storageKey);
-
         const savedSection = sections().find(function (section) {
-            return (
-                section.classList.contains("is-collapsible") &&
-                sectionKey(section) === savedKey
-            );
+            return section.classList.contains("is-collapsible") && sectionKey(section) === savedKey;
         });
-
-        if (savedSection) {
-            setOpen(savedSection, true, false);
-        }
+        if (savedSection) setOpen(savedSection, true, false);
     }
 });
 
-/*
- * Global POST-form submit guard.
- *
- * A slow email/PDF/upload request used to leave the submit button active,
- * so a second click could create a duplicate submission. Lock the form as
- * soon as the browser accepts a valid submit, show a clear busy state, and
- * block every later submit event until the page changes.
- *
- * Add data-allow-repeat-submit to a form if a future AJAX workflow genuinely
- * needs to submit the same form more than once without a page navigation.
- */
+/* Global POST-form submit guard. */
 (function () {
     function getBusyText(form, button) {
         const override =
@@ -253,14 +172,8 @@ document.addEventListener("DOMContentLoaded", function () {
             ? ((button.textContent || button.value || "").trim().toLowerCase())
             : "";
 
-        if (label.includes("save") || label.includes("update")) {
-            return "Saving…";
-        }
-
-        if (label.includes("upload")) {
-            return "Uploading…";
-        }
-
+        if (label.includes("save") || label.includes("update")) return "Saving…";
+        if (label.includes("upload")) return "Uploading…";
         return "Sending…";
     }
 
@@ -314,13 +227,9 @@ document.addEventListener("DOMContentLoaded", function () {
         );
 
         preserveSubmitterValue(form, submitter);
-
         const busyText = getBusyText(form, submitter);
-        const submitButtons = form.querySelectorAll(
-            'button[type="submit"], input[type="submit"]'
-        );
 
-        submitButtons.forEach(function (button) {
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function (button) {
             lockSubmitButton(button, busyText);
         });
     });
@@ -328,11 +237,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
 /*
  * Checklist cash capture.
- *
- * "Count Till" and the 3-O'Clock "Dayshift Cash Out" task stay normal
- * checklist items. Checking either one opens a one-field cash-on-hand popup.
- * The cash value is saved into the existing CashLog table first; only after
- * that succeeds do we let the checklist's normal autosave mark the task done.
+ * Count Till captures opening cash on hand.
+ * Dayshift Cash Out captures cash on hand + total to account for and calculates over/short.
+ * Cash is saved first; only then is the checklist item allowed to complete.
  */
 document.addEventListener("DOMContentLoaded", function () {
     const checklistForm = document.getElementById("checklist-form");
@@ -359,15 +266,14 @@ document.addEventListener("DOMContentLoaded", function () {
         const sectionEl = checkbox.closest(".checklist-items");
 
         const task = normalizeText(taskEl ? taskEl.textContent : "");
-        const section = normalizeText(
-            sectionEl ? sectionEl.dataset.sectionName : ""
-        );
+        const section = normalizeText(sectionEl ? sectionEl.dataset.sectionName : "");
 
         if (task.includes("count till")) {
             return {
                 shiftType: "opening",
                 title: "Morning Cash Count",
                 eyebrow: "COUNT TILL",
+                needsAccountFor: false,
                 helper: "Enter the total cash on hand. This saves directly to Cash Review as the opening cash count.",
             };
         }
@@ -386,7 +292,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 shiftType: "midshift",
                 title: "Dayshift Cash Out",
                 eyebrow: "3 O'CLOCK CASH",
-                helper: "Enter the total cash on hand. This saves directly to Cash Review as the midshift cash count.",
+                needsAccountFor: true,
+                helper: "Enter cash on hand and the total to account for. BPI Ops will calculate the dayshift over / short and send it to Cash Review.",
             };
         }
 
@@ -400,117 +307,55 @@ document.addEventListener("DOMContentLoaded", function () {
         style.id = "bpi-checklist-cash-style";
         style.textContent = `
             .bpi-cash-capture-modal {
-                position: fixed;
-                inset: 0;
-                z-index: 10050;
-                display: none;
-                align-items: center;
-                justify-content: center;
-                padding: 20px;
-                background: rgba(2, 8, 23, .72);
-                backdrop-filter: blur(7px);
+                position: fixed; inset: 0; z-index: 10050; display: none;
+                align-items: center; justify-content: center; padding: 20px;
+                background: rgba(2, 8, 23, .72); backdrop-filter: blur(7px);
             }
             .bpi-cash-capture-modal.is-open { display: flex; }
             .bpi-cash-capture-card {
-                width: min(100%, 420px);
-                border: 1px solid rgba(96, 165, 250, .24);
-                border-radius: 20px;
-                padding: 22px;
+                width: min(100%, 430px); border: 1px solid rgba(96, 165, 250, .24);
+                border-radius: 20px; padding: 22px;
                 background: linear-gradient(180deg, #0d1a2f 0%, #08111f 100%);
-                box-shadow: 0 26px 80px rgba(0, 0, 0, .48);
-                color: #f8fafc;
+                box-shadow: 0 26px 80px rgba(0,0,0,.48); color: #f8fafc;
             }
             .bpi-cash-capture-eyebrow {
-                margin: 0 0 6px;
-                color: #7dd3fc;
-                font-size: 10px;
-                font-weight: 900;
-                letter-spacing: .14em;
-                text-transform: uppercase;
+                margin: 0 0 6px; color: #7dd3fc; font-size: 10px; font-weight: 900;
+                letter-spacing: .14em; text-transform: uppercase;
             }
-            .bpi-cash-capture-title {
-                margin: 0;
-                font-size: 23px;
-                line-height: 1.12;
-                letter-spacing: -.03em;
-            }
-            .bpi-cash-capture-helper {
-                margin: 8px 0 18px;
-                color: #a8bad3;
-                font-size: 13px;
-                line-height: 1.45;
-            }
-            .bpi-cash-capture-label {
-                display: block;
-                margin-bottom: 7px;
-                color: #dce8f7;
-                font-size: 12px;
-                font-weight: 900;
-            }
-            .bpi-cash-capture-money {
-                position: relative;
-            }
+            .bpi-cash-capture-title { margin: 0; font-size: 23px; line-height: 1.12; letter-spacing: -.03em; }
+            .bpi-cash-capture-helper { margin: 8px 0 18px; color: #a8bad3; font-size: 13px; line-height: 1.45; }
+            .bpi-cash-capture-field + .bpi-cash-capture-field { margin-top: 14px; }
+            .bpi-cash-capture-label { display: block; margin-bottom: 7px; color: #dce8f7; font-size: 12px; font-weight: 900; }
+            .bpi-cash-capture-money { position: relative; }
             .bpi-cash-capture-money span {
-                position: absolute;
-                left: 14px;
-                top: 50%;
-                transform: translateY(-50%);
-                color: #7dd3fc;
-                font-size: 20px;
-                font-weight: 900;
+                position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+                color: #7dd3fc; font-size: 20px; font-weight: 900;
             }
             .bpi-cash-capture-input {
-                width: 100%;
-                min-height: 54px;
-                box-sizing: border-box;
-                border: 1px solid rgba(125, 211, 252, .24);
-                border-radius: 14px;
-                padding: 12px 14px 12px 34px;
-                background: rgba(3, 10, 22, .92);
-                color: #fff;
-                font: inherit;
-                font-size: 20px;
-                font-weight: 850;
-                outline: none;
+                width: 100%; min-height: 54px; box-sizing: border-box;
+                border: 1px solid rgba(125, 211, 252, .24); border-radius: 14px;
+                padding: 12px 14px 12px 34px; background: rgba(3, 10, 22, .92);
+                color: #fff; font: inherit; font-size: 20px; font-weight: 850; outline: none;
             }
             .bpi-cash-capture-input:focus {
                 border-color: rgba(56, 189, 248, .8);
                 box-shadow: 0 0 0 4px rgba(56, 189, 248, .10);
             }
-            .bpi-cash-capture-error {
-                min-height: 18px;
-                margin: 8px 0 0;
-                color: #fca5a5;
-                font-size: 12px;
-                font-weight: 750;
+            .bpi-cash-capture-account-wrap[hidden] { display: none !important; }
+            .bpi-cash-capture-variance {
+                display: none; margin-top: 14px; padding: 11px 13px; border-radius: 13px;
+                background: rgba(15,23,42,.82); border: 1px solid rgba(148,163,184,.16);
+                align-items: center; justify-content: space-between; gap: 12px;
             }
-            .bpi-cash-capture-actions {
-                display: grid;
-                grid-template-columns: .8fr 1.2fr;
-                gap: 9px;
-                margin-top: 14px;
-            }
-            .bpi-cash-capture-actions button {
-                min-height: 44px;
-                border-radius: 12px;
-                font: inherit;
-                font-weight: 900;
-                cursor: pointer;
-            }
-            .bpi-cash-capture-cancel {
-                border: 1px solid rgba(148, 163, 184, .2);
-                background: rgba(15, 23, 42, .72);
-                color: #dbe7f5;
-            }
-            .bpi-cash-capture-save {
-                border: 1px solid rgba(56, 189, 248, .25);
-                background: linear-gradient(135deg, #1da7f0, #2563eb);
-                color: #fff;
-            }
-            .bpi-cash-capture-save:disabled {
-                opacity: .6;
-                cursor: not-allowed;
-            }
+            .bpi-cash-capture-variance.is-visible { display: flex; }
+            .bpi-cash-capture-variance span { color: #a8bad3; font-size: 12px; font-weight: 800; }
+            .bpi-cash-capture-variance strong { color: #f8fafc; font-size: 18px; }
+            .bpi-cash-capture-error { min-height: 18px; margin: 8px 0 0; color: #fca5a5; font-size: 12px; font-weight: 750; }
+            .bpi-cash-capture-actions { display: grid; grid-template-columns: .8fr 1.2fr; gap: 9px; margin-top: 14px; }
+            .bpi-cash-capture-actions button { min-height: 44px; border-radius: 12px; font: inherit; font-weight: 900; cursor: pointer; }
+            .bpi-cash-capture-cancel { border: 1px solid rgba(148,163,184,.2); background: rgba(15,23,42,.72); color: #dbe7f5; }
+            .bpi-cash-capture-save { border: 1px solid rgba(56,189,248,.25); background: linear-gradient(135deg,#1da7f0,#2563eb); color: #fff; }
+            .bpi-cash-capture-save:disabled { opacity: .6; cursor: not-allowed; }
             @media (max-width: 520px) {
                 .bpi-cash-capture-card { padding: 19px; }
                 .bpi-cash-capture-actions { grid-template-columns: 1fr; }
@@ -526,27 +371,33 @@ document.addEventListener("DOMContentLoaded", function () {
         const modal = document.createElement("div");
         modal.className = "bpi-cash-capture-modal";
         modal.setAttribute("aria-hidden", "true");
-
         modal.innerHTML = `
             <div class="bpi-cash-capture-card" role="dialog" aria-modal="true" aria-labelledby="bpi-cash-capture-title">
                 <p class="bpi-cash-capture-eyebrow" id="bpi-cash-capture-eyebrow">CASH COUNT</p>
                 <h3 class="bpi-cash-capture-title" id="bpi-cash-capture-title">Cash on Hand</h3>
                 <p class="bpi-cash-capture-helper" id="bpi-cash-capture-helper"></p>
 
-                <label class="bpi-cash-capture-label" for="bpi-cash-capture-input">Cash on Hand</label>
-                <div class="bpi-cash-capture-money">
-                    <span>$</span>
-                    <input
-                        id="bpi-cash-capture-input"
-                        class="bpi-cash-capture-input"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        inputmode="decimal"
-                        autocomplete="off"
-                        placeholder="0.00"
-                    >
+                <div class="bpi-cash-capture-field">
+                    <label class="bpi-cash-capture-label" for="bpi-cash-capture-input">Cash on Hand</label>
+                    <div class="bpi-cash-capture-money">
+                        <span>$</span>
+                        <input id="bpi-cash-capture-input" class="bpi-cash-capture-input" type="number" min="0" step="0.01" inputmode="decimal" autocomplete="off" placeholder="0.00">
+                    </div>
                 </div>
+
+                <div class="bpi-cash-capture-field bpi-cash-capture-account-wrap" id="bpi-cash-capture-account-wrap" hidden>
+                    <label class="bpi-cash-capture-label" for="bpi-cash-capture-account">Total to Account For</label>
+                    <div class="bpi-cash-capture-money">
+                        <span>$</span>
+                        <input id="bpi-cash-capture-account" class="bpi-cash-capture-input" type="number" min="0" step="0.01" inputmode="decimal" autocomplete="off" placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="bpi-cash-capture-variance" id="bpi-cash-capture-variance">
+                    <span>Calculated Over / Short</span>
+                    <strong id="bpi-cash-capture-variance-value">$0.00</strong>
+                </div>
+
                 <div class="bpi-cash-capture-error" id="bpi-cash-capture-error"></div>
 
                 <div class="bpi-cash-capture-actions">
@@ -565,12 +416,44 @@ document.addEventListener("DOMContentLoaded", function () {
     const modalEyebrow = document.getElementById("bpi-cash-capture-eyebrow");
     const modalHelper = document.getElementById("bpi-cash-capture-helper");
     const cashInput = document.getElementById("bpi-cash-capture-input");
+    const accountWrap = document.getElementById("bpi-cash-capture-account-wrap");
+    const accountInput = document.getElementById("bpi-cash-capture-account");
+    const varianceBox = document.getElementById("bpi-cash-capture-variance");
+    const varianceValue = document.getElementById("bpi-cash-capture-variance-value");
     const cashError = document.getElementById("bpi-cash-capture-error");
     const cancelButton = document.getElementById("bpi-cash-capture-cancel");
     const saveButton = document.getElementById("bpi-cash-capture-save");
 
+    function formatMoney(value) {
+        const number = Number(value) || 0;
+        const sign = number < 0 ? "-" : "";
+        return `${sign}$${Math.abs(number).toFixed(2)}`;
+    }
+
+    function updateVariancePreview() {
+        if (!activeCashCapture || !activeCashCapture.config.needsAccountFor) {
+            varianceBox.classList.remove("is-visible");
+            return;
+        }
+
+        const cash = Number(cashInput.value);
+        const accountFor = Number(accountInput.value);
+
+        if (
+            !cashInput.value.trim() ||
+            !accountInput.value.trim() ||
+            !Number.isFinite(cash) ||
+            !Number.isFinite(accountFor)
+        ) {
+            varianceBox.classList.remove("is-visible");
+            return;
+        }
+
+        varianceValue.textContent = formatMoney(cash - accountFor);
+        varianceBox.classList.add("is-visible");
+    }
+
     function closeCashCapture() {
-        if (!modal) return;
         modal.classList.remove("is-open");
         modal.setAttribute("aria-hidden", "true");
         activeCashCapture = null;
@@ -585,22 +468,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function openCashCapture(checkbox, config) {
         activeCashCapture = { checkbox: checkbox, config: config };
-
         checkbox.checked = false;
+
         modalTitle.textContent = config.title;
         modalEyebrow.textContent = config.eyebrow;
         modalHelper.textContent = config.helper;
         cashInput.value = "";
+        accountInput.value = "";
+        accountWrap.hidden = !config.needsAccountFor;
+        varianceBox.classList.remove("is-visible");
+        varianceValue.textContent = "$0.00";
         cashError.textContent = "";
         saveButton.disabled = false;
-        saveButton.textContent = "Save Cash";
+        saveButton.textContent = config.needsAccountFor ? "Save Dayshift Cash" : "Save Cash";
 
         modal.classList.add("is-open");
         modal.setAttribute("aria-hidden", "false");
-
-        window.setTimeout(function () {
-            cashInput.focus();
-        }, 80);
+        window.setTimeout(function () { cashInput.focus(); }, 80);
     }
 
     async function saveCashCapture() {
@@ -611,6 +495,20 @@ document.addEventListener("DOMContentLoaded", function () {
             cashError.textContent = "Enter a valid cash-on-hand amount.";
             cashInput.focus();
             return;
+        }
+
+        let amountToAccountFor = null;
+        if (activeCashCapture.config.needsAccountFor) {
+            amountToAccountFor = Number(accountInput.value);
+            if (
+                !accountInput.value.trim() ||
+                !Number.isFinite(amountToAccountFor) ||
+                amountToAccountFor < 0
+            ) {
+                cashError.textContent = "Enter a valid total to account for.";
+                accountInput.focus();
+                return;
+            }
         }
 
         const storeNumber = storeSelect ? String(storeSelect.value || "").trim() : "";
@@ -628,19 +526,23 @@ document.addEventListener("DOMContentLoaded", function () {
         saveButton.textContent = "Saving…";
         cashError.textContent = "";
 
+        const payload = {
+            store_number: storeNumber,
+            log_date: logDate,
+            shift_type: activeCashCapture.config.shiftType,
+            cash_on_hand: amount,
+            manager_name: managerName,
+        };
+
+        if (activeCashCapture.config.needsAccountFor) {
+            payload.amount_to_account_for = amountToAccountFor;
+        }
+
         try {
             const response = await fetch("/cash/checklist-log", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    store_number: storeNumber,
-                    log_date: logDate,
-                    shift_type: activeCashCapture.config.shiftType,
-                    cash_on_hand: amount,
-                    manager_name: managerName,
-                }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();
@@ -648,7 +550,9 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!response.ok || !data.success) {
                 cashError.textContent = data.error || "Cash could not be saved.";
                 saveButton.disabled = false;
-                saveButton.textContent = "Save Cash";
+                saveButton.textContent = activeCashCapture.config.needsAccountFor
+                    ? "Save Dayshift Cash"
+                    : "Save Cash";
                 return;
             }
 
@@ -661,7 +565,9 @@ document.addEventListener("DOMContentLoaded", function () {
         } catch (error) {
             cashError.textContent = "Cash could not be saved. Check the connection and try again.";
             saveButton.disabled = false;
-            saveButton.textContent = "Save Cash";
+            saveButton.textContent = activeCashCapture.config.needsAccountFor
+                ? "Save Dayshift Cash"
+                : "Save Cash";
         }
     }
 
@@ -671,9 +577,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (
             !(checkbox instanceof HTMLInputElement) ||
             !checkbox.classList.contains("live-checklist-box")
-        ) {
-            return;
-        }
+        ) return;
 
         if (checkbox.dataset.cashCaptureBypass === "true") {
             delete checkbox.dataset.cashCaptureBypass;
@@ -692,14 +596,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
     cancelButton.addEventListener("click", cancelCashCapture);
     saveButton.addEventListener("click", saveCashCapture);
+    cashInput.addEventListener("input", updateVariancePreview);
+    accountInput.addEventListener("input", updateVariancePreview);
 
     modal.addEventListener("click", function (event) {
-        if (event.target === modal) {
-            cancelCashCapture();
-        }
+        if (event.target === modal) cancelCashCapture();
     });
 
     cashInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            if (activeCashCapture && activeCashCapture.config.needsAccountFor) {
+                accountInput.focus();
+            } else {
+                saveCashCapture();
+            }
+        }
+    });
+
+    accountInput.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
             event.preventDefault();
             saveCashCapture();

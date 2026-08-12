@@ -1,302 +1,412 @@
 {% extends "base.html" %}
 
-{% block title %}Checklist Overview | BPI Ops{% endblock %}
-{% block header %}Checklist Overview{% endblock %}
+{% block title %}Checklist Command | BPI Ops{% endblock %}
+{% block header %}Checklist Command{% endblock %}
 
 {% block content %}
-<div class="command-bar panel" style="margin-bottom: 24px;">
-    <div class="command-bar-left">
-        <div class="command-eyebrow">SUPERVISOR VIEW</div>
-        <h2 class="command-title">Checklist Control Board</h2>
-        <p class="command-subtitle">
-            In-progress checklists, completed stores, and recent archives for {{ today_label }}.
-        </p>
-    </div>
-    <div class="command-bar-right">
-        <div class="command-chip">Oversight View</div>
-        <div class="command-chip">{{ today_label }}</div>
+<style>
+.check-command-page{display:flex;flex-direction:column;gap:14px}.check-hero{padding:18px 20px;border:1px solid rgba(56,189,248,.16);background:radial-gradient(circle at top left,rgba(14,165,233,.12),transparent 34%),rgba(8,17,32,.9)}.check-hero-row{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}.check-hero h2{margin:3px 0 4px;font-size:clamp(1.45rem,2.2vw,2rem);letter-spacing:-.04em}.check-hero p{margin:0;color:#94a3b8;font-size:.88rem;line-height:1.45;max-width:760px}.check-hero-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.check-date-chip{display:inline-flex;align-items:center;min-height:34px;padding:6px 11px;border:1px solid rgba(148,163,184,.15);border-radius:999px;background:rgba(15,23,42,.7);color:#dbeafe;font-size:.76rem;font-weight:900}.check-hero-actions .btn-primary{min-height:36px;padding:7px 12px;font-size:.78rem}.check-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}.check-metric{padding:13px 14px;border:1px solid rgba(148,163,184,.11);border-radius:15px;background:rgba(15,23,42,.5);min-width:0}.check-metric-label{color:#8ea2bd;font-size:.66rem;font-weight:950;letter-spacing:.11em;text-transform:uppercase}.check-metric-value{margin-top:5px;color:#f8fafc;font-size:1.65rem;font-weight:950;line-height:1;letter-spacing:-.04em}.check-metric-sub{margin-top:6px;color:#8294ad;font-size:.71rem;font-weight:750;line-height:1.3}.metric-danger{color:#fda4af}.metric-warning{color:#fde68a}.metric-good{color:#86efac}.metric-pending{color:#7dd3fc}.check-board{padding:0;overflow:hidden}.check-board-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 15px;border-bottom:1px solid rgba(148,163,184,.09);flex-wrap:wrap}.check-board-title h3{margin:0;font-size:1rem}.check-board-title p{margin:3px 0 0;color:#8294ad;font-size:.74rem}.check-board-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.check-search{width:min(260px,46vw);min-height:36px;padding:7px 10px;border:1px solid rgba(148,163,184,.16);border-radius:10px;background:rgba(8,17,32,.8);color:#f8fafc;font:inherit;font-size:.78rem;outline:none}.check-search:focus{border-color:rgba(56,189,248,.55);box-shadow:0 0 0 3px rgba(56,189,248,.08)}.check-filter-btn{min-height:34px;padding:6px 10px;border:1px solid rgba(148,163,184,.14);border-radius:999px;background:rgba(15,23,42,.72);color:#aebdd0;font:inherit;font-size:.71rem;font-weight:900;cursor:pointer}.check-filter-btn.is-active{border-color:rgba(56,189,248,.35);background:rgba(14,116,144,.23);color:#dff7ff}.check-table-wrap{width:100%;overflow-x:auto}.check-table{width:100%;border-collapse:collapse;min-width:1140px}.check-table th{padding:9px 10px;border-bottom:1px solid rgba(148,163,184,.1);color:#8195af;font-size:.62rem;font-weight:950;letter-spacing:.1em;text-align:left;text-transform:uppercase;white-space:nowrap}.check-table td{padding:10px;border-bottom:1px solid rgba(148,163,184,.065);color:#dbe4ef;font-size:.76rem;vertical-align:middle}.check-table tbody tr{cursor:pointer;transition:background .14s ease}.check-table tbody tr:hover{background:rgba(30,41,59,.32)}.check-table tbody tr.row-critical{background:linear-gradient(90deg,rgba(127,29,29,.13),transparent 34%)}.check-table tbody tr.row-warning{background:linear-gradient(90deg,rgba(120,53,15,.1),transparent 30%)}.check-store{font-weight:950;color:#e0f2fe;white-space:nowrap}.check-store small{display:block;margin-top:2px;color:#7388a3;font-size:.65rem;font-weight:750}.check-section-cell{min-width:87px}.check-section-main{font-size:.82rem;font-weight:950;white-space:nowrap}.check-section-sub{margin-top:2px;color:#71859f;font-size:.62rem;font-weight:750;white-space:nowrap}.sec-good .check-section-main{color:#86efac}.sec-warning .check-section-main{color:#fde68a}.sec-bad .check-section-main{color:#fda4af}.sec-pending .check-section-main{color:#7dd3fc}.sec-neutral .check-section-main{color:#cbd5e1}.check-integrity{font-weight:950;font-variant-numeric:tabular-nums}.integrity-good{color:#86efac}.integrity-warning{color:#fde68a}.integrity-bad{color:#fda4af}.check-oa{font-weight:950;font-variant-numeric:tabular-nums}.check-manager{color:#aebdd0;font-size:.72rem;white-space:nowrap}.check-manager small{display:block;color:#71859f;font-size:.62rem;margin-top:2px}.check-issue{min-width:230px}.issue-line{color:#dbe4ef;font-weight:850;line-height:1.35}.issue-line.danger{color:#fecaca}.issue-line.warning{color:#fde68a}.issue-secondary{margin-top:3px;color:#71859f;font-size:.63rem;font-weight:750;line-height:1.35}.check-row-actions{display:flex;align-items:center;gap:5px;white-space:nowrap}.check-open-link,.check-email-btn{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:5px 8px;border-radius:9px;font:inherit;font-size:.67rem;font-weight:900;text-decoration:none;cursor:pointer}.check-open-link{border:1px solid rgba(56,189,248,.18);background:rgba(14,116,144,.17);color:#dff7ff}.check-email-btn{border:1px solid rgba(148,163,184,.13);background:rgba(15,23,42,.72);color:#aebdd0}.check-email-btn:disabled{opacity:.55;cursor:wait}.check-loading{padding:22px 16px;color:#8fa4bf;text-align:center}.check-archives{padding:0;overflow:hidden}.check-archives>summary{list-style:none;cursor:pointer;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;gap:12px}.check-archives>summary::-webkit-details-marker{display:none}.check-archive-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.check-archive-title h3{margin:0;font-size:.94rem}.check-badge{display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:3px 8px;border:1px solid rgba(148,163,184,.13);border-radius:999px;background:rgba(15,23,42,.72);color:#b8c6d8;font-size:.66rem;font-weight:900;white-space:nowrap}.check-archive-body{border-top:1px solid rgba(148,163,184,.08);padding:12px 14px}.archive-compact-table{width:100%;border-collapse:collapse}.archive-compact-table th,.archive-compact-table td{padding:8px 9px;border-bottom:1px solid rgba(148,163,184,.07);font-size:.72rem;text-align:left}.archive-compact-table th{color:#8195af;font-size:.61rem;letter-spacing:.08em;text-transform:uppercase}.archive-delete{border:0;border-radius:8px;background:rgba(127,29,29,.65);color:#fecaca;padding:5px 7px;font-size:.64rem;font-weight:900;cursor:pointer}@media(max-width:1180px){.check-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.check-command-page{gap:10px}.check-hero{padding:15px}.check-hero-actions{width:100%}.check-metrics{grid-template-columns:1fr 1fr}.check-board-head{align-items:stretch}.check-board-tools{width:100%}.check-search{width:100%;flex:1 1 100%}.check-filter-btn{flex:1}.check-table{min-width:980px}.check-table th,.check-table td{padding:9px 8px}}@media(max-width:470px){.check-metrics{grid-template-columns:1fr}.check-metric{padding:12px}}
+</style>
 
-        {% if session.get("user_role") in ["admin", "supervisor"] %}
-        <form method="POST" action="{{ url_for('checklist.send_all_summaries') }}" style="margin: 0;">
-            <button
-                type="submit"
-                class="btn-primary"
-                onclick="return confirm('Send individual summary emails for all visible stores?');"
-            >
-                Send All Summaries
-            </button>
-        </form>
-        {% endif %}
-    </div>
-</div>
+{% set total_visible = not_started|length + in_progress|length + completed|length %}
 
-<div class="dashboard-grid dashboard-grid-premium" style="margin-bottom: 24px;">
-    <div class="metric-card premium-card premium-card-alert">
-        <span class="metric-label">Not Started</span>
-        <h3>{{ not_started|length }}</h3>
-        <p class="metric-footnote">Stores with no checklist started today</p>
-    </div>
-
-    <div class="metric-card premium-card premium-card-blue">
-        <span class="metric-label">In Progress</span>
-        <h3>{{ in_progress|length }}</h3>
-        <p class="metric-footnote">Stores currently working today’s checklist</p>
-    </div>
-
-    <div class="metric-card premium-card">
-        <span class="metric-label">Completed</span>
-        <h3>{{ completed|length }}</h3>
-        <p class="metric-footnote">Stores that finished today’s checklist</p>
-    </div>
-
-    <div class="metric-card premium-card">
-        <span class="metric-label">Archives</span>
-        <h3>{{ recent_archives|length }}</h3>
-        <p class="metric-footnote">Recent completed or saved prior-day checklists</p>
-    </div>
-</div>
-
-<div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
-
-    <details class="panel premium-panel" open>
-        <summary class="panel-head" style="cursor:pointer;">
-            <h3>In Progress</h3>
-            <span class="summary-pill">{{ in_progress|length }} stores</span>
-        </summary>
-
-        <div class="admin-task-list">
-            {% for item in in_progress %}
-            <div class="admin-task-card">
-                <a href="{{ url_for('checklist.index', store=item.store_number) }}" style="display:block; color:inherit;">
-                    <div class="admin-task-top">
-                        <span class="summary-pill">Store {{ item.store_number }}</span>
-                        <span class="table-badge badge-warning">{{ item.percent_complete }}%</span>
-                        <span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                            Integrity {{ item.integrity_score }}%
-                        </span>
-                        <span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                            Walk {{ item.manager_walk_integrity }}%
-                        </span>
-                    </div>
-                    <div class="area-subtitle">{{ item.store_name }} | {{ item.area_name }}</div>
-                </a>
-
+<div class="check-command-page">
+    <section class="panel check-hero">
+        <div class="check-hero-row">
+            <div>
+                <div class="command-eyebrow">LIVE OPERATIONS</div>
+                <h2>Checklist Command</h2>
+                <p>See which stores are actually behind right now — by section, timing integrity, and OA exposure — instead of scrolling through 25 checklist cards.</p>
+            </div>
+            <div class="check-hero-actions">
+                <span class="check-date-chip">{{ today_label }}</span>
                 {% if session.get("user_role") in ["admin", "supervisor"] %}
-                <div style="margin-top: 14px;">
-                    <form method="POST" action="{{ url_for('checklist.send_daily_summary', store_number=item.store_number) }}">
-                        <button type="submit" class="btn-primary">Send Summary</button>
-                    </form>
-                </div>
+                <form method="POST" action="{{ url_for('checklist.send_all_summaries') }}" style="margin:0;">
+                    <button type="submit" class="btn-primary" data-submitting-text="Sending…" onclick="return confirm('Send individual checklist summaries for all visible stores?');">Send All Summaries</button>
+                </form>
                 {% endif %}
             </div>
-            {% else %}
-            <div class="admin-task-card">No stores currently in progress.</div>
-            {% endfor %}
         </div>
-    </details>
+    </section>
 
-    <details class="panel premium-panel">
-        <summary class="panel-head" style="cursor:pointer;">
-            <h3>Not Started</h3>
-            <span class="summary-pill">{{ not_started|length }} stores</span>
-        </summary>
+    <section class="check-metrics">
+        <div class="check-metric"><div class="check-metric-label">Need Attention</div><div class="check-metric-value metric-warning" id="metricAttention">—</div><div class="check-metric-sub">stores with due work or integrity risk</div></div>
+        <div class="check-metric"><div class="check-metric-label">Opening Late</div><div class="check-metric-value" id="metricOpening">—</div><div class="check-metric-sub">past 10:30 target and incomplete</div></div>
+        <div class="check-metric"><div class="check-metric-label">3PM Reset Late</div><div class="check-metric-value" id="metricRestock">—</div><div class="check-metric-sub">past 3:00 target and incomplete</div></div>
+        <div class="check-metric"><div class="check-metric-label">Walk Late</div><div class="check-metric-value" id="metricWalk">—</div><div class="check-metric-sub">closing walk due and incomplete</div></div>
+        <div class="check-metric"><div class="check-metric-label">Timing Review</div><div class="check-metric-value" id="metricTiming">—</div><div class="check-metric-sub">stores with questionable completion timing</div></div>
+    </section>
 
-        <div class="admin-task-list">
-            {% for item in not_started %}
-            <div class="admin-task-card">
-                <a href="{{ url_for('checklist.index', store=item.store_number) }}" style="display:block; color:inherit;">
-                    <div class="admin-task-top">
-                        <span class="summary-pill">Store {{ item.store_number }}</span>
-                        <span class="table-badge badge-neutral">0%</span>
-                    </div>
-                    <div class="area-subtitle">{{ item.store_name }} | {{ item.area_name }}</div>
-                </a>
-
-                {% if session.get("user_role") in ["admin", "supervisor"] %}
-                <div style="margin-top: 14px;">
-                    <form method="POST" action="{{ url_for('checklist.send_daily_summary', store_number=item.store_number) }}">
-                        <button type="submit" class="btn-primary">Send Summary</button>
-                    </form>
-                </div>
-                {% endif %}
+    <section class="panel check-board">
+        <div class="check-board-head">
+            <div class="check-board-title">
+                <h3>Live Store Status</h3>
+                <p id="boardSubtitle">Loading section-level checklist status…</p>
             </div>
-            {% else %}
-            <div class="admin-task-card">Every visible store has started today’s checklist.</div>
-            {% endfor %}
-        </div>
-    </details>
-
-</div>
-
-<div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
-
-    <details class="panel premium-panel">
-        <summary class="panel-head" style="cursor:pointer;">
-            <h3>Completed Today</h3>
-            <span class="summary-pill">{{ completed|length }} stores</span>
-        </summary>
-
-        <div class="admin-task-list">
-            {% for item in completed %}
-            <div class="admin-task-card">
-                <a href="{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date.strftime('%Y-%m-%d')) }}" style="display:block; color:inherit;">
-                    <div class="admin-task-top">
-                        <span class="summary-pill">Store {{ item.store_number }}</span>
-                        <span class="table-badge badge-success">{{ item.percent_complete }}%</span>
-                        <span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                            Integrity {{ item.integrity_score }}%
-                        </span>
-                        <span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                            Walk {{ item.manager_walk_integrity }}%
-                        </span>
-                    </div>
-                    <div class="area-subtitle">{{ item.store_name }} | {{ item.area_name }}</div>
-                </a>
-
-                {% if session.get("user_role") in ["admin", "supervisor"] %}
-                <div style="margin-top: 14px;">
-                    <form method="POST" action="{{ url_for('checklist.send_daily_summary', store_number=item.store_number) }}">
-                        <button type="submit" class="btn-primary">Send Summary</button>
-                    </form>
-                </div>
-                {% endif %}
+            <div class="check-board-tools">
+                <input id="checkSearch" class="check-search" type="search" placeholder="Search store, area, manager…" autocomplete="off">
+                <button type="button" class="check-filter-btn is-active" data-view="attention">Needs Attention</button>
+                <button type="button" class="check-filter-btn" data-view="all">All Stores</button>
+                <button type="button" class="check-filter-btn" data-view="track">On Track</button>
             </div>
-            {% else %}
-            <div class="admin-task-card">No stores have completed today’s checklist yet.</div>
-            {% endfor %}
-        </div>
-    </details>
-
-    <details class="panel premium-panel">
-        <summary class="panel-head" style="cursor:pointer;">
-            <h3>Checklist Archives</h3>
-            <span class="summary-pill">{{ recent_archives|length }} items</span>
-        </summary>
-
-        <div style="margin-bottom: 16px;">
-            <input
-                id="archiveSearch"
-                type="text"
-                placeholder="Search store, name, area, date, status..."
-                style="
-                    width: 100%;
-                    padding: 10px 12px;
-                    border-radius: 10px;
-                    border: 1px solid #d1d5db;
-                    font-size: 14px;
-                    box-sizing: border-box;
-                "
-            />
         </div>
 
-        <div class="table-wrap premium-table-wrap">
-            <table class="data-table premium-table" id="archiveTable">
+        <div class="check-table-wrap">
+            <table class="check-table" id="checkCommandTable">
                 <thead>
                     <tr>
                         <th>Store</th>
-                        <th>Name</th>
-                        <th>Area</th>
-                        <th>Date</th>
-                        <th>Completion</th>
+                        <th>Opening</th>
+                        <th>Dayshift</th>
+                        <th>3PM Reset</th>
+                        <th>Mgr Walk</th>
                         <th>Integrity</th>
-                        <th>Walk Integrity</th>
-                        <th>Status</th>
-                        {% if session.get("user_role") == "admin" %}
-                        <th>Actions</th>
-                        {% endif %}
+                        <th>OA Risk</th>
+                        <th>Manager</th>
+                        <th>What Needs Attention</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in recent_archives %}
-                    <tr onclick="window.location='{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date.strftime('%Y-%m-%d')) }}'" style="cursor:pointer;">
-                        <td>{{ item.store_number }}</td>
-                        <td>{{ item.store_name }}</td>
-                        <td>{{ item.area_name }}</td>
-                        <td>{{ item.checklist_date.strftime('%b %d, %Y') }}</td>
-
-                        <td>
-                            <span class="table-badge {% if item.percent_complete >= 100 %}badge-success{% elif item.percent_complete > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                                {{ item.percent_complete }}%
-                            </span>
-                        </td>
-
-                        <td>
-                            <span class="table-badge {% if item.integrity_score >= 90 %}badge-success{% elif item.integrity_score > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                                {{ item.integrity_score }}%
-                            </span>
-                        </td>
-
-                        <td>
-                            <span class="table-badge {% if item.manager_walk_integrity >= 90 %}badge-success{% elif item.manager_walk_integrity > 0 %}badge-warning{% else %}badge-neutral{% endif %}">
-                                {{ item.manager_walk_integrity }}%
-                            </span>
-                        </td>
-
-                        <td>{{ item.status.replace('_', ' ')|title }}</td>
-
-                        {% if session.get("user_role") == "admin" %}
-                        <td onclick="event.stopPropagation();">
-                            <form
-                                method="POST"
-                                action="{{ url_for('checklist.delete_archive') }}"
-                                onsubmit="event.stopPropagation(); return confirm('Delete archived checklist for store {{ item.store_number }} on {{ item.checklist_date.strftime('%b %d, %Y') }}?');"
-                                style="margin:0;"
-                            >
-                                <input type="hidden" name="store_number" value="{{ item.store_number }}">
-                                <input type="hidden" name="checklist_date" value="{{ item.checklist_date.strftime('%Y-%m-%d') }}">
-                                <button
-                                    type="submit"
-                                    class="table-badge"
-                                    style="border:none; background:#ef4444; color:#fff; padding:8px 10px; border-radius:8px; cursor:pointer;"
-                                >
-                                    Delete
-                                </button>
-                            </form>
-                        </td>
-                        {% endif %}
+                    {% for item in not_started %}
+                    <tr data-store="{{ item.store_number }}" data-area="{{ item.area_name }}" data-name="{{ item.store_name }}" data-basic-status="missing" data-overall="0" data-integrity="0" data-walk="0">
+                        <td class="check-store">{{ item.store_number }}<small>{{ item.area_name }}</small></td>
+                        <td class="check-section-cell sec-opening"><div class="check-section-main">Loading…</div></td>
+                        <td class="check-section-cell sec-dayshift"><div class="check-section-main">Loading…</div></td>
+                        <td class="check-section-cell sec-restock"><div class="check-section-main">Loading…</div></td>
+                        <td class="check-section-cell sec-walk"><div class="check-section-main">Loading…</div></td>
+                        <td class="integrity-cell"><span class="check-integrity integrity-bad">0%</span></td>
+                        <td class="oa-cell"><span class="check-oa">—</span></td>
+                        <td class="manager-cell check-manager">—</td>
+                        <td class="issue-cell check-issue"><div class="issue-line danger">Checklist not started</div></td>
+                        <td class="check-row-actions"><a class="check-open-link" href="{{ url_for('checklist.index', store=item.store_number) }}">Open</a>{% if session.get("user_role") in ["admin", "supervisor"] %}<form method="POST" action="{{ url_for('checklist.send_daily_summary', store_number=item.store_number) }}" style="margin:0;" onclick="event.stopPropagation();"><button type="submit" class="check-email-btn" data-submitting-text="Sending…">Email</button></form>{% endif %}</td>
                     </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="{% if session.get('user_role') == 'admin' %}9{% else %}8{% endif %}">
-                            No archive history available yet.
-                        </td>
+                    {% endfor %}
+
+                    {% for item in in_progress %}
+                    <tr data-store="{{ item.store_number }}" data-area="{{ item.area_name }}" data-name="{{ item.store_name }}" data-date="{{ item.checklist_date.strftime('%Y-%m-%d') }}" data-basic-status="in_progress" data-overall="{{ item.percent_complete }}" data-integrity="{{ item.integrity_score }}" data-walk="{{ item.manager_walk_integrity }}">
+                        <td class="check-store">{{ item.store_number }}<small>{{ item.area_name }}</small></td>
+                        <td class="check-section-cell sec-opening"><div class="check-section-main">Loading…</div></td>
+                        <td class="check-section-cell sec-dayshift"><div class="check-section-main">Loading…</div></td>
+                        <td class="check-section-cell sec-restock"><div class="check-section-main">Loading…</div></td>
+                        <td class="check-section-cell sec-walk"><div class="check-section-main">Loading…</div></td>
+                        <td class="integrity-cell"><span class="check-integrity">{{ item.integrity_score }}%</span></td>
+                        <td class="oa-cell"><span class="check-oa">—</span></td>
+                        <td class="manager-cell check-manager">—</td>
+                        <td class="issue-cell check-issue"><div class="issue-line">Loading live detail…</div></td>
+                        <td class="check-row-actions"><a class="check-open-link" href="{{ url_for('checklist.index', store=item.store_number) }}">Open</a>{% if session.get("user_role") in ["admin", "supervisor"] %}<form method="POST" action="{{ url_for('checklist.send_daily_summary', store_number=item.store_number) }}" style="margin:0;" onclick="event.stopPropagation();"><button type="submit" class="check-email-btn" data-submitting-text="Sending…">Email</button></form>{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for item in completed %}
+                    <tr data-store="{{ item.store_number }}" data-area="{{ item.area_name }}" data-name="{{ item.store_name }}" data-date="{{ item.checklist_date.strftime('%Y-%m-%d') }}" data-basic-status="completed" data-overall="{{ item.percent_complete }}" data-integrity="{{ item.integrity_score }}" data-walk="{{ item.manager_walk_integrity }}">
+                        <td class="check-store">{{ item.store_number }}<small>{{ item.area_name }}</small></td>
+                        <td class="check-section-cell sec-opening"><div class="check-section-main">Loading…</div></td>
+                        <td class="check-section-cell sec-dayshift"><div class="check-section-main">Loading…</div></td>
+                        <td class="check-section-cell sec-restock"><div class="check-section-main">Loading…</div></td>
+                        <td class="check-section-cell sec-walk"><div class="check-section-main">Loading…</div></td>
+                        <td class="integrity-cell"><span class="check-integrity">{{ item.integrity_score }}%</span></td>
+                        <td class="oa-cell"><span class="check-oa">—</span></td>
+                        <td class="manager-cell check-manager">—</td>
+                        <td class="issue-cell check-issue"><div class="issue-line">Loading live detail…</div></td>
+                        <td class="check-row-actions"><a class="check-open-link" href="{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date.strftime('%Y-%m-%d')) }}">Open</a>{% if session.get("user_role") in ["admin", "supervisor"] %}<form method="POST" action="{{ url_for('checklist.send_daily_summary', store_number=item.store_number) }}" style="margin:0;" onclick="event.stopPropagation();"><button type="submit" class="check-email-btn" data-submitting-text="Sending…">Email</button></form>{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        <div class="check-loading" id="checkLoading">Pulling live section status for {{ total_visible }} stores…</div>
+    </section>
 
+    <details class="panel check-archives">
+        <summary>
+            <div class="check-archive-title"><h3>Recent Checklist History</h3><span class="check-badge">{{ recent_archives|length }} records</span></div>
+            <span class="check-badge">Show ▼</span>
+        </summary>
+        <div class="check-archive-body">
+            <div class="check-table-wrap">
+                <table class="archive-compact-table">
+                    <thead><tr><th>Store</th><th>Date</th><th>Completion</th><th>Integrity</th><th>Walk</th><th>Status</th>{% if session.get("user_role") == "admin" %}<th></th>{% endif %}</tr></thead>
+                    <tbody>
+                    {% for item in recent_archives %}
+                    <tr onclick="window.location='{{ url_for('checklist.index', store=item.store_number, date=item.checklist_date.strftime('%Y-%m-%d')) }}'" style="cursor:pointer;">
+                        <td><strong>{{ item.store_number }}</strong><div class="issue-secondary">{{ item.area_name }}</div></td>
+                        <td>{{ item.checklist_date.strftime('%b %d, %Y') }}</td>
+                        <td>{{ item.percent_complete }}%</td>
+                        <td>{{ item.integrity_score }}%</td>
+                        <td>{{ item.manager_walk_integrity }}%</td>
+                        <td>{{ item.status.replace('_',' ')|title }}</td>
+                        {% if session.get("user_role") == "admin" %}<td onclick="event.stopPropagation();"><form method="POST" action="{{ url_for('checklist.delete_archive') }}" onsubmit="return confirm('Delete archived checklist for store {{ item.store_number }} on {{ item.checklist_date.strftime('%b %d, %Y') }}?');" style="margin:0;"><input type="hidden" name="store_number" value="{{ item.store_number }}"><input type="hidden" name="checklist_date" value="{{ item.checklist_date.strftime('%Y-%m-%d') }}"><button type="submit" class="archive-delete">Delete</button></form></td>{% endif %}
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7">No archive history available.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </details>
-
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const archiveSearch = document.getElementById("archiveSearch");
-    const archiveTable = document.getElementById("archiveTable");
+    const table = document.getElementById("checkCommandTable");
+    const tbody = table ? table.querySelector("tbody") : null;
+    const rows = tbody ? Array.from(tbody.querySelectorAll("tr[data-store]")) : [];
+    const loading = document.getElementById("checkLoading");
+    const subtitle = document.getElementById("boardSubtitle");
+    const search = document.getElementById("checkSearch");
+    const filterButtons = Array.from(document.querySelectorAll(".check-filter-btn"));
 
-    if (archiveSearch && archiveTable) {
-        archiveSearch.addEventListener("keyup", function () {
-            const search = this.value.toLowerCase();
-            const rows = archiveTable.querySelectorAll("tbody tr");
+    let activeView = "attention";
 
-            rows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                row.style.display = text.includes(search) ? "" : "none";
-            });
+    function isoFromTodayLabel() {
+        const parsed = new Date({{ today_label|tojson }} + " 12:00:00");
+        if (Number.isNaN(parsed.getTime())) return "";
+        const year = parsed.getFullYear();
+        const month = String(parsed.getMonth() + 1).padStart(2, "0");
+        const day = String(parsed.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    const fallbackDate = isoFromTodayLabel();
+
+    function sectionByName(snapshot, name) {
+        return (snapshot.sections || []).find(section => section.section_name === name) || null;
+    }
+
+    function isDue(section) {
+        const status = section && section.due_status ? section.due_status.status : "unknown";
+        return status === "due_now" || status === "past_due";
+    }
+
+    function renderSectionCell(cell, section) {
+        if (!cell) return;
+        cell.classList.remove("sec-good", "sec-warning", "sec-bad", "sec-pending", "sec-neutral");
+
+        if (!section) {
+            cell.classList.add("sec-neutral");
+            cell.innerHTML = '<div class="check-section-main">—</div>';
+            return;
+        }
+
+        const percent = Number(section.completion_percent || 0);
+        const due = isDue(section);
+        const dueState = section.due_status ? section.due_status.status : "unknown";
+
+        if (!due && percent < 100) {
+            cell.classList.add("sec-pending");
+        } else if (percent >= 100) {
+            cell.classList.add("sec-good");
+        } else if (percent >= 75) {
+            cell.classList.add("sec-warning");
+        } else {
+            cell.classList.add("sec-bad");
+        }
+
+        const sub = !due && dueState !== "past_due"
+            ? "not due"
+            : `${section.completed_tasks || 0}/${section.total_tasks || 0} tasks`;
+
+        cell.innerHTML = `<div class="check-section-main">${Math.round(percent)}%</div><div class="check-section-sub">${sub}</div>`;
+    }
+
+    function formatPoints(value) {
+        const number = Number(value || 0);
+        return Number.isInteger(number) ? String(number) : number.toFixed(1);
+    }
+
+    function evaluateRow(row, snapshot) {
+        const opening = sectionByName(snapshot, "Before Open / Before 10:30");
+        const dayshift = sectionByName(snapshot, "During Dayshift");
+        const restock = sectionByName(snapshot, "3-O'Clock Restock");
+        const walk = sectionByName(snapshot, "Manager's Walk");
+        const sections = [opening, dayshift, restock, walk].filter(Boolean);
+
+        renderSectionCell(row.querySelector(".sec-opening"), opening);
+        renderSectionCell(row.querySelector(".sec-dayshift"), dayshift);
+        renderSectionCell(row.querySelector(".sec-restock"), restock);
+        renderSectionCell(row.querySelector(".sec-walk"), walk);
+
+        const integrity = Number(snapshot.integrity_score || 0);
+        const integrityCell = row.querySelector(".integrity-cell");
+        const integrityClass = integrity >= 90 ? "integrity-good" : integrity >= 70 ? "integrity-warning" : "integrity-bad";
+        if (integrityCell) integrityCell.innerHTML = `<span class="check-integrity ${integrityClass}">${Math.round(integrity)}%</span>`;
+
+        const dueSections = sections.filter(isDue);
+        const dueRisk = dueSections.reduce((sum, section) => sum + Number(section.at_risk_points || 0), 0);
+        const questionable = sections.reduce((sum, section) => sum + Number(section.questionable_points || 0), 0);
+        const integrityFlags = sections.reduce((sum, section) => sum + ((section.integrity_flags || []).length), 0);
+        const oaCell = row.querySelector(".oa-cell");
+        if (oaCell) {
+            if (dueRisk > 0) oaCell.innerHTML = `<span class="check-oa metric-warning">${formatPoints(dueRisk)} pts</span>`;
+            else oaCell.innerHTML = '<span class="check-oa metric-good">0</span>';
+        }
+
+        const openingManager = (snapshot.opening_manager || snapshot.manager_on_duty || "").trim();
+        const closingManager = (snapshot.closing_manager || "").trim();
+        const managerCell = row.querySelector(".manager-cell");
+        if (managerCell) {
+            const primary = closingManager || openingManager || "—";
+            const secondary = closingManager && openingManager && closingManager !== openingManager ? `Open: ${openingManager}` : "";
+            managerCell.innerHTML = `${primary}${secondary ? `<small>${secondary}</small>` : ""}`;
+        }
+
+        const problems = [];
+        let riskScore = 0;
+
+        if (snapshot.status === "missing" || !snapshot.daily_checklist_id) {
+            problems.push({severity:"danger", text:"Checklist not started"});
+            riskScore += 1200;
+        }
+
+        const dueChecks = [
+            {label:"Opening", section:opening, weight:4},
+            {label:"Dayshift", section:dayshift, weight:2},
+            {label:"3PM Reset", section:restock, weight:3.5},
+            {label:"Manager Walk", section:walk, weight:2.5},
+        ];
+
+        dueChecks.forEach(item => {
+            if (!item.section || !isDue(item.section)) return;
+            const percent = Number(item.section.completion_percent || 0);
+            if (percent < 100) {
+                const remaining = Math.max(Number(item.section.total_tasks || 0) - Number(item.section.completed_tasks || 0), 0);
+                problems.push({severity:percent < 60 ? "danger" : "warning", text:`${item.label} ${Math.round(percent)}% (${remaining} left)`});
+                riskScore += (100 - percent) * item.weight;
+            }
+        });
+
+        if (integrity > 0 && integrity < 70) {
+            problems.push({severity:"danger", text:`Opening integrity ${Math.round(integrity)}%`});
+            riskScore += 240 + (70 - integrity) * 3;
+        } else if (integrity >= 70 && integrity < 90) {
+            problems.push({severity:"warning", text:`Opening integrity ${Math.round(integrity)}%`});
+            riskScore += 60 + (90 - integrity);
+        }
+
+        if (questionable > 0 || integrityFlags > 0) {
+            problems.push({severity:"warning", text:`Timing review · ${formatPoints(questionable)} questionable OA pts`});
+            riskScore += 170 + questionable * 5 + integrityFlags * 15;
+        }
+
+        if (dueRisk > 0) {
+            riskScore += dueRisk * 2.5;
+        }
+
+        const issueCell = row.querySelector(".issue-cell");
+        if (issueCell) {
+            if (!problems.length) {
+                issueCell.innerHTML = '<div class="issue-line" style="color:#86efac;">On track</div><div class="issue-secondary">No due checklist exception right now.</div>';
+            } else {
+                const primary = problems[0];
+                const more = problems.slice(1, 3).map(problem => problem.text).join(" · ");
+                issueCell.innerHTML = `<div class="issue-line ${primary.severity}">${primary.text}</div>${more ? `<div class="issue-secondary">${more}</div>` : ""}`;
+            }
+        }
+
+        row.classList.remove("row-critical", "row-warning");
+        if (problems.some(problem => problem.severity === "danger")) row.classList.add("row-critical");
+        else if (problems.length) row.classList.add("row-warning");
+
+        row.dataset.risk = String(riskScore);
+        row.dataset.attention = problems.length ? "true" : "false";
+        row.dataset.track = problems.length ? "false" : "true";
+        row.dataset.openingLate = opening && isDue(opening) && Number(opening.completion_percent || 0) < 100 ? "true" : "false";
+        row.dataset.restockLate = restock && isDue(restock) && Number(restock.completion_percent || 0) < 100 ? "true" : "false";
+        row.dataset.walkLate = walk && isDue(walk) && Number(walk.completion_percent || 0) < 100 ? "true" : "false";
+        row.dataset.timingReview = questionable > 0 || integrityFlags > 0 ? "true" : "false";
+        row.dataset.searchText = [row.dataset.store, row.dataset.area, row.dataset.name, openingManager, closingManager, problems.map(p => p.text).join(" ")].join(" ").toLowerCase();
+    }
+
+    function fallbackRow(row) {
+        const missing = row.dataset.basicStatus === "missing";
+        const issueCell = row.querySelector(".issue-cell");
+        if (issueCell && !missing) issueCell.innerHTML = '<div class="issue-line warning">Live detail unavailable</div><div class="issue-secondary">Open the checklist for current detail.</div>';
+        row.dataset.risk = missing ? "1200" : String(100 - Number(row.dataset.overall || 0));
+        row.dataset.attention = "true";
+        row.dataset.track = "false";
+        row.dataset.searchText = [row.dataset.store, row.dataset.area, row.dataset.name].join(" ").toLowerCase();
+    }
+
+    function sortRows() {
+        rows.sort((a, b) => {
+            const riskDiff = Number(b.dataset.risk || 0) - Number(a.dataset.risk || 0);
+            if (riskDiff !== 0) return riskDiff;
+            return String(a.dataset.store || "").localeCompare(String(b.dataset.store || ""), undefined, {numeric:true});
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    function updateMetrics() {
+        const attention = rows.filter(row => row.dataset.attention === "true").length;
+        const openingLate = rows.filter(row => row.dataset.openingLate === "true").length;
+        const restockLate = rows.filter(row => row.dataset.restockLate === "true").length;
+        const walkLate = rows.filter(row => row.dataset.walkLate === "true").length;
+        const timing = rows.filter(row => row.dataset.timingReview === "true").length;
+
+        const metricAttention = document.getElementById("metricAttention");
+        const metricOpening = document.getElementById("metricOpening");
+        const metricRestock = document.getElementById("metricRestock");
+        const metricWalk = document.getElementById("metricWalk");
+        const metricTiming = document.getElementById("metricTiming");
+
+        if (metricAttention) metricAttention.textContent = attention;
+        if (metricOpening) { metricOpening.textContent = openingLate; metricOpening.className = `check-metric-value ${openingLate ? "metric-danger" : "metric-good"}`; }
+        if (metricRestock) { metricRestock.textContent = restockLate; metricRestock.className = `check-metric-value ${restockLate ? "metric-danger" : "metric-good"}`; }
+        if (metricWalk) { metricWalk.textContent = walkLate; metricWalk.className = `check-metric-value ${walkLate ? "metric-warning" : "metric-good"}`; }
+        if (metricTiming) { metricTiming.textContent = timing; metricTiming.className = `check-metric-value ${timing ? "metric-warning" : "metric-good"}`; }
+
+        if (subtitle) subtitle.textContent = `${attention} of ${rows.length} visible stores need review right now. Sorted highest-risk first.`;
+    }
+
+    function applyView() {
+        const term = (search ? search.value : "").trim().toLowerCase();
+        rows.forEach(row => {
+            const matchesSearch = !term || (row.dataset.searchText || "").includes(term);
+            const matchesView = activeView === "all" || (activeView === "attention" && row.dataset.attention === "true") || (activeView === "track" && row.dataset.track === "true");
+            row.style.display = matchesSearch && matchesView ? "" : "none";
         });
     }
 
-    document.querySelectorAll("details.premium-panel").forEach(section => {
-        section.addEventListener("toggle", function () {
-            if (this.open) {
-                document.querySelectorAll("details.premium-panel").forEach(other => {
-                    if (other !== this) {
-                        other.removeAttribute("open");
-                    }
-                });
-            }
+    async function loadRow(row) {
+        const store = row.dataset.store;
+        const date = row.dataset.date || fallbackDate;
+        if (!store || !date) { fallbackRow(row); return; }
+
+        try {
+            const response = await fetch(`/checklist/api/doughy/execution-snapshot?store=${encodeURIComponent(store)}&date=${encodeURIComponent(date)}`, {headers:{"Accept":"application/json"}});
+            const data = await response.json();
+            if (!response.ok || !data.ok || !data.snapshot) throw new Error("Snapshot unavailable");
+            evaluateRow(row, data.snapshot);
+        } catch (error) {
+            fallbackRow(row);
+        }
+    }
+
+    rows.forEach(row => {
+        row.addEventListener("click", function (event) {
+            if (event.target.closest("a, button, form, input")) return;
+            const openLink = row.querySelector(".check-open-link");
+            if (openLink) window.location.href = openLink.href;
         });
+    });
+
+    filterButtons.forEach(button => {
+        button.addEventListener("click", function () {
+            activeView = this.dataset.view || "attention";
+            filterButtons.forEach(other => other.classList.toggle("is-active", other === this));
+            applyView();
+        });
+    });
+
+    if (search) search.addEventListener("input", applyView);
+
+    Promise.all(rows.map(loadRow)).then(() => {
+        sortRows();
+        updateMetrics();
+        applyView();
+        if (loading) loading.style.display = "none";
     });
 });
 </script>

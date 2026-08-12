@@ -1,9 +1,9 @@
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from app.extensions import db
-from app.models import CashLog
+from app.models import CashLog, Store
 from app.auth.routes import login_required
 
 cash_bp = Blueprint("cash", __name__, url_prefix="/cash")
@@ -40,6 +40,118 @@ def get_manager_store():
 
 def is_log_date_editable(log_date):
     return log_date == get_business_date()
+
+
+def can_capture_checklist_cash(store_number):
+    role = (session.get("user_role") or "").strip().lower()
+
+    if role == "manager":
+        return str(session.get("user_store") or "") == str(store_number)
+
+    store = Store.query.filter_by(
+        store_number=store_number,
+        is_active=True,
+    ).first()
+
+    if not store:
+        return False
+
+    if role == "admin":
+        return True
+
+    if role == "supervisor":
+        return str(store.area_name or "") == str(session.get("user_area") or "")
+
+    return False
+
+
+@cash_bp.route("/checklist-log", methods=["POST"])
+@login_required
+def checklist_log():
+    data = request.get_json(silent=True) or {}
+
+    store_number = str(data.get("store_number") or "").strip()
+    log_date_raw = str(data.get("log_date") or "").strip()
+    shift_type = str(data.get("shift_type") or "").strip().lower()
+    manager_name = str(
+        data.get("manager_name")
+        or session.get("user_name")
+        or ""
+    ).strip()
+
+    if not store_number or not log_date_raw:
+        return jsonify({"success": False, "error": "Missing store/date."}), 400
+
+    if shift_type not in {"opening", "midshift"}:
+        return jsonify({"success": False, "error": "Invalid cash shift."}), 400
+
+    if not can_capture_checklist_cash(store_number):
+        return jsonify({"success": False, "error": "You do not have access to this store."}), 403
+
+    try:
+        log_date = datetime.strptime(log_date_raw, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify({"success": False, "error": "Invalid cash date."}), 400
+
+    if not is_log_date_editable(log_date):
+        return jsonify({
+            "success": False,
+            "error": "Only the active business day can be updated.",
+        }), 400
+
+    try:
+        cash_on_hand = float(data.get("cash_on_hand"))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "Enter a valid cash amount."}), 400
+
+    if cash_on_hand < 0:
+        return jsonify({"success": False, "error": "Cash on hand cannot be negative."}), 400
+
+    log = (
+        CashLog.query
+        .filter_by(
+            store_number=store_number,
+            log_date=log_date,
+            shift_type=shift_type,
+        )
+        .order_by(CashLog.created_at.desc(), CashLog.id.desc())
+        .first()
+    )
+
+    created = log is None
+
+    if log is None:
+        log = CashLog(
+            store_number=store_number,
+            log_date=log_date,
+            shift_type=shift_type,
+            total_cash=cash_on_hand,
+            manager_name=manager_name,
+        )
+        db.session.add(log)
+    else:
+        # Checklist capture is an aggregate cash-on-hand count. Keep any
+        # component breakdown already entered through Cash Control intact.
+        log.total_cash = cash_on_hand
+        if manager_name:
+            log.manager_name = manager_name
+
+        # A one-field checklist count should not invent an over/short value.
+        # If Cash Control already supplied amount-to-account-for data, keep it.
+        if shift_type == "midshift" and log.amount_to_account_for is None:
+            log.cash_over_short = None
+
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "cash_log_id": log.id,
+        "created": created,
+        "store_number": store_number,
+        "log_date": log_date.isoformat(),
+        "shift_type": shift_type,
+        "total_cash": log.total_cash,
+    })
 
 
 @cash_bp.route("/", methods=["GET", "POST"])

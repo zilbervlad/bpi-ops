@@ -107,6 +107,26 @@ def checklist_log():
     if cash_on_hand < 0:
         return jsonify({"success": False, "error": "Cash on hand cannot be negative."}), 400
 
+    amount_to_account_for = None
+    cash_over_short = None
+
+    if shift_type == "midshift":
+        try:
+            amount_to_account_for = float(data.get("amount_to_account_for"))
+        except (TypeError, ValueError):
+            return jsonify({
+                "success": False,
+                "error": "Enter a valid total to account for.",
+            }), 400
+
+        if amount_to_account_for < 0:
+            return jsonify({
+                "success": False,
+                "error": "Total to account for cannot be negative.",
+            }), 400
+
+        cash_over_short = cash_on_hand - amount_to_account_for
+
     log = (
         CashLog.query
         .filter_by(
@@ -126,6 +146,8 @@ def checklist_log():
             log_date=log_date,
             shift_type=shift_type,
             total_cash=cash_on_hand,
+            amount_to_account_for=amount_to_account_for,
+            cash_over_short=cash_over_short,
             manager_name=manager_name,
         )
         db.session.add(log)
@@ -136,10 +158,9 @@ def checklist_log():
         if manager_name:
             log.manager_name = manager_name
 
-        # A one-field checklist count should not invent an over/short value.
-        # If Cash Control already supplied amount-to-account-for data, keep it.
-        if shift_type == "midshift" and log.amount_to_account_for is None:
-            log.cash_over_short = None
+        if shift_type == "midshift":
+            log.amount_to_account_for = amount_to_account_for
+            log.cash_over_short = cash_over_short
 
     db.session.commit()
 
@@ -151,6 +172,8 @@ def checklist_log():
         "log_date": log_date.isoformat(),
         "shift_type": shift_type,
         "total_cash": log.total_cash,
+        "amount_to_account_for": log.amount_to_account_for,
+        "cash_over_short": log.cash_over_short,
     })
 
 

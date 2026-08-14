@@ -2,26 +2,208 @@
 {% block title %}HR Forms · BPI Ops{% endblock %}
 {% block content %}
 <style>
-.hrf-page{max-width:1300px;margin:0 auto;padding:10px 12px 40px}.hrf-hero{background:linear-gradient(135deg,#111827,#1f2937);color:#fff;border-radius:22px;padding:24px;display:flex;justify-content:space-between;gap:16px;align-items:center}.hrf-hero h1{margin:0;font-size:30px}.hrf-hero p{margin:7px 0 0;color:#d1d5db;font-weight:700}.hrf-actions{display:flex;gap:10px;flex-wrap:wrap}.hrf-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:0;border-radius:999px;padding:11px 16px;font-weight:900;cursor:pointer}.hrf-primary{background:#2563eb;color:#fff}.hrf-light{background:#fff;color:#111827}.hrf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}.hrf-card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:16px}.hrf-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:900}.hrf-value{font-size:28px;font-weight:950;color:#111827;margin-top:6px}.hrf-panel{background:#fff;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;margin-top:14px;color:#111827}.hrf-panel h2{font-size:17px;margin:0;padding:15px 16px;border-bottom:1px solid #e5e7eb;color:#111827!important;-webkit-text-fill-color:#111827!important;opacity:1!important}.hrf-table{width:100%;border-collapse:collapse;color:#111827}.hrf-table th{background:#f8fafc;color:#64748b!important;-webkit-text-fill-color:#64748b!important;text-transform:uppercase;letter-spacing:.08em;font-size:10px;text-align:left;padding:11px 13px;opacity:1!important}.hrf-table td{padding:13px;border-top:1px solid #f1f5f9;vertical-align:top;color:#111827!important;-webkit-text-fill-color:#111827!important;font-size:14px;font-weight:700;opacity:1!important}.hrf-table td:first-child,.hrf-table td:nth-child(2){font-weight:850}.hrf-pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;background:#eef2ff;color:#3730a3!important;-webkit-text-fill-color:#3730a3!important}.hrf-link{font-weight:900;color:#2563eb!important;-webkit-text-fill-color:#2563eb!important;text-decoration:none}.hrf-empty{padding:24px;text-align:center;color:#64748b!important;-webkit-text-fill-color:#64748b!important;font-weight:800;opacity:1!important}@media(max-width:800px){.hrf-hero{display:block}.hrf-actions{margin-top:14px}.hrf-grid{grid-template-columns:1fr}.hrf-panel{overflow-x:auto}.hrf-table{min-width:760px}}
+.hrf-page{max-width:1380px;margin:0 auto;padding:18px 18px 44px;color:#0f172a}
+.hrf-top{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:20px}
+.hrf-eyebrow{font-size:11px;font-weight:900;letter-spacing:.13em;text-transform:uppercase;color:#64748b;margin-bottom:7px}
+.hrf-title{margin:0;font-size:31px;line-height:1.1;font-weight:950;letter-spacing:-.025em;color:#0f172a}
+.hrf-subtitle{margin:8px 0 0;max-width:650px;font-size:14px;line-height:1.5;color:#64748b;font-weight:650}
+.hrf-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end;padding-top:4px}
+.hrf-btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;min-height:40px;padding:9px 13px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#0f172a;text-decoration:none;font-size:13px;font-weight:850;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:.15s ease}
+.hrf-btn:hover{border-color:#94a3b8;background:#f8fafc;transform:translateY(-1px)}
+.hrf-btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}.hrf-btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8}
+.hrf-btn-danger{color:#b91c1c;border-color:#fecaca;background:#fff}.hrf-btn-danger:hover{background:#fef2f2;border-color:#fca5a5}
+.hrf-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hrf-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.hrf-stat{position:relative;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:17px 18px 16px;box-shadow:0 1px 2px rgba(15,23,42,.035)}
+.hrf-stat-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hrf-stat-label{font-size:12px;font-weight:850;color:#475569}.hrf-stat-number{font-size:31px;line-height:1;font-weight:950;letter-spacing:-.03em;color:#0f172a;margin-top:10px}
+.hrf-stat-note{font-size:11px;color:#94a3b8;font-weight:700;margin-top:7px}.hrf-stat-dot{width:9px;height:9px;border-radius:50%;background:#3b82f6}.hrf-stat-wait .hrf-stat-dot{background:#f59e0b}.hrf-stat-done .hrf-stat-dot{background:#16a34a}
+.hrf-panel{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.035);margin-top:14px}
+.hrf-panel-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 16px;border-bottom:1px solid #e2e8f0}
+.hrf-panel-title{display:flex;align-items:center;gap:9px}.hrf-panel-title h2{margin:0;font-size:16px;font-weight:900;color:#0f172a}.hrf-panel-title span{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:11px;font-weight:900}
+.hrf-approval{border-color:#fde68a}.hrf-approval .hrf-panel-head{background:#fffbeb;border-bottom-color:#fde68a}.hrf-approval .hrf-panel-title span{background:#fef3c7;color:#92400e}
+.hrf-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hrf-search{position:relative}.hrf-search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:#94a3b8;fill:none;stroke-width:2}.hrf-search input{width:235px;height:36px;border:1px solid #cbd5e1;border-radius:9px;padding:0 11px 0 32px;background:#fff;color:#0f172a;font:inherit;font-size:12px;font-weight:700;outline:none}.hrf-search input:focus,.hrf-filter:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.10)}
+.hrf-filter{height:36px;border:1px solid #cbd5e1;border-radius:9px;padding:0 28px 0 10px;background:#fff;color:#334155;font-size:12px;font-weight:800;outline:none}
+.hrf-result-count{font-size:11px;color:#64748b;font-weight:800;white-space:nowrap}
+.hrf-table-wrap{overflow-x:auto}.hrf-table{width:100%;border-collapse:collapse;color:#0f172a;min-width:880px}.hrf-table th{background:#f8fafc;color:#64748b;text-transform:uppercase;letter-spacing:.085em;font-size:10px;text-align:left;padding:10px 14px;font-weight:900;border-bottom:1px solid #e2e8f0}.hrf-table td{padding:13px 14px;border-bottom:1px solid #eef2f7;vertical-align:middle;font-size:13px;color:#334155;font-weight:700}.hrf-table tbody tr:last-child td{border-bottom:0}.hrf-table tbody tr:hover{background:#f8fafc}.hrf-form-name{font-weight:900;color:#0f172a}.hrf-person{font-weight:850;color:#0f172a}.hrf-muted{color:#64748b;font-weight:700}.hrf-store{font-variant-numeric:tabular-nums;font-weight:850;color:#334155}
+.hrf-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;font-size:10.5px;font-weight:900;white-space:nowrap;border:1px solid transparent}.hrf-pill:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.8}
+.hrf-pill-pending{background:#fff7ed;color:#b45309;border-color:#fed7aa}.hrf-pill-approved{background:#f0fdf4;color:#15803d;border-color:#bbf7d0}.hrf-pill-completed{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}.hrf-pill-submitted{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}.hrf-pill-denied{background:#fef2f2;color:#b91c1c;border-color:#fecaca}.hrf-pill-default{background:#f1f5f9;color:#475569;border-color:#e2e8f0}
+.hrf-link{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 10px;border-radius:8px;border:1px solid #dbeafe;background:#eff6ff;color:#1d4ed8;text-decoration:none;font-size:11px;font-weight:900}.hrf-link:hover{background:#dbeafe}
+.hrf-empty{padding:32px 18px;text-align:center;color:#94a3b8;font-size:13px;font-weight:750}.hrf-no-results{display:none;padding:32px 18px;text-align:center;color:#64748b;font-size:13px;font-weight:750}
+@media(max-width:960px){.hrf-top{display:block}.hrf-actions{justify-content:flex-start;margin-top:16px}.hrf-stats{grid-template-columns:1fr}.hrf-panel-head{align-items:flex-start;flex-direction:column}.hrf-tools{width:100%}.hrf-search{flex:1;min-width:180px}.hrf-search input{width:100%}}
+@media(max-width:620px){.hrf-page{padding:12px 10px 34px}.hrf-title{font-size:27px}.hrf-actions{display:grid;grid-template-columns:1fr}.hrf-btn{width:100%}.hrf-tools{display:grid;grid-template-columns:1fr}.hrf-search,.hrf-search input,.hrf-filter{width:100%;box-sizing:border-box}.hrf-result-count{padding-left:2px}}
 </style>
+
 {% set approved_count = forms|selectattr('status','equalto','approved')|list|length %}
 {% set completed_count = forms|selectattr('status','equalto','completed')|list|length %}
+
 <div class="hrf-page">
-  <div class="hrf-hero">
-    <div><h1>HR Forms</h1><p>Submit, approve, and track employee forms without chasing paper around the building.</p></div>
+  <div class="hrf-top">
+    <div>
+      <div class="hrf-eyebrow">Human Resources</div>
+      <h1 class="hrf-title">HR Forms</h1>
+      <p class="hrf-subtitle">Submit, review, and track employee records from one secure HR workspace.</p>
+    </div>
     <div class="hrf-actions">
-      <a class="hrf-btn hrf-light" href="{{ url_for('dwp.hr_time_off_new') }}">Request Time Off</a>
-      {% if can_pay_change %}<a class="hrf-btn hrf-primary" href="{{ url_for('dwp.hr_pay_change_new') }}">Position / Rate / Store Change</a>{% endif %}
+      <a class="hrf-btn" href="{{ url_for('dwp.hr_time_off_new') }}">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path></svg>
+        Request Time Off
+      </a>
+      {% if can_pay_change %}
+      <a class="hrf-btn hrf-btn-primary" href="{{ url_for('dwp.hr_pay_change_new') }}">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+        Position / Rate / Store Change
+      </a>
+      {% endif %}
+      {% if can_submit_separation %}
+      <a class="hrf-btn hrf-btn-danger" href="{{ url_for('dwp.hr_separation_new') }}">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+        Employee Separation Notice
+      </a>
+      {% endif %}
     </div>
   </div>
-  <div class="hrf-grid">
-    <div class="hrf-card"><div class="hrf-label">My Visible Forms</div><div class="hrf-value">{{ forms|length }}</div></div>
-    <div class="hrf-card"><div class="hrf-label">Waiting on Me</div><div class="hrf-value">{{ approvals|length }}</div></div>
-    <div class="hrf-card"><div class="hrf-label">Approved / Completed</div><div class="hrf-value">{{ approved_count + completed_count }}</div></div>
+
+  <div class="hrf-stats">
+    <div class="hrf-stat">
+      <div class="hrf-stat-top"><div class="hrf-stat-label">Visible Records</div><span class="hrf-stat-dot"></span></div>
+      <div class="hrf-stat-number">{{ forms|length }}</div>
+      <div class="hrf-stat-note">Forms available within your access level</div>
+    </div>
+    <div class="hrf-stat hrf-stat-wait">
+      <div class="hrf-stat-top"><div class="hrf-stat-label">Awaiting Your Action</div><span class="hrf-stat-dot"></span></div>
+      <div class="hrf-stat-number">{{ approvals|length }}</div>
+      <div class="hrf-stat-note">Requests currently waiting for your review</div>
+    </div>
+    <div class="hrf-stat hrf-stat-done">
+      <div class="hrf-stat-top"><div class="hrf-stat-label">Processed</div><span class="hrf-stat-dot"></span></div>
+      <div class="hrf-stat-number">{{ approved_count + completed_count }}</div>
+      <div class="hrf-stat-note">Approved or completed records</div>
+    </div>
   </div>
+
   {% if approvals %}
-  <div class="hrf-panel"><h2>Approval Queue</h2><table class="hrf-table"><thead><tr><th>Form</th><th>Team Member</th><th>Store</th><th>Status</th><th>Submitted</th><th></th></tr></thead><tbody>{% for form in approvals %}<tr><td>{{ form.form_type|replace('_',' ')|title }}</td><td>{{ form.subject_user.name }}</td><td>{{ form.store_number or '—' }}</td><td><span class="hrf-pill">{{ form.status|replace('_',' ')|title }}</span></td><td>{{ form.created_at.strftime('%m/%d/%Y %I:%M %p') }}</td><td><a class="hrf-link" href="{{ url_for('dwp.hr_form_detail',form_id=form.id) }}">Review</a></td></tr>{% endfor %}</tbody></table></div>
+  <section class="hrf-panel hrf-approval">
+    <div class="hrf-panel-head">
+      <div class="hrf-panel-title"><h2>Approval Queue</h2><span>{{ approvals|length }}</span></div>
+      <div class="hrf-muted" style="font-size:11px">Needs your review</div>
+    </div>
+    <div class="hrf-table-wrap">
+      <table class="hrf-table">
+        <thead><tr><th>Form</th><th>Team Member</th><th>Store</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
+        <tbody>
+          {% for form in approvals %}
+          <tr>
+            <td class="hrf-form-name">{% if form.form_type == 'pay_change' %}Position / Rate / Store Change{% elif form.form_type == 'time_off' %}Time Off Request{% elif form.form_type == 'separation_notice' %}Employee Separation Notice{% else %}{{ form.form_type|replace('_',' ')|title }}{% endif %}</td>
+            <td class="hrf-person">{{ form.subject_user.name }}</td>
+            <td class="hrf-store">{{ form.store_number or '—' }}</td>
+            <td><span class="hrf-pill hrf-pill-pending">{{ form.status|replace('_',' ')|title }}</span></td>
+            <td class="hrf-muted">{{ form.created_at.strftime('%m/%d/%Y %I:%M %p') }}</td>
+            <td><a class="hrf-link" href="{{ url_for('dwp.hr_form_detail',form_id=form.id) }}">Review</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
   {% endif %}
-  <div class="hrf-panel"><h2>Forms</h2>{% if forms %}<table class="hrf-table"><thead><tr><th>Form</th><th>Team Member</th><th>Store</th><th>Status</th><th>Submitted By</th><th>Date</th><th></th></tr></thead><tbody>{% for form in forms %}<tr><td>{{ form.form_type|replace('_',' ')|title }}</td><td>{{ form.subject_user.name }}</td><td>{{ form.store_number or '—' }}</td><td><span class="hrf-pill">{{ form.status|replace('_',' ')|title }}</span></td><td>{{ form.submitter.name }}</td><td>{{ form.created_at.strftime('%m/%d/%Y') }}</td><td><a class="hrf-link" href="{{ url_for('dwp.hr_form_detail',form_id=form.id) }}">View</a></td></tr>{% endfor %}</tbody></table>{% else %}<div class="hrf-empty">No forms yet.</div>{% endif %}</div>
+
+  <section class="hrf-panel">
+    <div class="hrf-panel-head">
+      <div class="hrf-panel-title"><h2>Employee Forms</h2><span id="hrfVisibleCount">{{ forms|length }}</span></div>
+      {% if forms %}
+      <div class="hrf-tools">
+        <div class="hrf-search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+          <input id="hrfSearch" type="search" placeholder="Search employee, store, submitter..." autocomplete="off">
+        </div>
+        <select id="hrfTypeFilter" class="hrf-filter" aria-label="Filter by form type">
+          <option value="">All Form Types</option>
+          <option value="time_off">Time Off</option>
+          <option value="pay_change">Position / Rate / Store</option>
+          <option value="separation_notice">Separation</option>
+        </select>
+        <select id="hrfStatusFilter" class="hrf-filter" aria-label="Filter by status">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending / Waiting</option>
+          <option value="submitted">Submitted</option>
+          <option value="approved">Approved</option>
+          <option value="completed">Completed</option>
+          <option value="denied">Denied</option>
+        </select>
+        <span class="hrf-result-count" id="hrfResultText">{{ forms|length }} records</span>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if forms %}
+    <div class="hrf-table-wrap">
+      <table class="hrf-table" id="hrfFormsTable">
+        <thead><tr><th>Form</th><th>Team Member</th><th>Store</th><th>Status</th><th>Submitted By</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+          {% for form in forms %}
+          {% set status_lower = form.status|lower %}
+          <tr class="hrf-form-row" data-type="{{ form.form_type }}" data-status="{{ status_lower }}" data-search="{{ ((form.subject_user.name or '') ~ ' ' ~ (form.store_number or '') ~ ' ' ~ (form.submitter.name or '') ~ ' ' ~ form.form_type ~ ' ' ~ form.status)|lower }}">
+            <td class="hrf-form-name">{% if form.form_type == 'pay_change' %}Position / Rate / Store Change{% elif form.form_type == 'time_off' %}Time Off Request{% elif form.form_type == 'separation_notice' %}Employee Separation Notice{% else %}{{ form.form_type|replace('_',' ')|title }}{% endif %}</td>
+            <td class="hrf-person">{{ form.subject_user.name }}</td>
+            <td class="hrf-store">{{ form.store_number or '—' }}</td>
+            <td>
+              {% if 'denied' in status_lower %}<span class="hrf-pill hrf-pill-denied">{{ form.status|replace('_',' ')|title }}</span>
+              {% elif 'completed' in status_lower %}<span class="hrf-pill hrf-pill-completed">Completed</span>
+              {% elif 'approved' in status_lower %}<span class="hrf-pill hrf-pill-approved">Approved</span>
+              {% elif 'submitted' in status_lower %}<span class="hrf-pill hrf-pill-submitted">{{ form.status|replace('_',' ')|title }}</span>
+              {% elif 'pending' in status_lower or 'waiting' in status_lower %}<span class="hrf-pill hrf-pill-pending">{{ form.status|replace('_',' ')|title }}</span>
+              {% else %}<span class="hrf-pill hrf-pill-default">{{ form.status|replace('_',' ')|title }}</span>{% endif %}
+            </td>
+            <td>{{ form.submitter.name }}</td>
+            <td class="hrf-muted">{{ form.created_at.strftime('%m/%d/%Y') }}</td>
+            <td><a class="hrf-link" href="{{ url_for('dwp.hr_form_detail',form_id=form.id) }}">View</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="hrf-no-results" id="hrfNoResults">No records match those filters.</div>
+    </div>
+    {% else %}
+    <div class="hrf-empty">No HR forms have been submitted yet.</div>
+    {% endif %}
+  </section>
 </div>
+
+{% if forms %}
+<script>
+(function(){
+  const search=document.getElementById('hrfSearch');
+  const typeFilter=document.getElementById('hrfTypeFilter');
+  const statusFilter=document.getElementById('hrfStatusFilter');
+  const rows=Array.from(document.querySelectorAll('.hrf-form-row'));
+  const visibleCount=document.getElementById('hrfVisibleCount');
+  const resultText=document.getElementById('hrfResultText');
+  const noResults=document.getElementById('hrfNoResults');
+  function matchesStatus(actual,wanted){
+    if(!wanted)return true;
+    if(wanted==='pending')return actual.includes('pending')||actual.includes('waiting');
+    return actual.includes(wanted);
+  }
+  function applyFilters(){
+    const q=(search.value||'').trim().toLowerCase();
+    const type=typeFilter.value;
+    const status=statusFilter.value;
+    let count=0;
+    rows.forEach(row=>{
+      const show=(!q||row.dataset.search.includes(q))&&(!type||row.dataset.type===type)&&matchesStatus(row.dataset.status,status);
+      row.style.display=show?'':'none';
+      if(show)count++;
+    });
+    visibleCount.textContent=count;
+    resultText.textContent=count+(count===1?' record':' records');
+    noResults.style.display=count?'none':'block';
+  }
+  search.addEventListener('input',applyFilters);
+  typeFilter.addEventListener('change',applyFilters);
+  statusFilter.addEventListener('change',applyFilters);
+})();
+</script>
+{% endif %}
 {% endblock %}

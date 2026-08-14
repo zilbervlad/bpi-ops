@@ -66,8 +66,8 @@
     <div class="sep-grid">
       <div class="field"><label>Did the Employee Give Notice?</label><select name="notice_given" required><option value="">Select...</option><option value="yes">Yes</option><option value="no">No</option></select></div>
       <div class="field"><label>To Whom?</label><input name="notice_to_whom"></div>
-      <div class="field"><label>Eligible for Rehire?</label><select name="eligible_for_rehire" id="rehireEligible" required><option value="">Select...</option><option value="yes">Yes</option><option value="no">No</option></select></div>
-      <div class="field hidden" id="rehireExplanation"><label>If No / Conditional, Explain</label><input name="rehire_explanation"></div>
+      <div class="field"><label>Eligible for Rehire?</label><select name="eligible_for_rehire" required><option value="">Select...</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+      <div class="field"><label>If Not Eligible or Only Under Certain Conditions, Explain</label><input name="rehire_explanation"></div>
     </div>
 
     <div class="section-title">Signatures</div>
@@ -114,10 +114,6 @@
   }
   document.querySelectorAll('input[name="separation_type"]').forEach(input=>input.addEventListener('change',()=>setReasons(input.value)));
   reasonSelect.addEventListener('change',()=>transferFields.classList.toggle('hidden',reasonSelect.value!=='Transfer'));
-
-  const rehire=document.getElementById('rehireEligible');
-  const rehireExplanation=document.getElementById('rehireExplanation');
-  rehire.addEventListener('change',()=>rehireExplanation.classList.toggle('hidden',rehire.value!=='no'));
 })();
 </script>
 {% endblock %}

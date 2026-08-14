@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Employee Separation Notice · BPI Ops{% endblock %}
+{% block content %}
+<style>
+.sep-detail{max-width:1040px;margin:0 auto;padding:10px 12px 40px}.sep-head{background:linear-gradient(135deg,#111827,#1f2937);color:#fff;border-radius:20px;padding:22px;margin-bottom:14px;display:flex;justify-content:space-between;gap:14px;align-items:center}.sep-head h1{margin:0;font-size:28px}.sep-head p{margin:7px 0 0;color:#d1d5db;font-weight:700}.status{display:inline-flex;background:#fff;color:#111827;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:950}.sep-card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:18px;margin-bottom:14px;color:#111827}.meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.meta-box,.row{background:#f8fafc;border:1px solid #e5e7eb;border-radius:13px;padding:11px}.label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:900}.value{margin-top:5px;color:#111827;font-weight:850;line-height:1.45;white-space:pre-wrap}.section-title{font-size:15px;margin:0 0 10px;color:#111827;font-weight:950}.rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.reason-banner{display:flex;align-items:center;gap:10px;padding:13px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;margin-bottom:12px}.reason-type{text-transform:uppercase;letter-spacing:.08em;font-size:11px;font-weight:950;color:#1d4ed8}.reason-value{font-size:17px;font-weight:950;color:#111827}.notice{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:13px;color:#9a3412;font-size:12px;font-weight:800;line-height:1.5}.signature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.signature{border-top:1px solid #cbd5e1;padding-top:10px;margin-top:4px}.event{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #f1f5f9;padding:10px 0}.event:first-child{border-top:0}.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:999px;padding:11px 16px;font-weight:900;text-decoration:none;cursor:pointer}.primary{background:#2563eb;color:#fff}.muted{background:#f3f4f6;color:#111827}.danger{background:#dc2626;color:#fff}@media(max-width:760px){.sep-head{display:block}.status{margin-top:12px}.meta,.rows,.signature-grid{grid-template-columns:1fr}.actions .btn{width:100%;text-align:center}.event{display:block}.event .label{margin-top:7px}}
+</style>
+<div class="sep-detail">
+  <div class="sep-head">
+    <div>
+      <h1>Employee Separation Notice</h1>
+      <p>{{ form.subject_user.name }} · Store {{ form.store_number or '-' }} · Form #{{ form.id }}</p>
+    </div>
+    <span class="status">{{ form.status|replace('_',' ')|title }}</span>
+  </div>
+
+  <div class="sep-card">
+    <div class="meta">
+      <div class="meta-box"><div class="label">Manager / Supervisor</div><div class="value">{{ form.data.manager_name or form.submitter.name }}</div></div>
+      <div class="meta-box"><div class="label">Employee</div><div class="value">{{ form.subject_user.name }}</div></div>
+      <div class="meta-box"><div class="label">Store</div><div class="value">{{ form.store_number or '-' }}</div></div>
+      <div class="meta-box"><div class="label">Last Day Worked</div><div class="value">{{ form.data.last_day_worked or '-' }}</div></div>
+    </div>
+  </div>
+
+  <div class="sep-card">
+    <h2 class="section-title">Reason for Separation</h2>
+    <div class="reason-banner">
+      <div class="reason-type">{{ form.data.separation_type|title }}</div>
+      <div class="reason-value">{{ form.data.separation_reason }}</div>
+    </div>
+    {% if form.data.separation_reason == 'Transfer' %}
+    <div class="rows" style="margin-bottom:12px">
+      <div class="row"><div class="label">Transfer Date</div><div class="value">{{ form.data.transfer_date or '-' }}</div></div>
+      <div class="row"><div class="label">Transfer Store</div><div class="value">{{ form.data.transfer_store or '-' }}</div></div>
+    </div>
+    {% endif %}
+    <div class="row" style="margin-bottom:10px"><div class="label">Detailed Explanation</div><div class="value">{{ form.data.explanation }}</div></div>
+    <div class="row"><div class="label">Employee's Statement of Reason for Separation</div><div class="value">{{ form.data.employee_statement or 'No statement provided' }}</div></div>
+  </div>
+
+  <div class="sep-card">
+    <h2 class="section-title">Notice / Rehire</h2>
+    <div class="rows">
+      <div class="row"><div class="label">Did Employee Give Notice?</div><div class="value">{{ form.data.notice_given|upper }}</div></div>
+      <div class="row"><div class="label">To Whom?</div><div class="value">{{ form.data.notice_to_whom or '-' }}</div></div>
+      <div class="row"><div class="label">Eligible for Rehire?</div><div class="value">{{ form.data.eligible_for_rehire|upper }}</div></div>
+      <div class="row"><div class="label">Rehire Conditions / Explanation</div><div class="value">{{ form.data.rehire_explanation or 'None' }}</div></div>
+    </div>
+  </div>
+
+  <div class="sep-card">
+    <h2 class="section-title">Certification & Signatures</h2>
+    <div class="notice">I certify that the information furnished above is true and correct and authorize the release of this document as requested.</div>
+    <div class="signature-grid" style="margin-top:14px">
+      <div class="signature"><div class="label">Employee Signature</div><div class="value">{{ form.data.employee_signature or 'Not provided' }}</div><div class="label" style="margin-top:8px">Date</div><div class="value">{{ form.data.employee_signature_date or '-' }}</div></div>
+      <div class="signature"><div class="label">Manager's Signature</div><div class="value">{{ form.data.manager_signature }}</div><div class="label" style="margin-top:8px">Date</div><div class="value">{{ form.data.manager_signature_date or '-' }}</div></div>
+    </div>
+  </div>
+
+  <div class="sep-card">
+    <h2 class="section-title">Audit Trail</h2>
+    {% for event in form.events|sort(attribute='created_at',reverse=true) %}
+    <div class="event">
+      <div><strong>{{ event.action|replace('_',' ')|title }}</strong>{% if event.note %}<div class="value">{{ event.note }}</div>{% endif %}</div>
+      <div class="label">{{ event.actor.name if event.actor else 'System' }}<br>{{ event.created_at.strftime('%m/%d/%Y %I:%M %p') }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="actions">
+    <a class="btn danger" href="{{ url_for('dwp.hr_form_pdf_download', form_id=form.id) }}">Download PDF</a>
+    <a class="btn muted" href="{{ url_for('dwp.hr_forms_home') }}">Back to HR Forms</a>
+  </div>
+</div>
+{% endblock %}

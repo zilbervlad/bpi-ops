@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Employee Separation Notice · BPI Ops{% endblock %}
+{% block content %}
+<style>
+.sep-page{max-width:1080px;margin:0 auto;padding:10px 12px 40px}.sep-head{background:linear-gradient(135deg,#111827,#1f2937);color:#fff;border-radius:20px;padding:22px;margin-bottom:14px}.sep-head h1{margin:0;font-size:28px}.sep-head p{margin:7px 0 0;color:#d1d5db;font-weight:700}.sep-card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:18px;color:#111827}.sep-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:900;color:#111827;margin-bottom:6px}.field input,.field select,.field textarea{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:12px;padding:11px 12px;font:inherit;color:#111827;background:#fff}.field textarea{min-height:105px;resize:vertical}.section-title{font-size:14px;font-weight:950;color:#111827;border-top:1px solid #e5e7eb;padding-top:16px;margin:4px 0 14px}.instructions{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:13px;margin-bottom:16px;color:#9a3412;font-size:12px;font-weight:800;line-height:1.5}.note{font-size:12px;color:#64748b;line-height:1.45;margin-top:5px}.choice-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.choice{border:1px solid #d1d5db;border-radius:14px;padding:12px;background:#fff;cursor:pointer;font-weight:900}.choice input{width:auto;margin-right:8px}.signature-note{background:#f8fafc;border:1px solid #cbd5e1;border-radius:14px;padding:12px;font-size:12px;color:#475569;line-height:1.45}.actions{display:flex;justify-content:space-between;gap:10px;margin-top:16px}.btn{border:0;border-radius:999px;padding:11px 17px;font-weight:900;text-decoration:none;cursor:pointer}.primary{background:#2563eb;color:#fff}.muted{background:#f3f4f6;color:#111827}.tm-search-wrap{position:relative}.tm-results{display:none;position:absolute;z-index:30;left:0;right:0;top:100%;max-height:300px;overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:14px;box-shadow:0 16px 35px rgba(15,23,42,.16);margin-top:6px}.tm-result{display:block;width:100%;border:0;border-bottom:1px solid #eef2f7;background:#fff;padding:11px 12px;text-align:left;cursor:pointer}.tm-result:hover{background:#eff6ff}.tm-result-name{font-weight:950;color:#111827}.tm-result-sub{font-size:12px;color:#64748b;margin-top:2px}.tm-selected{display:none;margin-top:8px;padding:10px 12px;border-radius:12px;background:#ecfdf5;border:1px solid #bbf7d0;color:#065f46;font-weight:900}.hidden{display:none}@media(max-width:720px){.sep-grid,.choice-row{grid-template-columns:1fr}.actions{flex-direction:column-reverse}.btn{width:100%;text-align:center}}
+</style>
+<div class="sep-page">
+  <div class="sep-head">
+    <h1>Employee Separation Notice</h1>
+    <p>Boston Pie, Inc. · digital version of the supervisor separation form.</p>
+  </div>
+
+  <form class="sep-card" method="POST">
+    <div class="instructions">
+      This form is to be completed by the supervisor of the separating employee. Supervisors should obtain the employee's signature and statement of reason for separation.
+    </div>
+
+    <div class="field tm-search-wrap">
+      <label>Employee Name</label>
+      <input type="search" id="tmSearch" placeholder="Search name, store, position, username, or email..." autocomplete="off">
+      <input type="hidden" name="subject_user_id" id="subjectUserId" required>
+      <div class="tm-selected" id="tmSelected"></div>
+      <div class="tm-results" id="tmResults">
+        {% for employee in users %}
+        {% set employee_label = 'Store ' ~ (employee.store_number or '—') ~ ' · ' ~ employee.name ~ ' · ' ~ (employee.position or employee.role|replace('_',' ')|title) %}
+        <button type="button" class="tm-result" data-id="{{ employee.id }}" data-label="{{ employee_label }}" data-search="{{ (employee_label ~ ' ' ~ (employee.username or '') ~ ' ' ~ (employee.email or ''))|lower }}">
+          <div class="tm-result-name">{{ employee.name }}</div>
+          <div class="tm-result-sub">Store {{ employee.store_number or '—' }} · {{ employee.position or employee.role|replace('_',' ')|title }}{% if not employee.is_active %} · Inactive{% endif %}</div>
+        </button>
+        {% endfor %}
+      </div>
+      <div class="note">Select the employee being separated. Store number will come from their BPI Ops profile.</div>
+    </div>
+
+    <div class="sep-grid">
+      <div class="field"><label>Manager / Supervisor</label><input value="{{ user.name }}" disabled></div>
+      <div class="field"><label>Last Day Worked</label><input type="date" name="last_day_worked" required></div>
+    </div>
+
+    <div class="section-title">Reason for Separation</div>
+    <div class="choice-row field">
+      <label class="choice"><input type="radio" name="separation_type" value="voluntary" required> Voluntary</label>
+      <label class="choice"><input type="radio" name="separation_type" value="involuntary" required> Involuntary</label>
+    </div>
+    <div class="field">
+      <label>Reason</label>
+      <select name="separation_reason" id="separationReason" required disabled><option value="">Select voluntary or involuntary first...</option></select>
+    </div>
+
+    <div id="transferFields" class="sep-grid hidden">
+      <div class="field"><label>Transfer Date</label><input type="date" name="transfer_date"></div>
+      <div class="field"><label>Transfer Store</label><input name="transfer_store" placeholder="Store #"></div>
+    </div>
+
+    <div class="field">
+      <label>Explain Reason in Detail</label>
+      <textarea name="explanation" required placeholder="Give the full explanation. For another job, include company and start date if known. If there was no notice, explain when and how the separation was determined."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Employee's Statement of Reason for Separation</label>
+      <textarea name="employee_statement" placeholder="Enter the employee's statement, if provided."></textarea>
+    </div>
+
+    <div class="section-title">Notice / Rehire</div>
+    <div class="sep-grid">
+      <div class="field"><label>Did the Employee Give Notice?</label><select name="notice_given" required><option value="">Select...</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+      <div class="field"><label>To Whom?</label><input name="notice_to_whom"></div>
+      <div class="field"><label>Eligible for Rehire?</label><select name="eligible_for_rehire" id="rehireEligible" required><option value="">Select...</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+      <div class="field hidden" id="rehireExplanation"><label>If No / Conditional, Explain</label><input name="rehire_explanation"></div>
+    </div>
+
+    <div class="section-title">Signatures</div>
+    <div class="signature-note">I certify that the information furnished above is true and correct and authorize the release of this document as requested.</div>
+    <div class="sep-grid" style="margin-top:14px">
+      <div class="field"><label>Employee Signature <span style="font-weight:700;color:#64748b">(if available)</span></label><input name="employee_signature" placeholder="Employee's full name"></div>
+      <div class="field"><label>Employee Signature Date</label><input type="date" name="employee_signature_date"></div>
+      <div class="field"><label>Manager's Signature</label><input name="manager_signature" required placeholder="Type your full legal name"></div>
+      <div class="field"><label>Manager Signature Date</label><input type="date" name="manager_signature_date" value="{{ today }}" required></div>
+    </div>
+
+    <div class="note">Submitting saves the notice to the employee's HR file and emails the completed PDF to HR and Payroll.</div>
+    <div class="actions"><a class="btn muted" href="{{ url_for('dwp.hr_forms_home') }}">Cancel</a><button class="btn primary" type="submit">Submit Separation Notice</button></div>
+  </form>
+</div>
+<script>
+(function(){
+  const search=document.getElementById('tmSearch');
+  const results=document.getElementById('tmResults');
+  const hidden=document.getElementById('subjectUserId');
+  const selected=document.getElementById('tmSelected');
+  const rows=Array.from(document.querySelectorAll('.tm-result'));
+  function filter(){
+    const q=search.value.trim().toLowerCase();
+    let visible=0;
+    rows.forEach(row=>{const show=!q||row.dataset.search.includes(q);row.style.display=show?'block':'none';if(show)visible++;});
+    results.style.display=(document.activeElement===search&&visible)?'block':'none';
+  }
+  search.addEventListener('focus',filter);
+  search.addEventListener('input',()=>{hidden.value='';selected.style.display='none';filter();});
+  rows.forEach(row=>row.addEventListener('click',()=>{hidden.value=row.dataset.id;search.value=row.dataset.label;selected.textContent='Selected: '+row.dataset.label;selected.style.display='block';results.style.display='none';}));
+  document.addEventListener('click',e=>{if(!e.target.closest('.tm-search-wrap'))results.style.display='none';});
+
+  const voluntary={{ voluntary_reasons|tojson }};
+  const involuntary={{ involuntary_reasons|tojson }};
+  const reasonSelect=document.getElementById('separationReason');
+  const transferFields=document.getElementById('transferFields');
+  function setReasons(type){
+    const values=type==='voluntary'?voluntary:type==='involuntary'?involuntary:[];
+    reasonSelect.innerHTML='<option value="">Select...</option>';
+    values.forEach(reason=>{const option=document.createElement('option');option.value=reason;option.textContent=reason;reasonSelect.appendChild(option);});
+    reasonSelect.disabled=!values.length;
+    transferFields.classList.add('hidden');
+  }
+  document.querySelectorAll('input[name="separation_type"]').forEach(input=>input.addEventListener('change',()=>setReasons(input.value)));
+  reasonSelect.addEventListener('change',()=>transferFields.classList.toggle('hidden',reasonSelect.value!=='Transfer'));
+
+  const rehire=document.getElementById('rehireEligible');
+  const rehireExplanation=document.getElementById('rehireExplanation');
+  rehire.addEventListener('change',()=>rehireExplanation.classList.toggle('hidden',rehire.value!=='no'));
+})();
+</script>
+{% endblock %}
